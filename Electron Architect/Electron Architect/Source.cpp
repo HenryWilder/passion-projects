@@ -1,4 +1,5 @@
 #include <vector>
+#include <unordered_set>
 #include <queue>
 #include <deque>
 #include <algorithm>
@@ -217,20 +218,40 @@ public:
         wires.erase(it);
     }
 
+    // Uses BFS
     void Sort()
     {
-        std::queue<int> list;
-        bool* visited = new bool[nodes.size()](false);
-        for (Node* node : nodes)
-        {
+        nodes.clear();
+        nodes.reserve(nodes.size());
 
+        std::queue<Node*> list;
+        std::unordered_set<Node*> visited;
+        for (Node* node : startNodes)
+        {
+            list.push(node);
+            visited.insert(node);
+        }
+
+        while (!list.empty())
+        {
+            Node* current = list.front();
+            for (Wire* wire : current->m_wires)
+            {
+                Node* next = wire->end;
+                if (next == current || visited.find(next) != visited.end())
+                    continue;
+
+                visited.insert(next);
+                list.push(next);
+            }
+            nodes.push_back(current);
+            list.pop();
         }
     }
 
     void Evaluate()
     {
-        std::queue<Node*> todo;
-        todo.insert();
+        
     }
 };
 
