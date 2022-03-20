@@ -576,11 +576,6 @@ int main()
         cursorPos = IVec2Scale_i(cursorPos, g_gridSize);
         cursorPos = cursorPos + IVec2(g_gridSize / 2, g_gridSize / 2);
 
-        data.hoveredWire = nullptr;
-        data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-        if (!data.hoveredNode)
-            data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
-
         if (IsKeyPressed(KEY_B))
             SetMode(Mode::PEN);
         else if (IsKeyPressed(KEY_V))
@@ -589,6 +584,11 @@ int main()
         switch (mode)
         {
         case Mode::PEN:
+            data.hoveredWire = nullptr;
+            data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+            if (!data.hoveredNode)
+                data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 Node* newNode = data.hoveredNode;
@@ -607,6 +607,14 @@ int main()
             break;
 
         case Mode::EDIT:
+            if (!data.edit.nodeBeingDragged &&
+                !data.edit.wireBeingDragged)
+            {
+                data.hoveredWire = nullptr;
+                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+                if (!data.hoveredNode)
+                    data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+            }
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 data.edit.nodeBeingDragged = data.hoveredNode;
@@ -622,6 +630,11 @@ int main()
             if (!!data.edit.nodeBeingDragged)
             {
                 data.edit.nodeBeingDragged->SetPosition(cursorPos);
+                for (Wire* wire : data.edit.nodeBeingDragged->GetWires())
+                {
+                    wire->elbow.x = wire->GetStartX();
+                    wire->elbow.y = wire->GetEndY();
+                }
             }
 
             // Wire
@@ -643,39 +656,64 @@ int main()
 
             ClearBackground(BLACK);
 
-            NodeWorld::Get().DrawWires();
-
-            if (!!data.pen.currentWireStart)
+            switch (mode)
             {
-                DrawLine(data.pen.currentWireStart->GetX(), data.pen.currentWireStart->GetY(), data.pen.currentWireStart->GetX(), cursorPos.y, DARKBLUE);
-                DrawLine(data.pen.currentWireStart->GetX(), cursorPos.y, cursorPos.x, cursorPos.y, DARKBLUE);
-            }
-
-            if (!!data.hoveredWire)
+            case Mode::PEN:
             {
-                data.hoveredWire->Draw(GOLD);
-                data.hoveredWire->DrawElbow(LIME);
-            }
+                NodeWorld::Get().DrawWires();
 
-            if (!!data.hoveredNode)
-            {
-                for (const Wire* wire : data.hoveredNode->GetWires())
+                if (!!data.pen.currentWireStart)
                 {
-                    Color color;
-                    if (wire->start == data.hoveredNode)
-                        color = DARKBLUE; // Output
-                    else
-                        color = DARKPURPLE; // Input
+                    DrawLine(data.pen.currentWireStart->GetX(), data.pen.currentWireStart->GetY(), data.pen.currentWireStart->GetX(), cursorPos.y, DARKBLUE);
+                    DrawLine(data.pen.currentWireStart->GetX(), cursorPos.y, cursorPos.x, cursorPos.y, DARKBLUE);
+                }
 
-                    wire->Draw(color);
+                if (!!data.hoveredWire)
+                {
+                    data.hoveredWire->Draw(GOLD);
+                }
+
+                if (!!data.hoveredNode)
+                {
+                    for (const Wire* wire : data.hoveredNode->GetWires())
+                    {
+                        Color color;
+                        if (wire->start == data.hoveredNode)
+                            color = DARKBLUE; // Output
+                        else
+                            color = DARKPURPLE; // Input
+
+                        wire->Draw(color);
+                    }
+                }
+
+                NodeWorld::Get().DrawNodes();
+
+                if (!!data.hoveredNode)
+                {
+                    data.hoveredNode->Draw(YELLOW);
                 }
             }
+                break;
 
-            NodeWorld::Get().DrawNodes();
-
-            if (!!data.hoveredNode)
+            case Mode::EDIT:
             {
-                data.hoveredNode->Draw(YELLOW);
+                NodeWorld::Get().DrawWires();
+
+                if (!!data.hoveredWire)
+                {
+                    data.hoveredWire->Draw(GOLD);
+                    data.hoveredWire->DrawElbow(LIME);
+                }
+
+                NodeWorld::Get().DrawNodes();
+
+                if (!!data.hoveredNode)
+                {
+                    data.hoveredNode->Draw(YELLOW);
+                }
+            }
+                break;
             }
 
         } EndDrawing();
