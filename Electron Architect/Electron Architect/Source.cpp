@@ -135,6 +135,42 @@ struct Wire
     Int_t GetElbowY() const;
     Int_t GetEndX() const;
     Int_t GetEndY() const;
+
+    void SnapElbowToLegal(IVec2 pos)
+    {
+        IVec2 startPos = start->GetPosition();
+        IVec2 endPos = end->GetPosition();
+
+        Int_t shortLength = std::min(
+            abs(endPos.x - startPos.x),
+            abs(endPos.y - startPos.y)
+        );
+
+        IVec2 legal[] =
+        {
+            IVec2(startPos.x, endPos.y),
+            IVec2(endPos.x, startPos.y),
+            startPos + IVec2(endPos.x < startPos.x ? -shortLength : shortLength,
+                             endPos.y < startPos.y ? -shortLength : shortLength),
+            endPos   + IVec2(startPos.x < endPos.x ? -shortLength : shortLength,
+                             startPos.y < endPos.y ? -shortLength : shortLength),
+        };
+
+
+        IVec2* pick = nullptr;
+        long shortestDist = LONG_MAX;
+        for (IVec2& vec : legal)
+        {
+            long dist = DistanceSqr(pos, vec);
+            if (dist < shortestDist)
+            {
+                shortestDist = dist;
+                pick = &vec;
+            }
+        }
+        _ASSERT_EXPR(!!pick, "Nearest legal move not executed");
+        elbow = *pick;
+    }
 };
 
 enum class Gate
@@ -646,46 +682,14 @@ int main()
                 data.edit.nodeBeingDragged->SetPosition(cursorPos);
                 for (Wire* wire : data.edit.nodeBeingDragged->GetWires())
                 {
-                    wire->elbow.x = wire->GetStartX();
-                    wire->elbow.y = wire->GetEndY();
+                    data.edit.wireBeingDragged->SnapElbowToLegal(data.edit.wireBeingDragged->elbow);
                 }
             }
 
             // Wire
             else if (!!data.edit.wireBeingDragged)
             {
-                IVec2 startPos = data.edit.wireBeingDragged->start->GetPosition();
-                IVec2 endPos = data.edit.wireBeingDragged->end->GetPosition();
-
-                Int_t shortLength = std::min(
-                    abs(endPos.x - startPos.x),
-                    abs(endPos.y - startPos.y)
-                );
-
-                IVec2 legal[] =
-                {
-                    IVec2(startPos.x, endPos.y),
-                    IVec2(endPos.x, startPos.y),
-                    startPos + IVec2(endPos.x < startPos.x ? -shortLength : shortLength,
-                                     endPos.y < startPos.y ? -shortLength : shortLength),
-                    endPos   + IVec2(startPos.x < endPos.x ? -shortLength : shortLength,
-                                     startPos.y < endPos.y ? -shortLength : shortLength),
-                };
-
-
-                IVec2* pick = nullptr;
-                long shortestDist = LONG_MAX;
-                for (IVec2& vec : legal)
-                {
-                    long dist = DistanceSqr(cursorPos, vec);
-                    if (dist < shortestDist)
-                    {
-                        shortestDist = dist;
-                        pick = &vec;
-                    }
-                }
-                _ASSERT_EXPR(!!pick, "Nearest legal move not executed");
-                data.edit.wireBeingDragged->elbow = *pick;
+                data.edit.wireBeingDragged->SnapElbowToLegal(cursorPos);
             }
 
             break;
