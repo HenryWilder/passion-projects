@@ -581,6 +581,11 @@ int main()
         if (!data.hoveredNode)
             data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
 
+        if (IsKeyPressed(KEY_B))
+            SetMode(Mode::PEN);
+        else if (IsKeyPressed(KEY_V))
+            SetMode(Mode::EDIT);
+
         switch (mode)
         {
         case Mode::PEN:
