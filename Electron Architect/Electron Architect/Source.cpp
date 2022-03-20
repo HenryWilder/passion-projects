@@ -3,6 +3,7 @@
 #include <queue>
 #include <algorithm>
 #include <raylib.h>
+#include <limits.h>
 //#include <raymath.h>
 //#include <extras\raygui.h>
 
@@ -662,6 +663,10 @@ int main()
         case Mode::EDIT:
             data.edit.nodeBeingDragged = nullptr;
             data.edit.wireBeingDragged = nullptr;
+            Int_t selectionRectangleX_Min = ;
+            Int_t selectionRectangleY_Min = ;
+            Int_t selectionRectangleX_Max = 0;
+            Int_t selectionRectangleY_Max = 0;
             break;
 
         default:
