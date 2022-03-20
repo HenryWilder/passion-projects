@@ -366,8 +366,10 @@ public:
         {
             if (wire->start == b)
                 wire->start = a;
-            else
+            else if (wire->end == b)
                 wire->end = a;
+            else
+                _ASSERT_EXPR(false, "How did we get here?");
         }
 
         // Destroy old
