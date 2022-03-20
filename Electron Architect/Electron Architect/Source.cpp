@@ -725,7 +725,9 @@ int main()
             else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
             {
                 data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-                if (data.hoveredNode && data.edit.nodeBeingDragged != data.hoveredNode)
+                if (data.edit.nodeBeingDragged &&
+                    data.hoveredNode &&
+                    data.edit.nodeBeingDragged != data.hoveredNode)
                     NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
 
                 data.edit.nodeBeingDragged = nullptr;
