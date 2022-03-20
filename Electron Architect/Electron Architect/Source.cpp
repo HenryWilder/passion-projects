@@ -75,6 +75,8 @@ struct Wire
     Wire() = default;
     Wire(Node* start, Node* end) : elbow(), start(start), end(end) {}
 
+    static constexpr Color g_wireColorActive = BROWN;
+    static constexpr Color g_wireColorInactive = GRAY;
     static constexpr float g_elbowRadius = 1.0f;
     IVec2 elbow;
     Node* start;
@@ -167,7 +169,9 @@ private: // Accessible by NodeWorld
     Node() = default;
     Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false) {}
 
-    static constexpr float g_nodeRadius = 1.0f;
+    static constexpr Color g_nodeColorActive = RED;
+    static constexpr Color g_nodeColorInactive = LIGHTGRAY;
+    static constexpr float g_nodeRadius = 3.0f;
     IVec2 m_position;
     Gate m_gate;
     bool m_state;
@@ -398,14 +402,14 @@ public:
     {
         for (Wire* wire : wires)
         {
-            wire->Draw(wire->start->m_state ? RED : GRAY);
+            wire->Draw(wire->start->m_state ? wire->g_wireColorActive : wire->g_wireColorInactive);
         }
     }
     void DrawNodes()
     {
         for (Node* node : nodes)
         {
-            node->Draw(node->m_state ? RED : GRAY);
+            node->Draw(node->m_state ? node->g_nodeColorActive : node->g_nodeColorInactive);
         }
     }
 };
