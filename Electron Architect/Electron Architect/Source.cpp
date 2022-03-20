@@ -136,41 +136,7 @@ struct Wire
     Int_t GetEndX() const;
     Int_t GetEndY() const;
 
-    void SnapElbowToLegal(IVec2 pos)
-    {
-        IVec2 startPos = start->GetPosition();
-        IVec2 endPos = end->GetPosition();
-
-        Int_t shortLength = std::min(
-            abs(endPos.x - startPos.x),
-            abs(endPos.y - startPos.y)
-        );
-
-        IVec2 legal[] =
-        {
-            IVec2(startPos.x, endPos.y),
-            IVec2(endPos.x, startPos.y),
-            startPos + IVec2(endPos.x < startPos.x ? -shortLength : shortLength,
-                             endPos.y < startPos.y ? -shortLength : shortLength),
-            endPos   + IVec2(startPos.x < endPos.x ? -shortLength : shortLength,
-                             startPos.y < endPos.y ? -shortLength : shortLength),
-        };
-
-
-        IVec2* pick = nullptr;
-        long shortestDist = LONG_MAX;
-        for (IVec2& vec : legal)
-        {
-            long dist = DistanceSqr(pos, vec);
-            if (dist < shortestDist)
-            {
-                shortestDist = dist;
-                pick = &vec;
-            }
-        }
-        _ASSERT_EXPR(!!pick, "Nearest legal move not executed");
-        elbow = *pick;
-    }
+    void SnapElbowToLegal(IVec2 pos);
 };
 
 enum class Gate
@@ -293,6 +259,41 @@ Int_t Wire::GetEndY() const
     return end->GetY();
 }
 
+void Wire::SnapElbowToLegal(IVec2 pos)
+{
+    IVec2 startPos = start->GetPosition();
+    IVec2 endPos = end->GetPosition();
+
+    Int_t shortLength = std::min(
+        abs(endPos.x - startPos.x),
+        abs(endPos.y - startPos.y)
+    );
+
+    IVec2 legal[] =
+    {
+        IVec2(startPos.x, endPos.y),
+        IVec2(endPos.x, startPos.y),
+        startPos + IVec2(endPos.x < startPos.x ? -shortLength : shortLength,
+                         endPos.y < startPos.y ? -shortLength : shortLength),
+        endPos + IVec2(startPos.x < endPos.x ? -shortLength : shortLength,
+                         startPos.y < endPos.y ? -shortLength : shortLength),
+    };
+
+
+    IVec2* pick = nullptr;
+    long shortestDist = LONG_MAX;
+    for (IVec2& vec : legal)
+    {
+        long dist = DistanceSqr(pos, vec);
+        if (dist < shortestDist)
+        {
+            shortestDist = dist;
+            pick = &vec;
+        }
+    }
+    _ASSERT_EXPR(!!pick, "Nearest legal move not executed");
+    elbow = *pick;
+}
 
 class NodeWorld
 {
