@@ -356,7 +356,7 @@ public:
         delete node;
         orderDirty = true;
     }
-    Node* CombineNodes(Node* a, Node* b)
+    Node* MergeNodes(Node* a, Node* b)
     {
         // Convert connections
         for (Wire* wire : b->m_wires)
