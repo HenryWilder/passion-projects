@@ -654,11 +654,24 @@ int main()
             // Wire
             else if (!!data.edit.wireBeingDragged)
             {
+                Int_t shortLength = std::min(
+                    abs(data.edit.wireBeingDragged->GetEndX() - data.edit.wireBeingDragged->GetStartX()),
+                    abs(data.edit.wireBeingDragged->GetEndY() - data.edit.wireBeingDragged->GetStartY())
+                );
                 IVec2 legal[] =
                 {
                     IVec2(data.edit.wireBeingDragged->GetStartX(), data.edit.wireBeingDragged->GetEndY()),
                     IVec2(data.edit.wireBeingDragged->GetEndX(), data.edit.wireBeingDragged->GetStartY()),
+                    data.edit.wireBeingDragged->start->GetPosition() +
+                        IVec2Scale_i(Normal(data.edit.wireBeingDragged->end->GetPosition() -
+                                            data.edit.wireBeingDragged->start->GetPosition()),
+                            shortLength),
+                    data.edit.wireBeingDragged->end->GetPosition() +
+                        IVec2Scale_i(Normal(data.edit.wireBeingDragged->start->GetPosition() -
+                                            data.edit.wireBeingDragged->end->GetPosition()),
+                            shortLength),
                 };
+
                 IVec2* pick = nullptr;
                 long shortestDist = LONG_MAX;
                 for (IVec2& vec : legal)
