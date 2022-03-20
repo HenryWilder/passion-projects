@@ -6,6 +6,7 @@
 //#include <extras\raygui.h>
 
 using Int_t = int;
+constexpr Int_t g_gridSize = 8;
 
 bool Between_Inclusive(Int_t x, Int_t a, Int_t b)
 {
@@ -286,10 +287,6 @@ public:
         orderDirty = true;
         return node;
     }
-    inline Node* CreateNode(Int_t x, Int_t y, Gate gate)
-    {
-        return CreateNode({ x,y }, gate);
-    } 
     void DestroyNode(Node* node)
     {
         auto node_iter = std::find(nodes.begin(), nodes.end(), node);
@@ -496,7 +493,7 @@ public:
             if ((InBoundingBox(pos, wire->start->GetPosition(), wire->elbow) &&
                 Normal(wire->elbow - wire->start->GetPosition()) == Normal(pos - wire->start->GetPosition())) ||
                 (InBoundingBox(pos, wire->elbow, wire->end->GetPosition()) &&
-                Normal(wire->start->GetPosition() - wire->elbow) == Normal(pos - wire->elbow)))
+                Normal(wire->end->GetPosition() - wire->elbow) == Normal(pos - wire->elbow)))
             {
                 return wire;
             }
@@ -561,15 +558,22 @@ int main()
         *   Simulate frame and update variables
         ******************************************/
 
-        data.hoveredNode = NodeWorld::Get().FindNodeAtPos({ GetMouseX(), GetMouseY() });
-        data.hoveredWire = NodeWorld::Get().FindWireAtPos({ GetMouseX(), GetMouseY() });
+        IVec2 cursorPos{
+            GetMouseX() / g_gridSize,
+            GetMouseY() / g_gridSize
+        };
+        cursorPos = IVec2Scale_i(cursorPos, g_gridSize);
+        cursorPos = cursorPos + IVec2(g_gridSize / 2, g_gridSize / 2);
+
+        data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+        data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
 
         switch (mode)
         {
         case Mode::PEN:
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
-                Node* newNode = NodeWorld::Get().CreateNode(GetMouseX(), GetMouseY(), Gate::OR);
+                Node* newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
                 if (!!data.pen.currentWireStart)
                 {
                     NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
@@ -600,11 +604,21 @@ int main()
 
             if (!!data.pen.currentWireStart)
             {
-                DrawLine(data.pen.currentWireStart->GetX(), data.pen.currentWireStart->GetY(), data.pen.currentWireStart->GetX(), GetMouseY(), WHITE);
-                DrawLine(data.pen.currentWireStart->GetX(), GetMouseY(), GetMouseX(), GetMouseY(), WHITE);
+                DrawLine(data.pen.currentWireStart->GetX(), data.pen.currentWireStart->GetY(), data.pen.currentWireStart->GetX(), cursorPos.y, DARKBLUE);
+                DrawLine(data.pen.currentWireStart->GetX(), cursorPos.y, cursorPos.x, cursorPos.y, DARKBLUE);
+            }
+
+            if (!!data.hoveredWire)
+            {
+                data.hoveredWire->Draw(WHITE);
             }
 
             NodeWorld::Get().DrawNodes();
+
+            if (!!data.hoveredNode)
+            {
+                data.hoveredNode->Draw(WHITE);
+            }
 
         } EndDrawing();
     }
