@@ -377,6 +377,9 @@ public:
 
         for (Wire* wire : b->m_wires)
         {
+            if (wire->start != a && wire->end != a)
+                a->m_wires.push_back(wire);
+
             if (wire->start == b)
                 wire->start = a;
             else // wire->end == b
