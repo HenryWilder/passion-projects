@@ -356,6 +356,13 @@ public:
         delete node;
         orderDirty = true;
     }
+    Node* CombineNodes(Node* a, Node* b)
+    {
+
+        delete b;
+        orderDirty = true;
+        return a;
+    }
 
     Wire* CreateWire(Node* start, Node* end)
     {
