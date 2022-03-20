@@ -654,22 +654,19 @@ int main()
             // Wire
             else if (!!data.edit.wireBeingDragged)
             {
+                IVec2 startPos = data.edit.wireBeingDragged->start->GetPosition();
+                IVec2 endPos = data.edit.wireBeingDragged->end->GetPosition();
+
                 Int_t shortLength = std::min(
-                    abs(data.edit.wireBeingDragged->GetEndX() - data.edit.wireBeingDragged->GetStartX()),
-                    abs(data.edit.wireBeingDragged->GetEndY() - data.edit.wireBeingDragged->GetStartY())
+                    abs(endPos.x - startPos.x),
+                    abs(endPos.y - startPos.y)
                 );
                 IVec2 legal[] =
                 {
-                    IVec2(data.edit.wireBeingDragged->GetStartX(), data.edit.wireBeingDragged->GetEndY()),
-                    IVec2(data.edit.wireBeingDragged->GetEndX(), data.edit.wireBeingDragged->GetStartY()),
-                    data.edit.wireBeingDragged->start->GetPosition() +
-                        IVec2Scale_i(Normal(data.edit.wireBeingDragged->end->GetPosition() -
-                                            data.edit.wireBeingDragged->start->GetPosition()),
-                            shortLength),
-                    data.edit.wireBeingDragged->end->GetPosition() +
-                        IVec2Scale_i(Normal(data.edit.wireBeingDragged->start->GetPosition() -
-                                            data.edit.wireBeingDragged->end->GetPosition()),
-                            shortLength),
+                    IVec2(startPos.x, endPos.y),
+                    IVec2(endPos.x, startPos.y),
+                    startPos + IVec2Scale_i(Normal(endPos - startPos), shortLength),
+                    endPos + IVec2Scale_i(Normal(startPos - endPos), shortLength),
                 };
 
                 IVec2* pick = nullptr;
