@@ -92,9 +92,6 @@ enum class Gate
 class Node
 {
 public:
-    Node() = default;
-    Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate) {}
-
     IVec2 GetPosition() const
     {
         return m_position;
@@ -117,10 +114,6 @@ public:
     {
         return m_state;
     }
-    void SetState(bool state)
-    {
-        m_state = state;
-    }
 
     const std::vector<Wire*>& GetWires() const
     {
@@ -142,7 +135,10 @@ public:
 
     friend class NodeWorld;
 
-private:
+private: // Accessible by NodeWorld
+    Node() = default;
+    Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate) {}
+
     static constexpr float g_nodeRadius = 1.0f;
     IVec2 m_position;
     Gate m_gate;
@@ -153,9 +149,10 @@ private:
 class NodeWorld
 {
 private:
-    std::vector<Node*> nodes; // For deleting
+    std::vector<Node*> nodes;
     std::vector<Node*> startNodes;
     std::vector<Wire*> wires;
+    bool orderDirty = false;
 
     NodeWorld() = default;
     ~NodeWorld()
@@ -182,6 +179,7 @@ public:
         Node* node = new Node(position, gate);
         nodes.push_back(node);
         startNodes.push_back(node);
+        orderDirty = true;
     }
     void DestroyNode(Node* node)
     {
@@ -206,6 +204,7 @@ public:
         }
         nodes.erase(node_iter);
         delete node;
+        orderDirty = true;
     }
 
     void CreateWire(Node* start, Node* end)
@@ -214,6 +213,13 @@ public:
         wires.push_back(wire);
         start->m_wires.push_back(wire);
         end->m_wires.push_back(wire);
+
+        // Remove end from start nodes if it is no longer an inputless node with this change
+        auto it = std::find(startNodes.begin(), startNodes.end(), end);
+        if (it != startNodes.end())
+            startNodes.erase(it);
+
+        orderDirty = true;
     }
     void DestroyWire(Wire* wire)
     {
@@ -223,9 +229,15 @@ public:
         _ASSERT_EXPR(it_b != wire->end->m_wires.end(), "Trying to destroy a wire that is not inside the searched vector");
         wire->start->m_wires.erase(it_a);
         wire->end->m_wires.erase(it_b);
+        Node* end = wire->end;
         auto it = std::find(wires.begin(), wires.end(), wire);
         _ASSERT_EXPR(it != wires.end(), "Trying to destroy a wire that does not exist");
         wires.erase(it);
+        // Push end to start nodes if this has destroyed its last remaining input
+        if (end->IsInputOnly())
+            startNodes.push_back(end);
+
+        orderDirty = true;
     }
 
     // Uses BFS
@@ -261,6 +273,12 @@ public:
 
     void Evaluate()
     {
+        if (orderDirty)
+        {
+            Sort();
+            orderDirty = false;
+        }
+
         for (Node* node : nodes)
         {
             switch (node->m_gate)
