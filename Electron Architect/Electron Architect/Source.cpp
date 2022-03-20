@@ -575,16 +575,13 @@ int main()
         case Mode::PEN:
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
-                Node* newNode;
-                if (!!data.hoveredNode)
-                    newNode = data.hoveredNode;
-                else
+                Node* newNode = data.hoveredNode;
+                if (!newNode)
                     newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
 
                 if (!!data.pen.currentWireStart)
-                {
                     NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
-                }
+
                 data.pen.currentWireStart = newNode;
             }
             else if (!!GetKeyPressed() || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
