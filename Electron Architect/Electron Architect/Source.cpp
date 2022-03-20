@@ -1,11 +1,9 @@
 #include <vector>
 #include <unordered_set>
 #include <queue>
-#include <deque>
 #include <algorithm>
 #include <raylib.h>
 #include <extras\raygui.h>
-#include <extras\easings.h>
 
 using IVecInt_t = int;
 
@@ -223,7 +221,7 @@ public:
     inline void CreateNode(IVecInt_t x, IVecInt_t y, Gate gate)
     {
         CreateNode({ x,y }, gate);
-    }
+    } 
     void DestroyNode(Node* node)
     {
         auto node_iter = std::find(nodes.begin(), nodes.end(), node);
