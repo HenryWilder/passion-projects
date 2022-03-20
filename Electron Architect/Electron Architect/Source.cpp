@@ -743,8 +743,8 @@ int main()
 
                 if (!!data.hoveredWire)
                 {
-                    data.hoveredWire->Draw(GOLD);
-                    data.hoveredWire->DrawElbow(LIME);
+                    data.hoveredWire->Draw(LIGHTGRAY);
+                    data.hoveredWire->DrawElbow(!!data.edit.wireBeingDragged ? GREEN : LIME);
                 }
 
                 NodeWorld::Get().DrawNodes();
