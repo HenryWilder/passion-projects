@@ -414,6 +414,18 @@ public:
             node->Draw(node->m_state ? node->g_nodeColorActive : node->g_nodeColorInactive);
         }
     }
+
+    Node* FindNodeAtPos(IVec2 pos)
+    {
+        auto it = std::find_if(nodes.begin(), nodes.end(), [&pos](Node* node) { return node->GetPosition() == pos; });
+        if (it != nodes.end())
+            return *it;
+        return nullptr;
+    }
+    Wire* FindWireAtPos(IVec2 pos)
+    {
+        // todo
+    }
 };
 
 
@@ -434,12 +446,17 @@ int main()
         PEN,
     } mode;
 
-    union ModeData
-    {
-        struct {
-            Node* currentWireStart;
-        } pen;
+    struct {
+        Node* hoveredNode;
+        union
+        {
+            struct {
+                Node* currentWireStart;
+            } pen;
+        };
     } data;
+
+    data.hoveredNode = nullptr;
 
     auto SetMode = [&mode, &data](Mode newMode)
     {
@@ -464,6 +481,12 @@ int main()
         /******************************************
         *   Simulate frame and update variables
         ******************************************/
+
+        data.hoveredNode = nullptr;
+        for ()
+        {
+
+        }
 
         switch (mode)
         {
@@ -498,8 +521,13 @@ int main()
             ClearBackground(BLACK);
 
             NodeWorld::Get().DrawWires();
+
             if (!!data.pen.currentWireStart)
-                DrawLine(data.pen.currentWireStart->GetX(), data.pen.currentWireStart->GetY(), GetMouseX(), GetMouseY(), WHITE);
+            {
+                DrawLine(data.pen.currentWireStart->GetX(), data.pen.currentWireStart->GetY(), data.pen.currentWireStart->GetX(), GetMouseY(), WHITE);
+                DrawLine(data.pen.currentWireStart->GetX(), GetMouseY(), GetMouseX(), GetMouseY(), WHITE);
+            }
+
             NodeWorld::Get().DrawNodes();
 
         } EndDrawing();
