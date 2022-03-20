@@ -6,6 +6,15 @@
 //#include <raymath.h>
 //#include <extras\raygui.h>
 
+#define FIND_AND_ERASE(vector, element)\
+    if (auto it = std::find((vector).begin(), (vector).end(), (element)); it != (vector).end()) \
+        (vector).erase(it)
+
+#define FIND_AND_ERASE__EXPECT_EXISTING(vector, element)\
+    auto it = std::find((vector).begin(), (vector).end(), (element)); \
+    _ASSERT_EXPR(it != (vector).end(), "Expected element to be present"); \
+    (vector).erase(it)
+
 using Int_t = int;
 constexpr Int_t g_gridSize = 8;
 
@@ -361,7 +370,7 @@ public:
         delete node;
         orderDirty = true;
     }
-    void MergeNodes(Node* a, Node* b)
+    Node* MergeNodes(Node* a, Node* b)
     {
         _ASSERT_EXPR(!!a && !!b, "Tried to merge a node with nullptr");
         _ASSERT_EXPR(a != b, "Tried to merge a node with itself");
@@ -369,21 +378,23 @@ public:
         for (Wire* wire : b->m_wires)
         {
             if (wire->start == b)
-            {
                 wire->start = a;
-            }
             else // wire->end == b
-            {
                 wire->end = a;
-            }
         }
-        std::find()
 
-        auto it = std::find(nodes.begin(), nodes.end(), b);
-        nodes.erase(it);
+        if (auto it = a->FindConnection(b); it != a->m_wires.end())
+        {
+            Wire* wire = *it;
+            FIND_AND_ERASE(wires, wire);
+            a->m_wires.erase(it);
+        }
+
+        FIND_AND_ERASE__EXPECT_EXISTING(nodes, b);
         delete b;
 
         orderDirty = true;
+        return a;
     }
 
     Wire* CreateWire(Node* start, Node* end)
@@ -726,10 +737,9 @@ int main()
                     data.hoveredNode &&
                     data.edit.nodeBeingDragged != data.hoveredNode)
                 {
-                    NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
+                    data.hoveredNode = NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
                 }
 
-                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
                 data.edit.nodeBeingDragged = nullptr;
                 data.edit.wireBeingDragged = nullptr;
             }
