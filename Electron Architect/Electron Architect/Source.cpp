@@ -216,6 +216,10 @@ public:
         startNodes.push_back(node);
         orderDirty = true;
     }
+    inline void CreateNode(IVecInt_t x, IVecInt_t y, Gate gate)
+    {
+        CreateNode({ x,y }, gate);
+    }
     void DestroyNode(Node* node)
     {
         auto node_iter = std::find(nodes.begin(), nodes.end(), node);
@@ -418,6 +422,11 @@ int main()
     *   Load textures, shaders, and meshes
     ******************************************/
 
+    enum class Mode
+    {
+        normal,
+    } mode;
+
     NodeWorld::Get(); // Construct
 
     while (!WindowShouldClose())
@@ -426,7 +435,16 @@ int main()
         *   Simulate frame and update variables
         ******************************************/
 
+        switch (mode)
+        {
+        case Mode::normal:
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                NodeWorld::Get().CreateNode(GetMouseX(), GetMouseY(), Gate::OR);
+            break;
 
+        default:
+            break;
+        }
 
         NodeWorld::Get().Evaluate();
 
