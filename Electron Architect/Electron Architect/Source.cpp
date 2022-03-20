@@ -48,10 +48,11 @@ Int_t IntGridDistance(IVec2 a, IVec2 b)
     else
         return abs(b.x - a.x);
 }
-Int_t DistanceSqr(IVec2 a, IVec2 b)
+long DistanceSqr(IVec2 a, IVec2 b)
 {
-    IVec2 c = a - b;
-    return c.x * c.x + c.y * c.y;
+    long x = b.x - a.x;
+    long y = b.y - a.y;
+    return x * x + y * y;
 }
 IVec2 Normal(IVec2 vec)
 {
@@ -656,15 +657,21 @@ int main()
                 IVec2 legal[] =
                 {
                     IVec2(data.edit.wireBeingDragged->GetStartX(), data.edit.wireBeingDragged->GetEndY()),
-                    IVec2(data.edit.wireBeingDragged->GetStartY(), data.edit.wireBeingDragged->GetEndX()),
+                    IVec2(data.edit.wireBeingDragged->GetEndX(), data.edit.wireBeingDragged->GetStartY()),
                 };
-                size_t pick = 0;
-                float distance = INFINITY;
-                for (IVec2 vec : legal)
+                IVec2* pick = nullptr;
+                long shortestDist = LONG_MAX;
+                for (IVec2& vec : legal)
                 {
-                    DistanceSqr(cursorPos, vec);
+                    long dist = DistanceSqr(cursorPos, vec);
+                    if (dist < shortestDist)
+                    {
+                        shortestDist = dist;
+                        pick = &vec;
+                    }
                 }
-                data.edit.wireBeingDragged->elbow = cursorPos;
+                _ASSERT_EXPR(!!pick, "Nearest legal move not executed");
+                data.edit.wireBeingDragged->elbow = *pick;
             }
 
             break;
