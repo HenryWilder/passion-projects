@@ -37,3 +37,9 @@
 *.user
 *.userosscache
 *.sln.docstates
+
+# Misc VS files
+*.tlog
+*.ilk
+*.idb
+*.pdb

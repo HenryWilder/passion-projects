@@ -165,7 +165,7 @@ public:
 
 private: // Accessible by NodeWorld
     Node() = default;
-    Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate) {}
+    Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false) {}
 
     static constexpr float g_nodeRadius = 1.0f;
     IVec2 m_position;
