@@ -643,12 +643,22 @@ int main()
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 Node* newNode = data.hoveredNode;
-                if (!newNode)
-                    newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
+                do {
+                    if (!newNode)
+                        newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
+                    else
+                    {
+                        if (newNode == data.pen.currentWireStart ||
+                            std::find_if(newNode->GetWires().begin(), newNode->GetWires().end(), [&newNode](Wire* wire) {
+                                return wire->start == newNode || wire->end == newNode;
+                                }) != newNode->GetWires().end())
+                            break;
+                    }
 
-                if (!!data.pen.currentWireStart)
-                    NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
+                    if (!!data.pen.currentWireStart)
+                        NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
 
+                } while (false);
                 data.pen.currentWireStart = newNode;
             }
             else if (!!GetKeyPressed() || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
