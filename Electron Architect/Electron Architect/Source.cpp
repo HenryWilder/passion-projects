@@ -359,6 +359,13 @@ public:
 
     Wire* CreateWire(Node* start, Node* end)
     {
+        // Duplicate guard
+        {
+            auto it = std::find_if(start->m_wires.begin(), start->m_wires.end(), [&end](Wire* wire) { return wire->end == end; });
+            if (it != start->m_wires.end())
+                return *it;
+        }
+
         Wire* wire = new Wire(start, end);
         wire->elbow.x = start->GetX();
         wire->elbow.y = end->GetY();
@@ -371,6 +378,12 @@ public:
         if (it != startNodes.end())
             startNodes.erase(it);
 
+        orderDirty = true;
+        return wire;
+    }
+    Wire* ReverseWire(Wire* wire)
+    {
+        std::swap(wire->start, wire->end);
         orderDirty = true;
         return wire;
     }
@@ -646,18 +659,11 @@ int main()
                 do {
                     if (!newNode)
                         newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
-                    else
-                    {
-                        if (newNode == data.pen.currentWireStart ||
-                            std::find_if(newNode->GetWires().begin(), newNode->GetWires().end(), [&newNode](Wire* wire) {
-                                return wire->start == newNode || wire->end == newNode;
-                                }) != newNode->GetWires().end())
+                    else if (newNode == data.pen.currentWireStart)
                             break;
-                    }
 
                     if (!!data.pen.currentWireStart)
                         NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
-
                 } while (false);
                 data.pen.currentWireStart = newNode;
             }
