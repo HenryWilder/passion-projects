@@ -518,6 +518,7 @@ int main()
     enum class Mode
     {
         PEN,
+        EDIT,
     } mode;
 
     struct {
@@ -528,6 +529,11 @@ int main()
             struct {
                 Node* currentWireStart;
             } pen;
+
+            struct {
+                Node* nodeBeingDragged;
+                Wire* wireBeingDragged;
+            } edit;
         };
     } data;
 
@@ -541,6 +547,11 @@ int main()
         {
         case Mode::PEN:
             data.pen.currentWireStart = nullptr;
+            break;
+
+        case Mode::EDIT:
+            data.edit.nodeBeingDragged = nullptr;
+            data.edit.wireBeingDragged = nullptr;
             break;
 
         default:
@@ -590,7 +601,30 @@ int main()
             }
             break;
 
-        default:
+        case Mode::EDIT:
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
+                data.edit.nodeBeingDragged = data.hoveredNode;
+                data.edit.wireBeingDragged = data.hoveredWire;
+            }
+            else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+            {
+                data.edit.nodeBeingDragged = nullptr;
+                data.edit.wireBeingDragged = nullptr;
+            }
+
+            // Node
+            if (!!data.edit.nodeBeingDragged)
+            {
+                data.edit.nodeBeingDragged->SetPosition(cursorPos);
+            }
+
+            // Wire
+            else if (!!data.edit.wireBeingDragged)
+            {
+                // Todo
+            }
+
             break;
         }
 
@@ -615,7 +649,7 @@ int main()
             if (!!data.hoveredWire)
             {
                 data.hoveredWire->Draw(GOLD);
-                data.hoveredWire->DrawElbow(GREEN);
+                data.hoveredWire->DrawElbow(LIME);
             }
 
             if (!!data.hoveredNode)
