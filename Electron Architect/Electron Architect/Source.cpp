@@ -111,7 +111,7 @@ struct Wire
 
     static constexpr Color g_wireColorActive = BROWN;
     static constexpr Color g_wireColorInactive = GRAY;
-    static constexpr float g_elbowRadius = 1.0f;
+    static constexpr float g_elbowRadius = 2.0f;
     IVec2 elbow;
     Node* start;
     Node* end;
@@ -565,15 +565,22 @@ int main()
         cursorPos = IVec2Scale_i(cursorPos, g_gridSize);
         cursorPos = cursorPos + IVec2(g_gridSize / 2, g_gridSize / 2);
 
+        data.hoveredWire = nullptr;
         data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-        data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+        if (!data.hoveredNode)
+            data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
 
         switch (mode)
         {
         case Mode::PEN:
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
-                Node* newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
+                Node* newNode;
+                if (!!data.hoveredNode)
+                    newNode = data.hoveredNode;
+                else
+                    newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
+
                 if (!!data.pen.currentWireStart)
                 {
                     NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
@@ -610,14 +617,29 @@ int main()
 
             if (!!data.hoveredWire)
             {
-                data.hoveredWire->Draw(WHITE);
+                data.hoveredWire->Draw(GOLD);
+                data.hoveredWire->DrawElbow(GREEN);
+            }
+
+            if (!!data.hoveredNode)
+            {
+                for (const Wire* wire : data.hoveredNode->GetWires())
+                {
+                    Color color;
+                    if (wire->start == data.hoveredNode)
+                        color = DARKBLUE; // Output
+                    else
+                        color = DARKPURPLE; // Input
+
+                    wire->Draw(color);
+                }
             }
 
             NodeWorld::Get().DrawNodes();
 
             if (!!data.hoveredNode)
             {
-                data.hoveredNode->Draw(WHITE);
+                data.hoveredNode->Draw(YELLOW);
             }
 
         } EndDrawing();
