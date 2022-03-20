@@ -194,6 +194,11 @@ public:
         return m_wires;
     }
 
+    auto FindConnection(Node* other) const
+    {
+        return std::find_if(m_wires.begin(), m_wires.end(), [&other](Wire* wire) { return wire->start == other || wire->end == other; });
+    }
+
     bool IsInputOnly() const
     {
         if (m_wires.empty())
@@ -356,24 +361,29 @@ public:
         delete node;
         orderDirty = true;
     }
-    Node* MergeNodes(Node* a, Node* b)
+    void MergeNodes(Node* a, Node* b)
     {
         _ASSERT_EXPR(!!a && !!b, "Tried to merge a node with nullptr");
         _ASSERT_EXPR(a != b, "Tried to merge a node with itself");
 
         for (Wire* wire : b->m_wires)
         {
-            if (wire->start == b && wire->end != a)
-                CreateWire(a, wire->end);
-            else if (wire->end == b && wire->start != a)
-                CreateWire(wire->start, a);
-            else
-                DestroyWire(wire);
+            if (wire->start == b)
+            {
+                wire->start = a;
+            }
+            else // wire->end == b
+            {
+                wire->end = a;
+            }
         }
-        DestroyNode(b);
+        std::find()
+
+        auto it = std::find(nodes.begin(), nodes.end(), b);
+        nodes.erase(it);
+        delete b;
 
         orderDirty = true;
-        return a;
     }
 
     Wire* CreateWire(Node* start, Node* end)
@@ -709,14 +719,17 @@ int main()
                 data.edit.nodeBeingDragged = data.hoveredNode;
                 data.edit.wireBeingDragged = data.hoveredWire;
             }
-            else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+            else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && !!data.edit.nodeBeingDragged || !!data.edit.wireBeingDragged)
             {
                 data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
                 if (data.edit.nodeBeingDragged &&
                     data.hoveredNode &&
                     data.edit.nodeBeingDragged != data.hoveredNode)
+                {
                     NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
+                }
 
+                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
                 data.edit.nodeBeingDragged = nullptr;
                 data.edit.wireBeingDragged = nullptr;
             }
