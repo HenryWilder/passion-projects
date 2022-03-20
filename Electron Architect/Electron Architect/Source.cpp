@@ -3,6 +3,7 @@
 #include <queue>
 #include <algorithm>
 #include <raylib.h>
+//#include <raymath.h>
 //#include <extras\raygui.h>
 
 using Int_t = int;
@@ -46,6 +47,11 @@ Int_t IntGridDistance(IVec2 a, IVec2 b)
         return abs(b.y - a.y);
     else
         return abs(b.x - a.x);
+}
+Int_t DistanceSqr(IVec2 a, IVec2 b)
+{
+    IVec2 c = a - b;
+    return c.x * c.x + c.y * c.y;
 }
 IVec2 Normal(IVec2 vec)
 {
@@ -620,7 +626,7 @@ int main()
                 data.hoveredWire = nullptr;
                 data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
                 if (!data.hoveredNode)
-                    data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+                    data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(cursorPos);
             }
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
@@ -647,7 +653,18 @@ int main()
             // Wire
             else if (!!data.edit.wireBeingDragged)
             {
-                // Todo
+                IVec2 legal[] =
+                {
+                    IVec2(data.edit.wireBeingDragged->GetStartX(), data.edit.wireBeingDragged->GetEndY()),
+                    IVec2(data.edit.wireBeingDragged->GetStartY(), data.edit.wireBeingDragged->GetEndX()),
+                };
+                size_t pick = 0;
+                float distance = INFINITY;
+                for (IVec2 vec : legal)
+                {
+                    DistanceSqr(cursorPos, vec);
+                }
+                data.edit.wireBeingDragged->elbow = cursorPos;
             }
 
             break;
