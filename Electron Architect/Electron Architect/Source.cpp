@@ -5,15 +5,26 @@
 #include <raylib.h>
 //#include <extras\raygui.h>
 
-using IVecInt_t = int;
+using Int_t = int;
+
+bool Between_Inclusive(Int_t x, Int_t a, Int_t b)
+{
+    auto [min, max] = std::minmax(a, b);
+    return min <= x && x <= max;
+}
+bool Between_Exclusive(Int_t x, Int_t a, Int_t b)
+{
+    auto [min, max] = std::minmax(a, b);
+    return min < x && x < max;
+}
 
 struct IVec2
 {
     IVec2() = default;
-    constexpr IVec2(IVecInt_t x, IVecInt_t y) : x(x), y(y) {}
+    constexpr IVec2(Int_t x, Int_t y) : x(x), y(y) {}
 
-    IVecInt_t x;
-    IVecInt_t y;
+    Int_t x;
+    Int_t y;
 
     bool operator==(IVec2 b) const
     {
@@ -24,6 +35,30 @@ struct IVec2
         return x != b.x || y != b.y;
     }
 };
+
+// Distance between points in an integer number of squares
+// I.E. a diagonal line is measured as the number of square-grid points it passes through, rather than the length of its hypotenuse
+// Assumes that the points could take each other in chess if the two were the positions of queens
+Int_t IntGridDistance(IVec2 a, IVec2 b)
+{
+    if (a.x == b.x)
+        return abs(b.y - a.y);
+    else
+        return abs(b.x - a.x);
+}
+IVec2 Normal(IVec2 vec)
+{
+    return {
+        (Int_t)(vec.x > 0) - (Int_t)(vec.x < 0),
+        (Int_t)(vec.x > 0) - (Int_t)(vec.x < 0)
+    };
+}
+
+bool InBoundingBox(IVec2 p, IVec2 a, IVec2 b)
+{
+    return Between_Inclusive(p.x, a.x, b.x) &&
+           Between_Inclusive(p.y, a.y, b.y);
+}
 
 IVec2 IVec2Zero()
 {
@@ -58,7 +93,7 @@ inline IVec2 IVec2Scale_i(int a, IVec2 b)
 }
 IVec2 IVec2Scale_f(IVec2 a, float b)
 {
-    return IVec2((IVecInt_t)((float)a.x * b), (IVecInt_t)((float)a.y * b));
+    return IVec2((Int_t)((float)a.x * b), (Int_t)((float)a.y * b));
 }
 inline IVec2 IVec2Scale_f(float a, IVec2 b)
 {
@@ -85,6 +120,13 @@ struct Wire
     {
         DrawCircle(elbow.x, elbow.y, g_elbowRadius, color);
     }
+
+    Int_t GetStartX() const;
+    Int_t GetStartY() const;
+    Int_t GetElbowX() const;
+    Int_t GetElbowY() const;
+    Int_t GetEndX() const;
+    Int_t GetEndY() const;
 };
 
 enum class Gate
@@ -106,19 +148,19 @@ public:
     {
         m_position = position;
     }
-    IVecInt_t GetX() const
+    Int_t GetX() const
     {
         return m_position.x;
     }
-    void SetX(IVecInt_t x)
+    void SetX(Int_t x)
     {
         m_position.x = x;
     }
-    IVecInt_t GetY() const
+    Int_t GetY() const
     {
         return m_position.y;
     }
-    void SetY(IVecInt_t y)
+    void SetY(Int_t y)
     {
         m_position.y = y;
     }
@@ -182,6 +224,31 @@ void Wire::Draw(Color color) const
     DrawLine(elbow.x, elbow.y, end->GetX(), end->GetY(), color);
 }
 
+Int_t Wire::GetStartX() const
+{
+    return start->GetX();
+}
+Int_t Wire::GetStartY() const
+{
+    return start->GetY();
+}
+Int_t Wire::GetElbowX() const
+{
+    return elbow.x;
+}
+Int_t Wire::GetElbowY() const
+{
+    return elbow.y;
+}
+Int_t Wire::GetEndX() const
+{
+    return end->GetX();
+}
+Int_t Wire::GetEndY() const
+{
+    return end->GetY();
+}
+
 
 class NodeWorld
 {
@@ -219,7 +286,7 @@ public:
         orderDirty = true;
         return node;
     }
-    inline Node* CreateNode(IVecInt_t x, IVecInt_t y, Gate gate)
+    inline Node* CreateNode(Int_t x, Int_t y, Gate gate)
     {
         return CreateNode({ x,y }, gate);
     } 
@@ -400,14 +467,14 @@ public:
         }
     }
 
-    void DrawWires()
+    void DrawWires() const
     {
         for (Wire* wire : wires)
         {
             wire->Draw(wire->start->m_state ? wire->g_wireColorActive : wire->g_wireColorInactive);
         }
     }
-    void DrawNodes()
+    void DrawNodes() const
     {
         for (Node* node : nodes)
         {
@@ -415,16 +482,26 @@ public:
         }
     }
 
-    Node* FindNodeAtPos(IVec2 pos)
+    Node* FindNodeAtPos(IVec2 pos) const
     {
         auto it = std::find_if(nodes.begin(), nodes.end(), [&pos](Node* node) { return node->GetPosition() == pos; });
         if (it != nodes.end())
             return *it;
         return nullptr;
     }
-    Wire* FindWireAtPos(IVec2 pos)
+    Wire* FindWireAtPos(IVec2 pos) const
     {
-        // todo
+        for (Wire* wire : wires)
+        {
+            if ((InBoundingBox(pos, wire->start->GetPosition(), wire->elbow) &&
+                Normal(wire->elbow - wire->start->GetPosition()) == Normal(pos - wire->start->GetPosition())) ||
+                (InBoundingBox(pos, wire->elbow, wire->end->GetPosition()) &&
+                Normal(wire->start->GetPosition() - wire->elbow) == Normal(pos - wire->elbow)))
+            {
+                return wire;
+            }
+        }
+        return nullptr;
     }
 };
 
@@ -448,6 +525,7 @@ int main()
 
     struct {
         Node* hoveredNode;
+        Wire* hoveredWire;
         union
         {
             struct {
@@ -457,6 +535,7 @@ int main()
     } data;
 
     data.hoveredNode = nullptr;
+    data.hoveredWire = nullptr;
 
     auto SetMode = [&mode, &data](Mode newMode)
     {
@@ -482,11 +561,8 @@ int main()
         *   Simulate frame and update variables
         ******************************************/
 
-        data.hoveredNode = nullptr;
-        for ()
-        {
-
-        }
+        data.hoveredNode = NodeWorld::Get().FindNodeAtPos({ GetMouseX(), GetMouseY() });
+        data.hoveredWire = NodeWorld::Get().FindWireAtPos({ GetMouseX(), GetMouseY() });
 
         switch (mode)
         {
