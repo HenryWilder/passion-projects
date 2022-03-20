@@ -358,8 +358,30 @@ public:
     }
     Node* CombineNodes(Node* a, Node* b)
     {
+        // Convert connections
+        for (Wire* wire : b->m_wires)
+        {
+            if (wire->start == b)
+                wire->start = a;
+            else
+                wire->end = b;
+        }
 
+        // Destroy old
+        auto it = std::find(nodes.begin(), nodes.end(), b);
+        _ASSERT_EXPR(it != nodes.end(), "Trying to erase a node that does not exist");
+        nodes.erase(it);
         delete b;
+
+        // Repair self-references
+        std::stable_partition(a->m_wires.begin(), a->m_wires.end(),
+            [&a](Wire* wire) { return wire->start == wire->end; });
+        while (a->m_wires.back()->start == a->m_wires.back()->end)
+        {
+            delete a->m_wires.back();
+            a->m_wires.pop_back();
+        }
+
         orderDirty = true;
         return a;
     }
