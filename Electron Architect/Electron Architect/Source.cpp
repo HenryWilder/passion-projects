@@ -500,6 +500,13 @@ public:
         }
         return nullptr;
     }
+    Wire* FindWireElbowAtPos(IVec2 pos) const
+    {
+        auto it = std::find_if(wires.begin(), wires.end(), [&pos](Wire* wire) { return wire->elbow == pos; });
+        if (it != wires.end())
+            return *it;
+        return nullptr;
+    }
 };
 
 
