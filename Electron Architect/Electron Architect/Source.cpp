@@ -57,8 +57,8 @@ long DistanceSqr(IVec2 a, IVec2 b)
 IVec2 Normal(IVec2 vec)
 {
     return {
-        (Int_t)(vec.x > 0) - (Int_t)(vec.x < 0),
-        (Int_t)(vec.x > 0) - (Int_t)(vec.x < 0)
+        (vec.x > 0 ? 1 : 0) - (vec.x < 0 ? 1 : 0),
+        (vec.x > 0 ? 1 : 0) - (vec.x < 0 ? 1 : 0)
     };
 }
 
@@ -661,13 +661,17 @@ int main()
                     abs(endPos.x - startPos.x),
                     abs(endPos.y - startPos.y)
                 );
+
                 IVec2 legal[] =
                 {
                     IVec2(startPos.x, endPos.y),
                     IVec2(endPos.x, startPos.y),
-                    startPos + IVec2Scale_i(Normal(endPos - startPos), shortLength),
-                    endPos + IVec2Scale_i(Normal(startPos - endPos), shortLength),
+                    startPos + IVec2(endPos.x < startPos.x ? -shortLength : shortLength,
+                                     endPos.y < startPos.y ? -shortLength : shortLength),
+                    endPos   + IVec2(startPos.x < endPos.x ? -shortLength : shortLength,
+                                     startPos.y < endPos.y ? -shortLength : shortLength),
                 };
+
 
                 IVec2* pick = nullptr;
                 long shortestDist = LONG_MAX;
