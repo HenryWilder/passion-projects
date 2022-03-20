@@ -683,7 +683,7 @@ int main()
                 data.edit.nodeBeingDragged->SetPosition(cursorPos);
                 for (Wire* wire : data.edit.nodeBeingDragged->GetWires())
                 {
-                    data.edit.wireBeingDragged->SnapElbowToLegal(data.edit.wireBeingDragged->elbow);
+                    wire->SnapElbowToLegal(wire->elbow);
                 }
             }
 
