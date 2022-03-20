@@ -367,6 +367,8 @@ public:
                 CreateWire(a, wire->end);
             else if (wire->end == b && wire->start != a)
                 CreateWire(wire->start, a);
+            else
+                DestroyWire(wire);
         }
         DestroyNode(b);
 
