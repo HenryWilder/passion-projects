@@ -358,6 +358,9 @@ public:
     }
     Node* MergeNodes(Node* a, Node* b)
     {
+        _ASSERT_EXPR(!!a && !!b, "Tried to merge a node with nullptr");
+        _ASSERT_EXPR(a != b, "Tried to merge a node with itself");
+
         // Convert connections
         for (Wire* wire : b->m_wires)
         {
@@ -718,6 +721,9 @@ int main()
             }
             else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
             {
+                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+                if (data.edit.nodeBeingDragged != data.hoveredNode)
+                    NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
                 data.edit.nodeBeingDragged = nullptr;
                 data.edit.wireBeingDragged = nullptr;
             }
