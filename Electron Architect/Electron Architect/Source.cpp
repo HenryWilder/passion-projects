@@ -79,6 +79,12 @@ struct Wire
     IVec2 elbow;
     Node* start;
     Node* end;
+
+    void Draw(Color color) const;
+    void DrawElbow(Color color) const
+    {
+        DrawCircle(elbow.x, elbow.y, g_elbowRadius, color);
+    }
 };
 
 enum class Gate
@@ -99,6 +105,22 @@ public:
     void SetPosition(IVec2 position)
     {
         m_position = position;
+    }
+    IVecInt_t GetX() const
+    {
+        return m_position.x;
+    }
+    void SetX(IVecInt_t x)
+    {
+        m_position.x = x;
+    }
+    IVecInt_t GetY() const
+    {
+        return m_position.y;
+    }
+    void SetY(IVecInt_t y)
+    {
+        m_position.y = y;
     }
 
     Gate GetGate() const
@@ -133,6 +155,12 @@ public:
         return false;
     }
 
+    // TODO: Improve
+    void Draw(Color color) const
+    {
+        DrawCircle(m_position.x, m_position.y, g_nodeRadius, color);
+    }
+
     friend class NodeWorld;
 
 private: // Accessible by NodeWorld
@@ -145,6 +173,13 @@ private: // Accessible by NodeWorld
     bool m_state;
     std::vector<Wire*> m_wires;
 };
+
+void Wire::Draw(Color color) const
+{
+    DrawLine(start->GetX(), start->GetY(), elbow.x, elbow.y, color);
+    DrawLine(elbow.x, elbow.y, end->GetX(), end->GetY(), color);
+}
+
 
 class NodeWorld
 {
@@ -354,6 +389,21 @@ public:
             }
         }
     }
+
+    void DrawWires()
+    {
+        for (Wire* wire : wires)
+        {
+            wire->Draw(wire->start->m_state ? RED : GRAY);
+        }
+    }
+    void DrawNodes()
+    {
+        for (Node* node : nodes)
+        {
+            node->Draw(node->m_state ? RED : GRAY);
+        }
+    }
 };
 
 
@@ -368,7 +418,7 @@ int main()
     *   Load textures, shaders, and meshes
     ******************************************/
 
-    // TODO: Load persistent assets & variables
+    NodeWorld::Get(); // Construct
 
     while (!WindowShouldClose())
     {
@@ -376,7 +426,9 @@ int main()
         *   Simulate frame and update variables
         ******************************************/
 
-        // TODO: simulate frame
+
+
+        NodeWorld::Get().Evaluate();
 
         /******************************************
         *   Draw the frame
@@ -386,7 +438,8 @@ int main()
 
             ClearBackground(BLACK);
 
-            // TODO: Draw frame
+            NodeWorld::Get().DrawWires();
+            NodeWorld::Get().DrawNodes();
 
         } EndDrawing();
     }
