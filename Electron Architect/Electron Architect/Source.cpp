@@ -377,12 +377,15 @@ public:
         delete b;
 
         // Repair self-references
-        std::stable_partition(a->m_wires.begin(), a->m_wires.end(),
-            [&a](Wire* wire) { return wire->start == wire->end; });
-        while (a->m_wires.back()->start == a->m_wires.back()->end)
+        if (!a->m_wires.empty())
         {
-            delete a->m_wires.back();
-            a->m_wires.pop_back();
+            std::stable_partition(a->m_wires.begin(), a->m_wires.end(),
+                [&a](Wire* wire) { return wire->start == wire->end; });
+            while (a->m_wires.back()->start == a->m_wires.back()->end)
+            {
+                delete a->m_wires.back();
+                a->m_wires.pop_back();
+            }
         }
 
         orderDirty = true;
