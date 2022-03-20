@@ -380,8 +380,11 @@ public:
         std::stable_partition(a->m_wires.begin(), a->m_wires.end(),
             [&a](Wire* wire) { return wire->start == wire->end; });
         while (!a->m_wires.empty() &&
-            a->m_wires.back()->start == a->m_wires.back()->end)
+                a->m_wires.back()->start == a->m_wires.back()->end)
         {
+            auto it = std::find(wires.begin(), wires.end(), a->m_wires);
+            _ASSERT_EXPR(it != wires.end(), "Node has wire that does not exist");
+            wires.erase(it);
             delete a->m_wires.back();
             a->m_wires.pop_back();
         }
