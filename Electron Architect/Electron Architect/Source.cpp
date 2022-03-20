@@ -361,34 +361,14 @@ public:
         _ASSERT_EXPR(!!a && !!b, "Tried to merge a node with nullptr");
         _ASSERT_EXPR(a != b, "Tried to merge a node with itself");
 
-        // Convert connections
         for (Wire* wire : b->m_wires)
         {
-            if (wire->start == b)
-                wire->start = a;
-            else if (wire->end == b)
-                wire->end = a;
-            else
-                _ASSERT_EXPR(false, "How did we get here?");
+            if (wire->start == b && wire->end != a)
+                CreateWire(a, wire->end);
+            else if (wire->end == b && wire->start != a)
+                CreateWire(wire->start, a);
         }
-
-        // Destroy old
-        auto it = std::find(nodes.begin(), nodes.end(), b);
-        _ASSERT_EXPR(it != nodes.end(), "Trying to erase a node that does not exist");
-        nodes.erase(it);
-        delete b;
-
-        // Repair self-references
-        std::stable_partition(a->m_wires.begin(), a->m_wires.end(), [&a](Wire* wire) { return wire->start == wire->end; });
-        while (!a->m_wires.empty() &&
-                a->m_wires.back()->start == a->m_wires.back()->end)
-        {
-            auto it = std::find(wires.begin(), wires.end(), a->m_wires.back());
-            _ASSERT_EXPR(it != wires.end(), "Node has wire that does not exist");
-            wires.erase(it);
-            delete a->m_wires.back();
-            a->m_wires.pop_back();
-        }
+        DestroyNode(b);
 
         orderDirty = true;
         return a;
@@ -396,6 +376,9 @@ public:
 
     Wire* CreateWire(Node* start, Node* end)
     {
+        _ASSERT_EXPR(start != nullptr && end != nullptr, "Tried to create a wire to nullptr");
+        _ASSERT_EXPR(start != end, "Cannot create self-reference wire");
+
         // Duplicate guard
         {
             auto it = std::find_if(start->m_wires.begin(), start->m_wires.end(), [&end](Wire* wire) { return wire->end == end; });
