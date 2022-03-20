@@ -147,7 +147,7 @@ public:
         if (m_wires.empty())
             return true;
 
-        auto isInput = [this](Wire* wire) { wire->start != this; };
+        auto isInput = [this](Wire* wire) { return wire->start != this; };
         auto input = std::find_if(m_wires.begin(), m_wires.end(), isInput);
         if (input == m_wires.end()) // No input
             return true;
