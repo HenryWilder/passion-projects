@@ -113,6 +113,15 @@ public:
         m_gate = gate;
     }
 
+    bool GetState() const
+    {
+        return m_state;
+    }
+    void SetState(bool state)
+    {
+        m_state = state;
+    }
+
     const std::vector<Wire*>& GetWires() const
     {
         return m_wires;
@@ -137,6 +146,7 @@ private:
     static constexpr float g_nodeRadius = 1.0f;
     IVec2 m_position;
     Gate m_gate;
+    bool m_state;
     std::vector<Wire*> m_wires;
 };
 
@@ -251,7 +261,80 @@ public:
 
     void Evaluate()
     {
-        
+        for (Node* node : nodes)
+        {
+            switch (node->m_gate)
+            {
+            case Gate::OR:
+                node->m_state = false;
+                for (Wire* wire : node->m_wires)
+                {
+                    if (wire->start == node)
+                        continue;
+
+                    if (wire->start->m_state)
+                    {
+                        node->m_state = true;
+                        break;
+                    }
+                }
+                break;
+
+            case Gate::NOR:
+                node->m_state = true;
+                for (Wire* wire : node->m_wires)
+                {
+                    if (wire->start == node)
+                        continue;
+
+                    if (wire->start->m_state)
+                    {
+                        node->m_state = false;
+                        break;
+                    }
+                }
+                break;
+
+            case Gate::AND:
+                node->m_state = true;
+                for (Wire* wire : node->m_wires)
+                {
+                    if (wire->start == node)
+                        continue;
+
+                    if (!wire->start->m_state)
+                    {
+                        node->m_state = false;
+                        break;
+                    }
+                }
+                break;
+
+            case Gate::XOR:
+                node->m_state = false;
+                bool x = false;
+                for (Wire* wire : node->m_wires)
+                {
+                    if (wire->start == node)
+                        continue;
+
+                    if (wire->start->m_state)
+                    {
+                        if (x)
+                        {
+                            node->m_state = false;
+                            break;
+                        }
+                        else
+                        {
+                            x = true;
+                            node->m_state = true;
+                        }
+                    }
+                }
+                break;
+            }
+        }
     }
 };
 
