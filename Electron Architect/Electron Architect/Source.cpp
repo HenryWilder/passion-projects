@@ -3,7 +3,7 @@
 #include <queue>
 #include <algorithm>
 #include <raylib.h>
-#include <extras\raygui.h>
+//#include <extras\raygui.h>
 
 using IVecInt_t = int;
 
@@ -211,16 +211,17 @@ public:
         return g_only;
     }
 
-    void CreateNode(IVec2 position, Gate gate)
+    Node* CreateNode(IVec2 position, Gate gate)
     {
         Node* node = new Node(position, gate);
         nodes.push_back(node);
         startNodes.push_back(node);
         orderDirty = true;
+        return node;
     }
-    inline void CreateNode(IVecInt_t x, IVecInt_t y, Gate gate)
+    inline Node* CreateNode(IVecInt_t x, IVecInt_t y, Gate gate)
     {
-        CreateNode({ x,y }, gate);
+        return CreateNode({ x,y }, gate);
     } 
     void DestroyNode(Node* node)
     {
@@ -248,9 +249,11 @@ public:
         orderDirty = true;
     }
 
-    void CreateWire(Node* start, Node* end)
+    Wire* CreateWire(Node* start, Node* end)
     {
         Wire* wire = new Wire(start, end);
+        wire->elbow.x = start->GetX();
+        wire->elbow.y = end->GetY();
         wires.push_back(wire);
         start->m_wires.push_back(wire);
         end->m_wires.push_back(wire);
@@ -261,6 +264,7 @@ public:
             startNodes.erase(it);
 
         orderDirty = true;
+        return wire;
     }
     void DestroyWire(Wire* wire)
     {
@@ -418,6 +422,7 @@ int main()
     int windowWidth = 1280;
     int windowHeight = 720;
     InitWindow(windowWidth, windowHeight, "Electron Architect");
+    SetExitKey(0);
     SetTargetFPS(60);
 
     /******************************************
@@ -426,11 +431,34 @@ int main()
 
     enum class Mode
     {
-        normal,
-    } mode = Mode::normal;
+        PEN,
+    } mode;
+
+    union ModeData
+    {
+        struct {
+            Node* currentWireStart;
+        } pen;
+    } data;
+
+    auto SetMode = [&mode, &data](Mode newMode)
+    {
+        mode = newMode;
+        switch (newMode)
+        {
+        case Mode::PEN:
+            data.pen.currentWireStart = nullptr;
+            break;
+
+        default:
+            break;
+        }
+    };
+
+    SetMode(Mode::PEN);
 
     NodeWorld::Get(); // Construct
-
+        
     while (!WindowShouldClose())
     {
         /******************************************
@@ -439,9 +467,20 @@ int main()
 
         switch (mode)
         {
-        case Mode::normal:
+        case Mode::PEN:
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-                NodeWorld::Get().CreateNode(GetMouseX(), GetMouseY(), Gate::OR);
+            {
+                Node* newNode = NodeWorld::Get().CreateNode(GetMouseX(), GetMouseY(), Gate::OR);
+                if (!!data.pen.currentWireStart)
+                {
+                    NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
+                }
+                data.pen.currentWireStart = newNode;
+            }
+            else if (!!GetKeyPressed() || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+            {
+                data.pen.currentWireStart = nullptr;
+            }
             break;
 
         default:
@@ -459,6 +498,8 @@ int main()
             ClearBackground(BLACK);
 
             NodeWorld::Get().DrawWires();
+            if (!!data.pen.currentWireStart)
+                DrawLine(data.pen.currentWireStart->GetX(), data.pen.currentWireStart->GetY(), GetMouseX(), GetMouseY(), WHITE);
             NodeWorld::Get().DrawNodes();
 
         } EndDrawing();
