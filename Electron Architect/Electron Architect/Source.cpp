@@ -425,7 +425,7 @@ int main()
     enum class Mode
     {
         normal,
-    } mode;
+    } mode = Mode::normal;
 
     NodeWorld::Get(); // Construct
 

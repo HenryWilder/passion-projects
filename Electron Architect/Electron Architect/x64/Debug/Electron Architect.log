@@ -1,11 +1,3 @@
 ﻿  Source.cpp
-D:\Repo\passion-projects\Electron Architect\Electron Architect\Source.cpp(150,57): warning C4552: '!=': result of expression not used
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\include\xutility(5643,1): error C2451: a conditional expression of type 'void' is not valid
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\include\xutility(5643,18): message : Expressions of type void cannot be converted to other types
-D:\Repo\passion-projects\Electron Architect\Electron Architect\Source.cpp(151): message : see reference to function template instantiation '_InIt std::find_if<std::_Vector_const_iterator<std::_Vector_val<std::_Simple_types<_Ty>>>,Node::IsInputOnly::<lambda_1>>(_InIt,const _InIt,_Pr)' being compiled
-          with
-          [
-              _InIt=std::_Vector_const_iterator<std::_Vector_val<std::_Simple_types<Wire *>>>,
-              _Ty=Wire *,
-              _Pr=Node::IsInputOnly::<lambda_1>
-          ]
+  Electron Architect.vcxproj -> D:\Repo\passion-projects\Electron Architect\x64\Debug\Electron Architect.exe
+          1 file(s) copied.
