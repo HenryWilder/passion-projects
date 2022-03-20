@@ -1,5 +1,6 @@
 #include <vector>
-#include <list>
+#include <queue>
+#include <deque>
 #include <algorithm>
 #include <raylib.h>
 #include <extras\raygui.h>
@@ -66,12 +67,12 @@ inline IVec2 IVec2Scale_f(float a, IVec2 b)
 }
 
 
+class NodeWorld;
 class Node;
-
 struct Wire
 {
     Wire() = default;
-    Wire(Node * start, Node * end) : elbow(), start(start), end(end) {}
+    Wire(Node* start, Node* end) : elbow(), start(start), end(end) {}
 
     static constexpr float g_elbowRadius = 1.0f;
     IVec2 elbow;
@@ -87,37 +88,150 @@ enum class Gate
     XOR = '^',
 };
 
-struct Node
+class Node
 {
+public:
     Node() = default;
-    Node(IVec2 position, Gate gate) : position(position), gate(gate) {}
+    Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate) {}
 
-    static constexpr float g_nodeRadius = 1.0f;
-    IVec2 position;
-    Gate gate;
-    std::vector<Wire*> wires;
-};
-
-void SortBFS(std::vector<Node*>::iterator _First, std::vector<Node*>::iterator _Last)
-{
-    size_t nodeCount = std::distance(_First, _Last);
-    bool* visited = new bool[nodeCount](false);
-    std::vector<Node*>::iterator it = _First;
-    while (it != _Last)
+    IVec2 GetPosition() const
     {
-
+        return m_position;
     }
-}
+    void SetPosition(IVec2 position)
+    {
+        m_position = position;
+    }
+
+    Gate GetGate() const
+    {
+        return m_gate;
+    }
+    void SetGate(Gate gate)
+    {
+        m_gate = gate;
+    }
+
+    const std::vector<Wire*>& GetWires() const
+    {
+        return m_wires;
+    }
+
+    bool IsInputOnly() const
+    {
+        if (m_wires.empty())
+            return true;
+
+        auto isInput = [this](Wire* wire) { wire->start != this; };
+        auto input = std::find_if(m_wires.begin(), m_wires.end(), isInput);
+        if (input == m_wires.end()) // No input
+            return true;
+
+        return false;
+    }
+
+    friend class NodeWorld;
+
+private:
+    static constexpr float g_nodeRadius = 1.0f;
+    IVec2 m_position;
+    Gate m_gate;
+    std::vector<Wire*> m_wires;
+};
 
 class NodeWorld
 {
 private:
+    std::vector<Node*> nodes; // For deleting
+    std::vector<Node*> startNodes;
     std::vector<Wire*> wires;
-    std::vector<Node*> nodes;
+
+    NodeWorld() = default;
+    ~NodeWorld()
+    {
+        for (Node* node : nodes)
+        {
+            delete node;
+        }
+        for (Wire* wire : wires)
+        {
+            delete wire;
+        }
+    }
 
 public:
-    void InsertNode(Node* node);
-    void RemoveNode(Node* node);
+    static NodeWorld& Get()
+    {
+        static NodeWorld g_only;
+        return g_only;
+    }
+
+    void CreateNode(IVec2 position, Gate gate)
+    {
+        Node* node = new Node(position, gate);
+        nodes.push_back(node);
+        startNodes.push_back(node);
+    }
+    void DestroyNode(Node* node)
+    {
+        auto node_iter = std::find(nodes.begin(), nodes.end(), node);
+        _ASSERT_EXPR(node_iter != nodes.end(), "Cannot remove a node that does not exist");
+        for (Wire* wire : node->m_wires)
+        {
+            if (wire->start == node)
+            {
+                Node* end = wire->end;
+                auto wire_iter = std::find_if(end->m_wires.begin(), end->m_wires.end(), [&node](Wire* wire) { return wire->start == node; });
+                _ASSERT_EXPR(wire_iter != end->m_wires.end(), "Node connection could not be verified");
+                end->m_wires.erase(wire_iter);
+            }
+            else // wire->end == node
+            {
+                Node* start = wire->start;
+                auto wire_iter = std::find_if(start->m_wires.begin(), start->m_wires.end(), [&node](Wire* wire) { return wire->end == node; });
+                _ASSERT_EXPR(wire_iter != start->m_wires.end(), "Node connection could not be verified");
+                start->m_wires.erase(wire_iter);
+            }
+        }
+        nodes.erase(node_iter);
+        delete node;
+    }
+
+    void CreateWire(Node* start, Node* end)
+    {
+        Wire* wire = new Wire(start, end);
+        wires.push_back(wire);
+        start->m_wires.push_back(wire);
+        end->m_wires.push_back(wire);
+    }
+    void DestroyWire(Wire* wire)
+    {
+        auto it_a = std::find(wire->start->m_wires.begin(), wire->start->m_wires.end(), wire);
+        auto it_b = std::find(wire->end->m_wires.begin(), wire->end->m_wires.end(), wire);
+        _ASSERT_EXPR(it_a != wire->start->m_wires.end(), "Trying to destroy a wire that is not inside the searched vector");
+        _ASSERT_EXPR(it_b != wire->end->m_wires.end(), "Trying to destroy a wire that is not inside the searched vector");
+        wire->start->m_wires.erase(it_a);
+        wire->end->m_wires.erase(it_b);
+        auto it = std::find(wires.begin(), wires.end(), wire);
+        _ASSERT_EXPR(it != wires.end(), "Trying to destroy a wire that does not exist");
+        wires.erase(it);
+    }
+
+    void Sort()
+    {
+        std::queue<int> list;
+        bool* visited = new bool[nodes.size()](false);
+        for (Node* node : nodes)
+        {
+
+        }
+    }
+
+    void Evaluate()
+    {
+        std::queue<Node*> todo;
+        todo.insert();
+    }
 };
 
 
