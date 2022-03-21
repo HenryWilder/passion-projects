@@ -678,6 +678,7 @@ int main()
         case Mode::EDIT:
             data.edit.nodeBeingDragged = nullptr;
             data.edit.wireBeingDragged = nullptr;
+	    // TODO: Implement selection rectangle
             Int_t selectionRectangleX_Min = ;
             Int_t selectionRectangleY_Min = ;
             Int_t selectionRectangleX_Max = 0;
