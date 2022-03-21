@@ -137,12 +137,13 @@ class Node;
 struct Wire
 {
     Wire() = default;
-    Wire(Node* start, Node* end) : elbow(), start(start), end(end) {}
+    Wire(Node* start, Node* end) : elbow(), elbowConfig(0), start(start), end(end) {}
 
     static constexpr Color g_wireColorActive = BROWN;
     static constexpr Color g_wireColorInactive = GRAY;
     static constexpr float g_elbowRadius = 2.0f;
     IVec2 elbow;
+    size_t elbowConfig;
     Node* start;
     Node* end;
 
@@ -158,7 +159,9 @@ struct Wire
     Int_t GetElbowY() const;
     Int_t GetEndX() const;
     Int_t GetEndY() const;
-
+	
+    void GetLegalElbowPositions(IVec2 (&legal)[4]) const;
+    void UpdateElbowToLegal();
     void SnapElbowToLegal(IVec2 pos);
 };
 
@@ -287,6 +290,21 @@ Int_t Wire::GetEndY() const
     return end->GetY();
 }
 
+void Wire::GetLegalElbowPositions(IVec2 (&legal)[4]) const
+{
+    legal[0] = IVec2(startPos.x, endPos.y);
+    legal[1] = IVec2(endPos.x, startPos.y);
+    legal[2] = startPos + IVec2(endPos.x < startPos.x ? -shortLength : shortLength,
+                                endPos.y < startPos.y ? -shortLength : shortLength);
+    legal[3] = endPos + IVec2(startPos.x < endPos.x   ? -shortLength : shortLength,
+                              startPos.y < endPos.y   ? -shortLength : shortLength);
+}
+void Wire::UpdateElbowToLegal()
+{
+    IVec2 legal[4];
+    GetLegalElbowPositions(legal);
+    elbow = legal[elbowConfig];
+}
 void Wire::SnapElbowToLegal(IVec2 pos)
 {
     IVec2 startPos = start->GetPosition();
@@ -297,16 +315,8 @@ void Wire::SnapElbowToLegal(IVec2 pos)
         abs(endPos.y - startPos.y)
     );
 
-    IVec2 legal[] =
-    {
-        IVec2(startPos.x, endPos.y),
-        IVec2(endPos.x, startPos.y),
-        startPos + IVec2(endPos.x < startPos.x ? -shortLength : shortLength,
-                         endPos.y < startPos.y ? -shortLength : shortLength),
-        endPos + IVec2(startPos.x < endPos.x ? -shortLength : shortLength,
-                         startPos.y < endPos.y ? -shortLength : shortLength),
-    };
-
+    IVec2 legal[4];
+    GetLegalElbowPositions(legal);
 
     IVec2* pick = nullptr;
     long shortestDist = LONG_MAX;
@@ -319,7 +329,8 @@ void Wire::SnapElbowToLegal(IVec2 pos)
             pick = &vec;
         }
     }
-    _ASSERT_EXPR(!!pick, "Nearest legal move not executed");
+    _ASSERT_EXPR(pick != nullptr, "Nearest legal move search skipped");
+    elbowConfig = pick - legal; // Index of pick
     elbow = *pick;
 }
 
@@ -762,7 +773,7 @@ int main()
                 data.edit.nodeBeingDragged->SetPosition(cursorPos);
                 for (Wire* wire : data.edit.nodeBeingDragged->GetWires())
                 {
-                    wire->SnapElbowToLegal(wire->elbow);
+                    wire->UpdateElbowToLegal(); // Keep current configuration but move the elbow
                 }
             }
 
