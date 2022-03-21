@@ -7,18 +7,24 @@
 //#include <raymath.h>
 //#include <extras\raygui.h>
 
-#define FIND_AND_ERASE(vector, element) \
-    { \
-        if (auto it = std::find((vector).begin(), (vector).end(), (element)); it != (vector).end()) \
-            (vector).erase(it) \
+// Returns true on success
+template<typename T>
+bool FindAndErase(std::vector<T>& vec, const T& element)
+{
+    if (auto it = std::find(vec.begin(), vec.end(), element); it != vec.end())
+    {
+        vec.erase(it);
+        return true;
     }
-
-#define FIND_AND_ERASE__EXPECT_EXISTING(vector, element) \
-    { \
-        auto it = std::find((vector).begin(), (vector).end(), (element)); \
-        _ASSERT_EXPR(it != (vector).end(), "Expected element to be present"); \
-        (vector).erase(it) \
-    }
+    return false;
+}
+template<typename T>
+void FindAndErase_ExpectExisting(std::vector<T>& vec, const T& element)
+{
+    auto it = std::find(vec.begin(), vec.end(), element);
+    _ASSERT_EXPR(it != vec.end(), "Expected element to be present");
+    vec.erase(it);
+}
 
 using Int_t = int;
 constexpr Int_t g_gridSize = 8;
@@ -409,11 +415,11 @@ public:
         if (auto it = a->FindConnection(b); it != a->m_wires.end())
         {
             Wire* wire = *it;
-            FIND_AND_ERASE(wires, wire);
+            FindAndErase(wires, wire);
             a->m_wires.erase(it);
         }
 
-        FIND_AND_ERASE__EXPECT_EXISTING(nodes, b);
+        FindAndErase_ExpectExisting(nodes, b);
         delete b;
 
         orderDirty = true;
@@ -455,12 +461,12 @@ public:
     }
     void DestroyWire(Wire* wire)
     {
-        FIND_AND_ERASE__EXPECT_EXISTING(wires, wire);
-        FIND_AND_ERASE__EXPECT_EXISTING(wire->start->m_wire, wire);
-        FIND_AND_ERASE__EXPECT_EXISTING(wire->end->m_wires, wire);
+        FindAndErase_ExpectExisting(wires, wire);
+        FindAndErase_ExpectExisting(wire->start->m_wires, wire);
+        FindAndErase_ExpectExisting(wire->end->m_wires, wire);
         // Push end to start nodes if this has destroyed its last remaining input
         if (wire->end->IsInputOnly())
-            startNodes.push_back(end);
+            startNodes.push_back(wire->end);
         delete wire;
         orderDirty = true;
     }
@@ -676,8 +682,8 @@ int main()
             data.edit.nodeBeingDragged = nullptr;
             data.edit.wireBeingDragged = nullptr;
 	    // TODO: Implement selection rectangle
-            Int_t selectionRectangleX_Min = ;
-            Int_t selectionRectangleY_Min = ;
+            Int_t selectionRectangleX_Min = std::numeric_limits<Int_t>::max();
+            Int_t selectionRectangleY_Min = std::numeric_limits<Int_t>::max();
             Int_t selectionRectangleX_Max = 0;
             Int_t selectionRectangleY_Max = 0;
             break;
@@ -802,7 +808,7 @@ int main()
 
                 if (!!data.pen.currentWireStart)
                 {
-                    DrawWireGeneric(data.pen.currentWireStart->GetPosition(), IVec2(data.pen.currentWireStart->GetX(), cursorPos.y), cursorPos, DARKBLUE)
+                    DrawWireGeneric(data.pen.currentWireStart->GetPosition(), IVec2(data.pen.currentWireStart->GetX(), cursorPos.y), cursorPos, DARKBLUE);
                 }
 
                 if (!!data.hoveredWire)
