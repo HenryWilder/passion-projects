@@ -662,6 +662,10 @@ int main()
             struct {
                 Node* nodeBeingDragged;
                 Wire* wireBeingDragged;
+                Int_t selectionRectangleX_Min;
+                Int_t selectionRectangleY_Min;
+                Int_t selectionRectangleX_Max;
+                Int_t selectionRectangleY_Max;
             } edit;
         };
     } data;
@@ -682,10 +686,10 @@ int main()
             data.edit.nodeBeingDragged = nullptr;
             data.edit.wireBeingDragged = nullptr;
 	    // TODO: Implement selection rectangle
-            Int_t selectionRectangleX_Min = std::numeric_limits<Int_t>::max();
-            Int_t selectionRectangleY_Min = std::numeric_limits<Int_t>::max();
-            Int_t selectionRectangleX_Max = 0;
-            Int_t selectionRectangleY_Max = 0;
+            data.edit.selectionRectangleX_Min = std::numeric_limits<Int_t>::max();
+            data.edit.selectionRectangleY_Min = std::numeric_limits<Int_t>::max();
+            data.edit.selectionRectangleX_Max = 0;
+            data.edit.selectionRectangleY_Max = 0;
             break;
 
         default:
