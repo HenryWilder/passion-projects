@@ -166,7 +166,7 @@ struct Wire
     Int_t GetEndX() const;
     Int_t GetEndY() const;
 	
-    void GetLegalElbowPositions(IVec2 (&legal)[4]) const;
+    void GetLegalElbowPositions(IVec2(&legal)[4]) const;
     void UpdateElbowToLegal();
     void SnapElbowToLegal(IVec2 pos);
 };
@@ -306,9 +306,9 @@ void Wire::GetLegalElbowPositions(IVec2 (&legal)[4]) const
     legal[0] = IVec2(GetStartX(), GetEndY());
     legal[1] = IVec2(GetEndX(), GetStartY());
     legal[2] = start->GetPosition() + IVec2(GetEndX() < GetStartX() ? -shortLength : shortLength,
-                                GetEndY() < GetStartY() ? -shortLength : shortLength);
-    legal[3] = end->GetPosition() + IVec2(GetStartX() < GetEndX()   ? -shortLength : shortLength,
-                              GetStartY() < GetEndY()   ? -shortLength : shortLength);
+                                            GetEndY() < GetStartY() ? -shortLength : shortLength);
+    legal[3] = end->GetPosition()   + IVec2(GetStartX() < GetEndX() ? -shortLength : shortLength,
+                                            GetStartY() < GetEndY() ? -shortLength : shortLength);
 }
 void Wire::UpdateElbowToLegal()
 {
@@ -321,20 +321,19 @@ void Wire::SnapElbowToLegal(IVec2 pos)
     IVec2 legal[4];
     GetLegalElbowPositions(legal);
 
-    IVec2* pick = nullptr;
+    size_t pick = 0;
     long shortestDist = LONG_MAX;
-    for (IVec2& vec : legal)
+    for (size_t i = 0; i < 4; ++i)
     {
-        long dist = DistanceSqr(pos, vec);
+        long dist = DistanceSqr(pos, legal[i]);
         if (dist < shortestDist)
         {
             shortestDist = dist;
-            pick = &vec;
+            pick = i;
         }
     }
-    _ASSERT_EXPR(pick != nullptr, "Nearest legal move search skipped");
-    elbowConfig = pick - legal; // Index of pick
-    elbow = *pick;
+    elbowConfig = pick; // Index of pick
+    elbow = legal[pick];
 }
 
 class NodeWorld
@@ -761,7 +760,7 @@ int main()
                 data.edit.nodeBeingDragged = data.hoveredNode;
                 data.edit.wireBeingDragged = data.hoveredWire;
             }
-            else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && !!data.edit.nodeBeingDragged || !!data.edit.wireBeingDragged)
+            else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && (!!data.edit.nodeBeingDragged || !!data.edit.wireBeingDragged))
             {
                 data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
                 if (data.edit.nodeBeingDragged &&
