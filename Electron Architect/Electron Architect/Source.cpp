@@ -382,13 +382,13 @@ public:
             if (wire->start == node)
             {
                 auto it = wire->end->FindConnection(wire->start);
-                _ASSERT_EXPR(it != end->m_wires.end(), "Node connection could not be verified");
+                _ASSERT_EXPR(it != wire->end->m_wires.end(), "Node connection could not be verified");
                 wire->end->m_wires.erase(it);
             }
             else // wire->end == node
             {
                 auto it = wire->start->FindConnection(wire->end);
-                _ASSERT_EXPR(it != start->m_wires.end(), "Node connection could not be verified");
+                _ASSERT_EXPR(it != wire->start->m_wires.end(), "Node connection could not be verified");
                 wire->start->m_wires.erase(it);
             }
         }
