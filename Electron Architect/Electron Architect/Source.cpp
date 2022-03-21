@@ -118,6 +118,15 @@ inline IVec2 IVec2Scale_f(float a, IVec2 b)
     return IVec2Scale_f(b, a);
 }
 
+void DrawLineIV(IVec2 start, IVec2 end, Color color)
+{
+    DrawLine(start.x, start.y, end.x, end.y, color);
+}
+void DrawWireGeneric(IVec2 start, IVec2 joint, IVec2 end, Color color)
+{
+    DrawLineIV(start, joint, color);
+    DrawLineIV(joint, end, color);
+}
 
 class NodeWorld;
 class Node;
@@ -245,8 +254,8 @@ private: // Accessible by NodeWorld
 
 void Wire::Draw(Color color) const
 {
-    DrawLine(start->GetX(), start->GetY(), elbow.x, elbow.y, color);
-    DrawLine(elbow.x, elbow.y, end->GetX(), end->GetY(), color);
+    DrawLineIV(start->GetPosition(), elbow, color);
+    DrawLineIV(elbow, end->GetPosition(), color);
 }
 
 Int_t Wire::GetStartX() const
@@ -780,8 +789,7 @@ int main()
 
                 if (!!data.pen.currentWireStart)
                 {
-                    DrawLine(data.pen.currentWireStart->GetX(), data.pen.currentWireStart->GetY(), data.pen.currentWireStart->GetX(), cursorPos.y, DARKBLUE);
-                    DrawLine(data.pen.currentWireStart->GetX(), cursorPos.y, cursorPos.x, cursorPos.y, DARKBLUE);
+                    DrawWireGeneric(data.pen.currentWireStart->GetPosition(), IVec2(data.pen.currentWireStart->GetX(), cursorPos.y), cursorPos, DARKBLUE)
                 }
 
                 if (!!data.hoveredWire)
