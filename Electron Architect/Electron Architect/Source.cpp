@@ -292,12 +292,17 @@ Int_t Wire::GetEndY() const
 
 void Wire::GetLegalElbowPositions(IVec2 (&legal)[4]) const
 {
-    legal[0] = IVec2(startPos.x, endPos.y);
-    legal[1] = IVec2(endPos.x, startPos.y);
-    legal[2] = startPos + IVec2(endPos.x < startPos.x ? -shortLength : shortLength,
-                                endPos.y < startPos.y ? -shortLength : shortLength);
-    legal[3] = endPos + IVec2(startPos.x < endPos.x   ? -shortLength : shortLength,
-                              startPos.y < endPos.y   ? -shortLength : shortLength);
+    Int_t shortLength = std::min(
+        abs(GetEndX() - GetStartX()),
+        abs(GetEndY() - GetStartY())
+    );
+
+    legal[0] = IVec2(GetStartX(), GetEndY());
+    legal[1] = IVec2(GetEndX(), GetStartY());
+    legal[2] = start->GetPosition() + IVec2(GetEndX() < GetStartX() ? -shortLength : shortLength,
+                                GetEndY() < GetStartY() ? -shortLength : shortLength);
+    legal[3] = end->GetPosition() + IVec2(GetStartX() < GetEndX()   ? -shortLength : shortLength,
+                              GetStartY() < GetEndY()   ? -shortLength : shortLength);
 }
 void Wire::UpdateElbowToLegal()
 {
@@ -307,14 +312,6 @@ void Wire::UpdateElbowToLegal()
 }
 void Wire::SnapElbowToLegal(IVec2 pos)
 {
-    IVec2 startPos = start->GetPosition();
-    IVec2 endPos = end->GetPosition();
-
-    Int_t shortLength = std::min(
-        abs(endPos.x - startPos.x),
-        abs(endPos.y - startPos.y)
-    );
-
     IVec2 legal[4];
     GetLegalElbowPositions(legal);
 
