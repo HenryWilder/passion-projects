@@ -849,6 +849,13 @@ int main()
                 if (!!data.hoveredWire)
                 {
                     data.hoveredWire->Draw(LIGHTGRAY);
+                    IVec2 pts[4];
+                    data.hoveredWire->GetLegalElbowPositions(pts);
+                    for (const IVec2& p : pts)
+                    {
+                        DrawWireGeneric(data.hoveredWire->start->GetPosition(), p, data.hoveredWire->end->GetPosition(), ColorAlpha(DARKGREEN, 0.25));
+                        DrawCircle(p.x, p.y, Wire::g_elbowRadius, DARKGREEN);
+                    }
                     data.hoveredWire->DrawElbow(!!data.edit.wireBeingDragged ? GREEN : LIME);
                 }
 
