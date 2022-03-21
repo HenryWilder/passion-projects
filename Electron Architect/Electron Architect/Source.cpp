@@ -354,17 +354,15 @@ public:
         {
             if (wire->start == node)
             {
-                Node* end = wire->end;
-                auto wire_iter = std::find_if(end->m_wires.begin(), end->m_wires.end(), [&node](Wire* wire) { return wire->start == node; });
-                _ASSERT_EXPR(wire_iter != end->m_wires.end(), "Node connection could not be verified");
-                end->m_wires.erase(wire_iter);
+                auto it = wire->end->FindConnection(wire->start);
+                _ASSERT_EXPR(it != end->m_wires.end(), "Node connection could not be verified");
+                wire->end->m_wires.erase(it);
             }
             else // wire->end == node
             {
-                Node* start = wire->start;
-                auto wire_iter = std::find_if(start->m_wires.begin(), start->m_wires.end(), [&node](Wire* wire) { return wire->end == node; });
-                _ASSERT_EXPR(wire_iter != start->m_wires.end(), "Node connection could not be verified");
-                start->m_wires.erase(wire_iter);
+                auto it = wire->start->FindConnection(wire->end);
+                _ASSERT_EXPR(it != start->m_wires.end(), "Node connection could not be verified");
+                wire->start->m_wires.erase(it);
             }
         }
         nodes.erase(node_iter);
@@ -436,20 +434,13 @@ public:
     }
     void DestroyWire(Wire* wire)
     {
-        auto it_a = std::find(wire->start->m_wires.begin(), wire->start->m_wires.end(), wire);
-        auto it_b = std::find(wire->end->m_wires.begin(), wire->end->m_wires.end(), wire);
-        _ASSERT_EXPR(it_a != wire->start->m_wires.end(), "Trying to destroy a wire that is not inside the searched vector");
-        _ASSERT_EXPR(it_b != wire->end->m_wires.end(), "Trying to destroy a wire that is not inside the searched vector");
-        wire->start->m_wires.erase(it_a);
-        wire->end->m_wires.erase(it_b);
-        Node* end = wire->end;
-        auto it = std::find(wires.begin(), wires.end(), wire);
-        _ASSERT_EXPR(it != wires.end(), "Trying to destroy a wire that does not exist");
-        wires.erase(it);
+        FIND_AND_ERASE__EXPECT_EXISTING(wires, wire);
+        FIND_AND_ERASE__EXPECT_EXISTING(wire->start->m_wire, wire);
+        FIND_AND_ERASE__EXPECT_EXISTING(wire->end->m_wires, wire);
         // Push end to start nodes if this has destroyed its last remaining input
-        if (end->IsInputOnly())
+        if (wire->end->IsInputOnly())
             startNodes.push_back(end);
-
+        delete wire;
         orderDirty = true;
     }
 
