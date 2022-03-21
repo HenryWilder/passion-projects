@@ -661,10 +661,11 @@ int main()
             struct {
                 Node* nodeBeingDragged;
                 Wire* wireBeingDragged;
-                Int_t selectionRectangleX_Min;
-                Int_t selectionRectangleY_Min;
-                Int_t selectionRectangleX_Max;
-                Int_t selectionRectangleY_Max;
+                bool selectionWIP;
+                Int_t selectionRectangleX;
+                Int_t selectionRectangleY;
+                Int_t selectionRectangleWidth;
+                Int_t selectionRectangleHeight;
             } edit;
         };
     } data;
@@ -684,11 +685,11 @@ int main()
         case Mode::EDIT:
             data.edit.nodeBeingDragged = nullptr;
             data.edit.wireBeingDragged = nullptr;
-	    // TODO: Implement selection rectangle
-            data.edit.selectionRectangleX_Min = std::numeric_limits<Int_t>::max();
-            data.edit.selectionRectangleY_Min = std::numeric_limits<Int_t>::max();
-            data.edit.selectionRectangleX_Max = 0;
-            data.edit.selectionRectangleY_Max = 0;
+            data.edit.selectionWIP = false;
+            data.edit.selectionRectangleX = 0;
+            data.edit.selectionRectangleY = 0;
+            data.edit.selectionRectangleWidth = 0;
+            data.edit.selectionRectangleHeight = 0;
             break;
 
         default:
@@ -721,6 +722,7 @@ int main()
         switch (mode)
         {
         case Mode::PEN:
+        {
             data.hoveredWire = nullptr;
             data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
             if (!data.hoveredNode)
@@ -733,7 +735,7 @@ int main()
                     if (!newNode)
                         newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
                     else if (newNode == data.pen.currentWireStart)
-                            break;
+                        break;
 
                     if (!!data.pen.currentWireStart)
                         NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
@@ -744,9 +746,13 @@ int main()
             {
                 data.pen.currentWireStart = nullptr;
             }
+        }
             break;
 
         case Mode::EDIT:
+        {
+            bool lastFrameUpdate = false;
+
             if (!data.edit.nodeBeingDragged &&
                 !data.edit.wireBeingDragged)
             {
@@ -755,27 +761,45 @@ int main()
                 if (!data.hoveredNode)
                     data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(cursorPos);
             }
+
+            // Press
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 data.edit.nodeBeingDragged = data.hoveredNode;
                 data.edit.wireBeingDragged = data.hoveredWire;
-            }
-            else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && (!!data.edit.nodeBeingDragged || !!data.edit.wireBeingDragged))
-            {
-                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-                if (data.edit.nodeBeingDragged &&
-                    data.hoveredNode &&
-                    data.edit.nodeBeingDragged != data.hoveredNode)
+                if (!data.edit.nodeBeingDragged && !data.edit.wireBeingDragged)
                 {
-                    data.hoveredNode = NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
+                    data.edit.selectionRectangleX = cursorPos.x;
+                    data.edit.selectionRectangleY = cursorPos.y;
+                    data.edit.selectionWIP = true;
+                }
+            }
+            // Release
+            else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+            {
+                if (!!data.edit.nodeBeingDragged)
+                {
+                    data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+                    if (data.hoveredNode && data.edit.nodeBeingDragged != data.hoveredNode)
+                        data.hoveredNode = NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
                 }
 
                 data.edit.nodeBeingDragged = nullptr;
                 data.edit.wireBeingDragged = nullptr;
+                lastFrameUpdate = data.edit.selectionWIP;
+                data.edit.selectionWIP = false;
+            }
+
+            // Selection
+            if (data.edit.selectionWIP || lastFrameUpdate)
+            {
+                data.edit.selectionRectangleWidth = cursorPos.x - data.edit.selectionRectangleX;
+                data.edit.selectionRectangleHeight = cursorPos.y - data.edit.selectionRectangleY;
+                lastFrameUpdate = false;
             }
 
             // Node
-            if (!!data.edit.nodeBeingDragged)
+            else if (!!data.edit.nodeBeingDragged)
             {
                 data.edit.nodeBeingDragged->SetPosition(cursorPos);
                 for (Wire* wire : data.edit.nodeBeingDragged->GetWires())
@@ -789,7 +813,7 @@ int main()
             {
                 data.edit.wireBeingDragged->SnapElbowToLegal(cursorPos);
             }
-
+        }
             break;
         }
 
@@ -844,6 +868,20 @@ int main()
 
             case Mode::EDIT:
             {
+                DrawRectangle(
+                    data.edit.selectionRectangleX,
+                    data.edit.selectionRectangleY,
+                    data.edit.selectionRectangleWidth,
+                    data.edit.selectionRectangleHeight,
+                    ColorAlpha(YELLOW, 0.125));
+
+                DrawRectangleLines(
+                    data.edit.selectionRectangleX,
+                    data.edit.selectionRectangleY,
+                    data.edit.selectionRectangleWidth,
+                    data.edit.selectionRectangleHeight,
+                    ColorAlpha(YELLOW, 0.25));
+
                 NodeWorld::Get().DrawWires();
 
                 if (!!data.hoveredWire)
@@ -883,3 +921,6 @@ int main()
 	return 0;
 }
 
+// Todo:
+// Add delete options 
+// Add gate customization
