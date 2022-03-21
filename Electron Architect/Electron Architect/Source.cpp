@@ -7,14 +7,18 @@
 //#include <raymath.h>
 //#include <extras\raygui.h>
 
-#define FIND_AND_ERASE(vector, element)\
-    if (auto it = std::find((vector).begin(), (vector).end(), (element)); it != (vector).end()) \
-        (vector).erase(it)
+#define FIND_AND_ERASE(vector, element) \
+    { \
+        if (auto it = std::find((vector).begin(), (vector).end(), (element)); it != (vector).end()) \
+            (vector).erase(it) \
+    }
 
-#define FIND_AND_ERASE__EXPECT_EXISTING(vector, element)\
-    auto it = std::find((vector).begin(), (vector).end(), (element)); \
-    _ASSERT_EXPR(it != (vector).end(), "Expected element to be present"); \
-    (vector).erase(it)
+#define FIND_AND_ERASE__EXPECT_EXISTING(vector, element) \
+    { \
+        auto it = std::find((vector).begin(), (vector).end(), (element)); \
+        _ASSERT_EXPR(it != (vector).end(), "Expected element to be present"); \
+        (vector).erase(it) \
+    }
 
 using Int_t = int;
 constexpr Int_t g_gridSize = 8;
