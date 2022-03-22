@@ -7,6 +7,16 @@
 //#include <raymath.h>
 //#include <extras\raygui.h>
 
+// UI Colors
+namespace uicol
+{
+    constexpr Color wireGhost      = {   0, 117,  44,  64 };
+    constexpr Color wireHover      = {   0, 117,  44,  64 };
+    constexpr Color wireElbowGhost = {   0, 117,  44, 255 };
+    constexpr Color wireElbowHover = {   0, 158,  47, 255 };
+    constexpr Color wireElbowDragg = {   0, 228,  48, 255 };
+}
+
 // Returns true on success
 template<typename T>
 bool FindAndErase(std::vector<T>& vec, const T& element)
@@ -159,10 +169,15 @@ struct Wire
         DrawCircle(elbow.x, elbow.y, g_elbowRadius, color);
     }
 
+    IVec2 GetStartPos() const;
     Int_t GetStartX() const;
     Int_t GetStartY() const;
+
+    IVec2 GetElbowPos() const;
     Int_t GetElbowX() const;
     Int_t GetElbowY() const;
+
+    IVec2 GetEndPos() const;
     Int_t GetEndX() const;
     Int_t GetEndY() const;
 	
@@ -267,10 +282,13 @@ private: // Accessible by NodeWorld
 
 void Wire::Draw(Color color) const
 {
-    DrawLineIV(start->GetPosition(), elbow, color);
-    DrawLineIV(elbow, end->GetPosition(), color);
+    DrawWireGeneric(start->GetPosition(), elbow, end->GetPosition(), color);
 }
 
+IVec2 Wire::GetStartPos() const
+{
+    return start->GetPosition();
+}
 Int_t Wire::GetStartX() const
 {
     return start->GetX();
@@ -279,6 +297,11 @@ Int_t Wire::GetStartY() const
 {
     return start->GetY();
 }
+
+IVec2 Wire::GetElbowPos() const
+{
+    return elbow;
+}
 Int_t Wire::GetElbowX() const
 {
     return elbow.x;
@@ -286,6 +309,11 @@ Int_t Wire::GetElbowX() const
 Int_t Wire::GetElbowY() const
 {
     return elbow.y;
+}
+
+IVec2 Wire::GetEndPos() const
+{
+    return end->GetPosition();
 }
 Int_t Wire::GetEndX() const
 {
@@ -891,10 +919,17 @@ int main()
                     data.hoveredWire->GetLegalElbowPositions(pts);
                     for (const IVec2& p : pts)
                     {
-                        DrawWireGeneric(data.hoveredWire->start->GetPosition(), p, data.hoveredWire->end->GetPosition(), ColorAlpha(DARKGREEN, 0.25));
-                        DrawCircle(p.x, p.y, Wire::g_elbowRadius, DARKGREEN);
+                        DrawWireGeneric(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), uicol::wireElbowGhost);
+                        DrawCircle(p.x, p.y, Wire::g_elbowRadius, uicol::wireElbowGhost);
                     }
-                    data.hoveredWire->DrawElbow(!!data.edit.wireBeingDragged ? GREEN : LIME);
+
+                    Color elbowColor;
+                    if (!!data.edit.wireBeingDragged)
+                        elbowColor = uicol::wireElbowDragg;
+                    else
+                        elbowColor = uicol::wireElbowHover;
+
+                    data.hoveredWire->DrawElbow(elbowColor);
                 }
 
                 NodeWorld::Get().DrawNodes();
