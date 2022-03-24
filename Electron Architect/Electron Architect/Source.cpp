@@ -407,7 +407,53 @@ public:
         DrawCircle(m_position.x, m_position.y, g_nodeRadius, color);
     }
 
+    // Only NodeWorld can play with a node's wires/state
     friend class NodeWorld;
+
+private: // Helpers usable only by NodeWorld
+
+    void SetState(bool state)
+    {
+        m_state = state;
+    }
+    
+    void AddWireInput(Wire* input)
+    {
+        m_wires.push_front(input);
+        m_inputs++;
+    }
+    void AddWireOutput(Wire* output)
+    {
+        m_wires.push_back(output);
+    }
+
+    // Expects the wire to exist; throws a debug exception if it is not found.
+    void SwapWireIO(Wire* wire)
+    {
+        auto it = std::find(m_wires.begin(), m_wires.end(), wire);
+        _ASSERT_EXPR(it != m_wires.end(), "Expected wire to be in node");
+
+        bool isInput = std::distance(m_wires.begin(), it) < m_inputs;
+
+        m_wires.erase(it);
+
+        m_inputs = (m_inputs + isInput) - !isInput;
+
+        if (isInput)
+            m_wires.push_back(wire);
+        else // Is output
+            m_wires.push_front(wire);
+    }
+
+    // Expects the wire to exist; throws a debug exception if it is not found.
+    void RemoveWire_Expected(Wire* wire)
+    {
+        FindAndErase_ExpectExisting(m_wires, wire);
+    }
+    void RemoveWire(Wire* wire)
+    {
+        FindAndErase(m_wires, wire);
+    }
 
 private: // Accessible by NodeWorld
     Node() = default;
