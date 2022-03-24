@@ -10,11 +10,30 @@
 // UI Colors
 namespace uicol
 {
-    constexpr Color wireGhost      = {   0, 117,  44,  64 };
-    constexpr Color wireHover      = {   0, 117,  44,  64 };
-    constexpr Color wireElbowGhost = {   0, 117,  44, 255 };
-    constexpr Color wireElbowHover = {   0, 158,  47, 255 };
-    constexpr Color wireElbowDragg = {   0, 228,  48, 255 };
+    namespace wire
+    {
+        constexpr Color hidden = { 255, 255, 255,  10 }; // Gray (12.5%)
+        constexpr Color ghost  = {  };
+        constexpr Color normal = {  };
+        constexpr Color hover  = {  };
+        constexpr Color drag   = {  };
+    }
+    namespace wireElbow
+    {
+        constexpr Color hidden = {  }; // Dark green (25%)
+        constexpr Color ghost  = {  }; // Dark green (50%)
+        constexpr Color normal = {  }; // Dark green
+        constexpr Color hover  = {  }; // Lime green
+        constexpr Color drag   = {  }; // Green
+    }
+    namespace node
+    {
+        constexpr Color hidden = {  }; // Dark gray
+        constexpr Color ghost  = {  }; // Gray
+        constexpr Color normal = {  }; // Light gray
+        constexpr Color hover  = {  }; // Yellow
+        constexpr Color drag   = {  }; // White
+    }
 }
 
 // Returns true on success
@@ -919,15 +938,15 @@ int main()
                     data.hoveredWire->GetLegalElbowPositions(pts);
                     for (const IVec2& p : pts)
                     {
-                        DrawWireGeneric(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), uicol::wireElbowGhost);
-                        DrawCircle(p.x, p.y, Wire::g_elbowRadius, uicol::wireElbowGhost);
+                        DrawWireGeneric(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), uicol::wire::ghost);
+                        DrawCircle(p.x, p.y, Wire::g_elbowRadius, uicol::wireElbow::ghost);
                     }
 
                     Color elbowColor;
                     if (!!data.edit.wireBeingDragged)
-                        elbowColor = uicol::wireElbowDragg;
+                        elbowColor = uicol::wireElbow::drag;
                     else
-                        elbowColor = uicol::wireElbowHover;
+                        elbowColor = uicol::wireElbow::hover;
 
                     data.hoveredWire->DrawElbow(elbowColor);
                 }
