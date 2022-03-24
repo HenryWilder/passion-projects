@@ -954,6 +954,7 @@ int main()
         else if (IsKeyPressed(KEY_V))
             SetMode(Mode::EDIT);
 
+        // TODO: Find the spot where the wire gets made and remove reversal guard. That already gets taken care of in the CreateWire() function.
         switch (mode)
         {
         case Mode::PEN:
