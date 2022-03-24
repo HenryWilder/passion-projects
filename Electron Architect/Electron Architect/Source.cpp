@@ -382,6 +382,22 @@ public:
     {
         return m_wires;
     }
+    std::deque<Wire*>::const_iterator Inputs_Begin() const
+    {
+        return m_wires.begin();
+    }
+    std::deque<Wire*>::const_iterator Inputs_End() const
+    {
+        return Inputs_Begin() + m_inputs;
+    }
+    std::deque<Wire*>::const_iterator Outputs_Begin() const
+    {
+        return Inputs_End();
+    }
+    std::deque<Wire*>::const_iterator Outputs_End() const
+    {
+        return m_wires.end();
+    }
 
     auto FindConnection(Node* other) const
     {
@@ -493,23 +509,6 @@ private: // Helpers usable only by NodeWorld
         return Inputs_End();
     }
     std::deque<Wire*>::iterator Outputs_End()
-    {
-        return m_wires.end();
-    }
-
-    std::deque<Wire*>::const_iterator Inputs_Begin() const
-    {
-        return m_wires.begin();
-    }
-    std::deque<Wire*>::const_iterator Inputs_End() const
-    {
-        return Inputs_Begin() + m_inputs;
-    }
-    std::deque<Wire*>::const_iterator Outputs_Begin() const
-    {
-        return Inputs_End();
-    }
-    std::deque<Wire*>::const_iterator Outputs_End() const
     {
         return m_wires.end();
     }
