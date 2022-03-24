@@ -55,6 +55,25 @@ void FindAndErase_ExpectExisting(std::vector<T>& vec, const T& element)
     vec.erase(it);
 }
 
+// Returns true on success
+template<typename T>
+bool FindAndErase(std::deque<T>& vec, const T& element)
+{
+    if (auto it = std::find(vec.begin(), vec.end(), element); it != vec.end())
+    {
+        vec.erase(it);
+        return true;
+    }
+    return false;
+}
+template<typename T>
+void FindAndErase_ExpectExisting(std::deque<T>& vec, const T& element)
+{
+    auto it = std::find(vec.begin(), vec.end(), element);
+    _ASSERT_EXPR(it != vec.end(), "Expected element to be present");
+    vec.erase(it);
+}
+
 using Int_t = int;
 constexpr Int_t g_gridSize = 8;
 
@@ -177,32 +196,136 @@ struct Wire
     static constexpr Color g_wireColorActive = BROWN;
     static constexpr Color g_wireColorInactive = GRAY;
     static constexpr float g_elbowRadius = 2.0f;
+
     IVec2 elbow;
     size_t elbowConfig;
     Node* start;
     Node* end;
 
-    void Draw(Color color) const;
+    void Draw(Color color) const
+    {
+        DrawWireGeneric(GetStartPos(), elbow, GetEndPos(), color);
+    }
     void DrawElbow(Color color) const
     {
         DrawCircle(elbow.x, elbow.y, g_elbowRadius, color);
     }
 
-    IVec2 GetStartPos() const;
-    Int_t GetStartX() const;
-    Int_t GetStartY() const;
+    IVec2 GetStartPos() const; // Requires Node definition
+    Int_t GetStartX() const
+    {
+        return GetStartPos().x;
+    }
+    Int_t GetStartY() const
+    {
+        return GetStartPos().y;
+    }
 
-    IVec2 GetElbowPos() const;
-    Int_t GetElbowX() const;
-    Int_t GetElbowY() const;
+    IVec2 GetElbowPos() const
+    {
+        return elbow;
+    }
+    Int_t GetElbowX() const
+    {
+        return GetElbowPos().x;
+    }
+    Int_t GetElbowY() const
+    {
+        return GetElbowPos().y;
+    }
 
-    IVec2 GetEndPos() const;
-    Int_t GetEndX() const;
-    Int_t GetEndY() const;
+    IVec2 GetEndPos() const; // Requires Node definition
+    Int_t GetEndX() const
+    {
+        return GetEndPos().x;
+    }
+    Int_t GetEndY() const
+    {
+        return GetEndPos().y;
+    }
 	
-    void GetLegalElbowPositions(IVec2(&legal)[4]) const;
-    void UpdateElbowToLegal();
-    void SnapElbowToLegal(IVec2 pos);
+    IVec2 GetLegalElbowPosition(decltype(elbowConfig) index) const
+    {
+        _ASSERT_EXPR(index < 4, "Subscript error");
+        if (index == 0)
+            return IVec2(GetStartX(), GetEndY());
+        else if (index == 1)
+            return IVec2(GetEndX(), GetStartY());
+        else
+        {
+            Int_t shortLength = std::min(
+                abs(GetEndX() - GetStartX()),
+                abs(GetEndY() - GetStartY())
+            );
+            IVec2 pos;
+            if (index == 2)
+            {
+                pos = GetStartPos();
+
+                if (GetEndX() < GetStartX())
+                    pos.x -= shortLength;
+                else
+                    pos.x += shortLength;
+
+                if (GetEndY() < GetStartY())
+                    pos.y -= shortLength;
+                else
+                    pos.y += shortLength;
+            }
+            else // index == 3
+            {
+                pos = GetEndPos();
+
+                if (GetStartX() < GetEndX())
+                    pos.x -= shortLength;
+                else
+                    pos.x += shortLength;
+
+                if (GetStartY() < GetEndY())
+                    pos.y -= shortLength;
+                else
+                    pos.y += shortLength;
+            }
+            return pos;
+        }
+    }
+    void GetLegalElbowPositions(IVec2(&legal)[4]) const
+    {
+        Int_t shortLength = std::min(
+            abs(GetEndX() - GetStartX()),
+            abs(GetEndY() - GetStartY())
+        );
+
+        legal[0] = IVec2(GetStartX(), GetEndY());
+        legal[1] = IVec2(GetEndX(), GetStartY());
+        legal[2] = start->GetPosition() + IVec2(GetEndX() < GetStartX() ? -shortLength : shortLength,
+            GetEndY() < GetStartY() ? -shortLength : shortLength);
+        legal[3] = end->GetPosition() + IVec2(GetStartX() < GetEndX() ? -shortLength : shortLength,
+            GetStartY() < GetEndY() ? -shortLength : shortLength);
+    }
+    void UpdateElbowToLegal()
+    {
+        elbow = GetLegalElbowPosition(elbowConfig);
+    }
+    void SnapElbowToLegal(IVec2 pos)
+    {
+        IVec2 legal[4];
+        GetLegalElbowPositions(legal);
+
+        size_t pick = 0;
+        long shortestDist = LONG_MAX;
+        for (size_t i = 0; i < 4; ++i)
+        {
+            long dist = DistanceSqr(pos, legal[i]);
+            if (dist < shortestDist)
+            {
+                shortestDist = dist;
+                pick = i;
+            }
+        }
+        elbowConfig = pick; // Index of pick
+        elbow = legal[pick];
+    }
 };
 
 enum class Gate
@@ -255,7 +378,7 @@ public:
         return m_state;
     }
 
-    const std::vector<Wire*>& GetWires() const
+    const std::deque<Wire*>& GetWires() const
     {
         return m_wires;
     }
@@ -265,17 +388,17 @@ public:
         return std::find_if(m_wires.begin(), m_wires.end(), [&other](Wire* wire) { return wire->start == other || wire->end == other; });
     }
 
+    size_t GetInputCount() const
+    {
+        return m_inputs;
+    }
+    size_t GetOutputCount() const
+    {
+        return m_wires.size() - m_inputs;
+    }
     bool IsInputOnly() const
     {
-        if (m_wires.empty())
-            return true;
-
-        auto isInput = [this](Wire* wire) { return wire->start != this; };
-        auto input = std::find_if(m_wires.begin(), m_wires.end(), isInput);
-        if (input == m_wires.end()) // No input
-            return true;
-
-        return false;
+        return !m_inputs;
     }
 
     // TODO: Improve
@@ -288,193 +411,34 @@ public:
 
 private: // Accessible by NodeWorld
     Node() = default;
-    Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false) {}
+    Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) {}
 
     static constexpr Color g_nodeColorActive = RED;
     static constexpr Color g_nodeColorInactive = LIGHTGRAY;
     static constexpr float g_nodeRadius = 3.0f;
+
     IVec2 m_position;
     Gate m_gate;
     bool m_state;
-    std::vector<Wire*> m_wires;
+    size_t m_inputs;
+    std::deque<Wire*> m_wires; // Please keep this partitioned by inputs vs outputs
 };
-
-void Wire::Draw(Color color) const
-{
-    DrawWireGeneric(start->GetPosition(), elbow, end->GetPosition(), color);
-}
 
 IVec2 Wire::GetStartPos() const
 {
     return start->GetPosition();
 }
-Int_t Wire::GetStartX() const
-{
-    return start->GetX();
-}
-Int_t Wire::GetStartY() const
-{
-    return start->GetY();
-}
-
-IVec2 Wire::GetElbowPos() const
-{
-    return elbow;
-}
-Int_t Wire::GetElbowX() const
-{
-    return elbow.x;
-}
-Int_t Wire::GetElbowY() const
-{
-    return elbow.y;
-}
-
 IVec2 Wire::GetEndPos() const
 {
     return end->GetPosition();
-}
-Int_t Wire::GetEndX() const
-{
-    return end->GetX();
-}
-Int_t Wire::GetEndY() const
-{
-    return end->GetY();
-}
-
-void Wire::GetLegalElbowPositions(IVec2 (&legal)[4]) const
-{
-    Int_t shortLength = std::min(
-        abs(GetEndX() - GetStartX()),
-        abs(GetEndY() - GetStartY())
-    );
-
-    legal[0] = IVec2(GetStartX(), GetEndY());
-    legal[1] = IVec2(GetEndX(), GetStartY());
-    legal[2] = start->GetPosition() + IVec2(GetEndX() < GetStartX() ? -shortLength : shortLength,
-                                            GetEndY() < GetStartY() ? -shortLength : shortLength);
-    legal[3] = end->GetPosition()   + IVec2(GetStartX() < GetEndX() ? -shortLength : shortLength,
-                                            GetStartY() < GetEndY() ? -shortLength : shortLength);
-}
-void Wire::UpdateElbowToLegal()
-{
-    IVec2 legal[4];
-    GetLegalElbowPositions(legal);
-    elbow = legal[elbowConfig];
-}
-void Wire::SnapElbowToLegal(IVec2 pos)
-{
-    IVec2 legal[4];
-    GetLegalElbowPositions(legal);
-
-    size_t pick = 0;
-    long shortestDist = LONG_MAX;
-    for (size_t i = 0; i < 4; ++i)
-    {
-        long dist = DistanceSqr(pos, legal[i]);
-        if (dist < shortestDist)
-        {
-            shortestDist = dist;
-            pick = i;
-        }
-    }
-    elbowConfig = pick; // Index of pick
-    elbow = legal[pick];
 }
 
 class NodeWorld
 {
 private:
-    class BFS_Tree
-    {
-    public:
-        using LayerIterator_t = std::vector<std::vector<Node*>*>::iterator;
-        using NodeIterator_t = std::vector<Node*>::iterator;
-        using Iterator_t = std::pair<LayerIterator_t, NodeIterator_t>;
-
-        void Reserve_Layers(size_t count)
-        {
-
-        }
-        void Push_Layer()
-        {
-            data.push_back(new std::vector<Node*>);
-        }
-        // Returns layer pointer to be deleted or otherwise handled
-        std::vector<Node*>* Pop_Layer()
-        {
-            std::vector<Node*>* layerVec;
-            data.pop_back();
-            return layerVec;
-        }
-
-        void Push_Node(LayerIterator_t layer, Node* element)
-        {
-            (*layer)->push_back(element);
-        }
-        void Insert_Node(Iterator_t position, Node* element)
-        {
-            (*position.first)->insert(position.second, element);
-        }
-        Node* Erase_Node(Iterator_t position)
-        {
-            Node* node = *position.second;
-            (*position.first)->erase(position.second);
-            return node;
-        }
-
-        template<class _Pred> void For_Each(_Pred predicate)
-        {
-            for (std::vector<Node*>* layer : data)
-            {
-                for (Node* node : *layer)
-                {
-                    predicate(node);
-                }
-            }
-        }
-        // Breaks on predicate return true
-        template<class _Pred> void For_Each_With_Break(_Pred predicate)
-        {
-            for (std::vector<Node*>* layer : data)
-            {
-                for (Node* node : *layer)
-                {
-                    if (predicate(node))
-                        return;
-                }
-            }
-        }
-        // Returns iterator on predicate return true
-        template<class _Pred> Iterator_t For_Each_With_IterReturn(_Pred predicate)
-        {
-            LayerIterator_t it = { data.begin(), data[0]->begin() };
-            while (it.first != data.end())
-            {
-                std::vector<Node*>& layer = *(*it.first);
-                while (it.second != layer.end())
-                {
-                    if (predicate(node))
-                        return it.second;
-
-                    ++it.second;
-                }
-                ++it.first;
-            }
-        }
-
-        Iterator_t Find(Node* element)
-        {
-            return For_Each_With_IterReturn([&element](Node* node) { return node == element; });
-        }
-
-    private:
-        std::vector<std::vector<Node*>*> data;
-    };
-    BFS_Tree nodes;
+    std::vector<Node*> nodes;
     std::vector<Node*> startNodes;
-    std::vector<Wire*> wires;
+    std::vector<Wire*> wires; // Inputs/outputs don't exist here
     bool orderDirty = false;
 
     NodeWorld() = default;
@@ -500,7 +464,7 @@ public:
     Node* CreateNode(IVec2 position, Gate gate)
     {
         Node* node = new Node(position, gate);
-        nodes.push_back(node);
+        nodes.insert(nodes.begin(), node);
         startNodes.push_back(node);
         orderDirty = true;
         return node;
@@ -513,6 +477,9 @@ public:
         {
             if (wire->start == node)
             {
+                if (wire->end->IsInputOnly())
+                    startNodes.push_back(wire->end);
+
                 auto it = wire->end->FindConnection(wire->start);
                 _ASSERT_EXPR(it != wire->end->m_wires.end(), "Node connection could not be verified");
                 wire->end->m_wires.erase(it);
@@ -528,7 +495,6 @@ public:
         delete node;
         orderDirty = true;
     }
-    // Uses BFS insertion
     Node* MergeNodes(Node* a, Node* b)
     {
         _ASSERT_EXPR(!!a && !!b, "Tried to merge a node with nullptr");
@@ -559,7 +525,6 @@ public:
         return a;
     }
 
-    // Uses BFS insertion
     Wire* CreateWire(Node* start, Node* end)
     {
         _ASSERT_EXPR(start != nullptr && end != nullptr, "Tried to create a wire to nullptr");
@@ -578,8 +543,9 @@ public:
         wires.push_back(wire);
         start->m_wires.push_back(wire);
         end->m_wires.push_back(wire);
+        end->m_inputs++;
 
-        // Remove end from start nodes if it is no longer an inputless node with this change
+        // Remove end from start nodes, as it is no longer an inputless node with this change
         auto it = std::find(startNodes.begin(), startNodes.end(), end);
         if (it != startNodes.end())
             startNodes.erase(it);
@@ -587,14 +553,12 @@ public:
         orderDirty = true;
         return wire;
     }
-    // Uses BFS insertion
     Wire* ReverseWire(Wire* wire)
     {
         std::swap(wire->start, wire->end);
         orderDirty = true;
         return wire;
     }
-    // Uses BFS insertion
     void DestroyWire(Wire* wire)
     {
         FindAndErase_ExpectExisting(wires, wire);
@@ -612,6 +576,12 @@ public:
     {
         nodes.clear();
         nodes.reserve(nodes.size());
+
+        for (Node* node : nodes)
+        {
+            if (node->IsInputOnly())
+                startNodes.push_back(node);
+        }
 
         std::queue<Node*> list;
         std::unordered_set<Node*> visited;
@@ -636,6 +606,8 @@ public:
             nodes.push_back(current);
             list.pop();
         }
+
+        orderDirty = false;
     }
 
     void Evaluate()
