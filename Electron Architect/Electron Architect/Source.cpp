@@ -298,9 +298,9 @@ struct Wire
 
         legal[0] = IVec2(GetStartX(), GetEndY());
         legal[1] = IVec2(GetEndX(), GetStartY());
-        legal[2] = start->GetPosition() + IVec2(GetEndX() < GetStartX() ? -shortLength : shortLength,
+        legal[2] = GetStartPos() + IVec2(GetEndX() < GetStartX() ? -shortLength : shortLength,
             GetEndY() < GetStartY() ? -shortLength : shortLength);
-        legal[3] = end->GetPosition() + IVec2(GetStartX() < GetEndX() ? -shortLength : shortLength,
+        legal[3] = GetEndPos() + IVec2(GetStartX() < GetEndX() ? -shortLength : shortLength,
             GetStartY() < GetEndY() ? -shortLength : shortLength);
     }
     void UpdateElbowToLegal()
