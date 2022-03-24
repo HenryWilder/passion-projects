@@ -382,19 +382,19 @@ public:
     {
         return m_wires;
     }
-    std::deque<Wire*>::const_iterator Inputs_Begin() const
+    auto Inputs_Begin() const
     {
         return m_wires.begin();
     }
-    std::deque<Wire*>::const_iterator Inputs_End() const
+    auto Inputs_End() const
     {
         return Inputs_Begin() + m_inputs;
     }
-    std::deque<Wire*>::const_iterator Outputs_Begin() const
+    auto Outputs_Begin() const
     {
         return Inputs_End();
     }
-    std::deque<Wire*>::const_iterator Outputs_End() const
+    auto Outputs_End() const
     {
         return m_wires.end();
     }
@@ -496,19 +496,33 @@ private: // Helpers usable only by NodeWorld
         FindAndErase(m_wires, wire);
     }
 
-    std::deque<Wire*>::iterator Inputs_Begin()
+    // Expects the wire to exist; throws a debug exception if it is not found.
+    void RemoveConnection_Expected(Node* node)
+    {
+        auto it = FindConnection(node);
+        _ASSERT_EXPR(it != m_wires.end(), "Expected connection to be pre-existing");
+        m_wires.erase(it);
+    }
+    void RemoveConnection(Node* node)
+    {
+        auto it = FindConnection(node);
+        if (it != m_wires.end())
+            m_wires.erase(it);
+    }
+
+    auto Inputs_Begin()
     {
         return m_wires.begin();
     }
-    std::deque<Wire*>::iterator Inputs_End()
+    auto Inputs_End()
     {
         return Inputs_Begin() + m_inputs;
     }
-    std::deque<Wire*>::iterator Outputs_Begin()
+    auto Outputs_Begin()
     {
         return Inputs_End();
     }
-    std::deque<Wire*>::iterator Outputs_End()
+    auto Outputs_End()
     {
         return m_wires.end();
     }
@@ -575,8 +589,7 @@ public:
     }
     void DestroyNode(Node* node)
     {
-        auto node_iter = std::find(nodes.begin(), nodes.end(), node);
-        _ASSERT_EXPR(node_iter != nodes.end(), "Cannot remove a node that does not exist");
+        
         for (Wire* wire : node->m_wires)
         {
             if (wire->start == node)
@@ -584,18 +597,12 @@ public:
                 if (wire->end->IsInputOnly())
                     startNodes.push_back(wire->end);
 
-                auto it = wire->end->FindConnection(wire->start);
-                _ASSERT_EXPR(it != wire->end->m_wires.end(), "Node connection could not be verified");
-                wire->end->m_wires.erase(it);
+                wire->end->RemoveConnection_Expected(wire->start);
             }
             else // wire->end == node
-            {
-                auto it = wire->start->FindConnection(wire->end);
-                _ASSERT_EXPR(it != wire->start->m_wires.end(), "Node connection could not be verified");
-                wire->start->m_wires.erase(it);
-            }
+                wire->start->RemoveConnection_Expected(wire->end);
         }
-        nodes.erase(node_iter);
+        FindAndErase_ExpectExisting(nodes, node);
         delete node;
         orderDirty = true;
     }
