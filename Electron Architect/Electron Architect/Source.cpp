@@ -584,23 +584,25 @@ public:
         Node* node = new Node(position, gate);
         nodes.insert(nodes.begin(), node);
         startNodes.push_back(node);
-        orderDirty = true;
+        // The order is not dirty at this time due to the node having no connections yet
         return node;
     }
     void DestroyNode(Node* node)
     {
-        
         for (Wire* wire : node->m_wires)
         {
-            if (wire->start == node)
-            {
-                if (wire->end->IsInputOnly())
-                    startNodes.push_back(wire->end);
+            Node* start = wire->start;
+            Node* end = wire->end;
 
-                wire->end->RemoveConnection_Expected(wire->start);
+            if (start == node)
+            {
+                if (end->IsInputOnly())
+                    startNodes.push_back(end);
+
+                end->RemoveConnection_Expected(start);
             }
             else // wire->end == node
-                wire->start->RemoveConnection_Expected(wire->end);
+                start->RemoveConnection_Expected(end);
         }
         FindAndErase_ExpectExisting(nodes, node);
         delete node;
@@ -613,53 +615,54 @@ public:
 
         for (Wire* wire : b->m_wires)
         {
-            if (wire->start != a && wire->end != a)
-                a->m_wires.push_back(wire);
-
-            if (wire->start == b) // Updating the layer of these might require recursion
-                wire->start = a;
-            else // wire->end == b
-                wire->end = a;
+            if (wire->start == a || wire->end == a)
+            {
+                a->RemoveWire_Expected(wire);
+                delete wire;
+            }
+            else
+            {
+                if (wire->start == b)
+                {
+                    wire->start = a;
+                    a->AddWireOutput(wire);
+                }
+                else // wire->end == b
+                {
+                    wire->end = a;
+                    a->AddWireInput(wire);
+                }
+            }
         }
-
-        if (auto it = a->FindConnection(b); it != a->m_wires.end())
-        {
-            Wire* wire = *it;
-            FindAndErase(wires, wire);
-            a->m_wires.erase(it);
-        }
-
         FindAndErase_ExpectExisting(nodes, b);
         delete b;
-
         orderDirty = true;
         return a;
     }
-
     Wire* CreateWire(Node* start, Node* end)
     {
         _ASSERT_EXPR(start != nullptr && end != nullptr, "Tried to create a wire to nullptr");
         _ASSERT_EXPR(start != end, "Cannot create self-reference wire");
 
         // Duplicate guard
-        {
-            auto it = std::find_if(start->m_wires.begin(), start->m_wires.end(), [&end](Wire* wire) { return wire->end == end; });
-            if (it != start->m_wires.end())
-                return *it;
-        }
+        auto it = end->FindConnection(start);
+        if (it < end->Inputs_End()) // start is input of end
+            return *it;
+        else if (it < end->Outputs_End()) // start is output of end
+            return ReverseWire(*it);
 
         Wire* wire = new Wire(start, end);
+
         wire->elbowConfig = 0;
         wire->UpdateElbowToLegal();
+
         wires.push_back(wire);
-        start->m_wires.push_back(wire);
-        end->m_wires.push_back(wire);
-        end->m_inputs++;
+
+        start->AddWireOutput(wire);
+        end->AddWireInput(wire);
 
         // Remove end from start nodes, as it is no longer an inputless node with this change
-        auto it = std::find(startNodes.begin(), startNodes.end(), end);
-        if (it != startNodes.end())
-            startNodes.erase(it);
+        FindAndErase(startNodes, end);
 
         orderDirty = true;
         return wire;
@@ -667,18 +670,27 @@ public:
     Wire* ReverseWire(Wire* wire)
     {
         std::swap(wire->start, wire->end);
+
+        wire->start->MakeWireOutput(wire);
+        wire->end->MakeWireInput(wire);
+
         orderDirty = true;
         return wire;
     }
     void DestroyWire(Wire* wire)
     {
+        Node* start = wire->start;
+        Node* end = wire->end;
+
         FindAndErase_ExpectExisting(wires, wire);
-        FindAndErase_ExpectExisting(wire->start->m_wires, wire);
-        FindAndErase_ExpectExisting(wire->end->m_wires, wire);
-        // Push end to start nodes if this has destroyed its last remaining input
-        if (wire->end->IsInputOnly())
-            startNodes.push_back(wire->end);
+        start->RemoveWire_Expected(wire);
+        end->RemoveWire_Expected(wire);
         delete wire;
+
+        // Push end to start nodes if this has destroyed its last remaining input
+        if (end->IsInputOnly())
+            startNodes.push_back(end);
+
         orderDirty = true;
     }
 
