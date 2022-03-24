@@ -579,6 +579,7 @@ public:
         return g_only;
     }
 
+    // Node functions
     Node* CreateNode(IVec2 position, Gate gate)
     {
         Node* node = new Node(position, gate);
@@ -608,37 +609,8 @@ public:
         delete node;
         orderDirty = true;
     }
-    Node* MergeNodes(Node* a, Node* b)
-    {
-        _ASSERT_EXPR(!!a && !!b, "Tried to merge a node with nullptr");
-        _ASSERT_EXPR(a != b, "Tried to merge a node with itself");
 
-        for (Wire* wire : b->m_wires)
-        {
-            if (wire->start == a || wire->end == a)
-            {
-                a->RemoveWire_Expected(wire);
-                delete wire;
-            }
-            else
-            {
-                if (wire->start == b)
-                {
-                    wire->start = a;
-                    a->AddWireOutput(wire);
-                }
-                else // wire->end == b
-                {
-                    wire->end = a;
-                    a->AddWireInput(wire);
-                }
-            }
-        }
-        FindAndErase_ExpectExisting(nodes, b);
-        delete b;
-        orderDirty = true;
-        return a;
-    }
+    // Wire functions
     Wire* CreateWire(Node* start, Node* end)
     {
         _ASSERT_EXPR(start != nullptr && end != nullptr, "Tried to create a wire to nullptr");
@@ -667,16 +639,6 @@ public:
         orderDirty = true;
         return wire;
     }
-    Wire* ReverseWire(Wire* wire)
-    {
-        std::swap(wire->start, wire->end);
-
-        wire->start->MakeWireOutput(wire);
-        wire->end->MakeWireInput(wire);
-
-        orderDirty = true;
-        return wire;
-    }
     void DestroyWire(Wire* wire)
     {
         Node* start = wire->start;
@@ -692,6 +654,47 @@ public:
             startNodes.push_back(end);
 
         orderDirty = true;
+    }
+    Node* MergeNodes(Node* composite, Node* tbRemoved)
+    {
+        _ASSERT_EXPR(!!composite && !!tbRemoved, "Tried to merge a node with nullptr");
+        _ASSERT_EXPR(composite != tbRemoved, "Tried to merge a node with itself");
+
+        for (Wire* wire : tbRemoved->m_wires)
+        {
+            if (wire->start == composite || wire->end == composite)
+            {
+                composite->RemoveWire_Expected(wire);
+                delete wire;
+            }
+            else
+            {
+                if (wire->start == tbRemoved)
+                {
+                    wire->start = composite;
+                    composite->AddWireOutput(wire);
+                }
+                else // wire->end == b
+                {
+                    wire->end = composite;
+                    composite->AddWireInput(wire);
+                }
+            }
+        }
+        FindAndErase_ExpectExisting(nodes, tbRemoved);
+        delete tbRemoved;
+        orderDirty = true;
+        return composite;
+    }
+    Wire* ReverseWire(Wire* wire)
+    {
+        std::swap(wire->start, wire->end);
+
+        wire->start->MakeWireOutput(wire);
+        wire->end->MakeWireInput(wire);
+
+        orderDirty = true;
+        return wire;
     }
 
     // Uses BFS
@@ -821,14 +824,14 @@ public:
     {
         for (Wire* wire : wires)
         {
-            wire->Draw(wire->start->m_state ? wire->g_wireColorActive : wire->g_wireColorInactive);
+            wire->Draw(wire->start->GetState() ? wire->g_wireColorActive : wire->g_wireColorInactive);
         }
     }
     void DrawNodes() const
     {
         for (Node* node : nodes)
         {
-            node->Draw(node->m_state ? node->g_nodeColorActive : node->g_nodeColorInactive);
+            node->Draw(node->GetState() ? node->g_nodeColorActive : node->g_nodeColorInactive);
         }
     }
 
