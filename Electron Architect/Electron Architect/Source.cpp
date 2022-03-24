@@ -449,7 +449,7 @@ private: // Helpers usable only by NodeWorld
         auto it = std::find(m_wires.begin(), m_wires.end(), wire);
         _ASSERT_EXPR(it != m_wires.end(), "Expected wire to be in node");
 
-        bool isInput = std::distance(m_wires.begin(), it) < m_inputs;
+        bool isInput = std::distance(m_wires.begin(), it) < static_cast<ptrdiff_t>(m_inputs);
 
         m_wires.erase(it);
 
@@ -467,7 +467,7 @@ private: // Helpers usable only by NodeWorld
         auto it = std::find(m_wires.begin(), m_wires.end(), wire);
         _ASSERT_EXPR(it != m_wires.end(), "Expected wire to be in node");
 
-        if (!(std::distance(m_wires.begin(), it) < m_inputs))
+        if (!(std::distance(m_wires.begin(), it) < static_cast<ptrdiff_t>(m_inputs)))
         {
             m_wires.erase(it);
             AddWireInput(wire);
@@ -479,7 +479,7 @@ private: // Helpers usable only by NodeWorld
         auto it = std::find(m_wires.begin(), m_wires.end(), wire);
         _ASSERT_EXPR(it != m_wires.end(), "Expected wire to be in node");
 
-        if (std::distance(m_wires.begin(), it) < m_inputs)
+        if (std::distance(m_wires.begin(), it) < static_cast<ptrdiff_t>(m_inputs))
         {
             m_wires.erase(it);
             AddWireOutput(wire);
