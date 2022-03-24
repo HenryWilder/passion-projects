@@ -445,6 +445,31 @@ private: // Helpers usable only by NodeWorld
             m_wires.push_front(wire);
     }
 
+    // Converts an existing wire
+    void MakeWireInput(Wire* wire)
+    {
+        auto it = std::find(m_wires.begin(), m_wires.end(), wire);
+        _ASSERT_EXPR(it != m_wires.end(), "Expected wire to be in node");
+
+        if (!(std::distance(m_wires.begin(), it) < m_inputs))
+        {
+            m_wires.erase(it);
+            AddWireInput(wire);
+        }
+    }
+    // Converts an existing wire
+    void MakeWireOutput(Wire* wire)
+    {
+        auto it = std::find(m_wires.begin(), m_wires.end(), wire);
+        _ASSERT_EXPR(it != m_wires.end(), "Expected wire to be in node");
+
+        if (std::distance(m_wires.begin(), it) < m_inputs)
+        {
+            m_wires.erase(it);
+            AddWireOutput(wire);
+        }
+    }
+
     // Expects the wire to exist; throws a debug exception if it is not found.
     void RemoveWire_Expected(Wire* wire)
     {
@@ -453,6 +478,40 @@ private: // Helpers usable only by NodeWorld
     void RemoveWire(Wire* wire)
     {
         FindAndErase(m_wires, wire);
+    }
+
+    std::deque<Wire*>::iterator Inputs_Begin()
+    {
+        return m_wires.begin();
+    }
+    std::deque<Wire*>::iterator Inputs_End()
+    {
+        return Inputs_Begin() + m_inputs;
+    }
+    std::deque<Wire*>::iterator Outputs_Begin()
+    {
+        return Inputs_End();
+    }
+    std::deque<Wire*>::iterator Outputs_End()
+    {
+        return m_wires.end();
+    }
+
+    std::deque<Wire*>::const_iterator Inputs_Begin() const
+    {
+        return m_wires.begin();
+    }
+    std::deque<Wire*>::const_iterator Inputs_End() const
+    {
+        return Inputs_Begin() + m_inputs;
+    }
+    std::deque<Wire*>::const_iterator Outputs_Begin() const
+    {
+        return Inputs_End();
+    }
+    std::deque<Wire*>::const_iterator Outputs_End() const
+    {
+        return m_wires.end();
     }
 
 private: // Accessible by NodeWorld
