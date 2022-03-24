@@ -386,7 +386,93 @@ void Wire::SnapElbowToLegal(IVec2 pos)
 class NodeWorld
 {
 private:
-    std::vector<Node*> nodes;
+    class BFS_Tree
+    {
+    public:
+        using LayerIterator_t = std::vector<std::vector<Node*>*>::iterator;
+        using NodeIterator_t = std::vector<Node*>::iterator;
+        using Iterator_t = std::pair<LayerIterator_t, NodeIterator_t>;
+
+        void Reserve_Layers(size_t count)
+        {
+
+        }
+        void Push_Layer()
+        {
+            data.push_back(new std::vector<Node*>);
+        }
+        // Returns layer pointer to be deleted or otherwise handled
+        std::vector<Node*>* Pop_Layer()
+        {
+            std::vector<Node*>* layerVec;
+            data.pop_back();
+            return layerVec;
+        }
+
+        void Push_Node(LayerIterator_t layer, Node* element)
+        {
+            (*layer)->push_back(element);
+        }
+        void Insert_Node(Iterator_t position, Node* element)
+        {
+            (*position.first)->insert(position.second, element);
+        }
+        Node* Erase_Node(Iterator_t position)
+        {
+            Node* node = *position.second;
+            (*position.first)->erase(position.second);
+            return node;
+        }
+
+        template<class _Pred> void For_Each(_Pred predicate)
+        {
+            for (std::vector<Node*>* layer : data)
+            {
+                for (Node* node : *layer)
+                {
+                    predicate(node);
+                }
+            }
+        }
+        // Breaks on predicate return true
+        template<class _Pred> void For_Each_With_Break(_Pred predicate)
+        {
+            for (std::vector<Node*>* layer : data)
+            {
+                for (Node* node : *layer)
+                {
+                    if (predicate(node))
+                        return;
+                }
+            }
+        }
+        // Returns iterator on predicate return true
+        template<class _Pred> Iterator_t For_Each_With_IterReturn(_Pred predicate)
+        {
+            LayerIterator_t it = { data.begin(), data[0]->begin() };
+            while (it.first != data.end())
+            {
+                std::vector<Node*>& layer = *(*it.first);
+                while (it.second != layer.end())
+                {
+                    if (predicate(node))
+                        return it.second;
+
+                    ++it.second;
+                }
+                ++it.first;
+            }
+        }
+
+        Iterator_t Find(Node* element)
+        {
+            return For_Each_With_IterReturn([&element](Node* node) { return node == element; });
+        }
+
+    private:
+        std::vector<std::vector<Node*>*> data;
+    };
+    BFS_Tree nodes;
     std::vector<Node*> startNodes;
     std::vector<Wire*> wires;
     bool orderDirty = false;
@@ -442,6 +528,7 @@ public:
         delete node;
         orderDirty = true;
     }
+    // Uses BFS insertion
     Node* MergeNodes(Node* a, Node* b)
     {
         _ASSERT_EXPR(!!a && !!b, "Tried to merge a node with nullptr");
@@ -452,7 +539,7 @@ public:
             if (wire->start != a && wire->end != a)
                 a->m_wires.push_back(wire);
 
-            if (wire->start == b)
+            if (wire->start == b) // Updating the layer of these might require recursion
                 wire->start = a;
             else // wire->end == b
                 wire->end = a;
@@ -472,6 +559,7 @@ public:
         return a;
     }
 
+    // Uses BFS insertion
     Wire* CreateWire(Node* start, Node* end)
     {
         _ASSERT_EXPR(start != nullptr && end != nullptr, "Tried to create a wire to nullptr");
@@ -485,8 +573,8 @@ public:
         }
 
         Wire* wire = new Wire(start, end);
-        wire->elbow.x = start->GetX();
-        wire->elbow.y = end->GetY();
+        wire->elbowConfig = 0;
+        wire->UpdateElbowToLegal();
         wires.push_back(wire);
         start->m_wires.push_back(wire);
         end->m_wires.push_back(wire);
@@ -499,12 +587,14 @@ public:
         orderDirty = true;
         return wire;
     }
+    // Uses BFS insertion
     Wire* ReverseWire(Wire* wire)
     {
         std::swap(wire->start, wire->end);
         orderDirty = true;
         return wire;
     }
+    // Uses BFS insertion
     void DestroyWire(Wire* wire)
     {
         FindAndErase_ExpectExisting(wires, wire);
