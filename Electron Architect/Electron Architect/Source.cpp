@@ -911,8 +911,7 @@ int main()
     *   Load textures, shaders, and meshes
     ******************************************/
 
-    enum class Mode
-    {
+    enum class Mode {
         PEN,
         EDIT,
     } mode;
@@ -920,21 +919,21 @@ int main()
     Texture2D modeIcons = LoadTexture("icons_mode.png");
     auto DrawModeIcon = [&modeIcons](Mode mode, Rectangle dest, Color tint)
     {
-        Rectangle src;
         constexpr float width = 16.0f;
+        Rectangle src{ 0,0,width,width };
         switch (mode)
         {
         case Mode::PEN:  src = { 0*width,0*width, width,width }; break;
         case Mode::EDIT: src = { 1*width,0*width, width,width }; break;
         }
-        DrawTexturePro(modeIcons, src, dest, { 0.5f,0.5f }, 0.0f, tint);
+        DrawTexturePro(modeIcons, src, dest, { 0,0 }, 0.0f, tint);
     };
 
     Texture2D gateIcons = LoadTexture("icons_gate.png");
-    auto DrawModeIcon = [&gateIcons](Gate gate, Rectangle dest, Color tint)
+    auto DrawGateIcon = [&gateIcons](Gate gate, Rectangle dest, Color tint)
     {
-        Rectangle src;
         constexpr float width = 16.0f;
+        Rectangle src{ 0,0,width,width };
         switch (gate)
         {
         case Gate::OR:  src = { 0*width,0*width, width,width }; break;
@@ -942,12 +941,13 @@ int main()
         case Gate::NOR: src = { 0*width,1*width, width,width }; break;
         case Gate::XOR: src = { 1*width,1*width, width,width }; break;
         }
-        DrawTexturePro(gateIcons, src, dest, { 0.5f,0.5f }, 0.0f, tint);
+        DrawTexturePro(gateIcons, src, dest, { 0,0 }, 0.0f, tint);
     };
 
     struct {
         Node* hoveredNode;
         Wire* hoveredWire;
+        Gate gatePick;
         union
         {
             struct {
@@ -968,6 +968,7 @@ int main()
 
     data.hoveredNode = nullptr;
     data.hoveredWire = nullptr;
+    data.gatePick = Gate::OR;
 
     auto SetMode = [&mode, &data](Mode newMode)
     {
@@ -1014,6 +1015,19 @@ int main()
             SetMode(Mode::PEN);
         else if (IsKeyPressed(KEY_V))
             SetMode(Mode::EDIT);
+        
+        // Holding shift
+        if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+        {
+            if (IsKeyPressed(KEY_BACKSLASH)) // |
+                data.gatePick = Gate::OR;
+            else if (IsKeyPressed(KEY_SEVEN)) // &
+                data.gatePick = Gate::AND;
+            else if (IsKeyPressed(KEY_ONE)) // !
+                data.gatePick = Gate::NOR;
+            else if (IsKeyPressed(KEY_SIX)) // ^
+                data.gatePick = Gate::XOR;
+        }
 
         switch (mode)
         {
@@ -1208,6 +1222,8 @@ int main()
                 break;
             }
 
+            DrawGateIcon(data.gatePick, { 0,0,16,16 }, WHITE);
+
         } EndDrawing();
     }
 
@@ -1215,7 +1231,8 @@ int main()
     *   Unload and free memory
     ******************************************/
 
-    // TODO: Unload variables
+    UnloadTexture(modeIcons);
+    UnloadTexture(gateIcons);
 
     CloseWindow();
 
