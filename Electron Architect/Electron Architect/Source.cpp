@@ -1042,7 +1042,7 @@ int main()
             {
                 Node* newNode = data.hoveredNode;
                 if (!newNode)
-                    newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
+                    newNode = NodeWorld::Get().CreateNode(cursorPos, data.gatePick);
 		        // Do not create a new node/wire if already hovering the start node
                 if (!!data.pen.currentWireStart && newNode != data.pen.currentWireStart)
                 {
