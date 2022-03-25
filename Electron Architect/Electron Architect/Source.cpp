@@ -635,7 +635,7 @@ public:
                 if (start == wire->start) // Wire already matches
                     return wire;
                 else if (start == wire->end) // Wire is reverse of existing
-                    return nullptr;
+                    return ReverseWire(wire);
             }
         }
 
@@ -705,10 +705,12 @@ public:
     Wire* ReverseWire(Wire* wire)
     {
         // Swap
-        std::swap(wire->start, wire->end);
+        Node* temp = wire->start;
+        wire->start = wire->end;
+        wire->end = temp;
 
-        wire->start->MakeWireOutput(wire);
-        wire->end->MakeWireInput(wire);
+        wire->start->MakeWireInput(wire);
+        wire->end->MakeWireOutput(wire);
 
         orderDirty = true;
         return wire;
@@ -717,14 +719,19 @@ public:
     // Uses BFS
     void Sort()
     {
-        nodes.clear();
-        nodes.reserve(nodes.size());
+        size_t total = nodes.size();
+        decltype(nodes) sorted;
+        sorted.reserve(total);
 
+        // Not needed as long as other functions keep track of start nodes like they should.
+        /*
+        startNodes.clear();
         for (Node* node : nodes)
         {
             if (node->IsInputOnly())
                 startNodes.push_back(node);
         }
+        */
 
         std::queue<Node*> list;
         std::unordered_set<Node*> visited;
@@ -734,21 +741,37 @@ public:
             visited.insert(node);
         }
 
-        while (!list.empty())
+        do
         {
-            Node* current = list.front();
-            for (Wire* wire : current->m_wires)
+            while (!list.empty())
             {
-                Node* next = wire->end;
-                if (next == current || visited.find(next) != visited.end())
-                    continue;
+                Node* current = list.front();
+                for (Wire* wire : current->m_wires)
+                {
+                    Node* next = wire->end;
+                    if (next == current || visited.find(next) != visited.end())
+                        continue;
 
-                visited.insert(next);
-                list.push(next);
+                    visited.insert(next);
+                    list.push(next);
+                }
+                nodes.push_back(current);
+                list.pop();
             }
-            nodes.push_back(current);
-            list.pop();
+
+            if (nodes.size() == total)
+                break;
+
+            auto it = std::find_if(nodes.begin(), nodes.end(), [&visited](Node* node) { return visited.find(node) == visited.end(); });
+            _ASSERT_EXPR(it != nodes.end(), "Node missing"); // We should have hit the break by this point if there was no unvisited node
+            Node* firstUnvisitedNode = *it;
+            startNodes.push_back(firstUnvisitedNode);
+            list.push(firstUnvisitedNode);
+            visited.insert(firstUnvisitedNode);
         }
+        while (nodes.size() < total);
+
+        nodes.swap(sorted);
 
         orderDirty = false;
     }
@@ -987,7 +1010,9 @@ int main()
                     newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
 		        // Do not create a new node/wire if already hovering the start node
                 if (!!data.pen.currentWireStart && newNode != data.pen.currentWireStart)
+                {
                     NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
+                }
                 data.pen.currentWireStart = newNode;
             }
             else if (!!GetKeyPressed() || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
