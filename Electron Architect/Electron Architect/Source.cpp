@@ -1016,9 +1016,9 @@ int main()
         else if (IsKeyPressed(KEY_V))
             SetMode(Mode::EDIT);
         
-        // Holding shift
-        if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
-        {
+        // Holding shift?
+        //if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+        //{
             if (IsKeyPressed(KEY_BACKSLASH)) // |
                 data.gatePick = Gate::OR;
             else if (IsKeyPressed(KEY_SEVEN)) // &
@@ -1027,7 +1027,7 @@ int main()
                 data.gatePick = Gate::NOR;
             else if (IsKeyPressed(KEY_SIX)) // ^
                 data.gatePick = Gate::XOR;
-        }
+        //}
 
         switch (mode)
         {
@@ -1222,7 +1222,8 @@ int main()
                 break;
             }
 
-            DrawGateIcon(data.gatePick, { 0,0,16,16 }, WHITE);
+            DrawModeIcon(mode, { 0,0,16,16 }, WHITE);
+            DrawGateIcon(data.gatePick, { 16,0,16,16 }, WHITE);
 
         } EndDrawing();
     }
