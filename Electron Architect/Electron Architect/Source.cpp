@@ -328,7 +328,7 @@ struct Wire
     }
 };
 
-enum class Gate
+enum class Gate : char
 {
     OR = '|',
     AND = '&',
@@ -916,6 +916,34 @@ int main()
         PEN,
         EDIT,
     } mode;
+
+    Texture2D modeIcons = LoadTexture("icons_mode.png");
+    auto DrawModeIcon = [&modeIcons](Mode mode, Rectangle dest, Color tint)
+    {
+        Rectangle src;
+        constexpr float width = 16.0f;
+        switch (mode)
+        {
+        case Mode::PEN:  src = { 0*width,0*width, width,width }; break;
+        case Mode::EDIT: src = { 1*width,0*width, width,width }; break;
+        }
+        DrawTexturePro(modeIcons, src, dest, { 0.5f,0.5f }, 0.0f, tint);
+    };
+
+    Texture2D gateIcons = LoadTexture("icons_gate.png");
+    auto DrawModeIcon = [&gateIcons](Gate gate, Rectangle dest, Color tint)
+    {
+        Rectangle src;
+        constexpr float width = 16.0f;
+        switch (gate)
+        {
+        case Gate::OR:  src = { 0*width,0*width, width,width }; break;
+        case Gate::AND: src = { 1*width,0*width, width,width }; break;
+        case Gate::NOR: src = { 0*width,1*width, width,width }; break;
+        case Gate::XOR: src = { 1*width,1*width, width,width }; break;
+        }
+        DrawTexturePro(gateIcons, src, dest, { 0.5f,0.5f }, 0.0f, tint);
+    };
 
     struct {
         Node* hoveredNode;
