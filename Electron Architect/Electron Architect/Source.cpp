@@ -719,19 +719,8 @@ public:
     // Uses BFS
     void Sort()
     {
-        size_t total = nodes.size();
         decltype(nodes) sorted;
-        sorted.reserve(total);
-
-        // Not needed as long as other functions keep track of start nodes like they should.
-        /*
-        startNodes.clear();
-        for (Node* node : nodes)
-        {
-            if (node->IsInputOnly())
-                startNodes.push_back(node);
-        }
-        */
+        sorted.reserve(nodes.size());
 
         std::queue<Node*> list;
         std::unordered_set<Node*> visited;
@@ -741,7 +730,12 @@ public:
             visited.insert(node);
         }
 
-        do
+        auto nodeIsUnvisited = [&visited](Node* node)
+        {
+            return visited.find(node) == visited.end();
+        };
+
+        while (true)
         {
             while (!list.empty())
             {
@@ -749,27 +743,26 @@ public:
                 for (Wire* wire : current->m_wires)
                 {
                     Node* next = wire->end;
-                    if (next == current || visited.find(next) != visited.end())
+                    if (next == current || !nodeIsUnvisited(next))
                         continue;
 
                     visited.insert(next);
                     list.push(next);
                 }
-                nodes.push_back(current);
+                sorted.push_back(current);
                 list.pop();
             }
 
-            if (nodes.size() == total)
+            
+            auto it = std::find_if(nodes.begin(), nodes.end(), nodeIsUnvisited);
+            if (it == nodes.end())
                 break;
 
-            auto it = std::find_if(nodes.begin(), nodes.end(), [&visited](Node* node) { return visited.find(node) == visited.end(); });
-            _ASSERT_EXPR(it != nodes.end(), "Node missing"); // We should have hit the break by this point if there was no unvisited node
             Node* firstUnvisitedNode = *it;
             startNodes.push_back(firstUnvisitedNode);
             list.push(firstUnvisitedNode);
             visited.insert(firstUnvisitedNode);
         }
-        while (nodes.size() < total);
 
         nodes.swap(sorted);
 
