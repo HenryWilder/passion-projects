@@ -954,7 +954,6 @@ int main()
         else if (IsKeyPressed(KEY_V))
             SetMode(Mode::EDIT);
 
-        // TODO: Find the spot where the wire gets made and remove reversal guard. That already gets taken care of in the CreateWire() function.
         switch (mode)
         {
         case Mode::PEN:
@@ -967,15 +966,14 @@ int main()
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 Node* newNode = data.hoveredNode;
-                do {
+		// Do not create a new node/wire if already hovering the start node
+		if (newNode != data.pen.currentWireStart)
+		{
                     if (!newNode)
                         newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
-                    else if (newNode == data.pen.currentWireStart)
-                        break;
-
                     if (!!data.pen.currentWireStart)
                         NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
-                } while (false);
+		}
                 data.pen.currentWireStart = newNode;
             }
             else if (!!GetKeyPressed() || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
