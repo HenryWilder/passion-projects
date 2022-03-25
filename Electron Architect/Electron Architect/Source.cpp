@@ -403,7 +403,7 @@ public:
     {
         return std::find_if(m_wires.begin(), m_wires.end(), [&other](Wire* wire) { return wire->start == other || wire->end == other; });
     }
-
+    
     size_t GetInputCount() const
     {
         return m_inputs;
@@ -423,10 +423,30 @@ public:
         DrawCircle(m_position.x, m_position.y, g_nodeRadius, color);
     }
 
+    bool WireIsInput(Wire* wire) const
+    {
+        return wire->end == this;
+    }
+    bool WireIsOutput(Wire* wire) const
+    {
+        return wire->start == this;
+    }
+
     // Only NodeWorld can play with a node's wires/state
     friend class NodeWorld;
 
 private: // Helpers usable only by NodeWorld
+
+    auto FindWireIter_Expected(Wire* wire)
+    {
+        auto it = std::find(m_wires.begin(), m_wires.end(), wire);
+        _ASSERT_EXPR(it != m_wires.end(), "Expected wire");
+        return it;
+    }
+    auto FindWireIter(Wire* wire)
+    {
+        return std::find(m_wires.begin(), m_wires.end(), wire);
+    }
 
     void SetState(bool state)
     {
@@ -444,56 +464,21 @@ private: // Helpers usable only by NodeWorld
     }
 
     // Expects the wire to exist; throws a debug exception if it is not found.
-    void SwapWireIO(Wire* wire)
-    {
-        auto it = std::find(m_wires.begin(), m_wires.end(), wire);
-        _ASSERT_EXPR(it != m_wires.end(), "Expected wire to be in node");
-
-        bool isInput = std::distance(m_wires.begin(), it) < static_cast<ptrdiff_t>(m_inputs);
-
-        m_wires.erase(it);
-
-        m_inputs = (m_inputs + isInput) - !isInput;
-
-        if (isInput)
-            m_wires.push_back(wire);
-        else // Is output
-            m_wires.push_front(wire);
-    }
-
-    // Converts an existing wire
-    void MakeWireInput(Wire* wire)
-    {
-        auto it = std::find(m_wires.begin(), m_wires.end(), wire);
-        _ASSERT_EXPR(it != m_wires.end(), "Expected wire to be in node");
-
-        if (!(std::distance(m_wires.begin(), it) < static_cast<ptrdiff_t>(m_inputs)))
-        {
-            m_wires.erase(it);
-            AddWireInput(wire);
-        }
-    }
-    // Converts an existing wire
-    void MakeWireOutput(Wire* wire)
-    {
-        auto it = std::find(m_wires.begin(), m_wires.end(), wire);
-        _ASSERT_EXPR(it != m_wires.end(), "Expected wire to be in node");
-
-        if (std::distance(m_wires.begin(), it) < static_cast<ptrdiff_t>(m_inputs))
-        {
-            m_wires.erase(it);
-            AddWireOutput(wire);
-        }
-    }
-
-    // Expects the wire to exist; throws a debug exception if it is not found.
     void RemoveWire_Expected(Wire* wire)
     {
-        FindAndErase_ExpectExisting(m_wires, wire);
+        m_wires.erase(FindWireIter_Expected(wire));
+        if (WireIsInput(wire))
+            m_inputs--;
     }
     void RemoveWire(Wire* wire)
     {
-        FindAndErase(m_wires, wire);
+        auto it = FindWireIter(wire);
+        if (it == m_wires.end())
+            return; // Success!
+
+        m_wires.erase(it);
+        if (WireIsInput(wire))
+            m_inputs--;
     }
 
     // Expects the wire to exist; throws a debug exception if it is not found.
@@ -508,6 +493,25 @@ private: // Helpers usable only by NodeWorld
         auto it = FindConnection(node);
         if (it != m_wires.end())
             m_wires.erase(it);
+    }
+
+    // Converts an existing wire
+    void MakeWireInput(Wire* wire)
+    {
+        if (WireIsInput(wire))
+            return; // Success!
+
+        RemoveWire_Expected(wire);
+        AddWireInput(wire);
+    }
+    // Converts an existing wire
+    void MakeWireOutput(Wire* wire)
+    {
+        if (WireIsOutput(wire))
+            return; // Success!
+
+        RemoveWire_Expected(wire);
+        AddWireOutput(wire);
     }
 
     auto Inputs_Begin()
@@ -540,6 +544,12 @@ private: // Accessible by NodeWorld
     bool m_state;
     size_t m_inputs;
     std::deque<Wire*> m_wires; // Please keep this partitioned by inputs vs outputs
+
+public:
+    bool IsValidConnection(decltype(m_wires)::const_iterator it) const
+    {
+        return it != m_wires.end();
+    }
 };
 
 IVec2 Wire::GetStartPos() const
@@ -617,11 +627,17 @@ public:
         _ASSERT_EXPR(start != end, "Cannot create self-reference wire");
 
         // Duplicate guard
-        auto it = end->FindConnection(start);
-        if (it < end->Inputs_End()) // start is input of end
-            return *it;
-        else if (it < end->Outputs_End()) // start is output of end
-            return ReverseWire(*it);
+        {
+            auto it = end->FindConnection(start);
+            if (end->IsValidConnection(it))
+            {
+                Wire* wire = *it;
+                if (start == wire->start) // Wire already matches
+                    return wire;
+                else if (start == wire->end) // Wire is reverse of existing
+                    return nullptr;
+            }
+        }
 
         Wire* wire = new Wire(start, end);
 
@@ -688,6 +704,7 @@ public:
     }
     Wire* ReverseWire(Wire* wire)
     {
+        // Swap
         std::swap(wire->start, wire->end);
 
         wire->start->MakeWireOutput(wire);
@@ -966,14 +983,11 @@ int main()
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 Node* newNode = data.hoveredNode;
-		// Do not create a new node/wire if already hovering the start node
-		if (newNode != data.pen.currentWireStart)
-		{
-                    if (!newNode)
-                        newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
-                    if (!!data.pen.currentWireStart)
-                        NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
-		}
+                if (!newNode)
+                    newNode = NodeWorld::Get().CreateNode(cursorPos, Gate::OR);
+		        // Do not create a new node/wire if already hovering the start node
+                if (!!data.pen.currentWireStart && newNode != data.pen.currentWireStart)
+                    NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
                 data.pen.currentWireStart = newNode;
             }
             else if (!!GetKeyPressed() || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
