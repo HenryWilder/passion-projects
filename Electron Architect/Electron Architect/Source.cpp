@@ -1078,13 +1078,13 @@ int main()
             SetMode(Mode::PEN);
         else if (IsKeyPressed(KEY_V))
             SetMode(Mode::EDIT);
-        else if (IsKeyPressed(KEY_X))
-            SetMode(Mode::ERASE);
         else if (IsKeyPressed(KEY_G))
         {
             SetMode(Mode::GATE);
             data.gate.radialMenuCenter = cursorPos;
         }
+        else if (IsKeyPressed(KEY_X))
+            SetMode(Mode::ERASE);
         
         if (IsKeyPressed(KEY_BACKSLASH)) // |
             data.gatePick = Gate::OR;
@@ -1216,6 +1216,15 @@ int main()
             {
                 SetMode(lastMode);
             }
+        }
+            break;
+
+        case Mode::ERASE:
+        {
+            data.hoveredWire = nullptr;
+            data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+            if (!data.hoveredNode)
+                data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
         }
             break;
         }
@@ -1381,6 +1390,39 @@ int main()
                 }
             }
             break;
+
+            case Mode::ERASE:
+            {
+                auto DrawCross = [](IVec2 center, Color color)
+                {
+                    int radius = 3;
+                    int expandedRad = radius + 1;
+                    DrawRectangle(center.x - expandedRad, center.y - expandedRad, expandedRad * 2, expandedRad * 2, BLACK);
+                    DrawLine(center.x - radius, center.y - radius,
+                             center.x + radius, center.y + radius,
+                             color);
+                    DrawLine(center.x - radius, center.y + radius,
+                             center.x + radius, center.y - radius,
+                             color);
+                };
+
+                NodeWorld::Get().DrawWires();
+
+                if (!!data.hoveredWire)
+                {
+                    data.hoveredWire->Draw(MAGENTA);
+                    DrawCross(cursorPos, RED);
+                }
+
+                NodeWorld::Get().DrawNodes();
+
+                if (!!data.hoveredNode)
+                {
+                    data.hoveredNode->Draw(BLACK);
+                    DrawCross(data.hoveredNode->GetPosition(), RED);
+                }
+            }
+                break;
             }
 
             if (mode == Mode::GATE)
