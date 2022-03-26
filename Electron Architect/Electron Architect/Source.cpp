@@ -93,8 +93,7 @@ struct IVec2
     IVec2() = default;
     constexpr IVec2(Int_t x, Int_t y) : x(x), y(y) {}
 
-    Int_t x;
-    Int_t y;
+    Int_t x, y;
 
     bool operator==(IVec2 b) const
     {
@@ -175,6 +174,14 @@ inline IVec2 IVec2Scale_f(float a, IVec2 b)
 {
     return IVec2Scale_f(b, a);
 }
+
+struct IRect
+{
+    IRect() = default;
+    constexpr IRect(Int_t x, Int_t y, Int_t w, Int_t h) : x(x), y(y), w(w), h(h) {}
+
+    Int_t x, y, w, h;
+};
 
 void DrawLineIV(IVec2 start, IVec2 end, Color color)
 {
@@ -914,6 +921,7 @@ int main()
     enum class Mode {
         PEN,
         EDIT,
+        GATE,
     } mode;
 
     Texture2D modeIcons = LoadTexture("icons_mode.png");
@@ -963,6 +971,12 @@ int main()
                 Int_t selectionRectangleWidth;
                 Int_t selectionRectangleHeight;
             } edit;
+
+            struct {
+                IVec2 radialMenuCenter;
+                IRect bounds[4];
+                uint8_t overlappedSection;
+            } gate;
         };
     } data;
 
@@ -989,7 +1003,12 @@ int main()
             data.edit.selectionRectangleHeight = 0;
             break;
 
-        default:
+        case Mode::GATE:
+            data.gate.radialMenuCenter = IVec2Zero();
+            for (IRect& rec : data.gate.bounds) {
+                rec = IRect(0, 0, 0, 0);
+            }
+            data.gate.overlappedSection = 0;
             break;
         }
     };
@@ -1015,19 +1034,20 @@ int main()
             SetMode(Mode::PEN);
         else if (IsKeyPressed(KEY_V))
             SetMode(Mode::EDIT);
+        else if (IsKeyPressed(KEY_G))
+        {
+            SetMode(Mode::GATE);
+            data.gate.radialMenuCenter = cursorPos;
+        }
         
-        // Holding shift?
-        //if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
-        //{
-            if (IsKeyPressed(KEY_BACKSLASH)) // |
-                data.gatePick = Gate::OR;
-            else if (IsKeyPressed(KEY_SEVEN)) // &
-                data.gatePick = Gate::AND;
-            else if (IsKeyPressed(KEY_ONE)) // !
-                data.gatePick = Gate::NOR;
-            else if (IsKeyPressed(KEY_SIX)) // ^
-                data.gatePick = Gate::XOR;
-        //}
+        if (IsKeyPressed(KEY_BACKSLASH)) // |
+            data.gatePick = Gate::OR;
+        else if (IsKeyPressed(KEY_SEVEN)) // &
+            data.gatePick = Gate::AND;
+        else if (IsKeyPressed(KEY_ONE)) // !
+            data.gatePick = Gate::NOR;
+        else if (IsKeyPressed(KEY_SIX)) // ^
+            data.gatePick = Gate::XOR;
 
         switch (mode)
         {
@@ -1121,6 +1141,12 @@ int main()
             {
                 data.edit.wireBeingDragged->SnapElbowToLegal(cursorPos);
             }
+        }
+            break;
+
+        case Mode::GATE:
+        {
+            
         }
             break;
         }
@@ -1220,6 +1246,55 @@ int main()
                 }
             }
                 break;
+
+            case Mode::GATE:
+            {
+                constexpr float menuRadius = 64.0f;
+                constexpr float menuHalfRadius = menuRadius / 2;
+                constexpr float menuHoleRadius = 16.0f;
+                constexpr int menuPos = 2;
+                constexpr int menuNeg = -2 - menuRadius;
+                constexpr IVec2 menuOff[4] = {
+                    IVec2(menuPos, menuPos),
+                    IVec2(menuPos, menuNeg),
+                    IVec2(menuNeg, menuNeg),
+                    IVec2(menuNeg, menuPos),
+                };
+                constexpr Rectangle iconDest[4] = {
+                    Rectangle{  menuHoleRadius,       menuHoleRadius,      32, 32 },
+                    Rectangle{  menuHoleRadius,      -menuHoleRadius - 32, 32, 32 },
+                    Rectangle{ -menuHoleRadius - 32, -menuHoleRadius - 32, 32, 32 },
+                    Rectangle{ -menuHoleRadius - 32,  menuHoleRadius,      32, 32 },
+                };
+                constexpr Gate gateOrder[4] = {
+                    Gate::XOR,
+                    Gate::AND,
+                    Gate::OR,
+                    Gate::NOR,
+                };
+                int x = data.gate.radialMenuCenter.x;
+                int y = data.gate.radialMenuCenter.y;
+                Vector2 centerVec{ x, y };
+                Color menuBackground = ColorAlpha(DARKGRAY, 0.4f);
+                DrawCircleV(centerVec, menuRadius + 4.0f, menuBackground);
+
+                for (int i = 0; i < 4; ++i)
+                {
+                    BeginScissorMode(x + menuOff[i].x, y + menuOff[i].y, menuRadius, menuRadius); {
+
+                        DrawCircleSector(centerVec, menuRadius, (float)(i * 90), (float)((i + 1) * 90), 8, GRAY);
+                        Rectangle rec = iconDest[i];
+                        rec.x += x;
+                        rec.y += y;
+                        DrawGateIcon(gateOrder[i], rec, WHITE);
+
+                    } EndScissorMode();
+                }
+
+                DrawCircleV(centerVec, menuHoleRadius, BLACK);
+                DrawCircleV(centerVec, menuHoleRadius, menuBackground);
+            }
+            break;
             }
 
             DrawModeIcon(mode, { 0,0,16,16 }, WHITE);
