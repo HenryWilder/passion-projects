@@ -23,7 +23,10 @@
     <Image Include="icons_mode.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="icons_gate.png">
+    <Image Include="icons_gate16x.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icon_gate32x.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

@@ -933,12 +933,13 @@ int main()
         {
         case Mode::PEN:  src = { 0*width,0*width, width,width }; break;
         case Mode::EDIT: src = { 1*width,0*width, width,width }; break;
+        case Mode::GATE: return;
         }
         DrawTexturePro(modeIcons, src, dest, { 0,0 }, 0.0f, tint);
     };
 
-    Texture2D gateIcons = LoadTexture("icons_gate.png");
-    auto DrawGateIcon = [&gateIcons](Gate gate, Rectangle dest, Color tint)
+    Texture2D gateIcons16x = LoadTexture("icons_gate16x.png");
+    auto DrawGateIcon16x = [&gateIcons16x](Gate gate, Rectangle dest, Color tint)
     {
         constexpr float width = 16.0f;
         Rectangle src{ 0,0,width,width };
@@ -949,7 +950,22 @@ int main()
         case Gate::NOR: src = { 0*width,1*width, width,width }; break;
         case Gate::XOR: src = { 1*width,1*width, width,width }; break;
         }
-        DrawTexturePro(gateIcons, src, dest, { 0,0 }, 0.0f, tint);
+        DrawTexturePro(gateIcons16x, src, dest, { 0,0 }, 0.0f, tint);
+    };
+    
+    Texture2D gateIcons32x = LoadTexture("icons_gate32x.png");
+    auto DrawGateIcon32x = [&gateIcons32x](Gate gate, Rectangle dest, Color tint)
+    {
+        constexpr float width = 32.0f;
+        Rectangle src{ 0,0,width,width };
+        switch (gate)
+        {
+        case Gate::OR:  src = { 0*width,0*width, width,width }; break;
+        case Gate::AND: src = { 1*width,0*width, width,width }; break;
+        case Gate::NOR: src = { 0*width,1*width, width,width }; break;
+        case Gate::XOR: src = { 1*width,1*width, width,width }; break;
+        }
+        DrawTexturePro(gateIcons32x, src, dest, { 0,0 }, 0.0f, tint);
     };
 
     struct {
@@ -1286,7 +1302,7 @@ int main()
                         Rectangle rec = iconDest[i];
                         rec.x += x;
                         rec.y += y;
-                        DrawGateIcon(gateOrder[i], rec, WHITE);
+                        DrawGateIcon32x(gateOrder[i], rec, WHITE);
 
                     } EndScissorMode();
                 }
@@ -1298,7 +1314,7 @@ int main()
             }
 
             DrawModeIcon(mode, { 0,0,16,16 }, WHITE);
-            DrawGateIcon(data.gatePick, { 16,0,16,16 }, WHITE);
+            DrawGateIcon16x(data.gatePick, { 16,0,16,16 }, WHITE);
 
         } EndDrawing();
     }
@@ -1308,7 +1324,8 @@ int main()
     ******************************************/
 
     UnloadTexture(modeIcons);
-    UnloadTexture(gateIcons);
+    UnloadTexture(gateIcons16x);
+    UnloadTexture(gateIcons32x);
 
     CloseWindow();
 
