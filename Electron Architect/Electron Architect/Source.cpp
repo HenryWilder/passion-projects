@@ -1,5 +1,6 @@
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 #include <queue>
 #include <algorithm>
 #include <raylib.h>
@@ -75,6 +76,20 @@ struct IVec2
         return x != b.x || y != b.y;
     }
 };
+
+namespace std
+{
+    template<>
+    struct hash<IVec2>
+    {
+        size_t operator()(const IVec2& k) const
+        {
+            size_t first  = hash<Int_t>{}(k.x);
+            size_t second = hash<Int_t>{}(k.y);
+            return first ^ (second << 1);
+        }
+    };
+}
 
 // Distance between points in an integer number of squares
 // I.E. a diagonal line is measured as the number of square-grid points it passes through, rather than the length of its hypotenuse
@@ -294,9 +309,9 @@ struct Wire
         IVec2 legal[4];
         GetLegalElbowPositions(legal);
 
-        size_t pick = 0;
+        decltype(elbowConfig) pick = 0;
         long shortestDist = LONG_MAX;
-        for (size_t i = 0; i < 4; ++i)
+        for (decltype(pick) i = 0; i < 4; ++i)
         {
             long dist = DistanceSqr(pos, legal[i]);
             if (dist < shortestDist)
@@ -325,17 +340,14 @@ public:
     {
         return m_position;
     }
-    void SetPosition(IVec2 position)
-    {
-        m_position = position;
-    }
+    void SetPosition(IVec2 position);
     Int_t GetX() const
     {
         return m_position.x;
     }
     void SetX(Int_t x)
     {
-        m_position.x = x;
+        SetPosition(IVec2(x, GetY()));
     }
     Int_t GetY() const
     {
@@ -343,7 +355,7 @@ public:
     }
     void SetY(Int_t y)
     {
-        m_position.y = y;
+        SetPosition(IVec2(GetX(), y));
     }
 
     Gate GetGate() const
@@ -401,22 +413,23 @@ public:
 
     static void Draw(IVec2 position, Gate gate, Color color)
     {
+        constexpr Int_t nodeRadius = static_cast<int>(g_nodeRadius);
         switch (gate)
         {
         case Gate::OR:
-            DrawCircle(position.x, position.y, g_nodeRadius, color);
+            DrawCircle(position.x, position.y, nodeRadius, color);
             break;
         case Gate::AND:
-            DrawRectangle(position.x - g_nodeRadius, position.y - g_nodeRadius, g_nodeRadius * 2, g_nodeRadius * 2, color);
+            DrawRectangle(position.x - nodeRadius, position.y - nodeRadius, nodeRadius * 2, nodeRadius * 2, color);
             break;
         case Gate::NOR:
-            DrawCircle(position.x, position.y, g_nodeRadius, color);
-            DrawCircle(position.x, position.y, g_nodeRadius - 1.0f, BLACK);
+            DrawCircle(position.x, position.y, nodeRadius, color);
+            DrawCircle(position.x, position.y, nodeRadius - 1.0f, BLACK);
             break;
         case Gate::XOR:
-            DrawCircle(position.x, position.y, g_nodeRadius + 1.0f, color);
-            DrawCircle(position.x, position.y, g_nodeRadius, BLACK);
-            DrawCircle(position.x, position.y, g_nodeRadius - 1.0f, color);
+            DrawCircle(position.x, position.y, nodeRadius + 1.0f, color);
+            DrawCircle(position.x, position.y, nodeRadius, BLACK);
+            DrawCircle(position.x, position.y, nodeRadius - 1.0f, color);
             break;
         }
     }
@@ -569,6 +582,7 @@ class NodeWorld
 {
 private:
     std::vector<Node*> nodes;
+    std::unordered_map<IVec2, Node*> nodeGrid;
     std::vector<Node*> startNodes;
     std::vector<Wire*> wires; // Inputs/outputs don't exist here
     bool orderDirty = false;
@@ -599,6 +613,7 @@ public:
         Node* node = new Node(position, gate);
         nodes.insert(nodes.begin(), node);
         startNodes.push_back(node);
+        nodeGrid.emplace(position, node);
         // The order is not dirty at this time due to the node having no connections yet
         return node;
     }
@@ -624,8 +639,18 @@ public:
         }
         FindAndErase_ExpectExisting(nodes, node);
         FindAndErase(startNodes, node);
+        nodeGrid.erase(node->GetPosition());
         delete node;
         orderDirty = true;
+    }
+    void MoveNode(Node* node, IVec2 newPosition)
+    {
+        if (newPosition == node->GetPosition())
+            return;
+
+        nodeGrid.erase(node->GetPosition());
+        node->SetPosition(newPosition);
+        nodeGrid.emplace(newPosition, node);
     }
 
     // Wire functions
@@ -878,9 +903,9 @@ public:
 
     Node* FindNodeAtPos(IVec2 pos) const
     {
-        auto it = std::find_if(nodes.begin(), nodes.end(), [&pos](Node* node) { return node->GetPosition() == pos; });
-        if (it != nodes.end())
-            return *it;
+        auto it = nodeGrid.find(pos);
+        if (it != nodeGrid.end())
+            return it->second;
         return nullptr;
     }
     Wire* FindWireAtPos(IVec2 pos) const
@@ -905,6 +930,11 @@ public:
         return nullptr;
     }
 };
+
+void Node::SetPosition(IVec2 position)
+{
+    NodeWorld::Get().MoveNode(this, position);
+}
 
 int main()
 {
@@ -1357,29 +1387,29 @@ int main()
                 }
 
                 constexpr float menuRadius = 64.0f;
-                constexpr float menuHalfRadius = menuRadius / 2;
-                constexpr float menuHoleRadius = 16.0f;
+                constexpr Int_t menuIntRadius = static_cast<Int_t>(menuRadius);
+                constexpr float menuIconOffset = 12.0f;
                 constexpr IVec2 menuOff[4] = {
-                    IVec2( 4,               4             ),
-                    IVec2( 4,              -4 - menuRadius),
-                    IVec2(-4 - menuRadius, -4 - menuRadius),
-                    IVec2(-4 - menuRadius,  4             ),
+                    IVec2( 4,                  4                ),
+                    IVec2( 4,                 -4 - menuIntRadius),
+                    IVec2(-4 - menuIntRadius, -4 - menuIntRadius),
+                    IVec2(-4 - menuIntRadius,  4                ),
                 };
                 constexpr IVec2 menuOff_hover[4] = {
-                    IVec2(0,                    0                   ),
-                    IVec2(0,                    0 - (menuRadius + 4)),
-                    IVec2(0 - (menuRadius + 4), 0 - (menuRadius + 4)),
-                    IVec2(0 - (menuRadius + 4), 0                   ),
+                    IVec2(0,                       0                      ),
+                    IVec2(0,                       0 - (menuIntRadius + 4)),
+                    IVec2(0 - (menuIntRadius + 4), 0 - (menuIntRadius + 4)),
+                    IVec2(0 - (menuIntRadius + 4), 0                      ),
                 };
                 constexpr Rectangle iconDest[4] = {
-                    Rectangle{  menuHoleRadius * 3 / 4,       menuHoleRadius * 3 / 4,      32, 32 },
-                    Rectangle{  menuHoleRadius * 3 / 4,      -menuHoleRadius * 3 / 4 - 32, 32, 32 },
-                    Rectangle{ -menuHoleRadius * 3 / 4 - 32, -menuHoleRadius * 3 / 4 - 32, 32, 32 },
-                    Rectangle{ -menuHoleRadius * 3 / 4 - 32,  menuHoleRadius * 3 / 4,      32, 32 },
+                    Rectangle{  menuIconOffset,          menuIconOffset,         32.0f, 32.0f },
+                    Rectangle{  menuIconOffset,         -menuIconOffset - 32.0f, 32.0f, 32.0f },
+                    Rectangle{ -menuIconOffset - 32.0f, -menuIconOffset - 32.0f, 32.0f, 32.0f },
+                    Rectangle{ -menuIconOffset - 32.0f,  menuIconOffset,         32.0f, 32.0f },
                 };
                 int x = data.gate.radialMenuCenter.x;
                 int y = data.gate.radialMenuCenter.y;
-                Vector2 centerVec{ x, y };
+                Vector2 centerVec{ static_cast<float>(x), static_cast<float>(y) };
                 Color menuBackground = ColorAlpha(DARKGRAY, 0.4f);
                 DrawCircleV(centerVec, menuRadius + 4.0f, menuBackground);
 
@@ -1394,14 +1424,14 @@ int main()
                         colorA = WHITE;
                         colorB = BLUE;
                         radius = menuRadius + 4.0f;
-                        BeginScissorMode(x + menuOff_hover[i].x, y + menuOff_hover[i].y, radius, radius);
+                        BeginScissorMode(x + menuOff_hover[i].x, y + menuOff_hover[i].y, static_cast<int>(radius), static_cast<int>(radius));
                     }
                     else
                     {
                         colorA = GRAY;
                         colorB = WHITE;
                         radius = menuRadius;
-                        BeginScissorMode(x + menuOff[i].x, y + menuOff[i].y, radius, radius);
+                        BeginScissorMode(x + menuOff[i].x, y + menuOff[i].y, static_cast<int>(radius), static_cast<int>(radius));
                     }
 
                     float startAngle = static_cast<float>(i * 90);
