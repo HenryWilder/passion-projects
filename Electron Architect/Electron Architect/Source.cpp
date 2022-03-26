@@ -937,6 +937,7 @@ int main()
         PEN,
         EDIT,
         GATE,
+        ERASE,
     } mode, lastMode;
 
     Texture2D modeIcons = LoadTexture("icons_mode.png");
@@ -946,9 +947,10 @@ int main()
         Rectangle src{ 0,0,width,width };
         switch (mode)
         {
-        case Mode::PEN:  src = { 0*width,0*width, width,width }; break;
-        case Mode::EDIT: src = { 1*width,0*width, width,width }; break;
-        case Mode::GATE: src = { 1*width,0*width, width,width }; break;
+        case Mode::PEN:   src = { 0*width,0*width, width,width }; break;
+        case Mode::EDIT:  src = { 1*width,0*width, width,width }; break;
+        case Mode::GATE:  return;
+        case Mode::ERASE: src = { 0*width,1*width, width,width }; break;
         }
         DrawTexturePro(modeIcons, src, dest, { 0,0 }, 0.0f, tint);
     };
@@ -1007,6 +1009,9 @@ int main()
                 IVec2 radialMenuCenter;
                 uint8_t overlappedSection;
             } gate;
+
+            struct {
+            } erase;
         };
     } data;
 
@@ -1045,6 +1050,9 @@ int main()
             data.gate.radialMenuCenter = IVec2Zero();
             data.gate.overlappedSection = 0;
             break;
+        
+        case Mode::ERASE:
+            break;
         }
     };
 
@@ -1070,6 +1078,8 @@ int main()
             SetMode(Mode::PEN);
         else if (IsKeyPressed(KEY_V))
             SetMode(Mode::EDIT);
+        else if (IsKeyPressed(KEY_X))
+            SetMode(Mode::ERASE);
         else if (IsKeyPressed(KEY_G))
         {
             SetMode(Mode::GATE);
