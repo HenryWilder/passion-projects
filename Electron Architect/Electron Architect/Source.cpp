@@ -630,15 +630,19 @@ public:
 
             if (start == node)
             {
+                end->RemoveWire_Expected(wire);
+
                 if (end->IsInputOnly())
                     startNodes.push_back(end);
-
-                end->RemoveConnection_Expected(start);
             }
             else // wire->end == node
-                start->RemoveConnection_Expected(end);
+                start->RemoveWire_Expected(wire);
+
+            FindAndErase_ExpectExisting(wires, wire);
+            delete wire;
         }
         FindAndErase_ExpectExisting(nodes, node);
+        FindAndErase(startNodes, node);
         delete node;
         orderDirty = true;
     }
@@ -1225,6 +1229,17 @@ int main()
             data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
             if (!data.hoveredNode)
                 data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
+                if (!!data.hoveredNode)
+                    NodeWorld::Get().DestroyNode(data.hoveredNode);
+                else if (!!data.hoveredWire)
+                    NodeWorld::Get().DestroyWire(data.hoveredWire);
+
+                data.hoveredNode = nullptr;
+                data.hoveredWire = nullptr;
+            }
         }
             break;
         }
