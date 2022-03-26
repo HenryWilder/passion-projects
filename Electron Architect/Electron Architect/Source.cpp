@@ -921,7 +921,7 @@ int main()
         PEN,
         EDIT,
         GATE,
-    } mode;
+    } mode, lastMode;
 
     Texture2D modeIcons = LoadTexture("icons_mode.png");
     auto DrawModeIcon = [&modeIcons](Mode mode, Rectangle dest, Color tint)
@@ -998,8 +998,16 @@ int main()
     data.hoveredWire = nullptr;
     data.gatePick = Gate::OR;
 
-    auto SetMode = [&mode, &data](Mode newMode)
+    static constexpr Gate radialGateOrder[4] = {
+        Gate::XOR,
+        Gate::AND,
+        Gate::OR,
+        Gate::NOR,
+    };
+
+    auto SetMode = [&lastMode, &mode, &data](Mode newMode)
     {
+        lastMode = mode;
         mode = newMode;
         switch (newMode)
         {
@@ -1024,6 +1032,7 @@ int main()
         }
     };
 
+    mode = Mode::PEN;
     SetMode(Mode::PEN);
 
     NodeWorld::Get(); // Construct
@@ -1157,7 +1166,30 @@ int main()
 
         case Mode::GATE:
         {
-            
+            if (cursorPos.x < data.gate.radialMenuCenter.x)
+            {
+                if (cursorPos.y < data.gate.radialMenuCenter.y)
+                    data.gate.overlappedSection = 2;
+                else // cursorPos.y > data.gate.radialMenuCenter.y
+                    data.gate.overlappedSection = 3;
+            }
+            else // cursorPos.x > data.gate.radialMenuCenter.x
+            {
+                if (cursorPos.y < data.gate.radialMenuCenter.y)
+                    data.gate.overlappedSection = 1;
+                else // cursorPos.y > data.gate.radialMenuCenter.y
+                    data.gate.overlappedSection = 0;
+            }
+
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
+                data.gatePick = radialGateOrder[data.gate.overlappedSection];
+                SetMode(lastMode);
+            }
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+            {
+                SetMode(lastMode);
+            }
         }
             break;
         }
@@ -1260,28 +1292,30 @@ int main()
 
             case Mode::GATE:
             {
+                NodeWorld::Get().DrawWires();
+                NodeWorld::Get().DrawNodes();
+
+
                 constexpr float menuRadius = 64.0f;
                 constexpr float menuHalfRadius = menuRadius / 2;
                 constexpr float menuHoleRadius = 16.0f;
-                constexpr int menuPos = 2;
-                constexpr int menuNeg = -2 - menuRadius;
                 constexpr IVec2 menuOff[4] = {
-                    IVec2(menuPos, menuPos),
-                    IVec2(menuPos, menuNeg),
-                    IVec2(menuNeg, menuNeg),
-                    IVec2(menuNeg, menuPos),
+                    IVec2( 4,               4             ),
+                    IVec2( 4,              -4 - menuRadius),
+                    IVec2(-4 - menuRadius, -4 - menuRadius),
+                    IVec2(-4 - menuRadius,  4             ),
+                };
+                constexpr IVec2 menuOff_hover[4] = {
+                    IVec2(0,                    0                   ),
+                    IVec2(0,                    0 - (menuRadius + 4)),
+                    IVec2(0 - (menuRadius + 4), 0 - (menuRadius + 4)),
+                    IVec2(0 - (menuRadius + 4), 0                   ),
                 };
                 constexpr Rectangle iconDest[4] = {
-                    Rectangle{  menuHoleRadius,       menuHoleRadius,      32, 32 },
-                    Rectangle{  menuHoleRadius,      -menuHoleRadius - 32, 32, 32 },
-                    Rectangle{ -menuHoleRadius - 32, -menuHoleRadius - 32, 32, 32 },
-                    Rectangle{ -menuHoleRadius - 32,  menuHoleRadius,      32, 32 },
-                };
-                constexpr Gate gateOrder[4] = {
-                    Gate::XOR,
-                    Gate::AND,
-                    Gate::OR,
-                    Gate::NOR,
+                    Rectangle{  menuHoleRadius * 3 / 4,       menuHoleRadius * 3 / 4,      32, 32 },
+                    Rectangle{  menuHoleRadius * 3 / 4,      -menuHoleRadius * 3 / 4 - 32, 32, 32 },
+                    Rectangle{ -menuHoleRadius * 3 / 4 - 32, -menuHoleRadius * 3 / 4 - 32, 32, 32 },
+                    Rectangle{ -menuHoleRadius * 3 / 4 - 32,  menuHoleRadius * 3 / 4,      32, 32 },
                 };
                 int x = data.gate.radialMenuCenter.x;
                 int y = data.gate.radialMenuCenter.y;
@@ -1291,19 +1325,34 @@ int main()
 
                 for (int i = 0; i < 4; ++i)
                 {
-                    BeginScissorMode(x + menuOff[i].x, y + menuOff[i].y, menuRadius, menuRadius); {
+                    Color colorA;
+                    Color colorB;
+                    float radius;
 
-                        DrawCircleSector(centerVec, menuRadius, (float)(i * 90), (float)((i + 1) * 90), 8, GRAY);
-                        Rectangle rec = iconDest[i];
-                        rec.x += x;
-                        rec.y += y;
-                        DrawGateIcon32x(gateOrder[i], rec, WHITE);
+                    if (i == data.gate.overlappedSection)
+                    {
+                        colorA = WHITE;
+                        colorB = BLUE;
+                        radius = menuRadius + 4.0f;
+                        BeginScissorMode(x + menuOff_hover[i].x, y + menuOff_hover[i].y, radius, radius);
+                    }
+                    else
+                    {
+                        colorA = GRAY;
+                        colorB = WHITE;
+                        radius = menuRadius;
+                        BeginScissorMode(x + menuOff[i].x, y + menuOff[i].y, radius, radius);
+                    }
 
-                    } EndScissorMode();
+                    float startAngle = static_cast<float>(i * 90);
+                    DrawCircleSector(centerVec, radius, startAngle, startAngle + 90.0f, 8, colorA);
+                    Rectangle rec = iconDest[i];
+                    rec.x += x;
+                    rec.y += y;
+                    DrawGateIcon32x(radialGateOrder[i], rec, colorB);
+
+                    EndScissorMode();
                 }
-
-                DrawCircleV(centerVec, menuHoleRadius, BLACK);
-                DrawCircleV(centerVec, menuHoleRadius, menuBackground);
             }
             break;
             }
