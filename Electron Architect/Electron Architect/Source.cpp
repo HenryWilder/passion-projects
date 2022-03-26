@@ -1443,7 +1443,35 @@ int main()
             {
                 if (!!data.button.dropdownActive && InBoundingBox(*data.button.dropdownActive, cursorPos))
                 {
-                    
+                    IRect rec = *data.button.dropdownActive;
+                    rec.w = rec.h = 16;
+                    if (data.button.dropdownActive == (dropdowns + 0))
+                    {
+                        if (InBoundingBox(rec, cursorPos))
+                            SetMode(Mode::PEN);
+                        rec.y += 16;
+                        if (InBoundingBox(rec, cursorPos))
+                            SetMode(Mode::EDIT);
+                        rec.y += 16;
+                        if (InBoundingBox(rec, cursorPos))
+                            SetMode(Mode::ERASE);
+                    }
+                    else if (data.button.dropdownActive == (dropdowns + 1))
+                    {
+                        if (InBoundingBox(rec, cursorPos))
+                            data.gatePick = Gate::OR;
+                        rec.y += 16;
+                        if (InBoundingBox(rec, cursorPos))
+                            data.gatePick = Gate::AND;
+                        rec.y += 16;
+                        if (InBoundingBox(rec, cursorPos))
+                            data.gatePick = Gate::NOR;
+                        rec.y += 16;
+                        if (InBoundingBox(rec, cursorPos))
+                            data.gatePick = Gate::XOR;
+
+                        SetMode(lastMode);
+                    }
                 }
             }
             else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
