@@ -413,6 +413,15 @@ public:
         return m_position;
     }
     void SetPosition(IVec2 position);
+    // Moves the node without updating its collision
+    void SetPosition_Temporary(IVec2 position)
+    {
+        m_position = position;
+        for (Wire* wire : m_wires)
+        {
+            wire->UpdateElbowToLegal(); // Keep current configuration but move the elbow
+        }
+    }
     Int_t GetX() const
     {
         return m_position.x;
@@ -672,6 +681,63 @@ private:
         }
     }
 
+private: // Internal
+    Node* _CreateNode(Node&& base)
+    {
+        Node* node = new Node(base);
+        nodes.insert(nodes.begin(), node);
+        startNodes.push_back(node);
+        nodeGrid.emplace(base.m_position, node);
+    }
+    void _ClearNodeReferences(Node* node)
+    {
+        for (auto it = node->Inputs_Begin(); it != node->Inputs_End(); ++it)
+        {
+            Wire* input = *it;
+            input->start->RemoveWire_Expected(input);
+            _DestroyWire(input);
+        }
+        for (auto it = node->Outputs_Begin(); it != node->Outputs_End(); ++it)
+        {
+            Wire* output = *it;
+            output->end->RemoveWire_Expected(output);
+            _DestroyWire(output);
+        }
+        orderDirty = true;
+    }
+    void _DestroyNode(Node* node)
+    {
+        FindAndErase_ExpectExisting(nodes, node);
+        FindAndErase(startNodes, node);
+        auto it = nodeGrid.find(node->m_position);
+        if (it != nodeGrid.end() && it->second == node)
+            nodeGrid.erase(it);
+        delete node;
+        orderDirty = true;
+    }
+
+    Wire* _CreateWire(Wire&& base)
+    {
+        Wire* wire = new Wire(base);
+        wires.push_back(wire);
+        return wire;
+    }
+    void _ClearWireReferences(Wire* wire)
+    {
+        wire->start->RemoveWire_Expected(wire);
+        wire->end->RemoveWire_Expected(wire);
+        // Push end to start nodes if this has destroyed its last remaining input
+        if (wire->end->IsInputOnly())
+            startNodes.push_back(wire->end);
+        orderDirty = true;
+    }
+    void _DestroyWire(Wire* wire)
+    {
+        FindAndErase_ExpectExisting(wires, wire);
+        delete wire;
+        orderDirty = true;
+    }
+
 public:
     static NodeWorld& Get()
     {
@@ -682,12 +748,8 @@ public:
     // Node functions
     Node* CreateNode(IVec2 position, Gate gate)
     {
-        Node* node = new Node(position, gate);
-        nodes.insert(nodes.begin(), node);
-        startNodes.push_back(node);
-        nodeGrid.emplace(position, node);
         // The order is not dirty at this time due to the node having no connections yet
-        return node;
+        return _CreateNode(Node(position, gate));
     }
     void DestroyNode(Node* node)
     {
@@ -717,11 +779,7 @@ public:
     }
     void MoveNode(Node* node, IVec2 newPosition)
     {
-        if (newPosition == node->GetPosition())
-            return;
-
         nodeGrid.erase(node->GetPosition());
-        node->SetPosition(newPosition);
         nodeGrid.emplace(newPosition, node);
     }
 
@@ -744,12 +802,10 @@ public:
             }
         }
 
-        Wire* wire = new Wire(start, end);
+        Wire* wire = _CreateWire(Wire(start, end));
 
         wire->elbowConfig = 0;
         wire->UpdateElbowToLegal();
-
-        wires.push_back(wire);
 
         start->AddWireOutput(wire);
         end->AddWireInput(wire);
@@ -762,17 +818,8 @@ public:
     }
     void DestroyWire(Wire* wire)
     {
-        Node* start = wire->start;
-        Node* end = wire->end;
-
-        FindAndErase_ExpectExisting(wires, wire);
-        start->RemoveWire_Expected(wire);
-        end->RemoveWire_Expected(wire);
-        delete wire;
-
-        // Push end to start nodes if this has destroyed its last remaining input
-        if (end->IsInputOnly())
-            startNodes.push_back(end);
+        _ClearWireReferences(wire);
+        _DestroyWire(wire);
 
         orderDirty = true;
     }
@@ -919,6 +966,12 @@ public:
                 break;
 
             case Gate::AND:
+                if (node->m_inputs == 0)
+                {
+                    node->m_state = false;
+                    break;
+                }
+
                 node->m_state = true;
                 for (Wire* wire : node->m_wires)
                 {
@@ -1006,6 +1059,7 @@ public:
 void Node::SetPosition(IVec2 position)
 {
     NodeWorld::Get().MoveNode(this, position);
+    SetPosition_Temporary(position);
 }
 
 int main()
@@ -1084,9 +1138,10 @@ int main()
             } pen;
 
             struct {
+                IVec2 fallbackPos;
+                bool selectionWIP;
                 Node* nodeBeingDragged;
                 Wire* wireBeingDragged;
-                bool selectionWIP;
                 Int_t selectionRectangleX;
                 Int_t selectionRectangleY;
                 Int_t selectionRectangleWidth;
@@ -1118,9 +1173,10 @@ int main()
             break;
 
         case Mode::EDIT:
+            data.edit.fallbackPos = IVec2Zero();
+            data.edit.selectionWIP = false;
             data.edit.nodeBeingDragged = nullptr;
             data.edit.wireBeingDragged = nullptr;
-            data.edit.selectionWIP = false;
             data.edit.selectionRectangleX = 0;
             data.edit.selectionRectangleY = 0;
             data.edit.selectionRectangleWidth = 0;
@@ -1237,21 +1293,36 @@ int main()
                     data.edit.selectionRectangleY = cursorPos.y;
                     data.edit.selectionWIP = true;
                 }
+                data.edit.fallbackPos = cursorPos;
             }
             // Release
-            else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+            else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)))
             {
                 if (!!data.edit.nodeBeingDragged)
                 {
-                    data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-                    if (data.hoveredNode && data.edit.nodeBeingDragged != data.hoveredNode)
-                        data.hoveredNode = NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
+                    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+                    {
+                        data.edit.nodeBeingDragged->SetPosition(data.edit.fallbackPos);
+                    }
+                    else
+                    {
+                        data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+                        if (data.hoveredNode && data.edit.nodeBeingDragged != data.hoveredNode)
+                            NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
+
+                        data.edit.nodeBeingDragged->SetPosition(cursorPos);
+                        data.hoveredNode = data.edit.nodeBeingDragged;
+                    }
                 }
 
                 data.edit.nodeBeingDragged = nullptr;
                 data.edit.wireBeingDragged = nullptr;
                 lastFrameUpdate = data.edit.selectionWIP;
                 data.edit.selectionWIP = false;
+            }
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!data.hoveredNode)
+            {
+                data.hoveredNode->SetGate(data.gatePick);
             }
 
             // Selection
@@ -1265,11 +1336,7 @@ int main()
             // Node
             else if (!!data.edit.nodeBeingDragged)
             {
-                data.edit.nodeBeingDragged->SetPosition(cursorPos);
-                for (Wire* wire : data.edit.nodeBeingDragged->GetWires())
-                {
-                    wire->UpdateElbowToLegal(); // Keep current configuration but move the elbow
-                }
+                data.edit.nodeBeingDragged->SetPosition_Temporary(cursorPos);
             }
 
             // Wire
