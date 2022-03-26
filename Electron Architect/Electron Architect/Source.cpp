@@ -688,6 +688,7 @@ private: // Internal
         nodes.insert(nodes.begin(), node);
         startNodes.push_back(node);
         nodeGrid.emplace(base.m_position, node);
+        return node;
     }
     void _ClearNodeReferences(Node* node)
     {
@@ -1077,8 +1078,9 @@ int main()
     enum class Mode {
         PEN,
         EDIT,
-        GATE,
         ERASE,
+        GATE,
+        BUTTON,
     } mode, lastMode;
 
     Texture2D modeIcons = LoadTexture("icons_mode.png");
@@ -1088,10 +1090,10 @@ int main()
         Rectangle src{ 0,0,width,width };
         switch (mode)
         {
-        case Mode::PEN:   src = { 0*width,0*width, width,width }; break;
-        case Mode::EDIT:  src = { 1*width,0*width, width,width }; break;
-        case Mode::GATE:  return;
-        case Mode::ERASE: src = { 0*width,1*width, width,width }; break;
+        case Mode::PEN:    src = { 0*width,0*width, width,width }; break;
+        case Mode::EDIT:   src = { 1*width,0*width, width,width }; break;
+        case Mode::ERASE:  src = { 0*width,1*width, width,width }; break;
+        default: return;
         }
         DrawTexturePro(modeIcons, src, dest, { 0,0 }, 0.0f, tint);
     };
@@ -1126,11 +1128,17 @@ int main()
         DrawTexturePro(gateIcons32x, src, dest, { 0,0 }, 0.0f, tint);
     };
 
+    constexpr IRect dropdowns[]
+    {
+        IRect(0,16,16,16*3),
+        IRect(16,16,16,16*4),
+    };
+
     struct {
         Node* hoveredNode = nullptr;
         Wire* hoveredWire = nullptr;
         Gate gatePick = Gate::OR;
-        union
+        union // Base mode
         {
             struct {
                 Node* currentWireStart;
@@ -1147,11 +1155,21 @@ int main()
                 Int_t selectionRectangleWidth;
                 Int_t selectionRectangleHeight;
             } edit;
+
+            struct {
+            } erase;
         };
-        struct {
-            IVec2 radialMenuCenter = IVec2Zero();
-            uint8_t overlappedSection = 0;
-        } gate;
+        union // Overlay mode - doesn't affect other modes
+        {
+            struct {
+                IVec2 radialMenuCenter;
+                uint8_t overlappedSection;
+            } gate;
+
+            struct {
+                const IRect* dropdownActive;
+            } button;
+        };
     } data;
 
     static constexpr Gate radialGateOrder[4] = {
@@ -1163,16 +1181,17 @@ int main()
 
     auto SetMode = [&lastMode, &mode, &data](Mode newMode)
     {
-        lastMode = mode;
         mode = newMode;
         switch (newMode)
         {
         case Mode::PEN:
+            lastMode = mode;
             data.pen.currentWireStart = nullptr;
             data.pen.currentWireElbowConfig = 0;
             break;
 
         case Mode::EDIT:
+            lastMode = mode;
             data.edit.fallbackPos = IVec2Zero();
             data.edit.selectionWIP = false;
             data.edit.nodeBeingDragged = nullptr;
@@ -1183,10 +1202,17 @@ int main()
             data.edit.selectionRectangleHeight = 0;
             break;
 
-        case Mode::GATE:
-            break;
-        
         case Mode::ERASE:
+            lastMode = mode;
+            break;
+
+        case Mode::GATE:
+            data.gate.radialMenuCenter = IVec2Zero();
+            data.gate.overlappedSection = 0;
+            break;
+
+        case Mode::BUTTON:
+            data.button.dropdownActive = nullptr;
             break;
         }
     };
@@ -1210,16 +1236,27 @@ int main()
         cursorPos = cursorPos + IVec2(g_gridSize / 2, g_gridSize / 2);
 
         if (IsKeyPressed(KEY_B))
+        {
             SetMode(Mode::PEN);
+        }
         else if (IsKeyPressed(KEY_V))
+        {
             SetMode(Mode::EDIT);
+        }
         else if (IsKeyPressed(KEY_G))
         {
             SetMode(Mode::GATE);
             data.gate.radialMenuCenter = cursorPos;
         }
         else if (IsKeyPressed(KEY_X))
+        {
             SetMode(Mode::ERASE);
+        }
+        else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (cursorPos.y <= 16 && cursorPos.x <= 32))
+        {
+            SetMode(Mode::BUTTON);
+            data.button.dropdownActive = dropdowns + (cursorPos.x / 16);
+        }
         
         if (IsKeyPressed(KEY_BACKSLASH)) // |
             data.gatePick = Gate::OR;
@@ -1230,6 +1267,7 @@ int main()
         else if (IsKeyPressed(KEY_SIX)) // ^
             data.gatePick = Gate::XOR;
 
+        // Simulation
         switch (mode)
         {
         case Mode::PEN:
@@ -1398,6 +1436,22 @@ int main()
             }
         }
             break;
+
+        case Mode::BUTTON:
+        {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
+                if (!!data.button.dropdownActive && InBoundingBox(*data.button.dropdownActive, cursorPos))
+                {
+                    
+                }
+            }
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+            {
+                SetMode(lastMode);
+            }
+        }
+            break;
         }
 
         NodeWorld::Get().Evaluate();
@@ -1410,6 +1464,7 @@ int main()
 
             ClearBackground(BLACK);
 
+            // Draw
             switch (mode)
             {
             case Mode::PEN:
@@ -1501,6 +1556,39 @@ int main()
             }
                 break;
 
+            case Mode::ERASE:
+            {
+                auto DrawCross = [](IVec2 center, Color color)
+                {
+                    int radius = 3;
+                    int expandedRad = radius + 1;
+                    DrawRectangle(center.x - expandedRad, center.y - expandedRad, expandedRad * 2, expandedRad * 2, BLACK);
+                    DrawLine(center.x - radius, center.y - radius,
+                        center.x + radius, center.y + radius,
+                        color);
+                    DrawLine(center.x - radius, center.y + radius,
+                        center.x + radius, center.y - radius,
+                        color);
+                };
+
+                NodeWorld::Get().DrawWires();
+
+                if (!!data.hoveredWire)
+                {
+                    data.hoveredWire->Draw(MAGENTA);
+                    DrawCross(cursorPos, RED);
+                }
+
+                NodeWorld::Get().DrawNodes();
+
+                if (!!data.hoveredNode)
+                {
+                    data.hoveredNode->Draw(BLACK);
+                    DrawCross(data.hoveredNode->GetPosition(), RED);
+                }
+            }
+            break;
+
             case Mode::GATE:
             {
                 if (lastMode == Mode::PEN)
@@ -1585,35 +1673,49 @@ int main()
             }
             break;
 
-            case Mode::ERASE:
+            case Mode::BUTTON:
             {
-                auto DrawCross = [](IVec2 center, Color color)
-                {
-                    int radius = 3;
-                    int expandedRad = radius + 1;
-                    DrawRectangle(center.x - expandedRad, center.y - expandedRad, expandedRad * 2, expandedRad * 2, BLACK);
-                    DrawLine(center.x - radius, center.y - radius,
-                             center.x + radius, center.y + radius,
-                             color);
-                    DrawLine(center.x - radius, center.y + radius,
-                             center.x + radius, center.y - radius,
-                             color);
-                };
-
                 NodeWorld::Get().DrawWires();
-
-                if (!!data.hoveredWire)
-                {
-                    data.hoveredWire->Draw(MAGENTA);
-                    DrawCross(cursorPos, RED);
-                }
-
                 NodeWorld::Get().DrawNodes();
-
-                if (!!data.hoveredNode)
+                if (!!data.button.dropdownActive)
                 {
-                    data.hoveredNode->Draw(BLACK);
-                    DrawCross(data.hoveredNode->GetPosition(), RED);
+                    DrawRectangle(
+                        data.button.dropdownActive->x,
+                        data.button.dropdownActive->y,
+                        data.button.dropdownActive->w,
+                        data.button.dropdownActive->h,
+                        DARKGRAY);
+                    IRect rec =
+                    {
+                        data.button.dropdownActive->x,
+                        data.button.dropdownActive->y,
+                        16,
+                        16
+                    };
+                    Rectangle dest = { static_cast<float>(rec.x), static_cast<float>(rec.y), static_cast<float>(rec.w), static_cast<float>(rec.h) };
+                    if (data.button.dropdownActive == dropdowns + 0)
+                    {
+                        DrawModeIcon(Mode::PEN, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
+                        rec.y += 16;
+                        dest.y += 16.0f;
+                        DrawModeIcon(Mode::EDIT, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
+                        rec.y += 16;
+                        dest.y += 16.0f;
+                        DrawModeIcon(Mode::ERASE, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
+                    }
+                    else if (data.button.dropdownActive == dropdowns + 1)
+                    {
+                        DrawGateIcon16x(Gate::OR, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
+                        rec.y += 16;
+                        dest.y += 16.0f;
+                        DrawGateIcon16x(Gate::AND, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
+                        rec.y += 16;
+                        dest.y += 16.0f;
+                        DrawGateIcon16x(Gate::NOR, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
+                        rec.y += 16;
+                        dest.y += 16.0f;
+                        DrawGateIcon16x(Gate::XOR, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
+                    }
                 }
             }
                 break;
@@ -1621,12 +1723,12 @@ int main()
 
             {
                 Mode displayMode;
-                if (mode == Mode::GATE)
+                if (mode == Mode::GATE || mode == Mode::BUTTON)
                     displayMode = lastMode;
                 else
                     displayMode = mode;
 
-                if (cursorPos.y >= (windowHeight - 16))
+                if (cursorPos.y <= 16)
                 {
                     if (cursorPos.x <= 16)
                     {
@@ -1639,8 +1741,8 @@ int main()
                         case Mode::ERASE: text = "Mode: Erase";       break;
                         default:          text = "";                  break;
                         }
-                        DrawText(text, 0, windowHeight - 26, 8, WHITE);
-                        DrawRectangle(0, windowHeight - 16, 16, 16, DARKGRAY);
+                        DrawText(text, 20, 17, 8, WHITE);
+                        DrawRectangle(0, 0, 16, 16, DARKGRAY);
                     }
                     else if (cursorPos.x <= 32)
                     {
@@ -1653,12 +1755,12 @@ int main()
                         case Gate::XOR: text = "Gate: ^ (xor)";  break;
                         default:        text = "";             break;
                         }
-                        DrawText(text, 16, windowHeight - 26, 8, WHITE);
-                        DrawRectangle(16, windowHeight - 16, 16, 16, DARKGRAY);
+                        DrawText(text, 36, 17, 8, WHITE);
+                        DrawRectangle(16, 0, 16, 16, DARKGRAY);
                     }
                 }
 
-                Rectangle rec = { 0, (float)(windowHeight - 16), 16, 16 };
+                Rectangle rec = { 0, 0, 16, 16 };
                 DrawModeIcon(displayMode, rec, WHITE);
                 rec.x += 16;
                 DrawGateIcon16x(data.gatePick, rec, WHITE);
