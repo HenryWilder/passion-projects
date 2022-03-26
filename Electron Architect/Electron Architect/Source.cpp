@@ -1200,6 +1200,8 @@ int main()
 
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
+                if (lastMode == Mode::GATE) // Fringe
+                    lastMode = Mode::PEN;
                 mode = lastMode;
                 lastMode = Mode::GATE;
                 SetMousePosition(data.gate.radialMenuCenter.x, data.gate.radialMenuCenter.y);
