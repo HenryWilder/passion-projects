@@ -205,7 +205,7 @@ struct Wire
     static constexpr float g_elbowRadius = 2.0f;
 
     IVec2 elbow;
-    size_t elbowConfig;
+    uint8_t elbowConfig;
     Node* start;
     Node* end;
 
@@ -251,50 +251,54 @@ struct Wire
         return GetEndPos().y;
     }
 	
-    IVec2 GetLegalElbowPosition(decltype(elbowConfig) index) const
+    static IVec2 GetLegalElbowPosition(IVec2 start, IVec2 end, decltype(elbowConfig) index)
     {
         _ASSERT_EXPR(index < 4, "Subscript error");
         if (index == 0)
-            return IVec2(GetStartX(), GetEndY());
+            return IVec2(start.x, end.y);
         else if (index == 1)
-            return IVec2(GetEndX(), GetStartY());
+            return IVec2(end.x, start.y);
         else
         {
             Int_t shortLength = std::min(
-                abs(GetEndX() - GetStartX()),
-                abs(GetEndY() - GetStartY())
+                abs(end.x - start.x),
+                abs(end.y - start.y)
             );
             IVec2 pos;
             if (index == 2)
             {
-                pos = GetStartPos();
+                pos = start;
 
-                if (GetEndX() < GetStartX())
+                if (end.x < start.x)
                     pos.x -= shortLength;
                 else
                     pos.x += shortLength;
 
-                if (GetEndY() < GetStartY())
+                if (end.y < start.y)
                     pos.y -= shortLength;
                 else
                     pos.y += shortLength;
             }
             else // index == 3
             {
-                pos = GetEndPos();
+                pos = end;
 
-                if (GetStartX() < GetEndX())
+                if (start.x < end.x)
                     pos.x -= shortLength;
                 else
                     pos.x += shortLength;
 
-                if (GetStartY() < GetEndY())
+                if (start.y < end.y)
                     pos.y -= shortLength;
                 else
                     pos.y += shortLength;
             }
             return pos;
         }
+    }
+    IVec2 GetLegalElbowPosition(decltype(elbowConfig) index) const
+    {
+        return GetLegalElbowPosition(GetStartPos(), GetEndPos(), index);
     }
     void GetLegalElbowPositions(IVec2(&legal)[4]) const
     {
@@ -997,6 +1001,7 @@ int main()
         {
             struct {
                 Node* currentWireStart;
+                decltype(Wire::elbowConfig) currentWireElbowConfig;
             } pen;
 
             struct {
@@ -1038,6 +1043,7 @@ int main()
         {
         case Mode::PEN:
             data.pen.currentWireStart = nullptr;
+            data.pen.currentWireElbowConfig = 0;
             break;
 
         case Mode::EDIT:
@@ -1116,11 +1122,22 @@ int main()
 		        // Do not create a new node/wire if already hovering the start node
                 if (!!data.pen.currentWireStart && newNode != data.pen.currentWireStart)
                 {
-                    NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
+                    Wire* wire = NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
+                    wire->elbowConfig = data.pen.currentWireElbowConfig;
+                    wire->UpdateElbowToLegal();
                 }
                 data.pen.currentWireStart = newNode;
             }
-            else if (!!GetKeyPressed() || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+            else if (IsKeyPressed(KEY_R))
+            {
+                if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+                    data.pen.currentWireElbowConfig--;
+                else
+                    data.pen.currentWireElbowConfig++;
+
+                data.pen.currentWireElbowConfig %= 4;
+            }
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
                 data.pen.currentWireStart = nullptr;
             }
@@ -1262,7 +1279,12 @@ int main()
 
                 if (!!data.pen.currentWireStart)
                 {
-                    DrawWireGeneric(data.pen.currentWireStart->GetPosition(), IVec2(data.pen.currentWireStart->GetX(), cursorPos.y), cursorPos, DARKBLUE);
+                    IVec2 start = data.pen.currentWireStart->GetPosition();
+                    IVec2 elbow;
+                    IVec2 end = cursorPos;
+                    elbow = Wire::GetLegalElbowPosition(start, end, data.pen.currentWireElbowConfig);
+                    DrawWireGeneric(start, elbow, end, DARKBLUE);
+                    DrawCircle(end.x, end.y, 3.0f, DARKBLUE);
                 }
 
                 if (!!data.hoveredWire)
