@@ -169,6 +169,15 @@ struct IRect
     Int_t x, y, w, h;
 };
 
+bool InBoundingBox(IRect bounds, IVec2 pt)
+{
+    return
+        pt.x >= bounds.x &&
+        pt.y >= bounds.y &&
+        pt.x <= bounds.x + bounds.w &&
+        pt.y <= bounds.y + bounds.h;
+}
+
 void DrawLineIV(IVec2 start, IVec2 end, Color color)
 {
     DrawLine(start.x, start.y, end.x, end.y, color);
@@ -581,11 +590,103 @@ IVec2 Wire::GetEndPos() const
 class NodeWorld
 {
 private:
+    bool orderDirty = false;
     std::vector<Node*> nodes;
     std::unordered_map<IVec2, Node*> nodeGrid;
     std::vector<Node*> startNodes;
     std::vector<Wire*> wires; // Inputs/outputs don't exist here
-    bool orderDirty = false;
+    class WireQTree
+    {
+        class Quad
+        {
+            IRect bounds;
+            std::vector<Wire*> wires;
+            Quad* children[4]; // top left, top right, bot left, bot right
+        public:
+            Quad() : bounds(0, 0, 0, 0), wires{}, children{ nullptr, nullptr, nullptr, nullptr } {}
+            Quad(IRect bounds) : bounds(bounds), wires{}, children{ nullptr, nullptr, nullptr, nullptr } {}
+
+            bool InBoundary(IVec2 pt)
+            {
+                return InBoundingBox(bounds, pt);
+            }
+            bool LineThroughBoundary(IVec2 start, IVec2 end)
+            {
+                /*
+                * TRUE:
+                *   .---.   .o-o.   .---.   .---.   .---.
+                *   |o-o|   |   |   o---o  o-----o  | o---o
+                *   '---'   '---'   '---'   '---'   '---'
+                * 
+                *                             o       
+                *   .---.   o---.   .-o-.   .-|-.   .---.
+                *   | 8 |   |   |   | | |   | | |   | o |
+                *   '---'   o---'   '-o-'   '-|-'   '-|-'
+                *                             o       o
+                * 
+                *          o         o
+                *   .o--.  .\--.   .--\.
+                *   | \ |  | \ |   |   \   etc...
+                *   '--o'  '--\'   '---'\
+                *              o         o
+                * 
+                * FALSE:
+                *        .---.
+                *        |   |
+                *        '---'
+                *   .---.     .---.
+                *   |   | o-o |   |
+                *   '---'     '---'
+                *        .---.
+                *        |   |
+                *        '---'
+                * 
+                *        .---.
+                *        |   |
+                *        '---'
+                *   .---.  o  .---.
+                *   |   |  |  |   |
+                *   '---'  o  '---'
+                *        .---.
+                *        |   |
+                *        '---'
+                * 
+                *        .---.
+                *        |   |
+                *        '---'
+                *   .---. o   .---.
+                *   |   |  \  |   |
+                *   '---'   o '---'
+                *        .---.
+                *        |   |
+                *        '---'
+                * 
+                */
+                if (InBoundary(start) || InBoundary(end))
+                    return true;
+
+                Int_t bounds_left = bounds.x;
+                Int_t bounds_right = bounds.x + bounds.w;
+                Int_t bounds_bot = bounds.y;
+                Int_t bounds_top = bounds.x + bounds.h;
+
+                // Cardinal
+                if (Between_Inclusive(start.y, bounds_top, bounds_bot) &&
+                    Between_Inclusive(end.y,   bounds_top, bounds_bot))
+                if (Between_Inclusive(start.x, bounds_left, bounds_right) &&
+                    Between_Inclusive(end.x,   bounds_left, bounds_right))
+                // Diagonal
+            }
+            void Insert(Wire* wire)
+            {
+                _ASSERT_EXPR(wire != nullptr, "Expected wire not to be nullptr");
+
+                if (!LineThroughBoundary(wire->GetStartPos(), wire->GetElbowPos()) &&
+                    !LineThroughBoundary(wire->GetElbowPos(), wire->GetEndPos()))
+                    return;
+            }
+        };
+    };
 
     NodeWorld() = default;
     ~NodeWorld()
@@ -708,6 +809,8 @@ public:
     {
         _ASSERT_EXPR(!!composite && !!tbRemoved, "Tried to merge a node with nullptr");
         _ASSERT_EXPR(composite != tbRemoved, "Tried to merge a node with itself");
+
+        nodeGrid.erase(tbRemoved->GetPosition());
 
         for (Wire* wire : tbRemoved->m_wires)
         {
