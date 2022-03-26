@@ -161,34 +161,66 @@ inline IVec2 IVec2Scale_f(float a, IVec2 b)
     return IVec2Scale_f(b, a);
 }
 
-// @ Taken from rshapes.c and refactored to work with IVec2 type
 bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2)
 {
-    Int_t dxc = pt.x - p1.x;
-    Int_t dyc = pt.y - p1.y;
-    Int_t dxl = p2.x - p1.x;
-    Int_t dyl = p2.y - p1.y;
-    Int_t cross = dxc * dyl - dyc * dxl;
+    auto [minX, maxX] = std::minmax(p1.x, p2.x);
+    auto [minY, maxY] = std::minmax(p1.y, p2.y);
+    if (pt.x < minX || pt.x > maxX || pt.y < minY || pt.y > maxY)
+        return false;
 
-    Int_t dxlAbs = abs(dxl);
-    Int_t dylAbs = abs(dyl);
+    // Cardinal
+    if (p1.x == p2.x || p1.y == p2.y)
+        return true;
 
-    if (abs(cross) < std::max(dxlAbs, dylAbs))
+    // Diagonal
+    auto [a, b] = (p1.x < p2.x) ?
+        std::pair<const IVec2&,const IVec2&>{ p1, p2 } :
+        std::pair<const IVec2&,const IVec2&>{ p2, p1 };
+
+    /*****************
+    *   It is either
+    *
+    *   a
+    *    \
+    *     \
+    *      \
+    *       b
+    *
+    *   Or
+    *
+    *       b
+    *      /
+    *     /
+    *    /
+    *   a
+    *
+    *****************/
+
+    if (b.y > a.y)
     {
-        if (dxlAbs >= dylAbs)
-        {
-            if (dxl > 0)
-                return Between_Inclusive(pt.x, p1.x, p2.x);
-            else
-                return Between_Inclusive(pt.x, p2.x, p1.x);
-        }
-        else
-        {
-            if (dyl > 0)
-                return Between_Inclusive(pt.y, p1.y, p2.y);
-            else
-                return Between_Inclusive(pt.y, p2.y, p1.y);
-        }
+        /*************
+        *
+        *   a
+        *    \
+        *     \
+        *      \
+        *       b
+        *
+        *************/
+        return abs((pt.x - a.x) - (pt.y - a.y)) <= 1;
+    }
+    else
+    {
+        /*************
+        *
+        *       b
+        *      /
+        *     /
+        *    /
+        *   a
+        *
+        *************/
+        return abs((pt.x - a.x) - -(pt.y - a.y)) <= 1;
     }
 }
 
@@ -954,10 +986,8 @@ public:
     {
         for (Wire* wire : wires)
         {
-            if ((InBoundingBox(pos, wire->start->GetPosition(), wire->elbow) &&
-                Normal(wire->elbow - wire->start->GetPosition()) == Normal(pos - wire->start->GetPosition())) ||
-                (InBoundingBox(pos, wire->elbow, wire->end->GetPosition()) &&
-                Normal(wire->end->GetPosition() - wire->elbow) == Normal(pos - wire->elbow)))
+            if (CheckCollisionIVecPointLine(pos, wire->GetStartPos(), wire->GetElbowPos()) ||
+                CheckCollisionIVecPointLine(pos, wire->GetElbowPos(), wire->GetEndPos()))
             {
                 return wire;
             }
@@ -1522,12 +1552,50 @@ int main()
                 break;
             }
 
-            if (mode == Mode::GATE)
-                DrawModeIcon(lastMode, { 0,0,16,16 }, WHITE);
-            else
-                DrawModeIcon(mode, { 0,0,16,16 }, WHITE);
+            {
+                Mode displayMode;
+                if (mode == Mode::GATE)
+                    displayMode = lastMode;
+                else
+                    displayMode = mode;
 
-            DrawGateIcon16x(data.gatePick, { 16,0,16,16 }, WHITE);
+                if (cursorPos.y >= (windowHeight - 16))
+                {
+                    if (cursorPos.x <= 16)
+                    {
+                        const char* text;
+                        switch (displayMode)
+                        {
+                        case Mode::PEN:   text = "Mode: Draw";        break;
+                        case Mode::EDIT:  text = "Mode: Edit";        break;
+                        case Mode::GATE:  text = "Mode: Gate select"; break;
+                        case Mode::ERASE: text = "Mode: Erase";       break;
+                        default:          text = "";                  break;
+                        }
+                        DrawText(text, 0, windowHeight - 26, 8, WHITE);
+                        DrawRectangle(0, windowHeight - 16, 16, 16, DARKGRAY);
+                    }
+                    else if (cursorPos.x <= 32)
+                    {
+                        const char* text;
+                        switch (data.gatePick)
+                        {
+                        case Gate::OR:  text = "Gate: | (or)";  break;
+                        case Gate::AND: text = "Gate: & (and)"; break;
+                        case Gate::NOR: text = "Gate: ! (nor)";  break;
+                        case Gate::XOR: text = "Gate: ^ (xor)";  break;
+                        default:        text = "";             break;
+                        }
+                        DrawText(text, 16, windowHeight - 26, 8, WHITE);
+                        DrawRectangle(16, windowHeight - 16, 16, 16, DARKGRAY);
+                    }
+                }
+
+                Rectangle rec = { 0, (float)(windowHeight - 16), 16, 16 };
+                DrawModeIcon(displayMode, rec, WHITE);
+                rec.x += 16;
+                DrawGateIcon16x(data.gatePick, rec, WHITE);
+            }
 
         } EndDrawing();
     }
