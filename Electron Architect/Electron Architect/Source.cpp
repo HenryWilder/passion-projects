@@ -905,7 +905,6 @@ public:
     }
 };
 
-
 int main()
 {
     int windowWidth = 1280;
@@ -933,7 +932,7 @@ int main()
         {
         case Mode::PEN:  src = { 0*width,0*width, width,width }; break;
         case Mode::EDIT: src = { 1*width,0*width, width,width }; break;
-        case Mode::GATE: return;
+        case Mode::GATE: src = { 1*width,0*width, width,width }; break;
         }
         DrawTexturePro(modeIcons, src, dest, { 0,0 }, 0.0f, tint);
     };
@@ -990,7 +989,6 @@ int main()
 
             struct {
                 IVec2 radialMenuCenter;
-                IRect bounds[4];
                 uint8_t overlappedSection;
             } gate;
         };
@@ -1021,9 +1019,6 @@ int main()
 
         case Mode::GATE:
             data.gate.radialMenuCenter = IVec2Zero();
-            for (IRect& rec : data.gate.bounds) {
-                rec = IRect(0, 0, 0, 0);
-            }
             data.gate.overlappedSection = 0;
             break;
         }
