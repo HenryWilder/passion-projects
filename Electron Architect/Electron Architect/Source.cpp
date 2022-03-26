@@ -161,6 +161,37 @@ inline IVec2 IVec2Scale_f(float a, IVec2 b)
     return IVec2Scale_f(b, a);
 }
 
+// @ Taken from rshapes.c and refactored to work with IVec2 type
+bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2)
+{
+    Int_t dxc = pt.x - p1.x;
+    Int_t dyc = pt.y - p1.y;
+    Int_t dxl = p2.x - p1.x;
+    Int_t dyl = p2.y - p1.y;
+    Int_t cross = dxc * dyl - dyc * dxl;
+
+    Int_t dxlAbs = abs(dxl);
+    Int_t dylAbs = abs(dyl);
+
+    if (abs(cross) < std::max(dxlAbs, dylAbs))
+    {
+        if (dxlAbs >= dylAbs)
+        {
+            if (dxl > 0)
+                return Between_Inclusive(pt.x, p1.x, p2.x);
+            else
+                return Between_Inclusive(pt.x, p2.x, p1.x);
+        }
+        else
+        {
+            if (dyl > 0)
+                return Between_Inclusive(pt.y, p1.y, p2.y);
+            else
+                return Between_Inclusive(pt.y, p2.y, p1.y);
+        }
+    }
+}
+
 struct IRect
 {
     IRect() = default;
