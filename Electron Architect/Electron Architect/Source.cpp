@@ -7,35 +7,6 @@
 //#include <raymath.h>
 //#include <extras\raygui.h>
 
-// UI Colors
-namespace uicol
-{
-    namespace wire
-    {
-        constexpr Color hidden = { 255, 255, 255,  10 }; // Gray (12.5%)
-        constexpr Color ghost  = {  };
-        constexpr Color normal = {  };
-        constexpr Color hover  = {  };
-        constexpr Color drag   = {  };
-    }
-    namespace wireElbow
-    {
-        constexpr Color hidden = {  }; // Dark green (25%)
-        constexpr Color ghost  = {  }; // Dark green (50%)
-        constexpr Color normal = {  }; // Dark green
-        constexpr Color hover  = {  }; // Lime green
-        constexpr Color drag   = {  }; // Green
-    }
-    namespace node
-    {
-        constexpr Color hidden = {  }; // Dark gray
-        constexpr Color ghost  = {  }; // Gray
-        constexpr Color normal = {  }; // Light gray
-        constexpr Color hover  = {  }; // Yellow
-        constexpr Color drag   = {  }; // White
-    }
-}
-
 // Returns true on success
 template<typename T>
 bool FindAndErase(std::vector<T>& vec, const T& element)
@@ -187,11 +158,6 @@ void DrawLineIV(IVec2 start, IVec2 end, Color color)
 {
     DrawLine(start.x, start.y, end.x, end.y, color);
 }
-void DrawWireGeneric(IVec2 start, IVec2 joint, IVec2 end, Color color)
-{
-    DrawLineIV(start, joint, color);
-    DrawLineIV(joint, end, color);
-}
 
 class NodeWorld;
 class Node;
@@ -200,7 +166,7 @@ struct Wire
     Wire() = default;
     Wire(Node* start, Node* end) : elbow(), elbowConfig(0), start(start), end(end) {}
 
-    static constexpr Color g_wireColorActive = BROWN;
+    static constexpr Color g_wireColorActive = RED;
     static constexpr Color g_wireColorInactive = GRAY;
     static constexpr float g_elbowRadius = 2.0f;
 
@@ -209,9 +175,14 @@ struct Wire
     Node* start;
     Node* end;
 
+    static void Draw(IVec2 start, IVec2 joint, IVec2 end, Color color)
+    {
+        DrawLineIV(start, joint, color);
+        DrawLineIV(joint, end, color);
+    }
     void Draw(Color color) const
     {
-        DrawWireGeneric(GetStartPos(), elbow, GetEndPos(), color);
+        Draw(GetStartPos(), elbow, GetEndPos(), color);
     }
     void DrawElbow(Color color) const
     {
@@ -428,26 +399,30 @@ public:
         return !m_inputs;
     }
 
-    void Draw(Color color) const
+    static void Draw(IVec2 position, Gate gate, Color color)
     {
-        switch (m_gate)
+        switch (gate)
         {
         case Gate::OR:
-            DrawCircle(m_position.x, m_position.y, g_nodeRadius, color);
+            DrawCircle(position.x, position.y, g_nodeRadius, color);
             break;
         case Gate::AND:
-            DrawRectangle(m_position.x - g_nodeRadius, m_position.y - g_nodeRadius, g_nodeRadius * 2, g_nodeRadius * 2, color);
+            DrawRectangle(position.x - g_nodeRadius, position.y - g_nodeRadius, g_nodeRadius * 2, g_nodeRadius * 2, color);
             break;
         case Gate::NOR:
-            DrawCircle(m_position.x, m_position.y, g_nodeRadius, color);
-            DrawCircle(m_position.x, m_position.y, g_nodeRadius - 1.0f, BLACK);
+            DrawCircle(position.x, position.y, g_nodeRadius, color);
+            DrawCircle(position.x, position.y, g_nodeRadius - 1.0f, BLACK);
             break;
         case Gate::XOR:
-            DrawCircle(m_position.x, m_position.y, g_nodeRadius + 1.0f, color);
-            DrawCircle(m_position.x, m_position.y, g_nodeRadius, BLACK);
-            DrawCircle(m_position.x, m_position.y, g_nodeRadius - 1.0f, color);
+            DrawCircle(position.x, position.y, g_nodeRadius + 1.0f, color);
+            DrawCircle(position.x, position.y, g_nodeRadius, BLACK);
+            DrawCircle(position.x, position.y, g_nodeRadius - 1.0f, color);
             break;
         }
+    }
+    void Draw(Color color) const
+    {
+        Draw(m_position, m_gate, color);
     }
 
     bool WireIsInput(Wire* wire) const
@@ -562,10 +537,12 @@ private: // Accessible by NodeWorld
     Node() = default;
     Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) {}
 
+public:
     static constexpr Color g_nodeColorActive = RED;
     static constexpr Color g_nodeColorInactive = LIGHTGRAY;
     static constexpr float g_nodeRadius = 3.0f;
 
+private:
     IVec2 m_position;
     Gate m_gate;
     bool m_state;
@@ -994,9 +971,9 @@ int main()
     };
 
     struct {
-        Node* hoveredNode;
-        Wire* hoveredWire;
-        Gate gatePick;
+        Node* hoveredNode = nullptr;
+        Wire* hoveredWire = nullptr;
+        Gate gatePick = Gate::OR;
         union
         {
             struct {
@@ -1013,20 +990,12 @@ int main()
                 Int_t selectionRectangleWidth;
                 Int_t selectionRectangleHeight;
             } edit;
-
-            struct {
-                IVec2 radialMenuCenter;
-                uint8_t overlappedSection;
-            } gate;
-
-            struct {
-            } erase;
         };
+        struct {
+            IVec2 radialMenuCenter = IVec2Zero();
+            uint8_t overlappedSection = 0;
+        } gate;
     } data;
-
-    data.hoveredNode = nullptr;
-    data.hoveredWire = nullptr;
-    data.gatePick = Gate::OR;
 
     static constexpr Gate radialGateOrder[4] = {
         Gate::XOR,
@@ -1057,8 +1026,6 @@ int main()
             break;
 
         case Mode::GATE:
-            data.gate.radialMenuCenter = IVec2Zero();
-            data.gate.overlappedSection = 0;
             break;
         
         case Mode::ERASE:
@@ -1229,13 +1196,14 @@ int main()
             }
 
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            {
                 data.gatePick = radialGateOrder[data.gate.overlappedSection];
-                SetMode(lastMode);
-            }
-            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
-                SetMode(lastMode);
+                mode = lastMode;
+                lastMode = Mode::GATE;
+                SetMousePosition(data.gate.radialMenuCenter.x, data.gate.radialMenuCenter.y);
+                cursorPos = data.gate.radialMenuCenter;
             }
         }
             break;
@@ -1283,8 +1251,8 @@ int main()
                     IVec2 elbow;
                     IVec2 end = cursorPos;
                     elbow = Wire::GetLegalElbowPosition(start, end, data.pen.currentWireElbowConfig);
-                    DrawWireGeneric(start, elbow, end, DARKBLUE);
-                    DrawCircle(end.x, end.y, 3.0f, DARKBLUE);
+                    Wire::Draw(start, elbow, end, DARKBLUE);
+                    Node::Draw(end, data.gatePick, DARKBLUE);
                 }
 
                 if (!!data.hoveredWire)
@@ -1340,7 +1308,7 @@ int main()
                     data.hoveredWire->GetLegalElbowPositions(pts);
                     for (const IVec2& p : pts)
                     {
-                        DrawWireGeneric(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(LIGHTGRAY, 0.125));
+                        Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(LIGHTGRAY, 0.125));
                         DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(DARKGREEN, 0.5));
                     }
 
@@ -1364,9 +1332,27 @@ int main()
 
             case Mode::GATE:
             {
-                NodeWorld::Get().DrawWires();
-                NodeWorld::Get().DrawNodes();
+                if (lastMode == Mode::PEN)
+                {
+                    NodeWorld::Get().DrawWires();
 
+                    if (!!data.pen.currentWireStart)
+                    {
+                        IVec2 start = data.pen.currentWireStart->GetPosition();
+                        IVec2 elbow;
+                        IVec2 end = data.gate.radialMenuCenter;
+                        elbow = Wire::GetLegalElbowPosition(start, end, data.pen.currentWireElbowConfig);
+                        Wire::Draw(start, elbow, end, DARKBLUE);
+                        Node::Draw(end, data.gatePick, DARKBLUE);
+                    }
+
+                    NodeWorld::Get().DrawNodes();
+                }
+                else
+                {
+                    NodeWorld::Get().DrawWires();
+                    NodeWorld::Get().DrawNodes();
+                }
 
                 constexpr float menuRadius = 64.0f;
                 constexpr float menuHalfRadius = menuRadius / 2;
