@@ -424,10 +424,26 @@ public:
         return !m_inputs;
     }
 
-    // TODO: Improve
     void Draw(Color color) const
     {
-        DrawCircle(m_position.x, m_position.y, g_nodeRadius, color);
+        switch (m_gate)
+        {
+        case Gate::OR:
+            DrawCircle(m_position.x, m_position.y, g_nodeRadius, color);
+            break;
+        case Gate::AND:
+            DrawRectangle(m_position.x - g_nodeRadius, m_position.y - g_nodeRadius, g_nodeRadius * 2, g_nodeRadius * 2, color);
+            break;
+        case Gate::NOR:
+            DrawCircle(m_position.x, m_position.y, g_nodeRadius, color);
+            DrawCircle(m_position.x, m_position.y, g_nodeRadius - 1.0f, BLACK);
+            break;
+        case Gate::XOR:
+            DrawCircle(m_position.x, m_position.y, g_nodeRadius + 1.0f, color);
+            DrawCircle(m_position.x, m_position.y, g_nodeRadius, BLACK);
+            DrawCircle(m_position.x, m_position.y, g_nodeRadius - 1.0f, color);
+            break;
+        }
     }
 
     bool WireIsInput(Wire* wire) const
@@ -1357,7 +1373,11 @@ int main()
             break;
             }
 
-            DrawModeIcon(mode, { 0,0,16,16 }, WHITE);
+            if (mode == Mode::GATE)
+                DrawModeIcon(lastMode, { 0,0,16,16 }, WHITE);
+            else
+                DrawModeIcon(mode, { 0,0,16,16 }, WHITE);
+
             DrawGateIcon16x(data.gatePick, { 16,0,16,16 }, WHITE);
 
         } EndDrawing();
