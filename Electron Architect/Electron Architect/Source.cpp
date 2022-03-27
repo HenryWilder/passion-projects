@@ -19,6 +19,7 @@
 #define INPUTLAVENDER CLITERAL(Color){ 128, 106, 217, 255 }
 #define OUTPUTAPRICOT CLITERAL(Color){ 207, 107, 35, 255 }
 #define WIPBLUE CLITERAL(Color){ 26, 68, 161, 255 }
+#define CAUTIONYELLOW CLITERAL(Color){ 250, 222, 37, 255 }
 
 // Returns true on success
 template<typename T>
@@ -1586,7 +1587,7 @@ int main()
 
                 if (!!data.hoveredNode)
                 {
-                    data.hoveredNode->Draw(YELLOW);
+                    data.hoveredNode->Draw(WIPBLUE);
                 }
             }
                 break;
@@ -1633,7 +1634,7 @@ int main()
 
                 if (!!data.hoveredNode)
                 {
-                    data.hoveredNode->Draw(YELLOW);
+                    data.hoveredNode->Draw(CAUTIONYELLOW);
                 }
             }
                 break;
@@ -1845,4 +1846,5 @@ int main()
 }
 
 // Todo:
+// Wire bisection
 // Save/load
