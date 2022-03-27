@@ -224,6 +224,15 @@ bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2)
     }
 }
 
+void DrawLineIV(IVec2 start, IVec2 end, Color color)
+{
+    DrawLine(start.x, start.y, end.x, end.y, color);
+}
+void DrawCircleIV(IVec2 origin, float radius, Color color)
+{
+    DrawCircle(origin.x, origin.y, radius, color);
+}
+
 struct IRect
 {
     IRect() = default;
@@ -241,9 +250,9 @@ bool InBoundingBox(IRect bounds, IVec2 pt)
         pt.y <= bounds.y + bounds.h;
 }
 
-void DrawLineIV(IVec2 start, IVec2 end, Color color)
+void DrawRectangleIRect(IRect rec, Color color)
 {
-    DrawLine(start.x, start.y, end.x, end.y, color);
+    DrawRectangle(rec.x, rec.y, rec.w, rec.h, color);
 }
 
 class NodeWorld;
@@ -1084,54 +1093,56 @@ int main()
     } mode, lastMode;
 
     Texture2D modeIcons = LoadTexture("icons_mode.png");
-    auto DrawModeIcon = [&modeIcons](Mode mode, Rectangle dest, Color tint)
+    auto DrawModeIcon = [&modeIcons](Mode mode, IRect dest, Color tint)
     {
-        constexpr float width = 16.0f;
-        Rectangle src{ 0,0,width,width };
+        constexpr Int_t width = 16;
+        IVec2 offset;
         switch (mode)
         {
-        case Mode::PEN:    src = { 0*width,0*width, width,width }; break;
-        case Mode::EDIT:   src = { 1*width,0*width, width,width }; break;
-        case Mode::ERASE:  src = { 0*width,1*width, width,width }; break;
+        case Mode::PEN:    offset = IVec2(    0,     0); break;
+        case Mode::EDIT:   offset = IVec2(width,     0); break;
+        case Mode::ERASE:  offset = IVec2(    0, width); break;
         default: return;
         }
-        DrawTexturePro(modeIcons, src, dest, { 0,0 }, 0.0f, tint);
+        BeginScissorMode(dest.x, dest.y, dest.w, dest.h); {
+            DrawTexture(modeIcons, dest.x - offset.x, dest.y - offset.y, tint);
+        } EndScissorMode();
     };
 
     Texture2D gateIcons16x = LoadTexture("icons_gate16x.png");
-    auto DrawGateIcon16x = [&gateIcons16x](Gate gate, Rectangle dest, Color tint)
+    auto DrawGateIcon16x = [&gateIcons16x](Gate gate, IRect dest, Color tint)
     {
-        constexpr float width = 16.0f;
-        Rectangle src{ 0,0,width,width };
+        constexpr Int_t width = 16;
+        IVec2 offset;
         switch (gate)
         {
-        case Gate::OR:  src = { 0*width,0*width, width,width }; break;
-        case Gate::AND: src = { 1*width,0*width, width,width }; break;
-        case Gate::NOR: src = { 0*width,1*width, width,width }; break;
-        case Gate::XOR: src = { 1*width,1*width, width,width }; break;
+        case Gate::OR:  offset = IVec2(    0,     0); break;
+        case Gate::AND: offset = IVec2(width,     0); break;
+        case Gate::NOR: offset = IVec2(    0, width); break;
+        case Gate::XOR: offset = IVec2(width, width); break;
+        default: return;
         }
-        DrawTexturePro(gateIcons16x, src, dest, { 0,0 }, 0.0f, tint);
+        BeginScissorMode(dest.x, dest.y, dest.w, dest.h); {
+            DrawTexture(gateIcons16x, dest.x - offset.x, dest.y - offset.y, tint);
+        } EndScissorMode();
     };
     
     Texture2D gateIcons32x = LoadTexture("icons_gate32x.png");
-    auto DrawGateIcon32x = [&gateIcons32x](Gate gate, Rectangle dest, Color tint)
+    auto DrawGateIcon32x = [&gateIcons32x](Gate gate, IRect dest, Color tint)
     {
-        constexpr float width = 32.0f;
-        Rectangle src{ 0,0,width,width };
+        constexpr Int_t width = 32;
+        IVec2 offset;
         switch (gate)
         {
-        case Gate::OR:  src = { 0*width,0*width, width,width }; break;
-        case Gate::AND: src = { 1*width,0*width, width,width }; break;
-        case Gate::NOR: src = { 0*width,1*width, width,width }; break;
-        case Gate::XOR: src = { 1*width,1*width, width,width }; break;
+        case Gate::OR:  offset = IVec2(    0,     0); break;
+        case Gate::AND: offset = IVec2(width,     0); break;
+        case Gate::NOR: offset = IVec2(    0, width); break;
+        case Gate::XOR: offset = IVec2(width, width); break;
+        default: return;
         }
-        DrawTexturePro(gateIcons32x, src, dest, { 0,0 }, 0.0f, tint);
-    };
-
-    constexpr IRect dropdowns[]
-    {
-        IRect(0,16,16,16*3),
-        IRect(16,16,16,16*4),
+        BeginScissorMode(dest.x, dest.y, dest.w, dest.h); {
+            DrawTexture(gateIcons32x, dest.x - offset.x, dest.y - offset.y, tint);
+        } EndScissorMode();
     };
 
     struct {
@@ -1157,7 +1168,7 @@ int main()
             } edit;
 
             struct {
-            } erase;
+            } erase = {};
         };
         union // Overlay mode - doesn't affect other modes
         {
@@ -1167,12 +1178,31 @@ int main()
             } gate;
 
             struct {
-                const IRect* dropdownActive;
-            } button;
+                int dropdownActive;
+            } button = { 0 };
         };
     } data;
 
-    static constexpr Gate radialGateOrder[4] = {
+    constexpr Mode dropdownModeOrder[] =
+    {
+        Mode::PEN,
+        Mode::EDIT,
+        Mode::ERASE,
+    };
+    constexpr Gate dropdownGateOrder[] =
+    {
+        Gate::OR,
+        Gate::AND,
+        Gate::NOR,
+        Gate::XOR,
+    };
+    constexpr IRect dropdownBounds[] =
+    {
+        IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
+        IRect(16, 16, 16, 16 * (_countof(dropdownGateOrder) - 1)), // Gate
+    };
+
+    constexpr Gate radialGateOrder[] = {
         Gate::XOR,
         Gate::AND,
         Gate::OR,
@@ -1212,7 +1242,7 @@ int main()
             break;
 
         case Mode::BUTTON:
-            data.button.dropdownActive = nullptr;
+            data.button.dropdownActive = 0;
             break;
         }
     };
@@ -1255,7 +1285,7 @@ int main()
         else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (cursorPos.y <= 16 && cursorPos.x <= 32))
         {
             SetMode(Mode::BUTTON);
-            data.button.dropdownActive = dropdowns + (cursorPos.x / 16);
+            data.button.dropdownActive = cursorPos.x / 16;
         }
         
         if (IsKeyPressed(KEY_BACKSLASH)) // |
@@ -1441,36 +1471,50 @@ int main()
         {
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
-                if (!!data.button.dropdownActive && InBoundingBox(*data.button.dropdownActive, cursorPos))
+                IRect rec = dropdownBounds[data.button.dropdownActive];
+                if (!!data.button.dropdownActive && InBoundingBox(rec, cursorPos))
                 {
-                    IRect rec = *data.button.dropdownActive;
-                    rec.w = rec.h = 16;
-                    if (data.button.dropdownActive == (dropdowns + 0))
+                    rec.h = 16;
+
+                    switch (data.button.dropdownActive)
                     {
-                        if (InBoundingBox(rec, cursorPos))
-                            SetMode(Mode::PEN);
-                        rec.y += 16;
-                        if (InBoundingBox(rec, cursorPos))
-                            SetMode(Mode::EDIT);
-                        rec.y += 16;
-                        if (InBoundingBox(rec, cursorPos))
-                            SetMode(Mode::ERASE);
+                    case 0: // Mode
+                    {
+                        for (Mode m : dropdownModeOrder)
+                        {
+                            if (m == lastMode)
+                                continue;
+
+                            if (InBoundingBox(rec, cursorPos))
+                            {
+                                SetMode(m);
+                                break;
+                            }
+
+                            rec.y += 16;
+                        }
                     }
-                    else if (data.button.dropdownActive == (dropdowns + 1))
+                        break;
+
+                    case 1: // Gate
                     {
-                        if (InBoundingBox(rec, cursorPos))
-                            data.gatePick = Gate::OR;
-                        rec.y += 16;
-                        if (InBoundingBox(rec, cursorPos))
-                            data.gatePick = Gate::AND;
-                        rec.y += 16;
-                        if (InBoundingBox(rec, cursorPos))
-                            data.gatePick = Gate::NOR;
-                        rec.y += 16;
-                        if (InBoundingBox(rec, cursorPos))
-                            data.gatePick = Gate::XOR;
+                        for (Gate g : dropdownGateOrder)
+                        {
+                            if (g == data.gatePick)
+                                continue;
+
+                            if (InBoundingBox(rec, cursorPos))
+                            {
+                                data.gatePick = g;
+                                break;
+                            }
+
+                            rec.y += 16;
+                        }
 
                         SetMode(lastMode);
+                    }
+                        break;
                     }
                 }
             }
@@ -1641,57 +1685,55 @@ int main()
                     NodeWorld::Get().DrawNodes();
                 }
 
-                constexpr float menuRadius = 64.0f;
-                constexpr Int_t menuIntRadius = static_cast<Int_t>(menuRadius);
-                constexpr float menuIconOffset = 12.0f;
+                constexpr int menuRadius = 64;
+                constexpr int menuIconOffset = 12;
                 constexpr IVec2 menuOff[4] = {
-                    IVec2( 4,                  4                ),
-                    IVec2( 4,                 -4 - menuIntRadius),
-                    IVec2(-4 - menuIntRadius, -4 - menuIntRadius),
-                    IVec2(-4 - menuIntRadius,  4                ),
+                    IVec2( 4,               4             ),
+                    IVec2( 4,              -4 - menuRadius),
+                    IVec2(-4 - menuRadius, -4 - menuRadius),
+                    IVec2(-4 - menuRadius,  4             ),
                 };
                 constexpr IVec2 menuOff_hover[4] = {
-                    IVec2(0,                       0                      ),
-                    IVec2(0,                       0 - (menuIntRadius + 4)),
-                    IVec2(0 - (menuIntRadius + 4), 0 - (menuIntRadius + 4)),
-                    IVec2(0 - (menuIntRadius + 4), 0                      ),
+                    IVec2(0,                    0                   ),
+                    IVec2(0,                    0 - (menuRadius + 4)),
+                    IVec2(0 - (menuRadius + 4), 0 - (menuRadius + 4)),
+                    IVec2(0 - (menuRadius + 4), 0                   ),
                 };
-                constexpr Rectangle iconDest[4] = {
-                    Rectangle{  menuIconOffset,          menuIconOffset,         32.0f, 32.0f },
-                    Rectangle{  menuIconOffset,         -menuIconOffset - 32.0f, 32.0f, 32.0f },
-                    Rectangle{ -menuIconOffset - 32.0f, -menuIconOffset - 32.0f, 32.0f, 32.0f },
-                    Rectangle{ -menuIconOffset - 32.0f,  menuIconOffset,         32.0f, 32.0f },
+                constexpr IRect iconDest[4] = {
+                    IRect( menuIconOffset,       menuIconOffset,      32, 32),
+                    IRect( menuIconOffset,      -menuIconOffset - 32, 32, 32),
+                    IRect(-menuIconOffset - 32, -menuIconOffset - 32, 32, 32),
+                    IRect(-menuIconOffset - 32,  menuIconOffset,      32, 32),
                 };
                 int x = data.gate.radialMenuCenter.x;
                 int y = data.gate.radialMenuCenter.y;
-                Vector2 centerVec{ static_cast<float>(x), static_cast<float>(y) };
                 Color menuBackground = ColorAlpha(DARKGRAY, 0.4f);
-                DrawCircleV(centerVec, menuRadius + 4.0f, menuBackground);
+                DrawCircleIV(data.gate.radialMenuCenter, static_cast<float>(menuRadius + 4), menuBackground);
 
                 for (int i = 0; i < 4; ++i)
                 {
                     Color colorA;
                     Color colorB;
-                    float radius;
+                    int radius;
 
                     if (i == data.gate.overlappedSection)
                     {
                         colorA = WHITE;
                         colorB = BLUE;
-                        radius = menuRadius + 4.0f;
-                        BeginScissorMode(x + menuOff_hover[i].x, y + menuOff_hover[i].y, static_cast<int>(radius), static_cast<int>(radius));
+                        radius = menuRadius + 4;
+                        BeginScissorMode(x + menuOff_hover[i].x, y + menuOff_hover[i].y, radius, radius);
                     }
                     else
                     {
                         colorA = GRAY;
                         colorB = WHITE;
                         radius = menuRadius;
-                        BeginScissorMode(x + menuOff[i].x, y + menuOff[i].y, static_cast<int>(radius), static_cast<int>(radius));
+                        BeginScissorMode(x + menuOff[i].x, y + menuOff[i].y, radius, radius);
                     }
 
                     float startAngle = static_cast<float>(i * 90);
-                    DrawCircleSector(centerVec, radius, startAngle, startAngle + 90.0f, 8, colorA);
-                    Rectangle rec = iconDest[i];
+                    DrawCircleSector({ static_cast<float>(x), static_cast<float>(y) }, static_cast<float>(radius), startAngle, startAngle + 90.0f, 8, colorA);
+                    IRect rec = iconDest[i];
                     rec.x += x;
                     rec.y += y;
                     DrawGateIcon32x(radialGateOrder[i], rec, colorB);
@@ -1705,45 +1747,38 @@ int main()
             {
                 NodeWorld::Get().DrawWires();
                 NodeWorld::Get().DrawNodes();
-                if (!!data.button.dropdownActive)
+
+                IRect rec = dropdownBounds[data.button.dropdownActive];
+                DrawRectangleIRect(dropdownBounds[data.button.dropdownActive], DARKGRAY);
+                rec.h = 16;
+
+                switch (data.button.dropdownActive)
                 {
-                    DrawRectangle(
-                        data.button.dropdownActive->x,
-                        data.button.dropdownActive->y,
-                        data.button.dropdownActive->w,
-                        data.button.dropdownActive->h,
-                        DARKGRAY);
-                    IRect rec =
+                case 0: // Mode
+                {
+                    for (Mode m : dropdownModeOrder)
                     {
-                        data.button.dropdownActive->x,
-                        data.button.dropdownActive->y,
-                        16,
-                        16
-                    };
-                    Rectangle dest = { static_cast<float>(rec.x), static_cast<float>(rec.y), static_cast<float>(rec.w), static_cast<float>(rec.h) };
-                    if (data.button.dropdownActive == dropdowns + 0)
-                    {
-                        DrawModeIcon(Mode::PEN, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
+                        if (m == lastMode)
+                            continue;
+                        Color color = InBoundingBox(rec, cursorPos) ? WHITE : GRAY;
+                        DrawModeIcon(m, rec, color);
                         rec.y += 16;
-                        dest.y += 16.0f;
-                        DrawModeIcon(Mode::EDIT, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
-                        rec.y += 16;
-                        dest.y += 16.0f;
-                        DrawModeIcon(Mode::ERASE, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
                     }
-                    else if (data.button.dropdownActive == dropdowns + 1)
+                }
+                    break;
+
+                case 1: // Gate
+                {
+                    for (Gate g : dropdownGateOrder)
                     {
-                        DrawGateIcon16x(Gate::OR, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
+                        if (g == data.gatePick)
+                            continue;
+                        Color color = InBoundingBox(rec, cursorPos) ? WHITE : GRAY;
+                        DrawGateIcon16x(g, rec, color);
                         rec.y += 16;
-                        dest.y += 16.0f;
-                        DrawGateIcon16x(Gate::AND, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
-                        rec.y += 16;
-                        dest.y += 16.0f;
-                        DrawGateIcon16x(Gate::NOR, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
-                        rec.y += 16;
-                        dest.y += 16.0f;
-                        DrawGateIcon16x(Gate::XOR, dest, InBoundingBox(rec, cursorPos) ? WHITE : GRAY);
                     }
+                }
+                    break;
                 }
             }
                 break;
@@ -1788,7 +1823,7 @@ int main()
                     }
                 }
 
-                Rectangle rec = { 0, 0, 16, 16 };
+                IRect rec = { 0, 0, 16, 16 };
                 DrawModeIcon(displayMode, rec, WHITE);
                 rec.x += 16;
                 DrawGateIcon16x(data.gatePick, rec, WHITE);
