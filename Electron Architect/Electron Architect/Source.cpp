@@ -860,31 +860,18 @@ public:
         _ASSERT_EXPR(!!composite && !!tbRemoved, "Tried to merge a node with nullptr");
         _ASSERT_EXPR(composite != tbRemoved, "Tried to merge a node with itself");
 
-        nodeGrid.erase(tbRemoved->GetPosition());
-
         for (Wire* wire : tbRemoved->m_wires)
         {
             if (wire->start == composite || wire->end == composite)
-            {
-                composite->RemoveWire_Expected(wire);
-                delete wire;
-            }
-            else
-            {
-                if (wire->start == tbRemoved)
-                {
-                    wire->start = composite;
-                    composite->AddWireOutput(wire);
-                }
-                else // wire->end == b
-                {
-                    wire->end = composite;
-                    composite->AddWireInput(wire);
-                }
-            }
+                continue;
+
+            if (wire->start == tbRemoved)
+                CreateWire(composite, wire->end);
+            else // wire->end == tbRemoved
+                CreateWire(wire->start, composite);
         }
-        FindAndErase_ExpectExisting(nodes, tbRemoved);
-        delete tbRemoved;
+        IVec2 newPos = tbRemoved->m_position;
+        DestroyNode(tbRemoved);
         orderDirty = true;
         return composite;
     }
@@ -1324,7 +1311,6 @@ int main()
                 bool selectionWIP;
                 Node* nodeBeingDragged;
                 Wire* wireBeingDragged;
-                bool b_editingElbow; // Elbow, or reverse?
                 Int_t selectionRectangleX;
                 Int_t selectionRectangleY;
                 Int_t selectionRectangleWidth;
@@ -1350,22 +1336,19 @@ int main()
         };
     } data;
 
-    constexpr Mode dropdownModeOrder[] =
-    {
+    constexpr Mode dropdownModeOrder[] = {
         Mode::PEN,
         Mode::EDIT,
         Mode::ERASE,
         Mode::INTERACT,
     };
-    constexpr Gate dropdownGateOrder[] =
-    {
+    constexpr Gate dropdownGateOrder[] = {
         Gate::OR,
         Gate::AND,
         Gate::NOR,
         Gate::XOR,
     };
-    constexpr IRect dropdownBounds[] =
-    {
+    constexpr IRect dropdownBounds[] = {
         IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
         IRect(16, 16, 16, 16 * (_countof(dropdownGateOrder) - 1)), // Gate
     };
@@ -1397,7 +1380,6 @@ int main()
             data.edit.selectionWIP = false;
             data.edit.nodeBeingDragged = nullptr;
             data.edit.wireBeingDragged = nullptr;
-            data.edit.b_editingElbow = false;
             data.edit.selectionRectangleX = 0;
             data.edit.selectionRectangleY = 0;
             data.edit.selectionRectangleWidth = 0;
@@ -1438,8 +1420,7 @@ int main()
             GetMouseX() / g_gridSize,
             GetMouseY() / g_gridSize
         };
-        cursorPos = IVec2Scale_i(cursorPos, g_gridSize);
-        cursorPos = cursorPos + IVec2(g_gridSize / 2, g_gridSize / 2);
+        cursorPos = IVec2Scale_i(cursorPos, g_gridSize) + IVec2(g_gridSize / 2, g_gridSize / 2);
 
         bool b_cursorMoved = cursorPosPrev != cursorPos;
         cursorPosPrev = cursorPos;
@@ -1535,12 +1516,7 @@ int main()
                     data.hoveredWire = nullptr;
                     data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
                     if (!data.hoveredNode)
-                    {
                         data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(cursorPos);
-                        data.edit.b_editingElbow = !!data.hoveredWire;
-                        if (!data.edit.b_editingElbow)
-                            data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
-                    }
                 }
             }
 
@@ -1556,9 +1532,6 @@ int main()
                     data.edit.selectionWIP = true;
                 }
                 data.edit.fallbackPos = cursorPos;
-
-                if (!!data.edit.wireBeingDragged && !data.edit.b_editingElbow)
-                    data.hoveredWire = data.edit.wireBeingDragged = NodeWorld::Get().ReverseWire(data.edit.wireBeingDragged);
             }
             // Release
             else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)))
@@ -1572,11 +1545,10 @@ int main()
                     else
                     {
                         data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-                        if (data.hoveredNode && data.edit.nodeBeingDragged != data.hoveredNode)
-                            NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
+                        if (!!data.hoveredNode && data.edit.nodeBeingDragged != data.hoveredNode)
+                            data.hoveredNode = data.edit.nodeBeingDragged = NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
 
                         data.edit.nodeBeingDragged->SetPosition(cursorPos);
-                        data.hoveredNode = data.edit.nodeBeingDragged;
                     }
                 }
 
@@ -1605,7 +1577,7 @@ int main()
             }
 
             // Wire
-            else if (!!data.edit.wireBeingDragged && data.edit.b_editingElbow)
+            else if (!!data.edit.wireBeingDragged)
             {
                 data.edit.wireBeingDragged->SnapElbowToLegal(cursorPos);
             }
@@ -1748,6 +1720,15 @@ int main()
 
             ClearBackground(BLACK);
 
+            for (Int_t y = 0; y < windowHeight; y += g_gridSize)
+            {
+                DrawLine(0, y, windowWidth, y, SPACEGRAY);
+            }
+            for (Int_t x = 0; x < windowWidth; x += g_gridSize)
+            {
+                DrawLine(x, 0, x, windowHeight, SPACEGRAY);
+            }
+
             // Draw
             switch (mode)
             {
@@ -1799,29 +1780,21 @@ int main()
 
                 if (!!data.hoveredWire)
                 {
-                    if (data.edit.b_editingElbow) // Elbow
+                    IVec2 pts[4];
+                    data.hoveredWire->GetLegalElbowPositions(pts);
+                    for (const IVec2& p : pts)
                     {
-                        IVec2 pts[4];
-                        data.hoveredWire->GetLegalElbowPositions(pts);
-                        for (const IVec2& p : pts)
-                        {
-                            Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(WIPBLUE, 0.25f));
-                            DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(WIPBLUE, 0.5f));
-                        }
+                        Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(WIPBLUE, 0.25f));
+                        DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(WIPBLUE, 0.5f));
+                    }
 
-                        data.hoveredWire->Draw(WIPBLUE);
-                        Color elbowColor;
-                        if (!!data.edit.wireBeingDragged)
-                            elbowColor = WIPBLUE;
-                        else
-                            elbowColor = CAUTIONYELLOW;
-                        data.hoveredWire->DrawElbow(elbowColor);
-                    }
-                    else // Wire
-                    {
-                        data.hoveredWire->Draw(CAUTIONYELLOW);
-                        data.hoveredWire->DrawElbow(WHITE);
-                    }
+                    data.hoveredWire->Draw(WIPBLUE);
+                    Color elbowColor;
+                    if (!!data.edit.wireBeingDragged)
+                        elbowColor = WIPBLUE;
+                    else
+                        elbowColor = CAUTIONYELLOW;
+                    data.hoveredWire->DrawElbow(elbowColor);
                 }
 
                 NodeWorld::Get().DrawNodes();
