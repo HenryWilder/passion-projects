@@ -15,6 +15,7 @@
 #define GLEEFULDUST CLITERAL(Color){ 116, 125, 237, 255 }
 #define INTERFERENCEGRAY CLITERAL(Color){ 232, 234, 255, 255 }
 #define REDSTONE CLITERAL(Color){ 212, 25, 25, 255 }
+#define DESTRUCTIVERED CLITERAL(Color){ 219, 18, 18, 255 }
 #define DEADCABLE CLITERAL(Color){ 122, 118, 118, 255 }
 #define INPUTLAVENDER CLITERAL(Color){ 128, 106, 217, 255 }
 #define OUTPUTAPRICOT CLITERAL(Color){ 207, 107, 35, 255 }
@@ -1659,7 +1660,14 @@ int main()
                 if (!!data.hoveredWire)
                 {
                     data.hoveredWire->Draw(MAGENTA);
-                    DrawCross(cursorPos, RED);
+                    DrawCross(cursorPos, DESTRUCTIVERED);
+                }
+                else if (!!data.hoveredNode)
+                {
+                    for (Wire* wire : data.hoveredNode->GetWires())
+                    {
+                        wire->Draw(MAGENTA);
+                    }
                 }
 
                 NodeWorld::Get().DrawNodes();
@@ -1667,7 +1675,7 @@ int main()
                 if (!!data.hoveredNode)
                 {
                     data.hoveredNode->Draw(BLACK);
-                    DrawCross(data.hoveredNode->GetPosition(), RED);
+                    DrawCross(data.hoveredNode->GetPosition(), DESTRUCTIVERED);
                 }
             }
             break;
