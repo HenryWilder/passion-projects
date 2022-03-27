@@ -11,6 +11,8 @@
 //#include <raymath.h>
 //#include <extras\raygui.h>
 
+#pragma region Utility
+
 // Custom colors
 #define SPACEGRAY CLITERAL(Color){ 28, 26, 41, 255 }
 #define LIFELESSNEBULA CLITERAL(Color){ 75, 78, 94, 255 }
@@ -271,6 +273,8 @@ void DrawRectangleIRect(IRect rec, Color color)
 {
     DrawRectangle(rec.x, rec.y, rec.w, rec.h, color);
 }
+
+#pragma endregion
 
 class NodeWorld;
 class Node;
@@ -875,6 +879,22 @@ public:
         orderDirty = true;
         return wire;
     }
+    // Invalidates input wire! (obviously; it's being split in two)
+    std::pair<Wire*, Wire*> BisectWire(Wire* wire, Node* bisector)
+    {
+        std::pair<Wire*, Wire*> newWire;
+
+        newWire.first = CreateWire(wire->start, bisector);
+        newWire.first->elbowConfig = wire->elbowConfig;
+        newWire.first->UpdateElbowToLegal();
+
+        newWire.second = CreateWire(bisector, wire->end);
+        newWire.second->elbowConfig = wire->elbowConfig;
+        newWire.second->UpdateElbowToLegal();
+
+        DestroyWire(wire);
+        return newWire;
+    }
 
     // Uses BFS
     void Sort()
@@ -1448,7 +1468,7 @@ int main()
             goto EVAL;
         }
 
-        // Simulation
+        // Input
         switch (mode)
         {
         case Mode::PEN:
@@ -1465,7 +1485,14 @@ int main()
             {
                 Node* newNode = data.hoveredNode;
                 if (!newNode)
+                {
                     newNode = NodeWorld::Get().CreateNode(cursorPos, data.gatePick);
+                    if (!!data.hoveredWire)
+                    {
+                        NodeWorld::Get().BisectWire(data.hoveredWire, newNode);
+                        data.hoveredWire = nullptr;
+                    }
+                }
                 // Do not create a new node/wire if already hovering the start node
                 if (!!data.pen.currentWireStart && newNode != data.pen.currentWireStart)
                 {
@@ -2039,7 +2066,6 @@ EVAL:
 // Step-by-step evaluation option
 // Blueprint pallet
 // Hotkey-able output-only gate state toggles (Like the Reason on-screen piano)
-// Wire bisection
 // Special erase (keep wires, erase node)
 // Multiple color pallets
 // Multiple selection (for movement and deletion)
