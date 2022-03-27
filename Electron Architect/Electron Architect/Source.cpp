@@ -784,28 +784,8 @@ public:
     }
     void DestroyNode(Node* node)
     {
-        for (Wire* wire : node->m_wires)
-        {
-            Node* start = wire->start;
-            Node* end = wire->end;
-
-            if (start == node)
-            {
-                end->RemoveWire_Expected(wire);
-
-                if (end->IsOutputOnly())
-                    startNodes.push_back(end);
-            }
-            else // wire->end == node
-                start->RemoveWire_Expected(wire);
-
-            FindAndErase_ExpectExisting(wires, wire);
-            delete wire;
-        }
-        FindAndErase_ExpectExisting(nodes, node);
-        FindAndErase(startNodes, node);
-        nodeGrid.erase(node->GetPosition());
-        delete node;
+        _ClearNodeReferences(node);
+        _DestroyNode(node);
         orderDirty = true;
     }
     // Only affects node collision
@@ -2040,7 +2020,6 @@ int main()
 }
 
 // Todo:
-// Hotswitch to last gate
 // Step-by-step evaluation option
 // Hotkey-able output-only gate state toggles (Like the Reason on-screen piano)
 // Wire bisection
