@@ -1302,13 +1302,13 @@ int main()
             data.button.dropdownActive = cursorPos.x / 16;
         }
         
-        if (IsKeyPressed(KEY_BACKSLASH)) // |
+        if (IsKeyPressed(KEY_ONE))
             data.gatePick = Gate::OR;
-        else if (IsKeyPressed(KEY_SEVEN)) // &
+        else if (IsKeyPressed(KEY_TWO))
             data.gatePick = Gate::AND;
-        else if (IsKeyPressed(KEY_ONE)) // !
+        else if (IsKeyPressed(KEY_THREE))
             data.gatePick = Gate::NOR;
-        else if (IsKeyPressed(KEY_SIX)) // ^
+        else if (IsKeyPressed(KEY_FOUR))
             data.gatePick = Gate::XOR;
 
         // Simulation
@@ -1856,4 +1856,7 @@ int main()
 // Todo:
 // Wire bisection
 // Special erase (keep wires, erase node)
+// Multiple color pallets
+// Multiple selection (for movement and deletion)
 // Save/load
+// Groups (for movement and labeling)
