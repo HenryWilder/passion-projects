@@ -1416,6 +1416,8 @@ int main()
 
     NodeWorld::Get(); // Construct
         
+    IVec2 cursorPosPrev = IVec2Zero(); // For checking if there was movement
+
     while (!WindowShouldClose())
     {
         /******************************************
@@ -1428,6 +1430,9 @@ int main()
         };
         cursorPos = IVec2Scale_i(cursorPos, g_gridSize);
         cursorPos = cursorPos + IVec2(g_gridSize / 2, g_gridSize / 2);
+
+        bool b_cursorMoved = cursorPosPrev != cursorPos;
+        cursorPosPrev = cursorPos;
 
         if (IsKeyPressed(KEY_B))
         {
@@ -1470,10 +1475,13 @@ int main()
         {
         case Mode::PEN:
         {
-            data.hoveredWire = nullptr;
-            data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-            if (!data.hoveredNode)
-                data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+            if (b_cursorMoved)
+            {
+                data.hoveredWire = nullptr;
+                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+                if (!data.hoveredNode)
+                    data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+            }
 
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
@@ -1509,13 +1517,16 @@ int main()
         {
             bool lastFrameUpdate = false;
 
-            if (!data.edit.nodeBeingDragged &&
-                !data.edit.wireBeingDragged)
+            if (b_cursorMoved)
             {
-                data.hoveredWire = nullptr;
-                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-                if (!data.hoveredNode)
-                    data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(cursorPos);
+                if (!data.edit.nodeBeingDragged &&
+                    !data.edit.wireBeingDragged)
+                {
+                    data.hoveredWire = nullptr;
+                    data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+                    if (!data.hoveredNode)
+                        data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(cursorPos);
+                }
             }
 
             // Press
@@ -1585,19 +1596,22 @@ int main()
 
         case Mode::GATE:
         {
-            if (cursorPos.x < data.gate.radialMenuCenter.x)
+            if (b_cursorMoved)
             {
-                if (cursorPos.y < data.gate.radialMenuCenter.y)
-                    data.gate.overlappedSection = 2;
-                else // cursorPos.y > data.gate.radialMenuCenter.y
-                    data.gate.overlappedSection = 3;
-            }
-            else // cursorPos.x > data.gate.radialMenuCenter.x
-            {
-                if (cursorPos.y < data.gate.radialMenuCenter.y)
-                    data.gate.overlappedSection = 1;
-                else // cursorPos.y > data.gate.radialMenuCenter.y
-                    data.gate.overlappedSection = 0;
+                if (cursorPos.x < data.gate.radialMenuCenter.x)
+                {
+                    if (cursorPos.y < data.gate.radialMenuCenter.y)
+                        data.gate.overlappedSection = 2;
+                    else // cursorPos.y > data.gate.radialMenuCenter.y
+                        data.gate.overlappedSection = 3;
+                }
+                else // cursorPos.x > data.gate.radialMenuCenter.x
+                {
+                    if (cursorPos.y < data.gate.radialMenuCenter.y)
+                        data.gate.overlappedSection = 1;
+                    else // cursorPos.y > data.gate.radialMenuCenter.y
+                        data.gate.overlappedSection = 0;
+                }
             }
 
             bool leftMouse = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
@@ -1615,10 +1629,13 @@ int main()
 
         case Mode::ERASE:
         {
-            data.hoveredWire = nullptr;
-            data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-            if (!data.hoveredNode)
-                data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+            if (b_cursorMoved)
+            {
+                data.hoveredWire = nullptr;
+                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+                if (!data.hoveredNode)
+                    data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+            }
 
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
@@ -1636,7 +1653,13 @@ int main()
         case Mode::INTERACT:
         {
             data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-            if (data.hoveredNode->IsOutputOnly())
+            if (!!data.hoveredNode && !data.hoveredNode->IsOutputOnly())
+                data.hoveredNode = nullptr;
+
+            if (false)
+            {
+
+            }
         }
         break;
 
