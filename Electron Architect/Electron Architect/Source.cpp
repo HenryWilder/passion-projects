@@ -1,3 +1,6 @@
+#include <fstream>
+#include <time.h>
+#include <thread>
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
@@ -1078,6 +1081,141 @@ public:
             return *it;
         return nullptr;
     }
+
+public: // Serialization
+
+    // Larger file, faster startup/save (less analysis)
+    void Save_LargeFile(const char* filename) const
+    {
+        std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
+        {
+            file << "0 l\n" << std::time(nullptr) << '\n';
+
+            {
+                std::unordered_map<Node*, size_t> nodeIDs;
+                nodeIDs.reserve(nodes.size());
+                for (size_t i = 0; i < nodes.size(); ++i)
+                {
+                    nodeIDs.insert({ nodes[i], i });
+                }
+
+                std::unordered_map<Wire*, size_t> wireIDs;
+                wireIDs.reserve(wires.size());
+                for (size_t i = 0; i < wires.size(); ++i)
+                {
+                    wireIDs.insert({ wires[i], i });
+                }
+
+                file << "\nn " << nodes.size() << '\n';
+                for (Node* node : nodes)
+                {
+                    file <<
+                        (char)node->m_gate << ' ' << node->m_state << ' ' <<
+                        node->m_position.x << ' ' << node->m_position.y << ' ' <<
+                        node->m_wires.size() << ' ' << node->m_inputs;
+                    for (Wire* wire : node->m_wires)
+                    {
+                        size_t wireID = wireIDs.find(wire)->second;
+                        file << ' ' << wireID;
+                    }
+                    file << '\n';
+                }
+
+                file << "\ns " << startNodes.size();
+                for (Node* node : startNodes)
+                {
+                    size_t nodeID = nodeIDs.find(node)->second;
+                    file << ' ' << nodeID;
+                }
+                file << '\n';
+
+                file << "\nw " << wires.size() << '\n';
+                for (Wire* wire : wires)
+                {
+                    size_t startID = nodeIDs.find(wire->start)->second;
+                    size_t endID = nodeIDs.find(wire->end)->second;
+                    file <<
+                        (int)wire->elbowConfig << ' ' <<
+                        wire->elbow.x << ' ' << wire->elbow.y << ' ' <<
+                        startID << ' ' << endID <<
+                        '\n';
+                }
+            }
+        }
+        file.close();
+    }
+
+    // Smaller file, slower startup/save (more analysis)
+    void Save_SmallFile(const char* filename) const
+    {
+        std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
+        {
+            file << "0 s\n" << std::time(nullptr) << '\n';
+
+            {
+                std::unordered_map<Node*, size_t> nodeIDs;
+                nodeIDs.reserve(nodes.size());
+                for (size_t i = 0; i < nodes.size(); ++i)
+                {
+                    nodeIDs.insert({ nodes[i], i });
+                }
+
+                std::unordered_map<Wire*, size_t> wireIDs;
+                wireIDs.reserve(wires.size());
+                for (size_t i = 0; i < wires.size(); ++i)
+                {
+                    wireIDs.insert({ wires[i], i });
+                }
+
+                file << "n " << nodes.size() << '\n';
+                for (Node* node : nodes)
+                {
+                    file <<
+                        (char)node->m_gate << ' ' <<
+                        node->m_position.x << ' ' << node->m_position.y;
+                    for (Wire* wire : node->m_wires)
+                    {
+                        size_t wireID = wireIDs.find(wire)->second;
+                        file << ' ' << wireID;
+                    }
+                    file << '\n';
+                }
+
+                file << "w " << wires.size() << '\n';
+                for (Wire* wire : wires)
+                {
+                    size_t startID = nodeIDs.find(wire->start)->second;
+                    size_t endID = nodeIDs.find(wire->end)->second;
+                    file << (int)wire->elbowConfig << ' ' << startID << ' ' << endID << '\n';
+                }
+            }
+        }
+        file.close();
+    }
+
+    // Reads both large and small
+    void Load(const char* filename)
+    {
+        std::ifstream file(filename, std::fstream::in);
+        {
+            int version;
+            char relSize;
+            time_t time;
+            file >> version;
+            if (version != 0) return;
+            file >> relSize >> time;
+
+            if (relSize == 'l') // Large
+            {
+
+            }
+            else if (relSize == 's') // Small
+            {
+                
+            }
+        }
+        file.close();
+    }
 };
 
 void Node::SetPosition(IVec2 position)
@@ -1843,6 +1981,9 @@ int main()
     /******************************************
     *   Unload and free memory
     ******************************************/
+
+    NodeWorld::Get().Save_LargeFile("dataL.txt");
+    NodeWorld::Get().Save_SmallFile("dataS.txt");
 
     UnloadTexture(modeIcons);
     UnloadTexture(gateIcons16x);

@@ -44,3 +44,6 @@
 *.idb
 *.pdb
 *.log
+
+# Custom files
+*.cg
