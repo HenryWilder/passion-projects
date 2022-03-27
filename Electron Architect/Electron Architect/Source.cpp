@@ -1854,6 +1854,9 @@ int main()
 }
 
 // Todo:
+// Hotswitch to last gate
+// Toggle between OR and NOR
+// Hotkey-able output-only gate state toggles (Like the Reason on-screen piano)
 // Wire bisection
 // Special erase (keep wires, erase node)
 // Multiple color pallets
