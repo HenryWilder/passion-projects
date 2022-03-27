@@ -513,7 +513,7 @@ public:
     {
         return m_wires.size() - m_inputs;
     }
-    bool IsInputOnly() const
+    bool IsOutputOnly() const
     {
         return !m_inputs;
     }
@@ -754,7 +754,7 @@ private: // Internal
         wire->start->RemoveWire_Expected(wire);
         wire->end->RemoveWire_Expected(wire);
         // Push end to start nodes if this has destroyed its last remaining input
-        if (wire->end->IsInputOnly())
+        if (wire->end->IsOutputOnly())
             startNodes.push_back(wire->end);
         orderDirty = true;
     }
@@ -789,7 +789,7 @@ public:
             {
                 end->RemoveWire_Expected(wire);
 
-                if (end->IsInputOnly())
+                if (end->IsOutputOnly())
                     startNodes.push_back(end);
             }
             else // wire->end == node
@@ -1636,6 +1636,7 @@ int main()
         case Mode::INTERACT:
         {
             data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+            if (data.hoveredNode->IsOutputOnly())
         }
         break;
 
