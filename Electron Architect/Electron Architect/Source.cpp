@@ -776,6 +776,11 @@ public:
         return g_only;
     }
 
+    const decltype(startNodes)& GetStartNodes() const
+    {
+        return startNodes;
+    }
+
     // Node functions
     Node* CreateNode(IVec2 position, Gate gate)
     {
@@ -1627,7 +1632,7 @@ int main()
                 data.hoveredNode = nullptr;
 
             if (!!data.hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-                data.hoveredNode->SetGate(data.hoveredNode->GetGate() == Gate::OR ? Gate::NOR : Gate::OR);
+                data.hoveredNode->SetGate(data.hoveredNode->GetGate() == Gate::NOR ? Gate::OR : Gate::NOR);
         }
         break;
 
@@ -1836,9 +1841,14 @@ int main()
                 NodeWorld::Get().DrawWires();
                 NodeWorld::Get().DrawNodes();
 
+                for (const Node* node : NodeWorld::Get().GetStartNodes())
+                {
+                    node->Draw(WIPBLUE);
+                }
+
                 if (!!data.hoveredNode)
                 {
-                    data.hoveredNode->Draw(INPUTLAVENDER);
+                    data.hoveredNode->Draw(CAUTIONYELLOW);
                 }
             }
             break;
@@ -2021,6 +2031,7 @@ int main()
 
 // Todo:
 // Step-by-step evaluation option
+// Blueprint pallet
 // Hotkey-able output-only gate state toggles (Like the Reason on-screen piano)
 // Wire bisection
 // Special erase (keep wires, erase node)
