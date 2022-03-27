@@ -785,6 +785,10 @@ public:
     {
         return startNodes;
     }
+    size_t LayerCount() const
+    {
+        return layers.size() - 1;
+    }
 
     // Node functions
     Node* CreateNode(IVec2 position, Gate gate)
@@ -1049,15 +1053,15 @@ public:
 
     void EvaluateStep(size_t depth)
     {
-        depth < (layers.size() - 1);
-
         if (orderDirty)
         {
             Sort();
             orderDirty = false;
         }
 
-        for (auto it = layers[depth]; it != layers[depth + 1]; ++it)
+        depth < LayerCount();
+
+        for (decltype(nodes)::const_iterator it = layers[depth]; it != layers[depth + 1] && it != nodes.end(); ++it)
         {
             EvaluateNode(*it);
         }
@@ -1764,7 +1768,7 @@ int main()
         break;
         }
 
-EVAL:
+    EVAL:
         NodeWorld::Get().Evaluate();
 
         /******************************************
