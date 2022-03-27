@@ -1982,8 +1982,8 @@ int main()
     *   Unload and free memory
     ******************************************/
 
-    NodeWorld::Get().Save_LargeFile("dataL.txt");
-    NodeWorld::Get().Save_SmallFile("dataS.txt");
+    NodeWorld::Get().Save_LargeFile("dataL.cg");
+    NodeWorld::Get().Save_SmallFile("dataS.cg");
 
     UnloadTexture(modeIcons);
     UnloadTexture(gateIcons16x);
