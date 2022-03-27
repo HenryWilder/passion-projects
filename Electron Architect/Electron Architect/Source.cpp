@@ -1090,7 +1090,7 @@ int main()
         ERASE,
         GATE,
         BUTTON,
-    } mode, lastMode;
+    } mode, baseMode;
 
     Texture2D modeIcons = LoadTexture("icons_mode.png");
     auto DrawModeIcon = [&modeIcons](Mode mode, IRect dest, Color tint)
@@ -1209,19 +1209,19 @@ int main()
         Gate::NOR,
     };
 
-    auto SetMode = [&lastMode, &mode, &data](Mode newMode)
+    auto SetMode = [&baseMode, &mode, &data](Mode newMode)
     {
         mode = newMode;
         switch (newMode)
         {
         case Mode::PEN:
-            lastMode = mode;
+            baseMode = mode;
             data.pen.currentWireStart = nullptr;
             data.pen.currentWireElbowConfig = 0;
             break;
 
         case Mode::EDIT:
-            lastMode = mode;
+            baseMode = mode;
             data.edit.fallbackPos = IVec2Zero();
             data.edit.selectionWIP = false;
             data.edit.nodeBeingDragged = nullptr;
@@ -1233,7 +1233,7 @@ int main()
             break;
 
         case Mode::ERASE:
-            lastMode = mode;
+            baseMode = mode;
             break;
 
         case Mode::GATE:
@@ -1437,10 +1437,10 @@ int main()
 
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
-                if (lastMode == Mode::GATE) // Fringe
-                    lastMode = Mode::PEN;
-                mode = lastMode;
-                lastMode = Mode::GATE;
+                if (baseMode == Mode::GATE) // Fringe
+                    baseMode = Mode::PEN;
+                mode = baseMode;
+                baseMode = Mode::GATE;
                 SetMousePosition(data.gate.radialMenuCenter.x, data.gate.radialMenuCenter.y);
                 cursorPos = data.gate.radialMenuCenter;
             }
@@ -1482,7 +1482,7 @@ int main()
                     {
                         for (Mode m : dropdownModeOrder)
                         {
-                            if (m == lastMode)
+                            if (m == baseMode)
                                 continue;
 
                             if (InBoundingBox(rec, cursorPos))
@@ -1512,7 +1512,7 @@ int main()
                             rec.y += 16;
                         }
 
-                        SetMode(lastMode);
+                        SetMode(baseMode);
                     }
                         break;
                     }
@@ -1520,7 +1520,7 @@ int main()
             }
             else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
-                SetMode(lastMode);
+                SetMode(baseMode);
             }
         }
             break;
@@ -1663,7 +1663,7 @@ int main()
 
             case Mode::GATE:
             {
-                if (lastMode == Mode::PEN)
+                if (baseMode == Mode::PEN)
                 {
                     NodeWorld::Get().DrawWires();
 
@@ -1758,7 +1758,7 @@ int main()
                 {
                     for (Mode m : dropdownModeOrder)
                     {
-                        if (m == lastMode)
+                        if (m == baseMode)
                             continue;
                         Color color = InBoundingBox(rec, cursorPos) ? WHITE : GRAY;
                         DrawModeIcon(m, rec, color);
@@ -1787,7 +1787,7 @@ int main()
             {
                 Mode displayMode;
                 if (mode == Mode::GATE || mode == Mode::BUTTON)
-                    displayMode = lastMode;
+                    displayMode = baseMode;
                 else
                     displayMode = mode;
 
@@ -1846,5 +1846,4 @@ int main()
 }
 
 // Todo:
-// Add delete options 
-// Add gate customization
+// Save/load
