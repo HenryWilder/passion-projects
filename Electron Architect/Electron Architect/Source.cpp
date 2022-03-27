@@ -1472,7 +1472,7 @@ int main()
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 IRect rec = dropdownBounds[data.button.dropdownActive];
-                if (!!data.button.dropdownActive && InBoundingBox(rec, cursorPos))
+                if (InBoundingBox(rec, cursorPos))
                 {
                     rec.h = 16;
 
@@ -1784,50 +1784,44 @@ int main()
                 break;
             }
 
+            // Global UI
+
+            if (cursorPos.y <= 16)
             {
-                Mode displayMode;
-                if (mode == Mode::GATE || mode == Mode::BUTTON)
-                    displayMode = baseMode;
-                else
-                    displayMode = mode;
-
-                if (cursorPos.y <= 16)
+                if (cursorPos.x <= 16)
                 {
-                    if (cursorPos.x <= 16)
+                    const char* text;
+                    switch (baseMode)
                     {
-                        const char* text;
-                        switch (displayMode)
-                        {
-                        case Mode::PEN:   text = "Mode: Draw";        break;
-                        case Mode::EDIT:  text = "Mode: Edit";        break;
-                        case Mode::GATE:  text = "Mode: Gate select"; break;
-                        case Mode::ERASE: text = "Mode: Erase";       break;
-                        default:          text = "";                  break;
-                        }
-                        DrawText(text, 20, 17, 8, WHITE);
-                        DrawRectangle(0, 0, 16, 16, DARKGRAY);
+                    case Mode::PEN:   text = "Mode: Draw";        break;
+                    case Mode::EDIT:  text = "Mode: Edit";        break;
+                    case Mode::GATE:  text = "Mode: Gate select"; break;
+                    case Mode::ERASE: text = "Mode: Erase";       break;
+                    default:          text = "";                  break;
                     }
-                    else if (cursorPos.x <= 32)
-                    {
-                        const char* text;
-                        switch (data.gatePick)
-                        {
-                        case Gate::OR:  text = "Gate: | (or)";  break;
-                        case Gate::AND: text = "Gate: & (and)"; break;
-                        case Gate::NOR: text = "Gate: ! (nor)";  break;
-                        case Gate::XOR: text = "Gate: ^ (xor)";  break;
-                        default:        text = "";             break;
-                        }
-                        DrawText(text, 36, 17, 8, WHITE);
-                        DrawRectangle(16, 0, 16, 16, DARKGRAY);
-                    }
+                    DrawText(text, 20, 17, 8, WHITE);
+                    DrawRectangle(0, 0, 16, 16, DARKGRAY);
                 }
-
-                IRect rec = { 0, 0, 16, 16 };
-                DrawModeIcon(displayMode, rec, WHITE);
-                rec.x += 16;
-                DrawGateIcon16x(data.gatePick, rec, WHITE);
+                else if (cursorPos.x <= 32)
+                {
+                    const char* text;
+                    switch (data.gatePick)
+                    {
+                    case Gate::OR:  text = "Gate: | (or)";  break;
+                    case Gate::AND: text = "Gate: & (and)"; break;
+                    case Gate::NOR: text = "Gate: ! (nor)"; break;
+                    case Gate::XOR: text = "Gate: ^ (xor)"; break;
+                    default:        text = "";              break;
+                    }
+                    DrawText(text, 36, 17, 8, WHITE);
+                    DrawRectangle(16, 0, 16, 16, DARKGRAY);
+                }
             }
+
+            IRect rec = { 0, 0, 16, 16 };
+            DrawModeIcon(baseMode, rec, WHITE);
+            rec.x += 16;
+            DrawGateIcon16x(data.gatePick, rec, WHITE);
 
         } EndDrawing();
     }
