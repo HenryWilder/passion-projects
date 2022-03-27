@@ -700,6 +700,7 @@ private:
     std::vector<Node*> nodes;
     std::unordered_map<IVec2, Node*> nodeGrid;
     std::vector<Node*> startNodes;
+    std::vector<decltype(nodes)::const_iterator> layers;
     std::vector<Wire*> wires; // Inputs/outputs don't exist here
     
     NodeWorld() = default;
@@ -903,11 +904,11 @@ public:
         sorted.reserve(nodes.size());
 
         std::queue<Node*> list;
-        std::unordered_set<Node*> visited;
+        std::unordered_map<Node*,size_t> visited; // Pointer, depth
         for (Node* node : startNodes)
         {
             list.push(node);
-            visited.insert(node);
+            visited.insert({ node, 0 });
         }
 
         auto nodeIsUnvisited = [&visited](Node* node)
@@ -920,13 +921,14 @@ public:
             while (!list.empty())
             {
                 Node* current = list.front();
+                size_t nextDepth = visited.find(current)->second + 1;
                 for (Wire* wire : current->m_wires)
                 {
                     Node* next = wire->end;
                     if (next == current || !nodeIsUnvisited(next))
                         continue;
 
-                    visited.insert(next);
+                    visited.insert({ next, nextDepth });
                     list.push(next);
                 }
                 sorted.push_back(current);
@@ -941,12 +943,124 @@ public:
             Node* firstUnvisitedNode = *it;
             startNodes.push_back(firstUnvisitedNode);
             list.push(firstUnvisitedNode);
-            visited.insert(firstUnvisitedNode);
+            visited.insert({ firstUnvisitedNode, 0 });
         }
+
+        layers.clear();
+        layers.reserve(nodes.size() + 1);
+        layers.push_back(nodes.begin());
+        size_t depth = 0;
+        for (auto it = nodes.begin(); it != nodes.end(); ++it)
+        {
+            if (visited.find(*it)->second != depth)
+            {
+                ++depth;
+                layers.push_back(it);
+            }
+        }
+        layers.push_back(nodes.end());
+        layers.shrink_to_fit();
 
         nodes.swap(sorted);
 
         orderDirty = false;
+    }
+
+    void EvaluateNode(Node* node)
+    {
+        switch (node->m_gate)
+        {
+        case Gate::OR:
+            node->m_state = false;
+            for (Wire* wire : node->m_wires)
+            {
+                if (wire->start == node)
+                    continue;
+
+                if (wire->start->m_state)
+                {
+                    node->m_state = true;
+                    break;
+                }
+            }
+            break;
+
+        case Gate::NOR:
+            node->m_state = true;
+            for (Wire* wire : node->m_wires)
+            {
+                if (wire->start == node)
+                    continue;
+
+                if (wire->start->m_state)
+                {
+                    node->m_state = false;
+                    break;
+                }
+            }
+            break;
+
+        case Gate::AND:
+            if (node->m_inputs == 0)
+            {
+                node->m_state = false;
+                break;
+            }
+
+            node->m_state = true;
+            for (Wire* wire : node->m_wires)
+            {
+                if (wire->start == node)
+                    continue;
+
+                if (!wire->start->m_state)
+                {
+                    node->m_state = false;
+                    break;
+                }
+            }
+            break;
+
+        case Gate::XOR:
+            node->m_state = false;
+            bool x = false;
+            for (Wire* wire : node->m_wires)
+            {
+                if (wire->start == node)
+                    continue;
+
+                if (wire->start->m_state)
+                {
+                    if (x)
+                    {
+                        node->m_state = false;
+                        break;
+                    }
+                    else
+                    {
+                        x = true;
+                        node->m_state = true;
+                    }
+                }
+            }
+            break;
+        }
+    }
+
+    void EvaluateStep(size_t depth)
+    {
+        depth < (layers.size() - 1);
+
+        if (orderDirty)
+        {
+            Sort();
+            orderDirty = false;
+        }
+
+        for (auto it = layers[depth]; it != layers[depth + 1]; ++it)
+        {
+            EvaluateNode(*it);
+        }
     }
 
     void Evaluate()
@@ -959,83 +1073,7 @@ public:
 
         for (Node* node : nodes)
         {
-            switch (node->m_gate)
-            {
-            case Gate::OR:
-                node->m_state = false;
-                for (Wire* wire : node->m_wires)
-                {
-                    if (wire->start == node)
-                        continue;
-
-                    if (wire->start->m_state)
-                    {
-                        node->m_state = true;
-                        break;
-                    }
-                }
-                break;
-
-            case Gate::NOR:
-                node->m_state = true;
-                for (Wire* wire : node->m_wires)
-                {
-                    if (wire->start == node)
-                        continue;
-
-                    if (wire->start->m_state)
-                    {
-                        node->m_state = false;
-                        break;
-                    }
-                }
-                break;
-
-            case Gate::AND:
-                if (node->m_inputs == 0)
-                {
-                    node->m_state = false;
-                    break;
-                }
-
-                node->m_state = true;
-                for (Wire* wire : node->m_wires)
-                {
-                    if (wire->start == node)
-                        continue;
-
-                    if (!wire->start->m_state)
-                    {
-                        node->m_state = false;
-                        break;
-                    }
-                }
-                break;
-
-            case Gate::XOR:
-                node->m_state = false;
-                bool x = false;
-                for (Wire* wire : node->m_wires)
-                {
-                    if (wire->start == node)
-                        continue;
-
-                    if (wire->start->m_state)
-                    {
-                        if (x)
-                        {
-                            node->m_state = false;
-                            break;
-                        }
-                        else
-                        {
-                            x = true;
-                            node->m_state = true;
-                        }
-                    }
-                }
-                break;
-            }
+            EvaluateNode(node);          
         }
     }
 
