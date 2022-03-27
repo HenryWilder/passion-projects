@@ -1410,6 +1410,15 @@ int main()
         bool b_cursorMoved = cursorPosPrev != cursorPos;
         cursorPosPrev = cursorPos;
 
+        if (IsKeyPressed(KEY_ONE))
+            data.gatePick = Gate::OR;
+        else if (IsKeyPressed(KEY_TWO))
+            data.gatePick = Gate::AND;
+        else if (IsKeyPressed(KEY_THREE))
+            data.gatePick = Gate::NOR;
+        else if (IsKeyPressed(KEY_FOUR))
+            data.gatePick = Gate::XOR;
+
         if (IsKeyPressed(KEY_B))
         {
             SetMode(Mode::PEN);
@@ -1431,20 +1440,12 @@ int main()
         {
             SetMode(Mode::INTERACT);
         }
-        else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (cursorPos.y <= 16 && cursorPos.x <= 32))
+        else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (cursorPos.y <= 16 && cursorPos.x <= 32) && mode != Mode::BUTTON)
         {
             SetMode(Mode::BUTTON);
             data.button.dropdownActive = cursorPos.x / 16;
+            goto EVAL;
         }
-        
-        if (IsKeyPressed(KEY_ONE))
-            data.gatePick = Gate::OR;
-        else if (IsKeyPressed(KEY_TWO))
-            data.gatePick = Gate::AND;
-        else if (IsKeyPressed(KEY_THREE))
-            data.gatePick = Gate::NOR;
-        else if (IsKeyPressed(KEY_FOUR))
-            data.gatePick = Gate::XOR;
 
         // Simulation
         switch (mode)
@@ -1686,6 +1687,8 @@ int main()
                     break;
                     }
                 }
+                else
+                    SetMode(baseMode);
             }
             else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
@@ -1695,6 +1698,7 @@ int main()
         break;
         }
 
+EVAL:
         NodeWorld::Get().Evaluate();
 
         /******************************************
