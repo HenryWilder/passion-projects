@@ -1855,4 +1855,5 @@ int main()
 
 // Todo:
 // Wire bisection
+// Special erase (keep wires, erase node)
 // Save/load
