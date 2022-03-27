@@ -297,9 +297,13 @@ struct Wire
     {
         Draw(GetStartPos(), elbow, GetEndPos(), color);
     }
+    static void DrawElbow(IVec2 pos, Color color)
+    {
+        DrawCircle(pos.x, pos.y, g_elbowRadius, color);
+    }
     void DrawElbow(Color color) const
     {
-        DrawCircle(elbow.x, elbow.y, g_elbowRadius, color);
+        DrawElbow(elbow, color);
     }
 
     IVec2 GetStartPos() const; // Requires Node definition
@@ -804,6 +808,7 @@ public:
         delete node;
         orderDirty = true;
     }
+    // Only affects node collision
     void MoveNode(Node* node, IVec2 newPosition)
     {
         nodeGrid.erase(node->GetPosition());
@@ -883,16 +888,18 @@ public:
         orderDirty = true;
         return composite;
     }
+    // Invalidates input wire!
     Wire* ReverseWire(Wire* wire)
     {
+        _ASSERT_EXPR(wire != nullptr, "Cannot reverse null wire");
+        _ASSERT_EXPR(wire->start != nullptr && wire->end != nullptr, "Malformed wire");
         // Swap
-        Node* temp = wire->start;
-        wire->start = wire->end;
-        wire->end = temp;
-
-        wire->start->MakeWireInput(wire);
-        wire->end->MakeWireOutput(wire);
-
+        Node* tbStart = wire->end;
+        Node* tbEnd = wire->start;
+        IVec2 elbow = wire->elbow;
+        DestroyWire(wire);
+        wire = CreateWire(tbStart, tbEnd);
+        wire->SnapElbowToLegal(elbow);
         orderDirty = true;
         return wire;
     }
@@ -1317,6 +1324,7 @@ int main()
                 bool selectionWIP;
                 Node* nodeBeingDragged;
                 Wire* wireBeingDragged;
+                bool b_editingElbow; // Elbow, or reverse?
                 Int_t selectionRectangleX;
                 Int_t selectionRectangleY;
                 Int_t selectionRectangleWidth;
@@ -1369,8 +1377,11 @@ int main()
         Gate::NOR,
     };
 
-    auto SetMode = [&baseMode, &mode, &data](Mode newMode)
+    IVec2 cursorPosPrev = IVec2Zero(); // For checking if there was movement
+
+    auto SetMode = [&baseMode, &mode, &data, &cursorPosPrev](Mode newMode)
     {
+        cursorPosPrev = IVec2(-1,-1);
         mode = newMode;
         switch (newMode)
         {
@@ -1386,6 +1397,7 @@ int main()
             data.edit.selectionWIP = false;
             data.edit.nodeBeingDragged = nullptr;
             data.edit.wireBeingDragged = nullptr;
+            data.edit.b_editingElbow = false;
             data.edit.selectionRectangleX = 0;
             data.edit.selectionRectangleY = 0;
             data.edit.selectionRectangleWidth = 0;
@@ -1416,8 +1428,6 @@ int main()
 
     NodeWorld::Get(); // Construct
         
-    IVec2 cursorPosPrev = IVec2Zero(); // For checking if there was movement
-
     while (!WindowShouldClose())
     {
         /******************************************
@@ -1525,7 +1535,12 @@ int main()
                     data.hoveredWire = nullptr;
                     data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
                     if (!data.hoveredNode)
+                    {
                         data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(cursorPos);
+                        data.edit.b_editingElbow = !!data.hoveredWire;
+                        if (!data.edit.b_editingElbow)
+                            data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+                    }
                 }
             }
 
@@ -1541,6 +1556,9 @@ int main()
                     data.edit.selectionWIP = true;
                 }
                 data.edit.fallbackPos = cursorPos;
+
+                if (!!data.edit.wireBeingDragged && !data.edit.b_editingElbow)
+                    data.hoveredWire = data.edit.wireBeingDragged = NodeWorld::Get().ReverseWire(data.edit.wireBeingDragged);
             }
             // Release
             else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)))
@@ -1587,7 +1605,7 @@ int main()
             }
 
             // Wire
-            else if (!!data.edit.wireBeingDragged)
+            else if (!!data.edit.wireBeingDragged && data.edit.b_editingElbow)
             {
                 data.edit.wireBeingDragged->SnapElbowToLegal(cursorPos);
             }
@@ -1656,10 +1674,8 @@ int main()
             if (!!data.hoveredNode && !data.hoveredNode->IsOutputOnly())
                 data.hoveredNode = nullptr;
 
-            if (false)
-            {
-
-            }
+            if (!!data.hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                data.hoveredNode->SetGate(data.hoveredNode->GetGate() == Gate::OR ? Gate::NOR : Gate::OR);
         }
         break;
 
@@ -1779,40 +1795,33 @@ int main()
 
             case Mode::EDIT:
             {
-                DrawRectangle(
-                    data.edit.selectionRectangleX,
-                    data.edit.selectionRectangleY,
-                    data.edit.selectionRectangleWidth,
-                    data.edit.selectionRectangleHeight,
-                    ColorAlpha(YELLOW, 0.125));
-
-                DrawRectangleLines(
-                    data.edit.selectionRectangleX,
-                    data.edit.selectionRectangleY,
-                    data.edit.selectionRectangleWidth,
-                    data.edit.selectionRectangleHeight,
-                    ColorAlpha(YELLOW, 0.25));
-
                 NodeWorld::Get().DrawWires();
 
                 if (!!data.hoveredWire)
                 {
-                    data.hoveredWire->Draw(LIGHTGRAY);
-                    IVec2 pts[4];
-                    data.hoveredWire->GetLegalElbowPositions(pts);
-                    for (const IVec2& p : pts)
+                    if (data.edit.b_editingElbow) // Elbow
                     {
-                        Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(LIGHTGRAY, 0.125));
-                        DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(DARKGREEN, 0.5));
+                        IVec2 pts[4];
+                        data.hoveredWire->GetLegalElbowPositions(pts);
+                        for (const IVec2& p : pts)
+                        {
+                            Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(WIPBLUE, 0.25f));
+                            DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(WIPBLUE, 0.5f));
+                        }
+
+                        data.hoveredWire->Draw(WIPBLUE);
+                        Color elbowColor;
+                        if (!!data.edit.wireBeingDragged)
+                            elbowColor = WIPBLUE;
+                        else
+                            elbowColor = CAUTIONYELLOW;
+                        data.hoveredWire->DrawElbow(elbowColor);
                     }
-
-                    Color elbowColor;
-                    if (!!data.edit.wireBeingDragged)
-                        elbowColor = LIME;
-                    else
-                        elbowColor = GREEN;
-
-                    data.hoveredWire->DrawElbow(elbowColor);
+                    else // Wire
+                    {
+                        data.hoveredWire->Draw(CAUTIONYELLOW);
+                        data.hoveredWire->DrawElbow(WHITE);
+                    }
                 }
 
                 NodeWorld::Get().DrawNodes();
@@ -1820,6 +1829,11 @@ int main()
                 if (!!data.hoveredNode)
                 {
                     data.hoveredNode->Draw(CAUTIONYELLOW);
+                }
+                if (!!data.hoveredWire)
+                {
+                    data.hoveredWire->start->Draw(INPUTLAVENDER);
+                    data.hoveredWire->end->Draw(OUTPUTAPRICOT);
                 }
             }
             break;
@@ -1871,7 +1885,7 @@ int main()
 
                 if (!!data.hoveredNode)
                 {
-                    data.hoveredNode->Draw(CAUTIONYELLOW);
+                    data.hoveredNode->Draw(INPUTLAVENDER);
                 }
             }
             break;
@@ -2054,7 +2068,7 @@ int main()
 
 // Todo:
 // Hotswitch to last gate
-// Toggle between OR and NOR
+// Step-by-step evaluation option
 // Hotkey-able output-only gate state toggles (Like the Reason on-screen piano)
 // Wire bisection
 // Special erase (keep wires, erase node)
