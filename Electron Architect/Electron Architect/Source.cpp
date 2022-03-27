@@ -1422,7 +1422,7 @@ int main()
         if (IsKeyPressed(KEY_B))
         {
             SetMode(Mode::PEN);
-        }
+        } 
         else if (IsKeyPressed(KEY_V))
         {
             SetMode(Mode::EDIT);
@@ -1440,7 +1440,8 @@ int main()
         {
             SetMode(Mode::INTERACT);
         }
-        else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (cursorPos.y <= 16 && cursorPos.x <= 32) && mode != Mode::BUTTON)
+        else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (cursorPos.y <= 16 && cursorPos.x <= 32) &&
+            (mode == Mode::BUTTON ? data.button.dropdownActive != (cursorPos.x / 16) : true))
         {
             SetMode(Mode::BUTTON);
             data.button.dropdownActive = cursorPos.x / 16;
@@ -1709,6 +1710,7 @@ EVAL:
 
             ClearBackground(BLACK);
 
+            // Grid
             for (Int_t y = 0; y < windowHeight; y += g_gridSize)
             {
                 DrawLine(0, y, windowWidth, y, SPACEGRAY);
