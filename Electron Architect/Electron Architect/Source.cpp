@@ -1194,6 +1194,7 @@ public: // Serialization
     }
 
     // Reads both large and small
+    // TODO
     void Load(const char* filename)
     {
         std::ifstream file(filename, std::fstream::in);
@@ -1240,6 +1241,7 @@ int main()
         PEN,
         EDIT,
         ERASE,
+        INTERACT,
         GATE,
         BUTTON,
     } mode, baseMode;
@@ -1251,9 +1253,10 @@ int main()
         IVec2 offset;
         switch (mode)
         {
-        case Mode::PEN:    offset = IVec2(    0,     0); break;
-        case Mode::EDIT:   offset = IVec2(width,     0); break;
-        case Mode::ERASE:  offset = IVec2(    0, width); break;
+        case Mode::PEN:      offset = IVec2(    0,     0); break;
+        case Mode::EDIT:     offset = IVec2(width,     0); break;
+        case Mode::ERASE:    offset = IVec2(    0, width); break;
+        case Mode::INTERACT: offset = IVec2(width, width); break;
         default: return;
         }
         BeginScissorMode(dest.x, dest.y, dest.w, dest.h); {
@@ -1301,6 +1304,7 @@ int main()
         Node* hoveredNode = nullptr;
         Wire* hoveredWire = nullptr;
         Gate gatePick = Gate::OR;
+        Gate lastGate = Gate::OR;
         union // Base mode
         {
             struct {
@@ -1320,7 +1324,10 @@ int main()
             } edit;
 
             struct {
-            } erase = {};
+            } erase;
+
+            struct {
+            } interact;
         };
         union // Overlay mode - doesn't affect other modes
         {
@@ -1340,6 +1347,7 @@ int main()
         Mode::PEN,
         Mode::EDIT,
         Mode::ERASE,
+        Mode::INTERACT,
     };
     constexpr Gate dropdownGateOrder[] =
     {
@@ -1367,13 +1375,13 @@ int main()
         switch (newMode)
         {
         case Mode::PEN:
-            baseMode = mode;
+            baseMode = Mode::PEN;
             data.pen.currentWireStart = nullptr;
             data.pen.currentWireElbowConfig = 0;
             break;
 
         case Mode::EDIT:
-            baseMode = mode;
+            baseMode = Mode::EDIT;
             data.edit.fallbackPos = IVec2Zero();
             data.edit.selectionWIP = false;
             data.edit.nodeBeingDragged = nullptr;
@@ -1385,7 +1393,11 @@ int main()
             break;
 
         case Mode::ERASE:
-            baseMode = mode;
+            baseMode = Mode::ERASE;
+            break;
+
+        case Mode::INTERACT:
+            baseMode = Mode::INTERACT;
             break;
 
         case Mode::GATE:
@@ -1434,6 +1446,10 @@ int main()
         {
             SetMode(Mode::ERASE);
         }
+        else if (IsKeyPressed(KEY_F))
+        {
+            SetMode(Mode::INTERACT);
+        }
         else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (cursorPos.y <= 16 && cursorPos.x <= 32))
         {
             SetMode(Mode::BUTTON);
@@ -1464,7 +1480,7 @@ int main()
                 Node* newNode = data.hoveredNode;
                 if (!newNode)
                     newNode = NodeWorld::Get().CreateNode(cursorPos, data.gatePick);
-		        // Do not create a new node/wire if already hovering the start node
+                // Do not create a new node/wire if already hovering the start node
                 if (!!data.pen.currentWireStart && newNode != data.pen.currentWireStart)
                 {
                     Wire* wire = NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
@@ -1487,7 +1503,7 @@ int main()
                 data.pen.currentWireStart = nullptr;
             }
         }
-            break;
+        break;
 
         case Mode::EDIT:
         {
@@ -1565,7 +1581,7 @@ int main()
                 data.edit.wireBeingDragged->SnapElbowToLegal(cursorPos);
             }
         }
-            break;
+        break;
 
         case Mode::GATE:
         {
@@ -1595,7 +1611,7 @@ int main()
                 cursorPos = data.gate.radialMenuCenter;
             }
         }
-            break;
+        break;
 
         case Mode::ERASE:
         {
@@ -1615,7 +1631,13 @@ int main()
                 data.hoveredWire = nullptr;
             }
         }
-            break;
+        break;
+
+        case Mode::INTERACT:
+        {
+            data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+        }
+        break;
 
         case Mode::BUTTON:
         {
@@ -1644,7 +1666,7 @@ int main()
                             rec.y += 16;
                         }
                     }
-                        break;
+                    break;
 
                     case 1: // Gate
                     {
@@ -1664,7 +1686,7 @@ int main()
 
                         SetMode(baseMode);
                     }
-                        break;
+                    break;
                     }
                 }
             }
@@ -1673,7 +1695,7 @@ int main()
                 SetMode(baseMode);
             }
         }
-            break;
+        break;
         }
 
         NodeWorld::Get().Evaluate();
@@ -1729,7 +1751,7 @@ int main()
                     data.hoveredNode->Draw(WIPBLUE);
                 }
             }
-                break;
+            break;
 
             case Mode::EDIT:
             {
@@ -1776,7 +1798,7 @@ int main()
                     data.hoveredNode->Draw(CAUTIONYELLOW);
                 }
             }
-                break;
+            break;
 
             case Mode::ERASE:
             {
@@ -1818,6 +1840,18 @@ int main()
             }
             break;
 
+            case Mode::INTERACT:
+            {
+                NodeWorld::Get().DrawWires();
+                NodeWorld::Get().DrawNodes();
+
+                if (!!data.hoveredNode)
+                {
+                    data.hoveredNode->Draw(CAUTIONYELLOW);
+                }
+            }
+            break;
+
             case Mode::GATE:
             {
                 if (baseMode == Mode::PEN)
@@ -1845,14 +1879,14 @@ int main()
                 constexpr int menuRadius = 64;
                 constexpr int menuIconOffset = 12;
                 constexpr IVec2 menuOff[4] = {
-                    IVec2( 0, 0),
-                    IVec2( 0,-1),
+                    IVec2(0, 0),
+                    IVec2(0,-1),
                     IVec2(-1,-1),
                     IVec2(-1, 0),
                 };
                 constexpr IRect iconDest[4] = {
-                    IRect( menuIconOffset,       menuIconOffset,      32, 32),
-                    IRect( menuIconOffset,      -menuIconOffset - 32, 32, 32),
+                    IRect(menuIconOffset,       menuIconOffset,      32, 32),
+                    IRect(menuIconOffset,      -menuIconOffset - 32, 32, 32),
                     IRect(-menuIconOffset - 32, -menuIconOffset - 32, 32, 32),
                     IRect(-menuIconOffset - 32,  menuIconOffset,      32, 32),
                 };
@@ -1915,7 +1949,7 @@ int main()
                         rec.y += 16;
                     }
                 }
-                    break;
+                break;
 
                 case 1: // Gate
                 {
@@ -1928,10 +1962,10 @@ int main()
                         rec.y += 16;
                     }
                 }
-                    break;
+                break;
                 }
             }
-                break;
+            break;
             }
 
             // Global UI
