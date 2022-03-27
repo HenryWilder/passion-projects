@@ -8,6 +8,18 @@
 //#include <raymath.h>
 //#include <extras\raygui.h>
 
+// Custom colors
+#define SPACEGRAY CLITERAL(Color){ 28, 26, 41, 255 }
+#define LIFELESSNEBULA CLITERAL(Color){ 75, 78, 94, 255 }
+#define HAUNTINGWHITE CLITERAL(Color){ 148, 150, 166, 255 }
+#define GLEEFULDUST CLITERAL(Color){ 116, 125, 237, 255 }
+#define INTERFERENCEGRAY CLITERAL(Color){ 232, 234, 255, 255 }
+#define REDSTONE CLITERAL(Color){ 212, 25, 25, 255 }
+#define DEADCABLE CLITERAL(Color){ 122, 118, 118, 255 }
+#define INPUTLAVENDER CLITERAL(Color){ 128, 106, 217, 255 }
+#define OUTPUTAPRICOT CLITERAL(Color){ 207, 107, 35, 255 }
+#define WIPBLUE CLITERAL(Color){ 26, 68, 161, 255 }
+
 // Returns true on success
 template<typename T>
 bool FindAndErase(std::vector<T>& vec, const T& element)
@@ -262,8 +274,8 @@ struct Wire
     Wire() = default;
     Wire(Node* start, Node* end) : elbow(), elbowConfig(0), start(start), end(end) {}
 
-    static constexpr Color g_wireColorActive = RED;
-    static constexpr Color g_wireColorInactive = GRAY;
+    static constexpr Color g_wireColorActive = REDSTONE;
+    static constexpr Color g_wireColorInactive = DEADCABLE;
     static constexpr float g_elbowRadius = 2.0f;
 
     IVec2 elbow;
@@ -1432,15 +1444,13 @@ int main()
                     data.gate.overlappedSection = 0;
             }
 
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-                data.gatePick = radialGateOrder[data.gate.overlappedSection];
-
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+            bool leftMouse = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+            if (leftMouse || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
-                if (baseMode == Mode::GATE) // Fringe
-                    baseMode = Mode::PEN;
+                if (leftMouse)
+                    data.gatePick = radialGateOrder[data.gate.overlappedSection];
+
                 mode = baseMode;
-                baseMode = Mode::GATE;
                 SetMousePosition(data.gate.radialMenuCenter.x, data.gate.radialMenuCenter.y);
                 cursorPos = data.gate.radialMenuCenter;
             }
@@ -1549,8 +1559,8 @@ int main()
                     IVec2 elbow;
                     IVec2 end = cursorPos;
                     elbow = Wire::GetLegalElbowPosition(start, end, data.pen.currentWireElbowConfig);
-                    Wire::Draw(start, elbow, end, DARKBLUE);
-                    Node::Draw(end, data.gatePick, DARKBLUE);
+                    Wire::Draw(start, elbow, end, WIPBLUE);
+                    Node::Draw(end, data.gatePick, WIPBLUE);
                 }
 
                 if (!!data.hoveredWire)
@@ -1564,9 +1574,9 @@ int main()
                     {
                         Color color;
                         if (wire->start == data.hoveredNode)
-                            color = DARKBLUE; // Output
+                            color = OUTPUTAPRICOT; // Output
                         else
-                            color = DARKPURPLE; // Input
+                            color = INPUTLAVENDER; // Input
 
                         wire->Draw(color);
                     }
@@ -1673,8 +1683,8 @@ int main()
                         IVec2 elbow;
                         IVec2 end = data.gate.radialMenuCenter;
                         elbow = Wire::GetLegalElbowPosition(start, end, data.pen.currentWireElbowConfig);
-                        Wire::Draw(start, elbow, end, DARKBLUE);
-                        Node::Draw(end, data.gatePick, DARKBLUE);
+                        Wire::Draw(start, elbow, end, WIPBLUE);
+                        Node::Draw(end, data.gatePick, WIPBLUE);
                     }
 
                     NodeWorld::Get().DrawNodes();
@@ -1688,16 +1698,10 @@ int main()
                 constexpr int menuRadius = 64;
                 constexpr int menuIconOffset = 12;
                 constexpr IVec2 menuOff[4] = {
-                    IVec2( 4,               4             ),
-                    IVec2( 4,              -4 - menuRadius),
-                    IVec2(-4 - menuRadius, -4 - menuRadius),
-                    IVec2(-4 - menuRadius,  4             ),
-                };
-                constexpr IVec2 menuOff_hover[4] = {
-                    IVec2(0,                    0                   ),
-                    IVec2(0,                    0 - (menuRadius + 4)),
-                    IVec2(0 - (menuRadius + 4), 0 - (menuRadius + 4)),
-                    IVec2(0 - (menuRadius + 4), 0                   ),
+                    IVec2( 0, 0),
+                    IVec2( 0,-1),
+                    IVec2(-1,-1),
+                    IVec2(-1, 0),
                 };
                 constexpr IRect iconDest[4] = {
                     IRect( menuIconOffset,       menuIconOffset,      32, 32),
@@ -1707,7 +1711,7 @@ int main()
                 };
                 int x = data.gate.radialMenuCenter.x;
                 int y = data.gate.radialMenuCenter.y;
-                Color menuBackground = ColorAlpha(DARKGRAY, 0.4f);
+                constexpr Color menuBackground = SPACEGRAY;
                 DrawCircleIV(data.gate.radialMenuCenter, static_cast<float>(menuRadius + 4), menuBackground);
 
                 for (int i = 0; i < 4; ++i)
@@ -1716,20 +1720,19 @@ int main()
                     Color colorB;
                     int radius;
 
-                    if (i == data.gate.overlappedSection)
+                    if (i == data.gate.overlappedSection) // Active
                     {
-                        colorA = WHITE;
-                        colorB = BLUE;
-                        radius = menuRadius + 4;
-                        BeginScissorMode(x + menuOff_hover[i].x, y + menuOff_hover[i].y, radius, radius);
+                        colorA = GLEEFULDUST;
+                        colorB = INTERFERENCEGRAY;
+                        radius = menuRadius + 8;
                     }
-                    else
+                    else // Inactive
                     {
-                        colorA = GRAY;
-                        colorB = WHITE;
+                        colorA = LIFELESSNEBULA;
+                        colorB = HAUNTINGWHITE;
                         radius = menuRadius;
-                        BeginScissorMode(x + menuOff[i].x, y + menuOff[i].y, radius, radius);
                     }
+                    BeginScissorMode(x + (menuOff[i].x * 8 + 4) + menuOff[i].x * radius, y + (menuOff[i].y * 8 + 4) + menuOff[i].y * radius, radius, radius);
 
                     float startAngle = static_cast<float>(i * 90);
                     DrawCircleSector({ static_cast<float>(x), static_cast<float>(y) }, static_cast<float>(radius), startAngle, startAngle + 90.0f, 8, colorA);
@@ -1749,7 +1752,7 @@ int main()
                 NodeWorld::Get().DrawNodes();
 
                 IRect rec = dropdownBounds[data.button.dropdownActive];
-                DrawRectangleIRect(dropdownBounds[data.button.dropdownActive], DARKGRAY);
+                DrawRectangleIRect(dropdownBounds[data.button.dropdownActive], SPACEGRAY);
                 rec.h = 16;
 
                 switch (data.button.dropdownActive)
@@ -1760,7 +1763,7 @@ int main()
                     {
                         if (m == baseMode)
                             continue;
-                        Color color = InBoundingBox(rec, cursorPos) ? WHITE : GRAY;
+                        Color color = InBoundingBox(rec, cursorPos) ? WHITE : DEADCABLE;
                         DrawModeIcon(m, rec, color);
                         rec.y += 16;
                     }
@@ -1800,7 +1803,7 @@ int main()
                     default:          text = "";                  break;
                     }
                     DrawText(text, 20, 17, 8, WHITE);
-                    DrawRectangle(0, 0, 16, 16, DARKGRAY);
+                    DrawRectangle(0, 0, 16, 16, SPACEGRAY);
                 }
                 else if (cursorPos.x <= 32)
                 {
@@ -1814,13 +1817,15 @@ int main()
                     default:        text = "";              break;
                     }
                     DrawText(text, 36, 17, 8, WHITE);
-                    DrawRectangle(16, 0, 16, 16, DARKGRAY);
+                    DrawRectangle(16, 0, 16, 16, SPACEGRAY);
                 }
             }
 
             IRect rec = { 0, 0, 16, 16 };
+            DrawRectangleIRect(rec, SPACEGRAY);
             DrawModeIcon(baseMode, rec, WHITE);
             rec.x += 16;
+            DrawRectangleIRect(rec, SPACEGRAY);
             DrawGateIcon16x(data.gatePick, rec, WHITE);
 
         } EndDrawing();
