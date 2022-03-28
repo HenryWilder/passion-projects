@@ -695,16 +695,115 @@ IVec2 Wire::GetEndPos() const
 
 struct Blueprint
 {
-	struct NodeBP
-	{
-		Gate gate;
-		IVec2 relativePosition;
-	};
-	struct WireBP
-	{
-		size_t startNodeIndex, endNodeIndex;
-		decltype(Wire::elbowConfig) elbowConfig;
-	};
+    struct NodeBP
+    {
+        Gate gate;
+        IVec2 relativePosition;
+    };
+    struct WireBP
+    {
+        size_t startNodeIndex, endNodeIndex;
+        decltype(Wire::elbowConfig) elbowConfig;
+    };
+
+    Blueprint(std::vector<Node*>::const_iterator first, std::vector<Node*>::const_iterator last)
+    {
+        Blueprint* this_ptr = this;
+
+        static auto nodeLambda = [first, last, this_ptr]()
+        {
+            constexpr IVec2 minInit = IVec2(std::numeric_limits<Int_t>::max(), std::numeric_limits<Int_t>::max());
+            IVec2 min = minInit;
+            for (auto it = first; it != last; ++it)
+            {
+                const IVec2& compare = (*it)->GetPosition();
+                if (compare.x < min.x)
+                    min.x = compare.x;
+                if (compare.y < min.y)
+                    min.y = compare.y;
+            }
+
+            this_ptr->nodes.reserve(std::distance(first, last));
+            for (auto it = first; it != last; ++it)
+            {
+                this_ptr->nodes.emplace_back(
+                    (*it)->GetGate(),
+                    (*it)->GetPosition() - min);
+            }
+        };
+        std::thread nodeThread(nodeLambda);
+
+        static auto wireLambda = [first, last, this_ptr]()
+        {
+            std::unordered_map<Node*, size_t> nodeIndices;
+            std::unordered_set<Wire*> visitedWires;
+
+            // Populate nodeIndices
+            std::thread nodeIndexer([first, last, &nodeIndices]()
+                {
+                    for (auto it = first; it != last; ++it)
+                    {
+                        nodeIndices.emplace(*it, std::distance(first, it));
+                    }
+                }
+            );
+
+            // Count wires
+            {
+                {
+                    size_t totalWires = 0;
+                    for (auto it = first; it != last; ++it)
+                    {
+                        for (Wire* wire : (*it)->GetWires())
+                        {
+                            ++totalWires;
+                        }
+                    }
+                    visitedWires.reserve(totalWires);
+                }
+
+                {
+                    size_t uniqueWires = 0;
+                    for (auto it = first; it != last; ++it)
+                    {
+                        for (Wire* wire : (*it)->GetWires())
+                        {
+                            if (visitedWires.find(wire) == visitedWires.end())
+                            {
+                                visitedWires.insert(wire);
+                                ++uniqueWires;
+                            }
+                        }
+                    }
+                    visitedWires.clear();
+                    visitedWires.reserve(uniqueWires);
+                    this_ptr->wires.reserve(uniqueWires);
+                }
+            }
+
+            nodeIndexer.join();
+
+            for (auto it = first; it != last; ++it)
+            {
+                for (Wire* wire : (*it)->GetWires())
+                {
+                    if (visitedWires.find(wire) == visitedWires.end())
+                    {
+                        visitedWires.insert(wire);
+                        this_ptr->wires.emplace_back(
+                            nodeIndices.find(wire->start)->second,
+                            nodeIndices.find(wire->end)->second,
+                            wire->elbowConfig);
+                    }
+                }
+            }
+        };
+        std::thread wireThread(wireLambda);
+
+        nodeThread.join();
+        wireThread.join();
+    }
+
 	std::vector<NodeBP> nodes;
 	std::vector<WireBP> wires;
 };
