@@ -1519,6 +1519,7 @@ int main()
                 bool selectionWIP;
                 Node* nodeBeingDragged;
                 Wire* wireBeingDragged;
+                IVec2 selectionStart;
                 IRect selectionRec;
             } edit;
 
@@ -1585,6 +1586,7 @@ int main()
             data.edit.selectionWIP = false;
             data.edit.nodeBeingDragged = nullptr;
             data.edit.wireBeingDragged = nullptr;
+            data.edit.selectionStart = IVec2Zero();
             data.edit.selectionRec = IRect(0,0,0,0);
             break;
 
@@ -1741,7 +1743,7 @@ int main()
                 data.edit.wireBeingDragged = data.hoveredWire;
                 if (!data.edit.nodeBeingDragged && !data.edit.wireBeingDragged)
                 {
-                    data.edit.selectionRec.xy = cursorPos;
+                    data.edit.selectionStart = cursorPos;
                     data.edit.selectionWIP = true;
                 }
                 data.edit.fallbackPos = cursorPos;
@@ -1778,19 +1780,10 @@ int main()
             // Selection
             if (data.edit.selectionWIP || lastFrameUpdate)
             {
-                data.edit.selectionRec.wh = cursorPos - data.edit.selectionRec.xy;
-                if (data.edit.selectionRec.w < 0)
-                {
-                    data.edit.selectionRec.w += data.edit.selectionRec.x;
-                    std::swap(data.edit.selectionRec.w, data.edit.selectionRec.x);
-                    data.edit.selectionRec.w -= data.edit.selectionRec.x;
-                }
-                if (data.edit.selectionRec.h < 0)
-                {
-                    data.edit.selectionRec.h += data.edit.selectionRec.y;
-                    std::swap(data.edit.selectionRec.h, data.edit.selectionRec.y);
-                    data.edit.selectionRec.h -= data.edit.selectionRec.y;
-                }
+                auto [minx, maxx] = std::minmax(cursorPos.x, data.edit.selectionStart.x);
+                auto [miny, maxy] = std::minmax(cursorPos.y, data.edit.selectionStart.y);
+                data.edit.selectionRec.w = maxx - (data.edit.selectionRec.x = minx);
+                data.edit.selectionRec.h = maxy - (data.edit.selectionRec.y = miny);
                 lastFrameUpdate = false;
             }
 
