@@ -709,38 +709,38 @@ struct Blueprint
     using ConstNodeIter = std::vector<Node*>::const_iterator;
 
 private: // Multithread functions
-    void PopulateNodes(ConstNodeIter first, ConstNodeIter last)
+    void PopulateNodes(std::vector<Node*>& src)
     {
         constexpr IVec2 minInit = IVec2(std::numeric_limits<Int_t>::max(), std::numeric_limits<Int_t>::max());
         IVec2 min = minInit;
-        for (auto it = first; it != last; ++it)
+        for (Node* node : src)
         {
-            const IVec2& compare = (*it)->GetPosition();
+            const IVec2& compare = node->GetPosition();
             if (compare.x < min.x)
                 min.x = compare.x;
             if (compare.y < min.y)
                 min.y = compare.y;
         }
 
-        nodes.reserve(std::distance(first, last));
-        for (auto it = first; it != last; ++it)
+        nodes.reserve(src.size());
+        for (Node* node : src)
         {
             nodes.emplace_back(
-                (*it)->GetGate(),
-                (*it)->GetPosition() - min);
+                node->GetGate(),
+                node->GetPosition() - min);
         }
     }
-    void PopulateWires(ConstNodeIter first, ConstNodeIter last)
+    void PopulateWires(std::vector<Node*>& src)
     {
         std::unordered_map<Node*, size_t> nodeIndices;
         std::unordered_set<Wire*> visitedWires;
 
         // Populate nodeIndices
-        std::thread nodeIndexer([first, last, &nodeIndices]()
+        std::thread nodeIndexer([&src, &nodeIndices]()
             {
-                for (auto it = first; it != last; ++it)
+                for (size_t i = 0; i < src.size(); ++i)
                 {
-                    nodeIndices.emplace(*it, std::distance(first, it));
+                    nodeIndices.emplace(src[i], i);
                 }
             }
         );
@@ -749,9 +749,9 @@ private: // Multithread functions
         {
             {
                 size_t totalWires = 0;
-                for (auto it = first; it != last; ++it)
+                for (Node* node : src)
                 {
-                    for (Wire* wire : (*it)->GetWires())
+                    for (Wire* wire : node->GetWires())
                     {
                         ++totalWires;
                     }
@@ -761,9 +761,9 @@ private: // Multithread functions
 
             {
                 size_t uniqueWires = 0;
-                for (auto it = first; it != last; ++it)
+                for (Node* node : src)
                 {
-                    for (Wire* wire : (*it)->GetWires())
+                    for (Wire* wire : node->GetWires())
                     {
                         if (visitedWires.find(wire) == visitedWires.end())
                         {
@@ -780,9 +780,9 @@ private: // Multithread functions
 
         nodeIndexer.join();
 
-        for (auto it = first; it != last; ++it)
+        for (Node* node : src)
         {
-            for (Wire* wire : (*it)->GetWires())
+            for (Wire* wire : node->GetWires())
             {
                 if (visitedWires.find(wire) == visitedWires.end())
                 {
@@ -797,10 +797,10 @@ private: // Multithread functions
     }
 
 public:
-    Blueprint(ConstNodeIter first, ConstNodeIter last)
+    Blueprint(std::vector<Node*>& src)
     {        
-        std::thread nodeThread(&PopulateNodes, first, last);
-        std::thread wireThread(&PopulateWires, first, last);
+        std::thread nodeThread(&PopulateNodes, src);
+        std::thread wireThread(&PopulateWires, src);
         nodeThread.join();
         wireThread.join();
     }
