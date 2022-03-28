@@ -706,100 +706,101 @@ struct Blueprint
         decltype(Wire::elbowConfig) elbowConfig;
     };
 
-    Blueprint(std::vector<Node*>::const_iterator first, std::vector<Node*>::const_iterator last)
+    using ConstNodeIter = std::vector<Node*>::const_iterator;
+
+private: // Multithread functions
+    void PopulateNodes(ConstNodeIter first, ConstNodeIter last)
     {
-        Blueprint* this_ptr = this;
-
-        static auto nodeLambda = [first, last, this_ptr]()
+        constexpr IVec2 minInit = IVec2(std::numeric_limits<Int_t>::max(), std::numeric_limits<Int_t>::max());
+        IVec2 min = minInit;
+        for (auto it = first; it != last; ++it)
         {
-            constexpr IVec2 minInit = IVec2(std::numeric_limits<Int_t>::max(), std::numeric_limits<Int_t>::max());
-            IVec2 min = minInit;
-            for (auto it = first; it != last; ++it)
-            {
-                const IVec2& compare = (*it)->GetPosition();
-                if (compare.x < min.x)
-                    min.x = compare.x;
-                if (compare.y < min.y)
-                    min.y = compare.y;
-            }
+            const IVec2& compare = (*it)->GetPosition();
+            if (compare.x < min.x)
+                min.x = compare.x;
+            if (compare.y < min.y)
+                min.y = compare.y;
+        }
 
-            this_ptr->nodes.reserve(std::distance(first, last));
-            for (auto it = first; it != last; ++it)
-            {
-                this_ptr->nodes.emplace_back(
-                    (*it)->GetGate(),
-                    (*it)->GetPosition() - min);
-            }
-        };
-        std::thread nodeThread(nodeLambda);
-
-        static auto wireLambda = [first, last, this_ptr]()
+        nodes.reserve(std::distance(first, last));
+        for (auto it = first; it != last; ++it)
         {
-            std::unordered_map<Node*, size_t> nodeIndices;
-            std::unordered_set<Wire*> visitedWires;
+            nodes.emplace_back(
+                (*it)->GetGate(),
+                (*it)->GetPosition() - min);
+        }
+    }
+    void PopulateWires(ConstNodeIter first, ConstNodeIter last)
+    {
+        std::unordered_map<Node*, size_t> nodeIndices;
+        std::unordered_set<Wire*> visitedWires;
 
-            // Populate nodeIndices
-            std::thread nodeIndexer([first, last, &nodeIndices]()
+        // Populate nodeIndices
+        std::thread nodeIndexer([first, last, &nodeIndices]()
+            {
+                for (auto it = first; it != last; ++it)
                 {
-                    for (auto it = first; it != last; ++it)
+                    nodeIndices.emplace(*it, std::distance(first, it));
+                }
+            }
+        );
+
+        // Count wires
+        {
+            {
+                size_t totalWires = 0;
+                for (auto it = first; it != last; ++it)
+                {
+                    for (Wire* wire : (*it)->GetWires())
                     {
-                        nodeIndices.emplace(*it, std::distance(first, it));
+                        ++totalWires;
                     }
                 }
-            );
+                visitedWires.reserve(totalWires);
+            }
 
-            // Count wires
             {
+                size_t uniqueWires = 0;
+                for (auto it = first; it != last; ++it)
                 {
-                    size_t totalWires = 0;
-                    for (auto it = first; it != last; ++it)
+                    for (Wire* wire : (*it)->GetWires())
                     {
-                        for (Wire* wire : (*it)->GetWires())
+                        if (visitedWires.find(wire) == visitedWires.end())
                         {
-                            ++totalWires;
+                            visitedWires.insert(wire);
+                            ++uniqueWires;
                         }
                     }
-                    visitedWires.reserve(totalWires);
                 }
-
-                {
-                    size_t uniqueWires = 0;
-                    for (auto it = first; it != last; ++it)
-                    {
-                        for (Wire* wire : (*it)->GetWires())
-                        {
-                            if (visitedWires.find(wire) == visitedWires.end())
-                            {
-                                visitedWires.insert(wire);
-                                ++uniqueWires;
-                            }
-                        }
-                    }
-                    visitedWires.clear();
-                    visitedWires.reserve(uniqueWires);
-                    this_ptr->wires.reserve(uniqueWires);
-                }
+                visitedWires.clear();
+                visitedWires.reserve(uniqueWires);
+                wires.reserve(uniqueWires);
             }
+        }
 
-            nodeIndexer.join();
+        nodeIndexer.join();
 
-            for (auto it = first; it != last; ++it)
+        for (auto it = first; it != last; ++it)
+        {
+            for (Wire* wire : (*it)->GetWires())
             {
-                for (Wire* wire : (*it)->GetWires())
+                if (visitedWires.find(wire) == visitedWires.end())
                 {
-                    if (visitedWires.find(wire) == visitedWires.end())
-                    {
-                        visitedWires.insert(wire);
-                        this_ptr->wires.emplace_back(
-                            nodeIndices.find(wire->start)->second,
-                            nodeIndices.find(wire->end)->second,
-                            wire->elbowConfig);
-                    }
+                    visitedWires.insert(wire);
+                    wires.emplace_back(
+                        nodeIndices.find(wire->start)->second,
+                        nodeIndices.find(wire->end)->second,
+                        wire->elbowConfig);
                 }
             }
-        };
-        std::thread wireThread(wireLambda);
+        }
+    }
 
+public:
+    Blueprint(ConstNodeIter first, ConstNodeIter last)
+    {        
+        std::thread nodeThread(&PopulateNodes, first, last);
+        std::thread wireThread(&PopulateWires, first, last);
         nodeThread.join();
         wireThread.join();
     }
