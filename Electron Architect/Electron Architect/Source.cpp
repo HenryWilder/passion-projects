@@ -709,17 +709,31 @@ struct Blueprint
 private: // Multithread functions
     void PopulateNodes(std::vector<Node*>& src)
     {
-        constexpr IVec2 minInit = IVec2(std::numeric_limits<Int_t>::max(), std::numeric_limits<Int_t>::max());
-        IVec2 min = minInit;
+        constexpr IRect boundsInit = IRect(
+            std::numeric_limits<Int_t>::max(),
+            std::numeric_limits<Int_t>::max(),
+            std::numeric_limits<Int_t>::min(),
+            std::numeric_limits<Int_t>::min());
+        bounds = boundsInit;
         for (Node* node : src)
         {
             const IVec2& compare = node->GetPosition();
-            if (compare.x < min.x)
-                min.x = compare.x;
-            if (compare.y < min.y)
-                min.y = compare.y;
-        }
+            if (compare.x < bounds.x)
+                bounds.x = compare.x;
+            if (compare.y < bounds.y)
+                bounds.y = compare.y;
 
+            // Abusing width and height as max x/y
+            if (compare.x > bounds.w)
+                bounds.w = compare.x;
+            if (compare.y > bounds.h)
+                bounds.h = compare.y;
+        }
+        // Disabuse
+        bounds.w -= bounds.x;
+        bounds.h -= bounds.y;
+
+        IVec2 min = IVec2(bounds.x, bounds.y);
         nodes.reserve(src.size());
         for (Node* node : src)
         {
@@ -803,6 +817,7 @@ public:
         wireThread.join();
     }
 
+    IRect bounds;
 	std::vector<NodeBP> nodes;
 	std::vector<WireBP> wires;
 };
@@ -1238,6 +1253,11 @@ public:
     }
 
 public: // Serialization
+
+    void SpawnBlueprint()
+    {
+
+    }
 
     // Larger file, faster startup/save (less analysis)
     void Save_LargeFile(const char* filename) const
