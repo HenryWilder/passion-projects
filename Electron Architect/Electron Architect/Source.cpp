@@ -1779,6 +1779,18 @@ int main()
             if (data.edit.selectionWIP || lastFrameUpdate)
             {
                 data.edit.selectionRec.wh = cursorPos - data.edit.selectionRec.xy;
+                if (data.edit.selectionRec.w < 0)
+                {
+                    data.edit.selectionRec.w += data.edit.selectionRec.x;
+                    std::swap(data.edit.selectionRec.w, data.edit.selectionRec.x);
+                    data.edit.selectionRec.w -= data.edit.selectionRec.x;
+                }
+                if (data.edit.selectionRec.h < 0)
+                {
+                    data.edit.selectionRec.h += data.edit.selectionRec.y;
+                    std::swap(data.edit.selectionRec.h, data.edit.selectionRec.y);
+                    data.edit.selectionRec.h -= data.edit.selectionRec.y;
+                }
                 lastFrameUpdate = false;
             }
 
