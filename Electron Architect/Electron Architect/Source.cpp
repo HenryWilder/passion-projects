@@ -693,6 +693,22 @@ IVec2 Wire::GetEndPos() const
     return end->GetPosition();
 }
 
+struct Blueprint
+{
+	struct NodeBP
+	{
+		Gate gate;
+		IVec2 relativePosition;
+	};
+	struct WireBP
+	{
+		size_t startNodeIndex, endNodeIndex;
+		decltype(Wire::elbowConfig) elbowConfig;
+	};
+	std::vector<NodeBP> nodes;
+	std::vector<WireBP> wires;
+};
+
 class NodeWorld
 {
 private:
