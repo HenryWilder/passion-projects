@@ -257,7 +257,11 @@ struct IRect
     IRect() = default;
     constexpr IRect(Int_t x, Int_t y, Int_t w, Int_t h) : x(x), y(y), w(w), h(h) {}
 
-    Int_t x, y, w, h;
+    union
+    {
+        struct { Int_t x, y, w, h; };
+        struct { IVec2 xy, wh; };
+    };
 };
 
 bool InBoundingBox(IRect bounds, IVec2 pt)
@@ -1496,10 +1500,12 @@ int main()
     };
 
     struct {
-        Node* hoveredNode = nullptr;
-        Wire* hoveredWire = nullptr;
         Gate gatePick = Gate::OR;
         Gate lastGate = Gate::OR;
+        Node* hoveredNode = nullptr;
+        Wire* hoveredWire = nullptr;
+        Blueprint* clipboard = nullptr;
+
         union // Base mode
         {
             struct {
@@ -1512,10 +1518,7 @@ int main()
                 bool selectionWIP;
                 Node* nodeBeingDragged;
                 Wire* wireBeingDragged;
-                Int_t selectionRectangleX;
-                Int_t selectionRectangleY;
-                Int_t selectionRectangleWidth;
-                Int_t selectionRectangleHeight;
+                IRect selectionRec;
             } edit;
 
             struct {
@@ -1581,10 +1584,7 @@ int main()
             data.edit.selectionWIP = false;
             data.edit.nodeBeingDragged = nullptr;
             data.edit.wireBeingDragged = nullptr;
-            data.edit.selectionRectangleX = 0;
-            data.edit.selectionRectangleY = 0;
-            data.edit.selectionRectangleWidth = 0;
-            data.edit.selectionRectangleHeight = 0;
+            data.edit.selectionRec = IRect(0,0,0,0);
             break;
 
         case Mode::ERASE:
@@ -1626,42 +1626,45 @@ int main()
         bool b_cursorMoved = cursorPosPrev != cursorPos;
         cursorPosPrev = cursorPos;
 
-        if (IsKeyPressed(KEY_ONE))
-            data.gatePick = Gate::OR;
-        else if (IsKeyPressed(KEY_TWO))
-            data.gatePick = Gate::AND;
-        else if (IsKeyPressed(KEY_THREE))
-            data.gatePick = Gate::NOR;
-        else if (IsKeyPressed(KEY_FOUR))
-            data.gatePick = Gate::XOR;
+        // Hotkeys
+        {
+            if (IsKeyPressed(KEY_ONE))
+                data.gatePick = Gate::OR;
+            else if (IsKeyPressed(KEY_TWO))
+                data.gatePick = Gate::AND;
+            else if (IsKeyPressed(KEY_THREE))
+                data.gatePick = Gate::NOR;
+            else if (IsKeyPressed(KEY_FOUR))
+                data.gatePick = Gate::XOR;
 
-        if (IsKeyPressed(KEY_B))
-        {
-            SetMode(Mode::PEN);
-        } 
-        else if (IsKeyPressed(KEY_V))
-        {
-            SetMode(Mode::EDIT);
-        }
-        else if (IsKeyPressed(KEY_G))
-        {
-            SetMode(Mode::GATE);
-            data.gate.radialMenuCenter = cursorPos;
-        }
-        else if (IsKeyPressed(KEY_X))
-        {
-            SetMode(Mode::ERASE);
-        }
-        else if (IsKeyPressed(KEY_F))
-        {
-            SetMode(Mode::INTERACT);
-        }
-        else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (cursorPos.y <= 16 && cursorPos.x <= 32) &&
-            (mode == Mode::BUTTON ? data.button.dropdownActive != (cursorPos.x / 16) : true))
-        {
-            SetMode(Mode::BUTTON);
-            data.button.dropdownActive = cursorPos.x / 16;
-            goto EVAL;
+            if (IsKeyPressed(KEY_B))
+            {
+                SetMode(Mode::PEN);
+            }
+            else if (IsKeyPressed(KEY_V))
+            {
+                SetMode(Mode::EDIT);
+            }
+            else if (IsKeyPressed(KEY_G))
+            {
+                SetMode(Mode::GATE);
+                data.gate.radialMenuCenter = cursorPos;
+            }
+            else if (IsKeyPressed(KEY_X))
+            {
+                SetMode(Mode::ERASE);
+            }
+            else if (IsKeyPressed(KEY_F))
+            {
+                SetMode(Mode::INTERACT);
+            }
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (cursorPos.y <= 16 && cursorPos.x <= 32) &&
+                (mode == Mode::BUTTON ? data.button.dropdownActive != (cursorPos.x / 16) : true))
+            {
+                SetMode(Mode::BUTTON);
+                data.button.dropdownActive = cursorPos.x / 16;
+                goto EVAL;
+            }
         }
 
         // Input
@@ -1737,8 +1740,7 @@ int main()
                 data.edit.wireBeingDragged = data.hoveredWire;
                 if (!data.edit.nodeBeingDragged && !data.edit.wireBeingDragged)
                 {
-                    data.edit.selectionRectangleX = cursorPos.x;
-                    data.edit.selectionRectangleY = cursorPos.y;
+                    data.edit.selectionRec.xy = cursorPos;
                     data.edit.selectionWIP = true;
                 }
                 data.edit.fallbackPos = cursorPos;
@@ -1775,8 +1777,7 @@ int main()
             // Selection
             if (data.edit.selectionWIP || lastFrameUpdate)
             {
-                data.edit.selectionRectangleWidth = cursorPos.x - data.edit.selectionRectangleX;
-                data.edit.selectionRectangleHeight = cursorPos.y - data.edit.selectionRectangleY;
+                data.edit.selectionRec.wh = cursorPos - data.edit.selectionRec.xy;
                 lastFrameUpdate = false;
             }
 
