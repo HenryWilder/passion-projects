@@ -813,10 +813,10 @@ private: // Multithread functions
     }
 
 public:
-    Blueprint(std::vector<Node*>& src)
+    Blueprint(std::vector<Node*>& src) : bounds(0, 0, 0, 0)
     {        
-        std::thread nodeThread(&PopulateNodes, src);
-        std::thread wireThread(&PopulateWires, src);
+        std::thread nodeThread(&Blueprint::PopulateNodes, this, std::ref(src));
+        std::thread wireThread(&Blueprint::PopulateWires, this, std::ref(src));
         nodeThread.join();
         wireThread.join();
     }
@@ -1196,7 +1196,8 @@ public:
             orderDirty = false;
         }
 
-        depth < LayerCount();
+        if (depth >= LayerCount())
+            return;
 
         for (decltype(nodes)::const_iterator it = layers[depth]; it != layers[depth + 1] && it != nodes.end(); ++it)
         {
@@ -1266,12 +1267,12 @@ public: // Serialization
     {
         size_t startingSize = nodes.size();
         nodes.reserve(nodes.size() + bp->nodes.size());
-        for (NodeBP node_bp : bp->nodes)
+        for (const NodeBP& node_bp : bp->nodes)
         {
             CreateNode(node_bp.relativePosition + topLeft, node_bp.gate);
         }
         wires.reserve(wires.size() + bp->wires.size());
-        for (WireBP wire_bp : bp->wires)
+        for (const WireBP& wire_bp : bp->wires)
         {
             Wire* wire = CreateWire(nodes[startingSize + wire_bp.startNodeIndex], nodes[startingSize + wire_bp.endNodeIndex]);
             wire->elbowConfig = wire_bp.elbowConfig;
@@ -1991,6 +1992,8 @@ int main()
 
             case Mode::EDIT:
             {
+                DrawRectangleIRect(data.edit.selectionRec, DARKGRAY);
+
                 NodeWorld::Get().DrawWires();
 
                 if (!!data.hoveredWire)
@@ -2201,6 +2204,7 @@ int main()
 
             // Global UI
 
+            // Buttons
             if (cursorPos.y <= 16)
             {
                 if (cursorPos.x <= 16)
