@@ -827,12 +827,15 @@ class NodeWorld
 {
 private:
     bool orderDirty = false;
+
     std::vector<Node*> nodes;
-    std::unordered_map<IVec2, Node*> nodeGrid;
+    std::vector<Wire*> wires; // Inputs/outputs don't exist here
+    std::vector<Blueprint*> blueprints;
+
     std::vector<Node*> startNodes;
     std::vector<decltype(nodes)::const_iterator> layers;
-    std::vector<Wire*> wires; // Inputs/outputs don't exist here
-    
+    std::unordered_map<IVec2, Node*> nodeGrid;
+
     NodeWorld() = default;
     ~NodeWorld()
     {
@@ -1270,6 +1273,10 @@ public: // Serialization
             wire->elbowConfig = wire_bp.elbowConfig;
             wire->UpdateElbowToLegal();
         }
+    }
+    void StoreBlueprint(Blueprint* bp)
+    {
+        blueprints.push_back(bp);
     }
 
     // Larger file, faster startup/save (less analysis)
