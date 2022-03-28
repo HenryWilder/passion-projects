@@ -693,19 +693,19 @@ IVec2 Wire::GetEndPos() const
     return end->GetPosition();
 }
 
+
+struct NodeBP
+{
+    Gate gate;
+    IVec2 relativePosition;
+};
+struct WireBP
+{
+    size_t startNodeIndex, endNodeIndex;
+    decltype(Wire::elbowConfig) elbowConfig;
+};
 struct Blueprint
 {
-    struct NodeBP
-    {
-        Gate gate;
-        IVec2 relativePosition;
-    };
-    struct WireBP
-    {
-        size_t startNodeIndex, endNodeIndex;
-        decltype(Wire::elbowConfig) elbowConfig;
-    };
-
 private: // Multithread functions
     void PopulateNodes(std::vector<Node*>& src)
     {
@@ -821,6 +821,7 @@ public:
 	std::vector<NodeBP> nodes;
 	std::vector<WireBP> wires;
 };
+
 
 class NodeWorld
 {
@@ -1254,9 +1255,21 @@ public:
 
 public: // Serialization
 
-    void SpawnBlueprint()
+    void SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
     {
-
+        size_t startingSize = nodes.size();
+        nodes.reserve(nodes.size() + bp->nodes.size());
+        for (NodeBP node_bp : bp->nodes)
+        {
+            CreateNode(node_bp.relativePosition + topLeft, node_bp.gate);
+        }
+        wires.reserve(wires.size() + bp->wires.size());
+        for (WireBP wire_bp : bp->wires)
+        {
+            Wire* wire = CreateWire(nodes[startingSize + wire_bp.startNodeIndex], nodes[startingSize + wire_bp.endNodeIndex]);
+            wire->elbowConfig = wire_bp.elbowConfig;
+            wire->UpdateElbowToLegal();
+        }
     }
 
     // Larger file, faster startup/save (less analysis)
