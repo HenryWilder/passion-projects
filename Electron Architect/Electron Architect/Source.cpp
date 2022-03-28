@@ -706,8 +706,6 @@ struct Blueprint
         decltype(Wire::elbowConfig) elbowConfig;
     };
 
-    using ConstNodeIter = std::vector<Node*>::const_iterator;
-
 private: // Multithread functions
     void PopulateNodes(std::vector<Node*>& src)
     {
