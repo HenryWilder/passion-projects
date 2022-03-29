@@ -282,18 +282,19 @@ void DrawRectangleIRect(IRect rec, Color color)
 
 class NodeWorld;
 class Node;
+using ElbowIndex_t = uint8_t;
 struct Wire
 {
     Wire() = default;
     Wire(Node* start, Node* end) : elbow(), elbowConfig(0), start(start), end(end) {}
-    Wire(Node* start, Node* end, uint8_t elbowConfig) : elbow(), elbowConfig(elbowConfig), start(start), end(end) { UpdateElbowToLegal(); }
+    Wire(Node* start, Node* end, ElbowIndex_t elbowConfig) : elbow(), elbowConfig(elbowConfig), start(start), end(end) { UpdateElbowToLegal(); }
 
     static constexpr Color g_wireColorActive = REDSTONE;
     static constexpr Color g_wireColorInactive = DEADCABLE;
     static constexpr float g_elbowRadius = 2.0f;
 
     IVec2 elbow;
-    uint8_t elbowConfig;
+    ElbowIndex_t elbowConfig;
     Node* start;
     Node* end;
 
@@ -348,7 +349,7 @@ struct Wire
         return GetEndPos().y;
     }
 	
-    static IVec2 GetLegalElbowPosition(IVec2 start, IVec2 end, decltype(elbowConfig) index)
+    static IVec2 GetLegalElbowPosition(IVec2 start, IVec2 end, ElbowIndex_t index)
     {
         _ASSERT_EXPR(index < 4, "Subscript error");
         if (index == 0)
@@ -393,7 +394,7 @@ struct Wire
             return pos;
         }
     }
-    IVec2 GetLegalElbowPosition(decltype(elbowConfig) index) const
+    IVec2 GetLegalElbowPosition(ElbowIndex_t index) const
     {
         return GetLegalElbowPosition(GetStartPos(), GetEndPos(), index);
     }
@@ -420,7 +421,7 @@ struct Wire
         IVec2 legal[4];
         GetLegalElbowPositions(legal);
 
-        decltype(elbowConfig) pick = 0;
+        ElbowIndex_t pick = 0;
         long shortestDist = LONG_MAX;
         for (decltype(pick) i = 0; i < 4; ++i)
         {
@@ -707,7 +708,7 @@ struct NodeBP
 struct WireBP
 {
     size_t startNodeIndex, endNodeIndex;
-    decltype(Wire::elbowConfig) elbowConfig;
+    ElbowIndex_t elbowConfig;
 };
 struct Blueprint
 {
@@ -825,6 +826,40 @@ public:
 };
 
 
+struct Group
+{
+    static constexpr Int_t g_fontSize = g_gridSize;
+    static constexpr Int_t g_labelHeight = g_fontSize * 2;
+
+    Group() = default;
+    // Takes captureBounds as rec
+    Group(IRect rec, Color color) : labelBounds(rec.x, rec.y - g_labelHeight, rec.x, g_labelHeight), captureBounds(rec), color(color), label() {}
+    Group(IRect rec, Color color, const std::string& label) : labelBounds(rec.x, rec.y - g_labelHeight, rec.x, g_labelHeight), captureBounds(rec), color(color), label(label) {}
+
+    IRect labelBounds;
+    IRect captureBounds;
+    Color color;
+    std::string label;
+
+    void Draw() const
+    {
+        DrawRectangleIRect(captureBounds, ColorAlpha(color, 0.25));
+        DrawRectangleLines(captureBounds.x, captureBounds.y, captureBounds.w, captureBounds.h, color);
+        DrawRectangleIRect(labelBounds, color);
+        constexpr Int_t padding = g_labelHeight / 4;
+        DrawText(label.c_str(), labelBounds.x + padding, labelBounds.y + padding, g_fontSize, WHITE);
+    }
+    void DrawHighlighted() const
+    {
+        IRect rec = labelBounds;
+        rec.y += captureBounds.h;
+        DrawRectangleLines(rec.x - 1, rec.y - 1, rec.w + 2, rec.h + 2, CAUTIONYELLOW);
+        DrawRectangleLines(rec.x - 2, rec.y - 2, rec.w + 4, rec.h + 4, CAUTIONYELLOW);
+        Draw();
+    }
+};
+
+
 class NodeWorld
 {
 private:
@@ -833,6 +868,7 @@ private:
     std::vector<Node*> nodes;
     std::vector<Wire*> wires; // Inputs/outputs don't exist here
     std::vector<Blueprint*> blueprints;
+    std::vector<Group*> groups;
 
     std::vector<Node*> startNodes;
     std::vector<decltype(nodes)::const_iterator> layers;
@@ -979,7 +1015,7 @@ public:
         return wire;
     }
     // CreateWire can affect the positions of parameter `end` in `nodes`
-    Wire* CreateWire(Node* start, Node* end, decltype(Wire::elbowConfig) elbowConfig)
+    Wire* CreateWire(Node* start, Node* end, ElbowIndex_t elbowConfig)
     {
         _ASSERT_EXPR(start != nullptr && end != nullptr, "Tried to create a wire to nullptr");
         _ASSERT_EXPR(start != end, "Cannot create self-reference wire");
@@ -1344,9 +1380,7 @@ public: // Serialization
                 _ASSERT_EXPR(it != nodeID.end(), "Malformed nodeID");
                 end = it->second;
             }
-            Wire* wire = CreateWire(start, end);
-            wire->elbowConfig = wire_bp.elbowConfig;
-            wire->UpdateElbowToLegal();
+            Wire* wire = CreateWire(start, end, wire_bp.elbowConfig);
         }
     }
     void StoreBlueprint(Blueprint* bp)
@@ -1586,7 +1620,7 @@ int main()
         {
             struct {
                 Node* currentWireStart;
-                decltype(Wire::elbowConfig) currentWireElbowConfig;
+                ElbowIndex_t currentWireElbowConfig;
             } pen;
 
             struct {
@@ -1694,6 +1728,8 @@ int main()
     SetMode(Mode::PEN);
 
     NodeWorld::Get(); // Construct
+
+    Group test(IRect(20,20,100,100), WIPBLUE, "Test");
         
     while (!WindowShouldClose())
     {
@@ -2067,6 +2103,8 @@ int main()
             {
                 DrawLine(x, 0, x, windowHeight, SPACEGRAY);
             }
+
+            test.Draw();
 
             // Draw
             switch (mode)
