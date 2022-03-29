@@ -826,20 +826,23 @@ public:
 };
 
 
-struct Group
+class Group
 {
     static constexpr Int_t g_fontSize = g_gridSize;
     static constexpr Int_t g_labelHeight = g_fontSize * 2;
-
-    Group() = default;
-    // Takes captureBounds as rec
-    Group(IRect rec, Color color) : labelBounds(rec.x, rec.y - g_labelHeight, rec.x, g_labelHeight), captureBounds(rec), color(color), label() {}
-    Group(IRect rec, Color color, const std::string& label) : labelBounds(rec.x, rec.y - g_labelHeight, rec.x, g_labelHeight), captureBounds(rec), color(color), label(label) {}
 
     IRect labelBounds;
     IRect captureBounds;
     Color color;
     std::string label;
+
+    friend class NodeWorld;
+
+public:
+    Group() = default;
+    // Takes captureBounds as rec
+    Group(IRect rec, Color color) : labelBounds(rec.x, rec.y - g_labelHeight, rec.x, g_labelHeight), captureBounds(rec), color(color), label() {}
+    Group(IRect rec, Color color, const std::string & label) : labelBounds(rec.x, rec.y - g_labelHeight, rec.x, g_labelHeight), captureBounds(rec), color(color), label(label) {}
 
     void Draw() const
     {
@@ -1103,6 +1106,23 @@ public:
         return newWire;
     }
 
+    Group* CreateGroup(IRect rec)
+    {
+        Group* group = new Group(rec, WIPBLUE, "Label");
+        groups.push_back(group);
+        return group;
+    }
+    void DestroyGroup(Group* group)
+    {
+        FindAndErase_ExpectExisting(groups, group);
+        delete group;
+    }
+    void FindNodesInGroup(std::vector<Node*>& result, Group* group)
+    {
+        FindNodesInRect(result, group->captureBounds);
+    }
+
+
     // Uses BFS
     void Sort()
     {
@@ -1296,6 +1316,13 @@ public:
         for (Node* node : nodes)
         {
             node->Draw(node->GetState() ? node->g_nodeColorActive : node->g_nodeColorInactive);
+        }
+    }
+    void DrawGroups() const
+    {
+        for (Group* group : groups)
+        {
+            group->Draw();
         }
     }
 
@@ -2470,4 +2497,5 @@ int main()
 * -Multiple color pallets
 * -Step-by-step evaluation option
 * -Log files for debug/crashes
+* -Export as SVG
 */
