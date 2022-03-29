@@ -926,6 +926,8 @@ public:
     }
 
     // Node functions
+
+    // CreateNode does not insert at the end of the `nodes`.
     Node* CreateNode(IVec2 position, Gate gate)
     {
         // The order is not dirty at this time due to the node having no connections yet
@@ -945,6 +947,8 @@ public:
     }
 
     // Wire functions
+
+    // CreateWire can affect the positions of parameter `end` in `nodes`
     Wire* CreateWire(Node* start, Node* end)
     {
         _ASSERT_EXPR(start != nullptr && end != nullptr, "Tried to create a wire to nullptr");
@@ -1291,18 +1295,28 @@ public: // Serialization
 
     void SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
     {
-	    std::unordered_set<NodeBP*, Node*> nodeID;
+	    std::unordered_map<NodeBP*, Node*> nodeID;
         nodes.reserve(nodes.size() + bp->nodes.size());
-        for (const NodeBP& node_bp : bp->nodes)
+        for (NodeBP node_bp : bp->nodes)
         {
             Node* node = CreateNode(node_bp.relativePosition + topLeft, node_bp.gate);
-		nodeID.insert({ &node_bp, node });
+		    nodeID.emplace(&node_bp, node);
         }
         wires.reserve(wires.size() + bp->wires.size());
         for (const WireBP& wire_bp : bp->wires)
         {
-			Node* start = nodeID.find(&(bp->nodes[wire_bp.startNodeIndex]))->second;
-			Node* end = nodeID.find(&(bp->nodes[wire_bp.endNodeIndex]))->second;
+            Node* start;
+            Node* end;
+            {
+                auto it = nodeID.find(&(bp->nodes[wire_bp.startNodeIndex]));
+                _ASSERT_EXPR(it != nodeID.end(), "Malformed nodeID");
+                start = it->second;
+            }
+            {
+                auto it = nodeID.find(&(bp->nodes[wire_bp.endNodeIndex]));
+                _ASSERT_EXPR(it != nodeID.end(), "Malformed nodeID");
+                end = it->second;
+            }
             Wire* wire = CreateWire(start, end);
             wire->elbowConfig = wire_bp.elbowConfig;
             wire->UpdateElbowToLegal();
