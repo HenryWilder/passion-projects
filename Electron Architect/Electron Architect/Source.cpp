@@ -1995,6 +1995,7 @@ int main()
         {
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
+                NodeWorld::Get().SpawnBlueprint(data.clipboard, cursorPos);
                 SetMode(baseMode);
             }
         }
