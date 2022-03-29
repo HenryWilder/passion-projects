@@ -1697,6 +1697,17 @@ int main()
                 data.button.dropdownActive = cursorPos.x / 16;
                 goto EVAL;
             }
+            // Copy
+            else if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_C))
+            {
+                if (data.clipboard != nullptr)
+                    delete data.clipboard;
+
+                if (data.selection.empty())
+                    data.clipboard = nullptr;
+                else
+                    data.clipboard = new Blueprint(data.selection);
+            }
         }
 
         // Input
@@ -2040,7 +2051,7 @@ int main()
 
                 for (Node* node : data.selection)
                 {
-                    DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, CAUTIONYELLOW);
+                    DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, WIPBLUE);
                 }
 
                 if (!!data.hoveredWire)
@@ -2297,6 +2308,9 @@ int main()
     /******************************************
     *   Unload and free memory
     ******************************************/
+
+    if (data.clipboard != nullptr)
+        delete data.clipboard;
 
     NodeWorld::Get().Save_LargeFile("dataL.cg");
     NodeWorld::Get().Save_SmallFile("dataS.cg");
