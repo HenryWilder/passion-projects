@@ -2372,13 +2372,23 @@ int main()
 	return 0;
 }
 
-// Todo:
-// Step-by-step evaluation option
-// Blueprint pallet
-// Hotkey-able output-only gate state toggles (Like the Reason on-screen piano)
-// Special erase (keep wires, erase node)
-// Multiple color pallets
-// Multiple selection movement and deletion
-// Save/load
-// Groups (for movement and labeling)
-// Log files for debug/crashes
+/* Todo
+* Major
+* -Selection move-together and delete-together
+* -Blueprint pallet
+* -Blueprint pallet icons (User-made combination of 4 premade icons. See Factorio for inspiration)
+* -Save/load
+* -Save file menu
+* -Save file thumbnails (based on cropped screenshot)
+* -Menu screen (Open to file menu with "new" at the top)
+*
+* Quality of Life
+* -Special erase (keep wires, erase node)
+* -Groups (labelled persistent selections)
+* -Hotkeys for output-only gate state toggles (Like the Reason on-screen piano)
+*
+* Stretch goals
+* -Multiple color pallets
+* -Step-by-step evaluation option
+* -Log files for debug/crashes
+*/
