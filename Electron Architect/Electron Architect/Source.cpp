@@ -787,8 +787,6 @@ private: // Multithread functions
                         }
                     }
                 }
-                visitedWires.clear();
-                visitedWires.reserve(uniqueWires);
                 wires.reserve(uniqueWires);
             }
         }
@@ -797,7 +795,8 @@ private: // Multithread functions
         {
             for (Wire* wire : node->GetWires())
             {
-                if (visitedWires.find(wire) != visitedWires.end() && !visitedWires.find(wire)->second)
+                if (visitedWires.find(wire) != visitedWires.end() && // Is an internal wire
+                    !visitedWires.find(wire)->second) // Has not been visited in this loop
                 {
                     visitedWires[wire] = true;
                     wires.emplace_back(
@@ -1295,12 +1294,12 @@ public: // Serialization
 
     void SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
     {
-	    std::unordered_map<NodeBP*, Node*> nodeID;
+	    std::unordered_map<size_t, Node*> nodeID;
         nodes.reserve(nodes.size() + bp->nodes.size());
-        for (NodeBP node_bp : bp->nodes)
+        for (size_t i = 0; i < bp->nodes.size(); ++i)
         {
-            Node* node = CreateNode(node_bp.relativePosition + topLeft, node_bp.gate);
-		    nodeID.emplace(&node_bp, node);
+            Node* node = CreateNode(bp->nodes[i].relativePosition + topLeft, bp->nodes[i].gate);
+		    nodeID.emplace(i, node);
         }
         wires.reserve(wires.size() + bp->wires.size());
         for (const WireBP& wire_bp : bp->wires)
@@ -1308,12 +1307,12 @@ public: // Serialization
             Node* start;
             Node* end;
             {
-                auto it = nodeID.find(&(bp->nodes[wire_bp.startNodeIndex]));
+                auto it = nodeID.find(wire_bp.startNodeIndex);
                 _ASSERT_EXPR(it != nodeID.end(), "Malformed nodeID");
                 start = it->second;
             }
             {
-                auto it = nodeID.find(&(bp->nodes[wire_bp.endNodeIndex]));
+                auto it = nodeID.find(wire_bp.endNodeIndex);
                 _ASSERT_EXPR(it != nodeID.end(), "Malformed nodeID");
                 end = it->second;
             }
