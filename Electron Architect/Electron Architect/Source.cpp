@@ -1291,17 +1291,19 @@ public: // Serialization
 
     void SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
     {
-        // This won't work! CreateNode() inserts new nodes at the START! I'm gonna have to find a way to more indisputably link the two...
-        size_t startingSize = nodes.size();
+	    std::unordered_set<NodeBP*, Node*> nodeID;
         nodes.reserve(nodes.size() + bp->nodes.size());
         for (const NodeBP& node_bp : bp->nodes)
         {
-            CreateNode(node_bp.relativePosition + topLeft, node_bp.gate);
+            Node* node = CreateNode(node_bp.relativePosition + topLeft, node_bp.gate);
+		nodeID.insert({ &node_bp, node });
         }
         wires.reserve(wires.size() + bp->wires.size());
         for (const WireBP& wire_bp : bp->wires)
         {
-            Wire* wire = CreateWire(nodes[startingSize + wire_bp.startNodeIndex], nodes[startingSize + wire_bp.endNodeIndex]);
+			Node* start = nodeID.find(&(bp->nodes[wire_bp.startNodeIndex]))->second;
+			Node* end = nodeID.find(&(bp->nodes[wire_bp.endNodeIndex]))->second;
+            Wire* wire = CreateWire(start, end);
             wire->elbowConfig = wire_bp.elbowConfig;
             wire->UpdateElbowToLegal();
         }
