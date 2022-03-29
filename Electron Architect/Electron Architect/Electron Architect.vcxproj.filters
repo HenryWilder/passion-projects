@@ -29,5 +29,8 @@
     <Image Include="icons_gate32x.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="icon_clipboard.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

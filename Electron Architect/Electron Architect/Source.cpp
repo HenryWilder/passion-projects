@@ -1492,6 +1492,8 @@ int main()
         } EndScissorMode();
     };
 
+    Texture2D clipboardIcon = LoadTexture("icon_clipboard.png");
+
     Texture2D gateIcons16x = LoadTexture("icons_gate16x.png");
     auto DrawGateIcon16x = [&gateIcons16x](Gate gate, IRect dest, Color tint)
     {
@@ -1698,7 +1700,7 @@ int main()
                 goto EVAL;
             }
             // Copy
-            else if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && IsKeyPressed(KEY_C))
+            else if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_C))
             {
                 if (data.clipboard != nullptr)
                     delete data.clipboard;
@@ -2301,6 +2303,12 @@ int main()
             rec.x += 16;
             DrawRectangleIRect(rec, SPACEGRAY);
             DrawGateIcon16x(data.gatePick, rec, WHITE);
+            if (!!data.clipboard)
+            {
+                rec.x += 16;
+                DrawRectangleIRect(rec, SPACEGRAY);
+                DrawTexture(clipboardIcon, rec.x, rec.y, WHITE);
+            }
 
         } EndDrawing();
     }
@@ -2318,6 +2326,7 @@ int main()
     UnloadTexture(modeIcons);
     UnloadTexture(gateIcons16x);
     UnloadTexture(gateIcons32x);
+    UnloadTexture(clipboardIcon);
 
     CloseWindow();
 

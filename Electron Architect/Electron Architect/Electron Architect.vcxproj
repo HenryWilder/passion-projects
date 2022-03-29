@@ -181,6 +181,7 @@
     <Image Include="icons_gate16x.png" />
     <Image Include="icons_mode.png" />
     <Image Include="icons_gate32x.png" />
+    <Image Include="icon_clipboard.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
