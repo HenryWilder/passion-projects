@@ -749,17 +749,13 @@ private: // Multithread functions
     void PopulateWires(std::vector<Node*>& src)
     {
         std::unordered_map<Node*, size_t> nodeIndices;
-        std::unordered_set<Wire*> visitedWires;
+        std::unordered_map<Wire*, bool> visitedWires;
 
         // Populate nodeIndices
-        std::thread nodeIndexer([&src, &nodeIndices]()
-            {
-                for (size_t i = 0; i < src.size(); ++i)
-                {
-                    nodeIndices.emplace(src[i], i);
-                }
-            }
-        );
+        for (size_t i = 0; i < src.size(); ++i)
+        {
+            nodeIndices.emplace(src[i], i);
+        }
 
         // Count wires
         {
@@ -781,9 +777,12 @@ private: // Multithread functions
                 {
                     for (Wire* wire : node->GetWires())
                     {
+                        if (nodeIndices.find(wire->start) == nodeIndices.end() ||
+                            nodeIndices.find(wire->end) == nodeIndices.end())
+                            continue;
                         if (visitedWires.find(wire) == visitedWires.end())
                         {
-                            visitedWires.insert(wire);
+                            visitedWires.insert({ wire, false });
                             ++uniqueWires;
                         }
                     }
@@ -794,15 +793,13 @@ private: // Multithread functions
             }
         }
 
-        nodeIndexer.join();
-
         for (Node* node : src)
         {
             for (Wire* wire : node->GetWires())
             {
-                if (visitedWires.find(wire) == visitedWires.end())
+                if (visitedWires.find(wire) != visitedWires.end() && !visitedWires.find(wire)->second)
                 {
-                    visitedWires.insert(wire);
+                    visitedWires[wire] = true;
                     wires.emplace_back(
                         nodeIndices.find(wire->start)->second,
                         nodeIndices.find(wire->end)->second,
