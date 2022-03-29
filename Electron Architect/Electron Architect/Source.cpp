@@ -1534,6 +1534,7 @@ int main()
         Node* hoveredNode = nullptr;
         Wire* hoveredWire = nullptr;
         Blueprint* clipboard = nullptr;
+        std::vector<Node*> selection;
 
         union // Base mode
         {
@@ -1750,8 +1751,6 @@ int main()
 
         case Mode::EDIT:
         {
-            bool lastFrameUpdate = false;
-
             if (b_cursorMoved)
             {
                 if (!data.edit.nodeBeingDragged &&
@@ -1767,54 +1766,63 @@ int main()
             // Press
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
+                data.selection.clear();
                 data.edit.nodeBeingDragged = data.hoveredNode;
                 data.edit.wireBeingDragged = data.hoveredWire;
-                if (!data.edit.nodeBeingDragged && !data.edit.wireBeingDragged)
-                {
-                    data.edit.selectionStart = cursorPos;
-                    data.edit.selectionWIP = true;
-                }
-                data.edit.fallbackPos = cursorPos;
+                data.edit.selectionStart = data.edit.fallbackPos = cursorPos;
+                data.edit.selectionWIP = !(data.edit.nodeBeingDragged || data.edit.wireBeingDragged);
             }
-            // Release
-            else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)))
+
+            // Selection
+            if (data.edit.selectionWIP)
             {
-                if (!!data.edit.nodeBeingDragged)
+                auto [minx, maxx] = std::minmax(cursorPos.x, data.edit.selectionStart.x);
+                auto [miny, maxy] = std::minmax(cursorPos.y, data.edit.selectionStart.y);
+                data.edit.selectionRec.w = maxx - (data.edit.selectionRec.x = minx);
+                data.edit.selectionRec.h = maxy - (data.edit.selectionRec.y = miny);
+            }
+
+            // Release
+            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)))
+            {
+                // Cancel
+                if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
                 {
-                    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+                    if (!!data.edit.nodeBeingDragged)
                     {
                         data.edit.nodeBeingDragged->SetPosition(data.edit.fallbackPos);
+                        data.edit.nodeBeingDragged = nullptr;
                     }
-                    else
+                    else if (data.edit.selectionWIP)
+                    {
+                        data.edit.selectionRec = IRect(0,0,0,0);
+                        data.edit.selectionWIP = false;
+                    }
+                }
+                // Finalize
+                else
+                {
+                    if (!!data.edit.nodeBeingDragged)
                     {
                         data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
                         if (!!data.hoveredNode && data.edit.nodeBeingDragged != data.hoveredNode)
                             data.hoveredNode = data.edit.nodeBeingDragged = NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
 
                         data.edit.nodeBeingDragged->SetPosition(cursorPos);
+                        data.edit.nodeBeingDragged = nullptr;
+                    }
+                    else if (data.edit.selectionWIP)
+                    {
+                        NodeWorld::Get().FindNodesInRect(data.selection, data.edit.selectionRec);
+                        data.edit.selectionWIP = false;
                     }
                 }
-
-                data.edit.nodeBeingDragged = nullptr;
                 data.edit.wireBeingDragged = nullptr;
-                lastFrameUpdate = data.edit.selectionWIP;
-                data.edit.selectionWIP = false;
             }
             else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!data.hoveredNode)
             {
                 data.hoveredNode->SetGate(data.gatePick);
             }
-
-            // Selection
-            if (data.edit.selectionWIP || lastFrameUpdate)
-            {
-                auto [minx, maxx] = std::minmax(cursorPos.x, data.edit.selectionStart.x);
-                auto [miny, maxy] = std::minmax(cursorPos.y, data.edit.selectionStart.y);
-                data.edit.selectionRec.w = maxx - (data.edit.selectionRec.x = minx);
-                data.edit.selectionRec.h = maxy - (data.edit.selectionRec.y = miny);
-                lastFrameUpdate = false;
-            }
-
             // Node
             else if (!!data.edit.nodeBeingDragged)
             {
@@ -2025,9 +2033,15 @@ int main()
 
             case Mode::EDIT:
             {
-                DrawRectangleIRect(data.edit.selectionRec, DARKGRAY);
+                DrawRectangleIRect(data.edit.selectionRec, ColorAlpha(SPACEGRAY, 0.5));
+                DrawRectangleLines(data.edit.selectionRec.x, data.edit.selectionRec.y, data.edit.selectionRec.w, data.edit.selectionRec.h, LIFELESSNEBULA);
 
                 NodeWorld::Get().DrawWires();
+
+                for (Node* node : data.selection)
+                {
+                    DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, CAUTIONYELLOW);
+                }
 
                 if (!!data.hoveredWire)
                 {
