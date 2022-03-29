@@ -810,8 +810,9 @@ private: // Multithread functions
     }
 
 public:
-    Blueprint(std::vector<Node*>& src) : bounds(0, 0, 0, 0)
+    Blueprint(std::vector<Node*>& src)
     {        
+        bounds = IRect(0,0,0,0);
         std::thread nodeThread(&Blueprint::PopulateNodes, this, std::ref(src));
         std::thread wireThread(&Blueprint::PopulateWires, this, std::ref(src));
         nodeThread.join();
@@ -1467,8 +1468,10 @@ int main()
         EDIT,
         ERASE,
         INTERACT,
+
         GATE,
         BUTTON,
+        PASTE,
     } mode, baseMode;
 
     Texture2D clipboardIcon = LoadTexture("icon_clipboard.png");
@@ -1555,7 +1558,7 @@ int main()
             } erase;
 
             struct {
-            } interact;
+            } interact = {};
         };
         union // Overlay mode - doesn't affect other modes
         {
@@ -1566,7 +1569,10 @@ int main()
 
             struct {
                 int dropdownActive;
-            } button = { 0 };
+            } button;
+
+            struct {
+            } paste = {};
         };
     } data;
 
@@ -1634,6 +1640,9 @@ int main()
         case Mode::BUTTON:
             data.button.dropdownActive = 0;
             break;
+
+        case Mode::PASTE:
+            break;
         }
     };
 
@@ -1668,7 +1677,26 @@ int main()
             else if (IsKeyPressed(KEY_FOUR))
                 data.gatePick = Gate::XOR;
 
-            if (IsKeyPressed(KEY_B))
+            // KEY COMBOS BEFORE INDIVIDUAL KEYS!
+
+            // Copy
+            if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_C))
+            {
+                if (data.clipboard != nullptr)
+                    delete data.clipboard;
+
+                if (data.selection.empty())
+                    data.clipboard = nullptr;
+                else
+                    data.clipboard = new Blueprint(data.selection);
+            }
+            // Paste
+            else if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_V) && !!data.clipboard)
+            {
+                SetMode(Mode::PASTE);
+            }
+
+            else if (IsKeyPressed(KEY_B))
             {
                 SetMode(Mode::PEN);
             }
@@ -1695,17 +1723,6 @@ int main()
                 SetMode(Mode::BUTTON);
                 data.button.dropdownActive = cursorPos.x / 16;
                 goto EVAL;
-            }
-            // Copy
-            else if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_C))
-            {
-                if (data.clipboard != nullptr)
-                    delete data.clipboard;
-
-                if (data.selection.empty())
-                    data.clipboard = nullptr;
-                else
-                    data.clipboard = new Blueprint(data.selection);
             }
         }
 
@@ -1968,6 +1985,15 @@ int main()
                     SetMode(baseMode);
             }
             else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+            {
+                SetMode(baseMode);
+            }
+        }
+        break;
+
+        case Mode::PASTE:
+        {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 SetMode(baseMode);
             }
@@ -2255,6 +2281,17 @@ int main()
                 }
                 break;
                 }
+            }
+            break;
+
+            case Mode::PASTE:
+            {
+                NodeWorld::Get().DrawWires();
+                NodeWorld::Get().DrawNodes();
+
+                IRect rec = data.clipboard->bounds;
+                rec.xy = cursorPos;
+                DrawRectangleIRect(rec, ColorAlpha(LIFELESSNEBULA, 0.5f));
             }
             break;
             }
