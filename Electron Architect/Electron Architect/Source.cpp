@@ -1471,6 +1471,8 @@ int main()
         BUTTON,
     } mode, baseMode;
 
+    Texture2D clipboardIcon = LoadTexture("icon_clipboard.png");
+
     Texture2D modeIcons = LoadTexture("icons_mode.png");
     auto DrawModeIcon = [&modeIcons](Mode mode, IRect dest, Color tint)
     {
@@ -1488,8 +1490,6 @@ int main()
             DrawTexture(modeIcons, dest.x - offset.x, dest.y - offset.y, tint);
         } EndScissorMode();
     };
-
-    Texture2D clipboardIcon = LoadTexture("icon_clipboard.png");
 
     Texture2D gateIcons16x = LoadTexture("icons_gate16x.png");
     auto DrawGateIcon16x = [&gateIcons16x](Gate gate, IRect dest, Color tint)
@@ -2320,9 +2320,9 @@ int main()
     NodeWorld::Get().Save_LargeFile("dataL.cg");
     NodeWorld::Get().Save_SmallFile("dataS.cg");
 
-    UnloadTexture(modeIcons);
-    UnloadTexture(gateIcons16x);
     UnloadTexture(gateIcons32x);
+    UnloadTexture(gateIcons16x);
+    UnloadTexture(modeIcons);
     UnloadTexture(clipboardIcon);
 
     CloseWindow();
@@ -2336,6 +2336,7 @@ int main()
 // Hotkey-able output-only gate state toggles (Like the Reason on-screen piano)
 // Special erase (keep wires, erase node)
 // Multiple color pallets
-// Multiple selection (for movement and deletion)
+// Multiple selection movement and deletion
 // Save/load
 // Groups (for movement and labeling)
+// Log files for debug/crashes
