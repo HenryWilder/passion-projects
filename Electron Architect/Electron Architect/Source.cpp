@@ -286,6 +286,7 @@ struct Wire
 {
     Wire() = default;
     Wire(Node* start, Node* end) : elbow(), elbowConfig(0), start(start), end(end) {}
+    Wire(Node* start, Node* end, uint8_t elbowConfig) : elbow(), elbowConfig(elbowConfig), start(start), end(end) { UpdateElbowToLegal(); }
 
     static constexpr Color g_wireColorActive = REDSTONE;
     static constexpr Color g_wireColorInactive = DEADCABLE;
@@ -968,8 +969,35 @@ public:
 
         Wire* wire = _CreateWire(Wire(start, end));
 
-        wire->elbowConfig = 0;
-        wire->UpdateElbowToLegal();
+        start->AddWireOutput(wire);
+        end->AddWireInput(wire);
+
+        // Remove end from start nodes, as it is no longer an inputless node with this change
+        FindAndErase(startNodes, end);
+
+        orderDirty = true;
+        return wire;
+    }
+    // CreateWire can affect the positions of parameter `end` in `nodes`
+    Wire* CreateWire(Node* start, Node* end, decltype(Wire::elbowConfig) elbowConfig)
+    {
+        _ASSERT_EXPR(start != nullptr && end != nullptr, "Tried to create a wire to nullptr");
+        _ASSERT_EXPR(start != end, "Cannot create self-reference wire");
+
+        // Duplicate guard
+        {
+            auto it = end->FindConnection(start);
+            if (end->IsValidConnection(it))
+            {
+                Wire* wire = *it;
+                if (start == wire->start) // Wire already matches
+                    return wire;
+                else if (start == wire->end) // Wire is reverse of existing
+                    return ReverseWire(wire);
+            }
+        }
+
+        Wire* wire = _CreateWire(Wire(start, end, elbowConfig));
 
         start->AddWireOutput(wire);
         end->AddWireInput(wire);
