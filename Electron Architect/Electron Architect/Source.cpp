@@ -1261,6 +1261,34 @@ public:
         return nullptr;
     }
 
+    void FindNodesInRect(std::vector<Node*>& result, IRect rec) const
+    {
+        // Find by node
+        size_t area = (size_t)rec.w * (size_t)rec.h;
+        if (area < nodes.size())
+        {
+            IVec2 pt;
+            for (pt.x = rec.x; pt.x < (rec.x + rec.w); ++pt.x)
+            {
+                for (pt.y = rec.y; pt.y < (rec.y + rec.h); ++pt.y)
+                {
+                    auto it = nodeGrid.find(pt);
+                    if (it != nodeGrid.end())
+                        result.push_back(it->second);
+                }
+            }
+        }
+        // Find by grid
+        else
+        {
+            for (Node* node : nodes)
+            {
+                if (InBoundingBox(rec, node->GetPosition()))
+                    result.push_back(node);
+            }
+        }
+    }
+
 public: // Serialization
 
     void SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
