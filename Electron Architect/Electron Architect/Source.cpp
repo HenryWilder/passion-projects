@@ -711,7 +711,7 @@ struct WireBP
 struct Blueprint
 {
 private: // Multithread functions
-    void PopulateNodes(std::vector<Node*>& src)
+    void PopulateNodes(const std::vector<Node*>& src)
     {
         constexpr IRect boundsInit = IRect(
             std::numeric_limits<Int_t>::max(),
@@ -746,7 +746,7 @@ private: // Multithread functions
                 node->GetPosition() - min);
         }
     }
-    void PopulateWires(std::vector<Node*>& src)
+    void PopulateWires(const std::vector<Node*>& src)
     {
         std::unordered_map<Node*, size_t> nodeIndices;
         std::unordered_map<Wire*, bool> visitedWires;
@@ -810,7 +810,7 @@ private: // Multithread functions
     }
 
 public:
-    Blueprint(std::vector<Node*>& src)
+    Blueprint(const std::vector<Node*>& src)
     {        
         bounds = IRect(0,0,0,0);
         std::thread nodeThread(&Blueprint::PopulateNodes, this, std::ref(src));
@@ -1291,6 +1291,7 @@ public: // Serialization
 
     void SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
     {
+        // This won't work! CreateNode() inserts new nodes at the START! I'm gonna have to find a way to more indisputably link the two...
         size_t startingSize = nodes.size();
         nodes.reserve(nodes.size() + bp->nodes.size());
         for (const NodeBP& node_bp : bp->nodes)
@@ -1996,6 +1997,7 @@ int main()
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 NodeWorld::Get().SpawnBlueprint(data.clipboard, cursorPos);
+                data.selection.clear();
                 SetMode(baseMode);
             }
         }
