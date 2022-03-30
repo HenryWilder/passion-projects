@@ -79,6 +79,7 @@ bool Between_Exclusive(Int_t x, Int_t a, Int_t b)
     return min < x && x < max;
 }
 
+
 struct IVec2
 {
     IVec2() = default;
@@ -252,6 +253,11 @@ void DrawCircleIV(IVec2 origin, float radius, Color color)
     DrawCircle(origin.x, origin.y, radius, color);
 }
 
+void DrawTextureIVec2(Texture2D texture, IVec2 pos, Color tint)
+{
+    DrawTexture(texture, pos.x, pos.y, tint);
+}
+
 struct IRect
 {
     IRect() = default;
@@ -276,6 +282,11 @@ bool InBoundingBox(IRect bounds, IVec2 pt)
 void DrawRectangleIRect(IRect rec, Color color)
 {
     DrawRectangle(rec.x, rec.y, rec.w, rec.h, color);
+}
+
+void BeginScissorMode(IRect area)
+{
+    BeginScissorMode(area.x, area.y, area.w, area.h);
 }
 
 #pragma endregion
@@ -1572,6 +1583,17 @@ void Node::SetPosition(IVec2 position)
     SetPosition_Temporary(position);
 }
 
+template<Int_t width, Int_t height = width>
+void DrawIcon(Texture2D iconSheet, IVec2 iconColRow, IRect dest, Color tint)
+{
+    BeginScissorMode(dest);
+    DrawTexture(iconSheet,
+        dest.x - iconColRow.x * width,
+        dest.y - iconColRow.y * height,
+        tint);
+    EndScissorMode();
+}
+
 int main()
 {
     int windowWidth = 1280;
@@ -1600,55 +1622,46 @@ int main()
     Texture2D modeIcons = LoadTexture("icons_mode.png");
     auto DrawModeIcon = [&modeIcons](Mode mode, IRect dest, Color tint)
     {
-        constexpr Int_t width = 16;
         IVec2 offset;
         switch (mode)
         {
-        case Mode::PEN:      offset = IVec2(    0,     0); break;
-        case Mode::EDIT:     offset = IVec2(width,     0); break;
-        case Mode::ERASE:    offset = IVec2(    0, width); break;
-        case Mode::INTERACT: offset = IVec2(width, width); break;
+        case Mode::PEN:      offset = IVec2(0, 0); break;
+        case Mode::EDIT:     offset = IVec2(1, 0); break;
+        case Mode::ERASE:    offset = IVec2(0, 1); break;
+        case Mode::INTERACT: offset = IVec2(1, 1); break;
         default: return;
         }
-        BeginScissorMode(dest.x, dest.y, dest.w, dest.h); {
-            DrawTexture(modeIcons, dest.x - offset.x, dest.y - offset.y, tint);
-        } EndScissorMode();
+        DrawIcon<16>(modeIcons, offset, dest, tint);
     };
 
     Texture2D gateIcons16x = LoadTexture("icons_gate16x.png");
     auto DrawGateIcon16x = [&gateIcons16x](Gate gate, IRect dest, Color tint)
     {
-        constexpr Int_t width = 16;
         IVec2 offset;
         switch (gate)
         {
-        case Gate::OR:  offset = IVec2(    0,     0); break;
-        case Gate::AND: offset = IVec2(width,     0); break;
-        case Gate::NOR: offset = IVec2(    0, width); break;
-        case Gate::XOR: offset = IVec2(width, width); break;
+        case Gate::OR:  offset = IVec2(0, 0); break;
+        case Gate::AND: offset = IVec2(1, 0); break;
+        case Gate::NOR: offset = IVec2(0, 1); break;
+        case Gate::XOR: offset = IVec2(1, 1); break;
         default: return;
         }
-        BeginScissorMode(dest.x, dest.y, dest.w, dest.h); {
-            DrawTexture(gateIcons16x, dest.x - offset.x, dest.y - offset.y, tint);
-        } EndScissorMode();
+        DrawIcon<16>(gateIcons16x, offset, dest, tint);
     };
     
     Texture2D gateIcons32x = LoadTexture("icons_gate32x.png");
     auto DrawGateIcon32x = [&gateIcons32x](Gate gate, IRect dest, Color tint)
     {
-        constexpr Int_t width = 32;
         IVec2 offset;
         switch (gate)
         {
-        case Gate::OR:  offset = IVec2(    0,     0); break;
-        case Gate::AND: offset = IVec2(width,     0); break;
-        case Gate::NOR: offset = IVec2(    0, width); break;
-        case Gate::XOR: offset = IVec2(width, width); break;
+        case Gate::OR:  offset = IVec2(0, 0); break;
+        case Gate::AND: offset = IVec2(1, 0); break;
+        case Gate::NOR: offset = IVec2(0, 1); break;
+        case Gate::XOR: offset = IVec2(1, 1); break;
         default: return;
         }
-        BeginScissorMode(dest.x, dest.y, dest.w, dest.h); {
-            DrawTexture(gateIcons32x, dest.x - offset.x, dest.y - offset.y, tint);
-        } EndScissorMode();
+        DrawIcon<32>(gateIcons32x, offset, dest, tint);
     };
 
     struct {
@@ -2558,7 +2571,7 @@ int main()
 * -Selection move-together and delete-together
 * -Blueprint pallet
 * -Blueprint pallet icons (User-made combination of 4 premade icons. See Factorio for inspiration)
-* -Save/load
+* -Save/load (https://en.cppreference.com/w/cpp/filesystem/directory_iterator)
 * -Save file menu
 * -Save file thumbnails (based on cropped screenshot)
 * -Menu screen (Open to file menu with "new" at the top)
