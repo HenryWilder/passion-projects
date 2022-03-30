@@ -1143,6 +1143,7 @@ public:
             if (InBoundingBox(group->labelBounds, pos))
                 return group;
         }
+        return nullptr;
     }
     void FindNodesInGroup(std::vector<Node*>& result, Group* group) const
     {
@@ -1588,8 +1589,8 @@ void DrawIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint)
 {
     BeginScissorMode(pos.x, pos.y, width, height);
     DrawTexture(iconSheet,
-        dest.x - iconColRow.x * width,
-        dest.y - iconColRow.y * height,
+        pos.x - iconColRow.x * width,
+        pos.y - iconColRow.y * height,
         tint);
     EndScissorMode();
 }
@@ -1601,10 +1602,25 @@ public:
     enum class Icon : uint16_t
     {
         null = 0, // Leave this also blank on the icon sheet
+        // TODO
     };
 
+private:
     static constexpr Int_t g_size = 16;
     static Texture2D g_iconSheet;
+    static IVec2 g_iconSheetDimensions; // Rows and columns, not pixels
+
+public:
+    static void Load(const char* filename)
+    {
+        g_iconSheet = LoadTexture(filename);
+        g_iconSheetDimensions.x = g_iconSheet.width  / g_size;
+        g_iconSheetDimensions.y = g_iconSheet.height / g_size;
+    }
+    static void Unload()
+    {
+        UnloadTexture(g_iconSheet);
+    }
 
 #pragma push_macro("INDEX")
 #undef INDEX
@@ -1653,8 +1669,7 @@ private:
     }
     static IVec2 ColRowFromIcon(Icon icon)
     {
-        constexpr IVec2 iconSheetDimensions = IVec2(0, 0); // Rows and columns, not pixels
-        return IVec2((Int_t)icon % iconSheetDimensions.x, (Int_t)icon / iconSheetDimensions.y);
+        return IVec2((Int_t)icon % g_iconSheetDimensions.x, (Int_t)icon / g_iconSheetDimensions.y);
     }
 
 public:
@@ -1664,7 +1679,7 @@ public:
 
         _ASSERT_EXPR(Count() <= 4, "BlueprintIcon had count greater than 4");
 
-        IVec2 offs[4];
+        IVec2 offs[4]{ IVec2Zero(), IVec2Zero(), IVec2Zero(), IVec2Zero() };
 
         switch (config)
         {
@@ -1758,6 +1773,8 @@ public:
         }
     }
 };
+Texture2D BlueprintIcon::g_iconSheet;
+IVec2 BlueprintIcon::g_iconSheetDimensions = IVec2Zero();
 
 int main()
 {
@@ -1828,6 +1845,8 @@ int main()
         }
         DrawIcon<32>(gateIcons32x, offset, pos, tint);
     };
+
+    BlueprintIcon::Load("icons_blueprint.png");
 
     struct {
         Gate gatePick = Gate::OR;
@@ -2533,7 +2552,7 @@ int main()
             }
             break;
 
-            case Mode::GATE:
+            case Mode::GATE: // Todo: Maybe change rect to vec?
             {
                 if (baseMode == Mode::PEN)
                 {
@@ -2601,7 +2620,7 @@ int main()
                     IRect rec = iconDest[i];
                     rec.x += x;
                     rec.y += y;
-                    DrawGateIcon32x(radialGateOrder[i], rec, colorB);
+                    DrawGateIcon32x(radialGateOrder[i], rec.xy, colorB);
 
                     EndScissorMode();
                 }
@@ -2626,7 +2645,7 @@ int main()
                         if (m == baseMode)
                             continue;
                         Color color = InBoundingBox(rec, cursorPos) ? WHITE : DEADCABLE;
-                        DrawModeIcon(m, rec, color);
+                        DrawModeIcon(m, rec.xy, color);
                         rec.y += 16;
                     }
                 }
@@ -2639,7 +2658,7 @@ int main()
                         if (g == data.gatePick)
                             continue;
                         Color color = InBoundingBox(rec, cursorPos) ? WHITE : GRAY;
-                        DrawGateIcon16x(g, rec, color);
+                        DrawGateIcon16x(g, rec.xy, color);
                         rec.y += 16;
                     }
                 }
@@ -2695,17 +2714,17 @@ int main()
                 }
             }
 
-            IRect rec = { 0, 0, 16, 16 };
+            IRect rec(0, 0, 16, 16);
             DrawRectangleIRect(rec, SPACEGRAY);
-            DrawModeIcon(baseMode, rec, WHITE);
+            DrawModeIcon(baseMode, rec.xy, WHITE);
             rec.x += 16;
             DrawRectangleIRect(rec, SPACEGRAY);
-            DrawGateIcon16x(data.gatePick, rec, WHITE);
+            DrawGateIcon16x(data.gatePick, rec.xy, WHITE);
             if (!!data.clipboard)
             {
                 rec.x += 16;
                 DrawRectangleIRect(rec, SPACEGRAY);
-                DrawTexture(clipboardIcon, rec.x, rec.y, WHITE);
+                DrawTextureIVec2(clipboardIcon, rec.xy, WHITE);
             }
 
         } EndDrawing();
@@ -2721,6 +2740,7 @@ int main()
     NodeWorld::Get().Save_LargeFile("dataL.cg");
     NodeWorld::Get().Save_SmallFile("dataS.cg");
 
+    BlueprintIcon::Unload();
     UnloadTexture(gateIcons32x);
     UnloadTexture(gateIcons16x);
     UnloadTexture(modeIcons);

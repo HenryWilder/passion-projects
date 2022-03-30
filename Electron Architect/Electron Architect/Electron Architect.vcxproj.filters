@@ -32,5 +32,8 @@
     <Image Include="icon_clipboard.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="icons_blueprint.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

@@ -178,6 +178,7 @@
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="icons_blueprint.png" />
     <Image Include="icons_gate16x.png" />
     <Image Include="icons_mode.png" />
     <Image Include="icons_gate32x.png" />
