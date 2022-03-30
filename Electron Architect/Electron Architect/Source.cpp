@@ -1668,50 +1668,87 @@ public:
 
         switch (config)
         {
-            // 0
+#pragma region count = 0
         case BlueprintIcon::Config::null:
             return;
+#pragma endregion
 
-            // 1
+#pragma region count = 1
         case BlueprintIcon::Config::center:
             offs[0] = IVec2(halfSize, halfSize);
             break;
+#pragma endregion
 
-            // 2
+#pragma region count = 2
         case BlueprintIcon::Config::horizontal:
+            offs[0] = IVec2(     0, halfSize);
+            offs[1] = IVec2(g_size, halfSize);
             break;
         case BlueprintIcon::Config::vertical:
+            offs[0] = IVec2(halfSize,      0);
+            offs[1] = IVec2(halfSize, g_size);
             break;
         case BlueprintIcon::Config::diagTLBR:
+            offs[0] = IVec2(     0,      0);
+            offs[1] = IVec2(g_size, g_size);
             break;
         case BlueprintIcon::Config::diagBLTR:
+            offs[0] = IVec2(g_size,      0);
+            offs[1] = IVec2(     0, g_size);
             break;
+#pragma endregion
 
-            // 3
+#pragma region count = 3
         case BlueprintIcon::Config::arrowDown:
+            offs[0] = IVec2(       0,        0);
+            offs[1] = IVec2(  g_size,        0);
+            offs[2] = IVec2(halfSize,   g_size);
             break;
         case BlueprintIcon::Config::arrowUp:
+            offs[0] = IVec2(halfSize,        0);
+            offs[1] = IVec2(       0,   g_size);
+            offs[2] = IVec2(  g_size,   g_size);
             break;
         case BlueprintIcon::Config::arrowRight:
+            offs[0] = IVec2(       0,        0);
+            offs[1] = IVec2(  g_size, halfSize);
+            offs[2] = IVec2(       0,   g_size);
             break;
         case BlueprintIcon::Config::arrowLeft:
+            offs[0] = IVec2(       0, halfSize);
+            offs[1] = IVec2(  g_size,        0);
+            offs[2] = IVec2(  g_size,   g_size);
             break;
         case BlueprintIcon::Config::arrowTL:
+            offs[0] = IVec2(       0,        0);
+            offs[1] = IVec2(  g_size,        0);
+            offs[2] = IVec2(       0,   g_size);
             break;
         case BlueprintIcon::Config::arrowTR:
+            offs[0] = IVec2(       0,        0);
+            offs[1] = IVec2(  g_size,        0);
+            offs[2] = IVec2(  g_size,   g_size);
             break;
         case BlueprintIcon::Config::arrowBL:
+            offs[0] = IVec2(       0,        0);
+            offs[1] = IVec2(       0,   g_size);
+            offs[2] = IVec2(  g_size,   g_size);
             break;
         case BlueprintIcon::Config::arrowBR:
+            offs[0] = IVec2(  g_size,        0);
+            offs[1] = IVec2(       0,   g_size);
+            offs[2] = IVec2(  g_size,   g_size);
             break;
+#pragma endregion
 
-            // 4
+#pragma region count = 4
         case BlueprintIcon::Config::full:
-            offs[0] = IVec2(0, 0);
-            offs[1] = IVec2(g_size, 0);
-            offs[2] = IVec2(0, g_size);
+            offs[0] = IVec2(     0,      0);
+            offs[1] = IVec2(g_size,      0);
+            offs[2] = IVec2(     0, g_size);
             offs[3] = IVec2(g_size, g_size);
             break;
+#pragma endregion
         }
 
         // Draw
