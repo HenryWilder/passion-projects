@@ -1789,7 +1789,6 @@ int main()
         cursorPos = IVec2Scale_i(cursorPos, g_gridSize) + IVec2(g_gridSize / 2, g_gridSize / 2);
 
         bool b_cursorMoved = cursorPosPrev != cursorPos;
-        cursorPosPrev = cursorPos;
 
         // Hotkeys
         {
@@ -1943,7 +1942,10 @@ int main()
 
                 // selectionStart being used as an offset here
                 if (data.edit.draggingGroup = !!data.edit.hoveredGroup)
+                {
+                    NodeWorld::Get().FindNodesInGroup(data.selection, data.edit.hoveredGroup);
                     data.edit.selectionStart = (cursorPos - (data.edit.fallbackPos = data.edit.hoveredGroup->GetPosition()));
+                }
 
                 if (data.edit.selectionWIP = !(data.edit.nodeBeingDragged || data.edit.wireBeingDragged || data.edit.draggingGroup))
                     data.edit.selectionStart = data.edit.fallbackPos = cursorPos;
@@ -1971,6 +1973,11 @@ int main()
             else if (data.edit.draggingGroup)
             {
                 data.edit.hoveredGroup->SetPosition(cursorPos - data.edit.selectionStart);
+                for (Node* node : data.selection)
+                {
+                    IVec2 offset = cursorPos - cursorPosPrev;
+                    node->SetPosition_Temporary(node->GetPosition() + offset);
+                }
             }
 
             // Release
@@ -2008,6 +2015,8 @@ int main()
                         NodeWorld::Get().FindNodesInRect(data.selection, data.edit.selectionRec);
                     }
                 }
+                if (data.edit.draggingGroup)
+                    data.selection.clear();
                 data.edit.nodeBeingDragged = nullptr;
                 data.edit.selectionWIP = false;
                 data.edit.draggingGroup = false;
@@ -2161,6 +2170,7 @@ int main()
         }
 
     EVAL:
+        cursorPosPrev = cursorPos;
         NodeWorld::Get().Evaluate();
 
         /******************************************
