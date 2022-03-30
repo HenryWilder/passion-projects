@@ -841,8 +841,8 @@ class Group
 public:
     Group() = default;
     // Takes captureBounds as rec
-    Group(IRect rec, Color color) : labelBounds(rec.x, rec.y - g_labelHeight, rec.x, g_labelHeight), captureBounds(rec), color(color), label() {}
-    Group(IRect rec, Color color, const std::string & label) : labelBounds(rec.x, rec.y - g_labelHeight, rec.x, g_labelHeight), captureBounds(rec), color(color), label(label) {}
+    Group(IRect rec, Color color) : labelBounds(rec.x, rec.y - g_labelHeight, rec.w, g_labelHeight), captureBounds(rec), color(color), label() {}
+    Group(IRect rec, Color color, const std::string & label) : labelBounds(rec.x, rec.y - g_labelHeight, rec.w, g_labelHeight), captureBounds(rec), color(color), label(label) {}
 
     void Draw() const
     {
@@ -852,13 +852,21 @@ public:
         constexpr Int_t padding = g_labelHeight / 4;
         DrawText(label.c_str(), labelBounds.x + padding, labelBounds.y + padding, g_fontSize, WHITE);
     }
-    void DrawHighlighted() const
+    void Highlight(Color highlight) const
     {
         IRect rec = labelBounds;
-        rec.y += captureBounds.h;
-        DrawRectangleLines(rec.x - 1, rec.y - 1, rec.w + 2, rec.h + 2, CAUTIONYELLOW);
-        DrawRectangleLines(rec.x - 2, rec.y - 2, rec.w + 4, rec.h + 4, CAUTIONYELLOW);
-        Draw();
+        rec.h += captureBounds.h;
+        DrawRectangleLines(rec.x - 1, rec.y - 1, rec.w + 2, rec.h + 2, highlight);
+    }
+
+    IVec2 GetPosition() const
+    {
+        return captureBounds.xy;
+    }
+    void SetPosition(IVec2 pos)
+    {
+        labelBounds.xy = captureBounds.xy = pos;
+        labelBounds.y -= g_labelHeight;
     }
 };
 
@@ -1117,7 +1125,15 @@ public:
         FindAndErase_ExpectExisting(groups, group);
         delete group;
     }
-    void FindNodesInGroup(std::vector<Node*>& result, Group* group)
+    Group* FindGroupAtPos(IVec2 pos) const
+    {
+        for (Group* group : groups)
+        {
+            if (InBoundingBox(group->labelBounds, pos))
+                return group;
+        }
+    }
+    void FindNodesInGroup(std::vector<Node*>& result, Group* group) const
     {
         FindNodesInRect(result, group->captureBounds);
     }
@@ -1653,10 +1669,12 @@ int main()
             struct {
                 IVec2 fallbackPos;
                 bool selectionWIP;
-                Node* nodeBeingDragged;
-                Wire* wireBeingDragged;
                 IVec2 selectionStart;
                 IRect selectionRec;
+                bool draggingGroup;
+                Group* hoveredGroup;
+                Node* nodeBeingDragged;
+                Wire* wireBeingDragged;
             } edit;
 
             struct {
@@ -1723,10 +1741,12 @@ int main()
             baseMode = Mode::EDIT;
             data.edit.fallbackPos = IVec2Zero();
             data.edit.selectionWIP = false;
-            data.edit.nodeBeingDragged = nullptr;
-            data.edit.wireBeingDragged = nullptr;
             data.edit.selectionStart = IVec2Zero();
             data.edit.selectionRec = IRect(0,0,0,0);
+            data.edit.draggingGroup = false;
+            data.edit.hoveredGroup = nullptr;
+            data.edit.nodeBeingDragged = nullptr;
+            data.edit.wireBeingDragged = nullptr;
             break;
 
         case Mode::ERASE:
@@ -1755,9 +1775,7 @@ int main()
     SetMode(Mode::PEN);
 
     NodeWorld::Get(); // Construct
-
-    Group test(IRect(20,20,100,100), WIPBLUE, "Test");
-        
+            
     while (!WindowShouldClose())
     {
         /******************************************
@@ -1785,24 +1803,35 @@ int main()
                 data.gatePick = Gate::XOR;
 
             // KEY COMBOS BEFORE INDIVIDUAL KEYS!
-
-            // Copy
-            if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_C))
+            
+            // Ctrl
+            if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
             {
-                if (data.clipboard != nullptr)
-                    delete data.clipboard;
+                // Copy
+                if (IsKeyPressed(KEY_C) && mode == Mode::EDIT)
+                {
+                    if (data.clipboard != nullptr)
+                        delete data.clipboard;
 
-                if (data.selection.empty())
-                    data.clipboard = nullptr;
-                else
-                    data.clipboard = new Blueprint(data.selection);
+                    if (data.selection.empty())
+                        data.clipboard = nullptr;
+                    else
+                        data.clipboard = new Blueprint(data.selection);
+                }
+                // Paste
+                else if (IsKeyPressed(KEY_V) && !!data.clipboard)
+                {
+                    SetMode(Mode::PASTE);
+                }
+                // Group
+                else if (IsKeyPressed(KEY_G) && mode == Mode::EDIT && !data.edit.selectionWIP &&
+                    !(data.edit.selectionRec.w == 0 || data.edit.selectionRec.h == 0))
+                {
+                    NodeWorld::Get().CreateGroup(data.edit.selectionRec);
+                    data.edit.selectionRec = IRect(0,0,0,0);
+                    data.selection.clear();
+                }
             }
-            // Paste
-            else if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_V) && !!data.clipboard)
-            {
-                SetMode(Mode::PASTE);
-            }
-
             else if (IsKeyPressed(KEY_B))
             {
                 SetMode(Mode::PEN);
@@ -1888,12 +1917,20 @@ int main()
             if (b_cursorMoved)
             {
                 if (!data.edit.nodeBeingDragged &&
-                    !data.edit.wireBeingDragged)
+                    !data.edit.wireBeingDragged &&
+                    !data.edit.draggingGroup)
                 {
+                    data.edit.hoveredGroup = nullptr;
                     data.hoveredWire = nullptr;
                     data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
                     if (!data.hoveredNode)
+                    {
                         data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(cursorPos);
+                        if (!data.hoveredWire)
+                        {
+                            data.edit.hoveredGroup = NodeWorld::Get().FindGroupAtPos(cursorPos);
+                        }
+                    }
                 }
             }
 
@@ -1903,8 +1940,13 @@ int main()
                 data.selection.clear();
                 data.edit.nodeBeingDragged = data.hoveredNode;
                 data.edit.wireBeingDragged = data.hoveredWire;
-                data.edit.selectionStart = data.edit.fallbackPos = cursorPos;
-                data.edit.selectionWIP = !(data.edit.nodeBeingDragged || data.edit.wireBeingDragged);
+
+                // selectionStart being used as an offset here
+                if (data.edit.draggingGroup = !!data.edit.hoveredGroup)
+                    data.edit.selectionStart = (cursorPos - (data.edit.fallbackPos = data.edit.hoveredGroup->GetPosition()));
+
+                if (data.edit.selectionWIP = !(data.edit.nodeBeingDragged || data.edit.wireBeingDragged || data.edit.draggingGroup))
+                    data.edit.selectionStart = data.edit.fallbackPos = cursorPos;
             }
 
             // Selection
@@ -1914,6 +1956,21 @@ int main()
                 auto [miny, maxy] = std::minmax(cursorPos.y, data.edit.selectionStart.y);
                 data.edit.selectionRec.w = maxx - (data.edit.selectionRec.x = minx);
                 data.edit.selectionRec.h = maxy - (data.edit.selectionRec.y = miny);
+            }
+            // Node
+            else if (!!data.edit.nodeBeingDragged)
+            {
+                data.edit.nodeBeingDragged->SetPosition_Temporary(cursorPos);
+            }
+            // Wire
+            else if (!!data.edit.wireBeingDragged)
+            {
+                data.edit.wireBeingDragged->SnapElbowToLegal(cursorPos);
+            }
+            // Group
+            else if (data.edit.draggingGroup)
+            {
+                data.edit.hoveredGroup->SetPosition(cursorPos - data.edit.selectionStart);
             }
 
             // Release
@@ -1925,12 +1982,14 @@ int main()
                     if (!!data.edit.nodeBeingDragged)
                     {
                         data.edit.nodeBeingDragged->SetPosition(data.edit.fallbackPos);
-                        data.edit.nodeBeingDragged = nullptr;
+                    }
+                    else if (data.edit.draggingGroup)
+                    {
+                        data.edit.hoveredGroup->SetPosition(data.edit.fallbackPos);
                     }
                     else if (data.edit.selectionWIP)
                     {
                         data.edit.selectionRec = IRect(0,0,0,0);
-                        data.edit.selectionWIP = false;
                     }
                 }
                 // Finalize
@@ -1943,30 +2002,21 @@ int main()
                             data.hoveredNode = data.edit.nodeBeingDragged = NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
 
                         data.edit.nodeBeingDragged->SetPosition(cursorPos);
-                        data.edit.nodeBeingDragged = nullptr;
                     }
                     else if (data.edit.selectionWIP)
                     {
                         NodeWorld::Get().FindNodesInRect(data.selection, data.edit.selectionRec);
-                        data.edit.selectionWIP = false;
                     }
                 }
+                data.edit.nodeBeingDragged = nullptr;
+                data.edit.selectionWIP = false;
+                data.edit.draggingGroup = false;
                 data.edit.wireBeingDragged = nullptr;
             }
+            // Right click
             else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!data.hoveredNode)
             {
                 data.hoveredNode->SetGate(data.gatePick);
-            }
-            // Node
-            else if (!!data.edit.nodeBeingDragged)
-            {
-                data.edit.nodeBeingDragged->SetPosition_Temporary(cursorPos);
-            }
-
-            // Wire
-            else if (!!data.edit.wireBeingDragged)
-            {
-                data.edit.wireBeingDragged->SnapElbowToLegal(cursorPos);
             }
         }
         break;
@@ -2131,7 +2181,7 @@ int main()
                 DrawLine(x, 0, x, windowHeight, SPACEGRAY);
             }
 
-            test.Draw();
+            NodeWorld::Get().DrawGroups();
 
             // Draw
             switch (mode)
@@ -2180,6 +2230,9 @@ int main()
 
             case Mode::EDIT:
             {
+                if (!!data.edit.hoveredGroup)
+                    data.edit.hoveredGroup->Highlight(WHITE);
+
                 DrawRectangleIRect(data.edit.selectionRec, ColorAlpha(SPACEGRAY, 0.5));
                 DrawRectangleLines(data.edit.selectionRec.x, data.edit.selectionRec.y, data.edit.selectionRec.w, data.edit.selectionRec.h, LIFELESSNEBULA);
 
