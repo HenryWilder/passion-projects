@@ -1993,6 +1993,11 @@ int main()
                     else if (data.edit.draggingGroup)
                     {
                         data.edit.hoveredGroup->SetPosition(data.edit.fallbackPos);
+                        for (Node* node : data.selection)
+                        {
+                            IVec2 offset = (data.edit.fallbackPos + data.edit.selectionStart) - cursorPos;
+                            node->SetPosition_Temporary(node->GetPosition() + offset);
+                        }
                     }
                     else if (data.edit.selectionWIP)
                     {
@@ -2009,6 +2014,13 @@ int main()
                             data.hoveredNode = data.edit.nodeBeingDragged = NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
 
                         data.edit.nodeBeingDragged->SetPosition(cursorPos);
+                    }
+                    else if (data.edit.draggingGroup)
+                    {
+                        for (Node* node : data.selection)
+                        {
+                            node->SetPosition(node->GetPosition());
+                        }
                     }
                     else if (data.edit.selectionWIP)
                     {
@@ -2241,7 +2253,7 @@ int main()
             case Mode::EDIT:
             {
                 if (!!data.edit.hoveredGroup)
-                    data.edit.hoveredGroup->Highlight(WHITE);
+                    data.edit.hoveredGroup->Highlight(INTERFERENCEGRAY);
 
                 DrawRectangleIRect(data.edit.selectionRec, ColorAlpha(SPACEGRAY, 0.5));
                 DrawRectangleLines(data.edit.selectionRec.x, data.edit.selectionRec.y, data.edit.selectionRec.w, data.edit.selectionRec.h, LIFELESSNEBULA);
