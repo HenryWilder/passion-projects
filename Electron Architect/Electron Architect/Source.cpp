@@ -1584,15 +1584,143 @@ void Node::SetPosition(IVec2 position)
 }
 
 template<Int_t width, Int_t height = width>
-void DrawIcon(Texture2D iconSheet, IVec2 iconColRow, IRect dest, Color tint)
+void DrawIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint)
 {
-    BeginScissorMode(dest);
+    BeginScissorMode(pos.x, pos.y, width, height);
     DrawTexture(iconSheet,
         dest.x - iconColRow.x * width,
         dest.y - iconColRow.y * height,
         tint);
     EndScissorMode();
 }
+
+// Combo of up to four icons for representing a blueprint
+struct BlueprintIcon
+{
+public:
+    enum class Icon : uint16_t
+    {
+        null = 0, // Leave this also blank on the icon sheet
+    };
+
+    static constexpr Int_t g_size = 16;
+    static Texture2D g_iconSheet;
+
+#pragma push_macro("INDEX")
+#undef INDEX
+#define INDEX(count, value) ((value) | (count << 3))
+    enum class Config : uint8_t
+    {
+        // count = 0
+
+        null        = INDEX(0, 0),
+
+        // count = 1
+        
+        center      = INDEX(1, 0),
+
+        // count == 2
+
+        horizontal  = INDEX(2, 0),
+        vertical    = INDEX(2, 1),
+        diagTLBR    = INDEX(2, 2), // Top left bottom right
+        diagBLTR    = INDEX(2, 3), // Bottom left top right
+
+        // count == 3
+
+        arrowDown   = INDEX(3, 0),
+        arrowUp     = INDEX(3, 1),
+        arrowRight  = INDEX(3, 2),
+        arrowLeft   = INDEX(3, 3),
+        arrowTL     = INDEX(3, 4),
+        arrowTR     = INDEX(3, 5),
+        arrowBL     = INDEX(3, 6),
+        arrowBR     = INDEX(3, 7),
+
+        // count == 4
+
+        full        = INDEX(4, 0),
+    };
+#pragma pop_macro("INDEX")
+
+private:
+    Config config = Config::null;
+    Icon combo[4] = { Icon::null, Icon::null, Icon::null, Icon::null };
+
+    uint8_t Count() const
+    {
+        return (uint8_t)config >> 3;
+    }
+    static IVec2 ColRowFromIcon(Icon icon)
+    {
+        constexpr IVec2 iconSheetDimensions = IVec2(0, 0); // Rows and columns, not pixels
+        return IVec2((Int_t)icon % iconSheetDimensions.x, (Int_t)icon / iconSheetDimensions.y);
+    }
+
+public:
+    void Draw(IVec2 pos, Color tint)
+    {
+        constexpr Int_t halfSize = g_size / 2;
+
+        _ASSERT_EXPR(Count() <= 4, "BlueprintIcon had count greater than 4");
+
+        IVec2 offs[4];
+
+        switch (config)
+        {
+            // 0
+        case BlueprintIcon::Config::null:
+            return;
+
+            // 1
+        case BlueprintIcon::Config::center:
+            offs[0] = IVec2(halfSize, halfSize);
+            break;
+
+            // 2
+        case BlueprintIcon::Config::horizontal:
+            break;
+        case BlueprintIcon::Config::vertical:
+            break;
+        case BlueprintIcon::Config::diagTLBR:
+            break;
+        case BlueprintIcon::Config::diagBLTR:
+            break;
+
+            // 3
+        case BlueprintIcon::Config::arrowDown:
+            break;
+        case BlueprintIcon::Config::arrowUp:
+            break;
+        case BlueprintIcon::Config::arrowRight:
+            break;
+        case BlueprintIcon::Config::arrowLeft:
+            break;
+        case BlueprintIcon::Config::arrowTL:
+            break;
+        case BlueprintIcon::Config::arrowTR:
+            break;
+        case BlueprintIcon::Config::arrowBL:
+            break;
+        case BlueprintIcon::Config::arrowBR:
+            break;
+
+            // 4
+        case BlueprintIcon::Config::full:
+            offs[0] = IVec2(0, 0);
+            offs[1] = IVec2(g_size, 0);
+            offs[2] = IVec2(0, g_size);
+            offs[3] = IVec2(g_size, g_size);
+            break;
+        }
+
+        // Draw
+        for (size_t i = 0; i < Count(); ++i)
+        {
+            DrawIcon<g_size>(g_iconSheet, ColRowFromIcon(combo[i]), pos + offs[i], tint);
+        }
+    }
+};
 
 int main()
 {
@@ -1620,7 +1748,7 @@ int main()
     Texture2D clipboardIcon = LoadTexture("icon_clipboard.png");
 
     Texture2D modeIcons = LoadTexture("icons_mode.png");
-    auto DrawModeIcon = [&modeIcons](Mode mode, IRect dest, Color tint)
+    auto DrawModeIcon = [&modeIcons](Mode mode, IVec2 pos, Color tint)
     {
         IVec2 offset;
         switch (mode)
@@ -1631,11 +1759,11 @@ int main()
         case Mode::INTERACT: offset = IVec2(1, 1); break;
         default: return;
         }
-        DrawIcon<16>(modeIcons, offset, dest, tint);
+        DrawIcon<16>(modeIcons, offset, pos, tint);
     };
 
     Texture2D gateIcons16x = LoadTexture("icons_gate16x.png");
-    auto DrawGateIcon16x = [&gateIcons16x](Gate gate, IRect dest, Color tint)
+    auto DrawGateIcon16x = [&gateIcons16x](Gate gate, IVec2 pos, Color tint)
     {
         IVec2 offset;
         switch (gate)
@@ -1646,11 +1774,11 @@ int main()
         case Gate::XOR: offset = IVec2(1, 1); break;
         default: return;
         }
-        DrawIcon<16>(gateIcons16x, offset, dest, tint);
+        DrawIcon<16>(gateIcons16x, offset, pos, tint);
     };
-    
+
     Texture2D gateIcons32x = LoadTexture("icons_gate32x.png");
-    auto DrawGateIcon32x = [&gateIcons32x](Gate gate, IRect dest, Color tint)
+    auto DrawGateIcon32x = [&gateIcons32x](Gate gate, IVec2 pos, Color tint)
     {
         IVec2 offset;
         switch (gate)
@@ -1661,7 +1789,7 @@ int main()
         case Gate::XOR: offset = IVec2(1, 1); break;
         default: return;
         }
-        DrawIcon<32>(gateIcons32x, offset, dest, tint);
+        DrawIcon<32>(gateIcons32x, offset, pos, tint);
     };
 
     struct {
