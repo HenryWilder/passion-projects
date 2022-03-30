@@ -907,6 +907,14 @@ private:
         {
             delete wire;
         }
+        for (Blueprint* bp : blueprints)
+        {
+            delete bp;
+        }
+        for (Group* group : groups)
+        {
+            delete group;
+        }
     }
 
 private: // Internal
