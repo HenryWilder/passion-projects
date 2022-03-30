@@ -2565,7 +2565,6 @@ int main()
 *
 * Quality of Life
 * -Special erase (keep wires, erase node)
-* -Groups (labelled persistent selections)
 * -Hotkeys for output-only gate state toggles (Like the Reason on-screen piano)
 *
 * Stretch goals
