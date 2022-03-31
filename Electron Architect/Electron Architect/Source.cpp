@@ -1777,6 +1777,7 @@ int main()
         GATE,
         BUTTON,
         PASTE,
+        BP_ICON,
     } mode, baseMode;
 
     Texture2D clipboardIcon = LoadTexture("icon_clipboard.png");
@@ -1873,6 +1874,11 @@ int main()
 
             struct {
             } paste = {};
+
+            struct {
+                BlueprintIcon* object;
+                IVec2 pos; // Width and height are fixed
+            } bp_icon;
         };
     } data;
 
@@ -1945,6 +1951,11 @@ int main()
 
         case Mode::PASTE:
             break;
+
+        case Mode::BP_ICON:
+            data.bp_icon.object = nullptr;
+            data.bp_icon.pos = IVec2Zero();
+            break;
         }
     };
 
@@ -1969,14 +1980,17 @@ int main()
 
         // Hotkeys
         {
-            if (IsKeyPressed(KEY_ONE))
-                data.gatePick = Gate::OR;
-            else if (IsKeyPressed(KEY_TWO))
-                data.gatePick = Gate::AND;
-            else if (IsKeyPressed(KEY_THREE))
-                data.gatePick = Gate::NOR;
-            else if (IsKeyPressed(KEY_FOUR))
-                data.gatePick = Gate::XOR;
+            if (mode == baseMode)
+            {
+                if (IsKeyPressed(KEY_ONE))
+                    data.gatePick = Gate::OR;
+                else if (IsKeyPressed(KEY_TWO))
+                    data.gatePick = Gate::AND;
+                else if (IsKeyPressed(KEY_THREE))
+                    data.gatePick = Gate::NOR;
+                else if (IsKeyPressed(KEY_FOUR))
+                    data.gatePick = Gate::XOR;
+            }
 
             // KEY COMBOS BEFORE INDIVIDUAL KEYS!
             
@@ -2007,6 +2021,24 @@ int main()
                     data.edit.selectionRec = IRect(0,0,0,0);
                     data.selection.clear();
                 }
+                // Save
+                else if (IsKeyPressed(KEY_S))
+                {
+                    // Save blueprint
+                    if (mode == Mode::PASTE)
+                    {
+                        SetMode(Mode::BP_ICON);
+                    }
+                    // Save file
+                    else
+                    {
+                        // TODO
+                    }
+                }
+            }
+            else if (IsKeyPressed(KEY_ESCAPE))
+            {
+                SetMode(baseMode);
             }
             else if (IsKeyPressed(KEY_B))
             {
@@ -2041,6 +2073,9 @@ int main()
         // Input
         switch (mode)
         {
+
+        // Basic
+
         case Mode::PEN:
         {
             if (b_cursorMoved)
@@ -2219,39 +2254,6 @@ int main()
         }
         break;
 
-        case Mode::GATE:
-        {
-            if (b_cursorMoved)
-            {
-                if (cursorPos.x < data.gate.radialMenuCenter.x)
-                {
-                    if (cursorPos.y < data.gate.radialMenuCenter.y)
-                        data.gate.overlappedSection = 2;
-                    else // cursorPos.y > data.gate.radialMenuCenter.y
-                        data.gate.overlappedSection = 3;
-                }
-                else // cursorPos.x > data.gate.radialMenuCenter.x
-                {
-                    if (cursorPos.y < data.gate.radialMenuCenter.y)
-                        data.gate.overlappedSection = 1;
-                    else // cursorPos.y > data.gate.radialMenuCenter.y
-                        data.gate.overlappedSection = 0;
-                }
-            }
-
-            bool leftMouse = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-            if (leftMouse || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-            {
-                if (leftMouse)
-                    data.gatePick = radialGateOrder[data.gate.overlappedSection];
-
-                mode = baseMode;
-                SetMousePosition(data.gate.radialMenuCenter.x, data.gate.radialMenuCenter.y);
-                cursorPos = data.gate.radialMenuCenter;
-            }
-        }
-        break;
-
         case Mode::ERASE:
         {
             if (b_cursorMoved)
@@ -2283,6 +2285,42 @@ int main()
 
             if (!!data.hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
                 data.hoveredNode->SetGate(data.hoveredNode->GetGate() == Gate::NOR ? Gate::OR : Gate::NOR);
+        }
+        break;
+
+
+        // Overlay
+
+        case Mode::GATE:
+        {
+            if (b_cursorMoved)
+            {
+                if (cursorPos.x < data.gate.radialMenuCenter.x)
+                {
+                    if (cursorPos.y < data.gate.radialMenuCenter.y)
+                        data.gate.overlappedSection = 2;
+                    else // cursorPos.y > data.gate.radialMenuCenter.y
+                        data.gate.overlappedSection = 3;
+                }
+                else // cursorPos.x > data.gate.radialMenuCenter.x
+                {
+                    if (cursorPos.y < data.gate.radialMenuCenter.y)
+                        data.gate.overlappedSection = 1;
+                    else // cursorPos.y > data.gate.radialMenuCenter.y
+                        data.gate.overlappedSection = 0;
+                }
+            }
+
+            bool leftMouse = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+            if (leftMouse || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+            {
+                if (leftMouse)
+                    data.gatePick = radialGateOrder[data.gate.overlappedSection];
+
+                mode = baseMode;
+                SetMousePosition(data.gate.radialMenuCenter.x, data.gate.radialMenuCenter.y);
+                cursorPos = data.gate.radialMenuCenter;
+            }
         }
         break;
 
@@ -2360,6 +2398,12 @@ int main()
                 data.selection.clear();
                 SetMode(baseMode);
             }
+        }
+        break;
+
+        case Mode::BP_ICON:
+        {
+
         }
         break;
         }
@@ -2662,6 +2706,16 @@ int main()
                 pos = IVec2Scale_i(IVec2Divide_i(pos, g_gridSize), g_gridSize);
                 pos = pos + IVec2(g_gridSize / 2, g_gridSize / 2);
                 data.clipboard->DrawPreview(pos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
+            }
+            break;
+
+            case Mode::BP_ICON:
+            {
+                if (!!data.bp_icon.object)
+                {
+                    data.bp_icon.object->DrawBackground(data.bp_icon.pos, SPACEGRAY);
+                    data.bp_icon.object->Draw(data.bp_icon.pos, WHITE);
+                }
             }
             break;
             }
