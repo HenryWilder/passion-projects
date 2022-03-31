@@ -762,6 +762,24 @@ private:
     }
 
 public:
+    static IconID_t GetIconAtColRow(IVec2 colRow)
+    {
+        colRow.x = std::min(std::max(colRow.x, 0), g_iconSheetDimensions.x);
+        colRow.y = std::min(std::max(colRow.y, 0), g_iconSheetDimensions.y);
+        return (IconID_t)((colRow.y * g_iconSheetDimensions.x) + colRow.x);
+    }
+    static IVec2 PixelToColRow(IVec2 sheetPos, IVec2 selectPos)
+    {
+        return IVec2Divide_i(selectPos - sheetPos, g_size);
+    }
+    static IVec2 GetSheetSize_RC() // Rows and columns
+    {
+        return g_iconSheetDimensions;
+    }
+    static IVec2 GetSheetSize_Px() // Pixels
+    {
+        return IVec2Scale_i(g_iconSheetDimensions, g_size);
+    }
     static void DrawBPIcon(IconID_t icon, IVec2 pos, Color tint)
     {
         if (icon != NULL)
@@ -788,6 +806,13 @@ public:
         }
     };
 
+    static void DrawSheet(IVec2 pos, Color background, Color tint)
+    {
+        DrawRectangle(pos.x, pos.y, g_iconSheet.width, g_iconSheet.height, background);
+        DrawTexture(g_iconSheet, pos.x, pos.y, tint);
+    }
+
+public:
     // Global
     static void Load(const char* filename)
     {
@@ -1878,6 +1903,7 @@ int main()
             struct {
                 BlueprintIcon* object;
                 IVec2 pos; // Width and height are fixed
+                BlueprintIconID_t iconID;
             } bp_icon;
         };
     } data;
@@ -1910,8 +1936,15 @@ int main()
 
     auto SetMode = [&baseMode, &mode, &data, &cursorPosPrev](Mode newMode)
     {
+        if (mode == Mode::BP_ICON)
+        {
+            delete data.bp_icon.object;
+            data.bp_icon.object = nullptr;
+        }
+
         cursorPosPrev = IVec2(-1,-1);
         mode = newMode;
+
         switch (newMode)
         {
         case Mode::PEN:
@@ -2028,6 +2061,8 @@ int main()
                     if (mode == Mode::PASTE)
                     {
                         SetMode(Mode::BP_ICON);
+                        data.bp_icon.object = new BlueprintIcon;
+                        data.bp_icon.pos = cursorPos - IVec2(BlueprintIcon::IconPos::g_unit, BlueprintIcon::IconPos::g_unit);
                     }
                     // Save file
                     else
@@ -2038,7 +2073,13 @@ int main()
             }
             else if (IsKeyPressed(KEY_ESCAPE))
             {
-                SetMode(baseMode);
+                if (mode != baseMode)
+                    SetMode(baseMode);
+                else if (!!data.clipboard)
+                {
+                    delete data.clipboard;
+                    data.clipboard = nullptr;
+                }
             }
             else if (IsKeyPressed(KEY_B))
             {
@@ -2061,7 +2102,7 @@ int main()
             {
                 SetMode(Mode::INTERACT);
             }
-            else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (cursorPos.y <= 16 && cursorPos.x <= 32) &&
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mode != Mode::BP_ICON && (cursorPos.y <= 16 && cursorPos.x <= 32) &&
                 (mode == Mode::BUTTON ? data.button.dropdownActive != (cursorPos.x / 16) : true))
             {
                 SetMode(Mode::BUTTON);
@@ -2403,7 +2444,8 @@ int main()
 
         case Mode::BP_ICON:
         {
-
+            constexpr IVec2 offset(BlueprintIcon::IconPos::g_unit * 4, BlueprintIcon::IconPos::g_unit * 4);
+            data.bp_icon.iconID = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.bp_icon.pos + offset, cursorPos));
         }
         break;
         }
@@ -2420,171 +2462,39 @@ int main()
 
             ClearBackground(BLACK);
 
-            // Grid
-            for (Int_t y = 0; y < windowHeight; y += g_gridSize)
+            if (mode == Mode::BP_ICON)
             {
-                DrawLine(0, y, windowWidth, y, SPACEGRAY);
+                _ASSERT_EXPR(!!data.bp_icon.object, "Blueprint icon object not initialized");
+                _ASSERT_EXPR(!!data.clipboard, "Bad entry into Mode::BP_ICON");
+
+                data.bp_icon.object->DrawBackground(data.bp_icon.pos, SPACEGRAY);
+                data.bp_icon.object->Draw(data.bp_icon.pos, WHITE);
+                constexpr IVec2 offset(BlueprintIcon::IconPos::g_unit * 4, BlueprintIcon::IconPos::g_unit * 4);
+                BlueprintIcon::DrawSheet(data.bp_icon.pos + offset, SPACEGRAY, WHITE);
+                BlueprintIcon::DrawBPIcon(data.bp_icon.iconID, data.bp_icon.pos, WIPBLUE);
+                
             }
-            for (Int_t x = 0; x < windowWidth; x += g_gridSize)
+            else
             {
-                DrawLine(x, 0, x, windowHeight, SPACEGRAY);
-            }
-
-            NodeWorld::Get().DrawGroups();
-
-            // Draw
-            switch (mode)
-            {
-            case Mode::PEN:
-            {
-                NodeWorld::Get().DrawWires();
-
-                if (!!data.pen.currentWireStart)
+                // Grid
+                for (Int_t y = 0; y < windowHeight; y += g_gridSize)
                 {
-                    IVec2 start = data.pen.currentWireStart->GetPosition();
-                    IVec2 elbow;
-                    IVec2 end = cursorPos;
-                    elbow = Wire::GetLegalElbowPosition(start, end, data.pen.currentWireElbowConfig);
-                    Wire::Draw(start, elbow, end, WIPBLUE);
-                    Node::Draw(end, data.gatePick, WIPBLUE);
+                    DrawLine(0, y, windowWidth, y, SPACEGRAY);
+                }
+                for (Int_t x = 0; x < windowWidth; x += g_gridSize)
+                {
+                    DrawLine(x, 0, x, windowHeight, SPACEGRAY);
                 }
 
-                if (!!data.hoveredWire)
+                NodeWorld::Get().DrawGroups();
+
+                // Draw
+                switch (mode)
                 {
-                    data.hoveredWire->Draw(GOLD);
-                }
 
-                if (!!data.hoveredNode)
-                {
-                    for (const Wire* wire : data.hoveredNode->GetWires())
-                    {
-                        Color color;
-                        if (wire->start == data.hoveredNode)
-                            color = OUTPUTAPRICOT; // Output
-                        else
-                            color = INPUTLAVENDER; // Input
+                // Base mode
 
-                        wire->Draw(color);
-                    }
-                }
-
-                NodeWorld::Get().DrawNodes();
-
-                if (!!data.hoveredNode)
-                {
-                    data.hoveredNode->Draw(WIPBLUE);
-                }
-            }
-            break;
-
-            case Mode::EDIT:
-            {
-                if (!!data.edit.hoveredGroup)
-                    data.edit.hoveredGroup->Highlight(INTERFERENCEGRAY);
-
-                DrawRectangleIRect(data.edit.selectionRec, ColorAlpha(SPACEGRAY, 0.5));
-                DrawRectangleLines(data.edit.selectionRec.x, data.edit.selectionRec.y, data.edit.selectionRec.w, data.edit.selectionRec.h, LIFELESSNEBULA);
-
-                NodeWorld::Get().DrawWires();
-
-                for (Node* node : data.selection)
-                {
-                    DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, WIPBLUE);
-                }
-
-                if (!!data.hoveredWire)
-                {
-                    IVec2 pts[4];
-                    data.hoveredWire->GetLegalElbowPositions(pts);
-                    for (const IVec2& p : pts)
-                    {
-                        Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(WIPBLUE, 0.25f));
-                        DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(WIPBLUE, 0.5f));
-                    }
-
-                    data.hoveredWire->Draw(WIPBLUE);
-                    Color elbowColor;
-                    if (!!data.edit.wireBeingDragged)
-                        elbowColor = WIPBLUE;
-                    else
-                        elbowColor = CAUTIONYELLOW;
-                    data.hoveredWire->DrawElbow(elbowColor);
-                }
-
-                NodeWorld::Get().DrawNodes();
-
-                if (!!data.hoveredNode)
-                {
-                    data.hoveredNode->Draw(CAUTIONYELLOW);
-                }
-                if (!!data.hoveredWire)
-                {
-                    data.hoveredWire->start->Draw(INPUTLAVENDER);
-                    data.hoveredWire->end->Draw(OUTPUTAPRICOT);
-                }
-            }
-            break;
-
-            case Mode::ERASE:
-            {
-                auto DrawCross = [](IVec2 center, Color color)
-                {
-                    int radius = 3;
-                    int expandedRad = radius + 1;
-                    DrawRectangle(center.x - expandedRad, center.y - expandedRad, expandedRad * 2, expandedRad * 2, BLACK);
-                    DrawLine(center.x - radius, center.y - radius,
-                        center.x + radius, center.y + radius,
-                        color);
-                    DrawLine(center.x - radius, center.y + radius,
-                        center.x + radius, center.y - radius,
-                        color);
-                };
-
-                NodeWorld::Get().DrawWires();
-
-                if (!!data.hoveredWire)
-                {
-                    data.hoveredWire->Draw(MAGENTA);
-                    DrawCross(cursorPos, DESTRUCTIVERED);
-                }
-                else if (!!data.hoveredNode)
-                {
-                    for (Wire* wire : data.hoveredNode->GetWires())
-                    {
-                        wire->Draw(MAGENTA);
-                    }
-                }
-
-                NodeWorld::Get().DrawNodes();
-
-                if (!!data.hoveredNode)
-                {
-                    data.hoveredNode->Draw(BLACK);
-                    DrawCross(data.hoveredNode->GetPosition(), DESTRUCTIVERED);
-                }
-            }
-            break;
-
-            case Mode::INTERACT:
-            {
-                NodeWorld::Get().DrawWires();
-                NodeWorld::Get().DrawNodes();
-
-                for (const Node* node : NodeWorld::Get().GetStartNodes())
-                {
-                    node->Draw(WIPBLUE);
-                }
-
-                if (!!data.hoveredNode)
-                {
-                    data.hoveredNode->Draw(CAUTIONYELLOW);
-                }
-            }
-            break;
-
-            case Mode::GATE: // Todo: Maybe change rect to vec?
-            {
-                if (baseMode == Mode::PEN)
+                case Mode::PEN:
                 {
                     NodeWorld::Get().DrawWires();
 
@@ -2592,180 +2502,329 @@ int main()
                     {
                         IVec2 start = data.pen.currentWireStart->GetPosition();
                         IVec2 elbow;
-                        IVec2 end = data.gate.radialMenuCenter;
+                        IVec2 end = cursorPos;
                         elbow = Wire::GetLegalElbowPosition(start, end, data.pen.currentWireElbowConfig);
                         Wire::Draw(start, elbow, end, WIPBLUE);
                         Node::Draw(end, data.gatePick, WIPBLUE);
                     }
 
+                    if (!!data.hoveredWire)
+                    {
+                        data.hoveredWire->Draw(GOLD);
+                    }
+
+                    if (!!data.hoveredNode)
+                    {
+                        for (const Wire* wire : data.hoveredNode->GetWires())
+                        {
+                            Color color;
+                            if (wire->start == data.hoveredNode)
+                                color = OUTPUTAPRICOT; // Output
+                            else
+                                color = INPUTLAVENDER; // Input
+
+                            wire->Draw(color);
+                        }
+                    }
+
                     NodeWorld::Get().DrawNodes();
+
+                    if (!!data.hoveredNode)
+                    {
+                        data.hoveredNode->Draw(WIPBLUE);
+                    }
                 }
-                else
+                break;
+
+                case Mode::EDIT:
+                {
+                    if (!!data.edit.hoveredGroup)
+                        data.edit.hoveredGroup->Highlight(INTERFERENCEGRAY);
+
+                    DrawRectangleIRect(data.edit.selectionRec, ColorAlpha(SPACEGRAY, 0.5));
+                    DrawRectangleLines(data.edit.selectionRec.x, data.edit.selectionRec.y, data.edit.selectionRec.w, data.edit.selectionRec.h, LIFELESSNEBULA);
+
+                    NodeWorld::Get().DrawWires();
+
+                    for (Node* node : data.selection)
+                    {
+                        DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, WIPBLUE);
+                    }
+
+                    if (!!data.hoveredWire)
+                    {
+                        IVec2 pts[4];
+                        data.hoveredWire->GetLegalElbowPositions(pts);
+                        for (const IVec2& p : pts)
+                        {
+                            Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(WIPBLUE, 0.25f));
+                            DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(WIPBLUE, 0.5f));
+                        }
+
+                        data.hoveredWire->Draw(WIPBLUE);
+                        Color elbowColor;
+                        if (!!data.edit.wireBeingDragged)
+                            elbowColor = WIPBLUE;
+                        else
+                            elbowColor = CAUTIONYELLOW;
+                        data.hoveredWire->DrawElbow(elbowColor);
+                    }
+
+                    NodeWorld::Get().DrawNodes();
+
+                    if (!!data.hoveredNode)
+                    {
+                        data.hoveredNode->Draw(CAUTIONYELLOW);
+                    }
+                    if (!!data.hoveredWire)
+                    {
+                        data.hoveredWire->start->Draw(INPUTLAVENDER);
+                        data.hoveredWire->end->Draw(OUTPUTAPRICOT);
+                    }
+                }
+                break;
+
+                case Mode::ERASE:
+                {
+                    auto DrawCross = [](IVec2 center, Color color)
+                    {
+                        int radius = 3;
+                        int expandedRad = radius + 1;
+                        DrawRectangle(center.x - expandedRad, center.y - expandedRad, expandedRad * 2, expandedRad * 2, BLACK);
+                        DrawLine(center.x - radius, center.y - radius,
+                            center.x + radius, center.y + radius,
+                            color);
+                        DrawLine(center.x - radius, center.y + radius,
+                            center.x + radius, center.y - radius,
+                            color);
+                    };
+
+                    NodeWorld::Get().DrawWires();
+
+                    if (!!data.hoveredWire)
+                    {
+                        data.hoveredWire->Draw(MAGENTA);
+                        DrawCross(cursorPos, DESTRUCTIVERED);
+                    }
+                    else if (!!data.hoveredNode)
+                    {
+                        for (Wire* wire : data.hoveredNode->GetWires())
+                        {
+                            wire->Draw(MAGENTA);
+                        }
+                    }
+
+                    NodeWorld::Get().DrawNodes();
+
+                    if (!!data.hoveredNode)
+                    {
+                        data.hoveredNode->Draw(BLACK);
+                        DrawCross(data.hoveredNode->GetPosition(), DESTRUCTIVERED);
+                    }
+                }
+                break;
+
+                case Mode::INTERACT:
                 {
                     NodeWorld::Get().DrawWires();
                     NodeWorld::Get().DrawNodes();
-                }
 
-                constexpr int menuRadius = 64;
-                constexpr int menuIconOffset = 12;
-                constexpr IVec2 menuOff[4] = {
-                    IVec2(0, 0),
-                    IVec2(0,-1),
-                    IVec2(-1,-1),
-                    IVec2(-1, 0),
-                };
-                constexpr IRect iconDest[4] = {
-                    IRect(menuIconOffset,       menuIconOffset,      32, 32),
-                    IRect(menuIconOffset,      -menuIconOffset - 32, 32, 32),
-                    IRect(-menuIconOffset - 32, -menuIconOffset - 32, 32, 32),
-                    IRect(-menuIconOffset - 32,  menuIconOffset,      32, 32),
-                };
-                int x = data.gate.radialMenuCenter.x;
-                int y = data.gate.radialMenuCenter.y;
-                constexpr Color menuBackground = SPACEGRAY;
-                DrawCircleIV(data.gate.radialMenuCenter, static_cast<float>(menuRadius + 4), menuBackground);
-
-                for (int i = 0; i < 4; ++i)
-                {
-                    Color colorA;
-                    Color colorB;
-                    int radius;
-
-                    if (i == data.gate.overlappedSection) // Active
+                    for (const Node* node : NodeWorld::Get().GetStartNodes())
                     {
-                        colorA = GLEEFULDUST;
-                        colorB = INTERFERENCEGRAY;
-                        radius = menuRadius + 8;
+                        node->Draw(WIPBLUE);
                     }
-                    else // Inactive
+
+                    if (!!data.hoveredNode)
                     {
-                        colorA = LIFELESSNEBULA;
-                        colorB = HAUNTINGWHITE;
-                        radius = menuRadius;
-                    }
-                    BeginScissorMode(x + (menuOff[i].x * 8 + 4) + menuOff[i].x * radius, y + (menuOff[i].y * 8 + 4) + menuOff[i].y * radius, radius, radius);
-
-                    float startAngle = static_cast<float>(i * 90);
-                    DrawCircleSector({ static_cast<float>(x), static_cast<float>(y) }, static_cast<float>(radius), startAngle, startAngle + 90.0f, 8, colorA);
-                    IRect rec = iconDest[i];
-                    rec.x += x;
-                    rec.y += y;
-                    DrawGateIcon32x(radialGateOrder[i], rec.xy, colorB);
-
-                    EndScissorMode();
-                }
-            }
-            break;
-
-            case Mode::BUTTON:
-            {
-                NodeWorld::Get().DrawWires();
-                NodeWorld::Get().DrawNodes();
-
-                IRect rec = dropdownBounds[data.button.dropdownActive];
-                DrawRectangleIRect(dropdownBounds[data.button.dropdownActive], SPACEGRAY);
-                rec.h = 16;
-
-                switch (data.button.dropdownActive)
-                {
-                case 0: // Mode
-                {
-                    for (Mode m : dropdownModeOrder)
-                    {
-                        if (m == baseMode)
-                            continue;
-                        Color color = InBoundingBox(rec, cursorPos) ? WHITE : DEADCABLE;
-                        DrawModeIcon(m, rec.xy, color);
-                        rec.y += 16;
+                        data.hoveredNode->Draw(CAUTIONYELLOW);
                     }
                 }
                 break;
 
-                case 1: // Gate
+
+                // Overlay mode
+
+                case Mode::GATE: // Todo: Maybe change rect to vec?
                 {
-                    for (Gate g : dropdownGateOrder)
+                    if (baseMode == Mode::PEN)
                     {
-                        if (g == data.gatePick)
-                            continue;
-                        Color color = InBoundingBox(rec, cursorPos) ? WHITE : GRAY;
-                        DrawGateIcon16x(g, rec.xy, color);
-                        rec.y += 16;
+                        NodeWorld::Get().DrawWires();
+
+                        if (!!data.pen.currentWireStart)
+                        {
+                            IVec2 start = data.pen.currentWireStart->GetPosition();
+                            IVec2 elbow;
+                            IVec2 end = data.gate.radialMenuCenter;
+                            elbow = Wire::GetLegalElbowPosition(start, end, data.pen.currentWireElbowConfig);
+                            Wire::Draw(start, elbow, end, WIPBLUE);
+                            Node::Draw(end, data.gatePick, WIPBLUE);
+                        }
+
+                        NodeWorld::Get().DrawNodes();
+                    }
+                    else
+                    {
+                        NodeWorld::Get().DrawWires();
+                        NodeWorld::Get().DrawNodes();
+                    }
+
+                    constexpr int menuRadius = 64;
+                    constexpr int menuIconOffset = 12;
+                    constexpr IVec2 menuOff[4] = {
+                        IVec2(0, 0),
+                        IVec2(0,-1),
+                        IVec2(-1,-1),
+                        IVec2(-1, 0),
+                    };
+                    constexpr IRect iconDest[4] = {
+                        IRect(menuIconOffset,       menuIconOffset,      32, 32),
+                        IRect(menuIconOffset,      -menuIconOffset - 32, 32, 32),
+                        IRect(-menuIconOffset - 32, -menuIconOffset - 32, 32, 32),
+                        IRect(-menuIconOffset - 32,  menuIconOffset,      32, 32),
+                    };
+                    int x = data.gate.radialMenuCenter.x;
+                    int y = data.gate.radialMenuCenter.y;
+                    constexpr Color menuBackground = SPACEGRAY;
+                    DrawCircleIV(data.gate.radialMenuCenter, static_cast<float>(menuRadius + 4), menuBackground);
+
+                    for (int i = 0; i < 4; ++i)
+                    {
+                        Color colorA;
+                        Color colorB;
+                        int radius;
+
+                        if (i == data.gate.overlappedSection) // Active
+                        {
+                            colorA = GLEEFULDUST;
+                            colorB = INTERFERENCEGRAY;
+                            radius = menuRadius + 8;
+                        }
+                        else // Inactive
+                        {
+                            colorA = LIFELESSNEBULA;
+                            colorB = HAUNTINGWHITE;
+                            radius = menuRadius;
+                        }
+                        BeginScissorMode(x + (menuOff[i].x * 8 + 4) + menuOff[i].x * radius, y + (menuOff[i].y * 8 + 4) + menuOff[i].y * radius, radius, radius);
+
+                        float startAngle = static_cast<float>(i * 90);
+                        DrawCircleSector({ static_cast<float>(x), static_cast<float>(y) }, static_cast<float>(radius), startAngle, startAngle + 90.0f, 8, colorA);
+                        IRect rec = iconDest[i];
+                        rec.x += x;
+                        rec.y += y;
+                        DrawGateIcon32x(radialGateOrder[i], rec.xy, colorB);
+
+                        EndScissorMode();
                     }
                 }
                 break;
-                }
-            }
-            break;
 
-            case Mode::PASTE:
-            {
-                NodeWorld::Get().DrawWires();
-                NodeWorld::Get().DrawNodes();
-
-                IVec2 pos = cursorPos - IVec2Divide_i(data.clipboard->extents, 2);
-                pos = IVec2Scale_i(IVec2Divide_i(pos, g_gridSize), g_gridSize);
-                pos = pos + IVec2(g_gridSize / 2, g_gridSize / 2);
-                data.clipboard->DrawPreview(pos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
-            }
-            break;
-
-            case Mode::BP_ICON:
-            {
-                if (!!data.bp_icon.object)
+                case Mode::BUTTON:
                 {
-                    data.bp_icon.object->DrawBackground(data.bp_icon.pos, SPACEGRAY);
-                    data.bp_icon.object->Draw(data.bp_icon.pos, WHITE);
-                }
-            }
-            break;
-            }
+                    NodeWorld::Get().DrawWires();
+                    NodeWorld::Get().DrawNodes();
 
-            // Global UI
+                    IRect rec = dropdownBounds[data.button.dropdownActive];
+                    DrawRectangleIRect(dropdownBounds[data.button.dropdownActive], SPACEGRAY);
+                    rec.h = 16;
 
-            // Buttons
-            if (cursorPos.y <= 16)
-            {
-                if (cursorPos.x <= 16)
-                {
-                    const char* text;
-                    switch (baseMode)
+                    switch (data.button.dropdownActive)
                     {
-                    case Mode::PEN:   text = "Mode: Draw";        break;
-                    case Mode::EDIT:  text = "Mode: Edit";        break;
-                    case Mode::GATE:  text = "Mode: Gate select"; break;
-                    case Mode::ERASE: text = "Mode: Erase";       break;
-                    default:          text = "";                  break;
-                    }
-                    DrawText(text, 20, 17, 8, WHITE);
-                    DrawRectangle(0, 0, 16, 16, SPACEGRAY);
-                }
-                else if (cursorPos.x <= 32)
-                {
-                    const char* text;
-                    switch (data.gatePick)
+                    case 0: // Mode
                     {
-                    case Gate::OR:  text = "Gate: | (or)";  break;
-                    case Gate::AND: text = "Gate: & (and)"; break;
-                    case Gate::NOR: text = "Gate: ! (nor)"; break;
-                    case Gate::XOR: text = "Gate: ^ (xor)"; break;
-                    default:        text = "";              break;
+                        for (Mode m : dropdownModeOrder)
+                        {
+                            if (m == baseMode)
+                                continue;
+                            Color color = InBoundingBox(rec, cursorPos) ? WHITE : DEADCABLE;
+                            DrawModeIcon(m, rec.xy, color);
+                            rec.y += 16;
+                        }
                     }
-                    DrawText(text, 36, 17, 8, WHITE);
-                    DrawRectangle(16, 0, 16, 16, SPACEGRAY);
-                }
-            }
+                    break;
 
-            IRect rec(0, 0, 16, 16);
-            DrawRectangleIRect(rec, SPACEGRAY);
-            DrawModeIcon(baseMode, rec.xy, WHITE);
-            rec.x += 16;
-            DrawRectangleIRect(rec, SPACEGRAY);
-            DrawGateIcon16x(data.gatePick, rec.xy, WHITE);
-            if (!!data.clipboard)
-            {
+                    case 1: // Gate
+                    {
+                        for (Gate g : dropdownGateOrder)
+                        {
+                            if (g == data.gatePick)
+                                continue;
+                            Color color = InBoundingBox(rec, cursorPos) ? WHITE : GRAY;
+                            DrawGateIcon16x(g, rec.xy, color);
+                            rec.y += 16;
+                        }
+                    }
+                    break;
+                    }
+                }
+                break;
+
+                case Mode::PASTE:
+                {
+                    NodeWorld::Get().DrawWires();
+                    NodeWorld::Get().DrawNodes();
+
+                    IVec2 pos = cursorPos - IVec2Divide_i(data.clipboard->extents, 2);
+                    pos = IVec2Scale_i(IVec2Divide_i(pos, g_gridSize), g_gridSize);
+                    pos = pos + IVec2(g_gridSize / 2, g_gridSize / 2);
+                    data.clipboard->DrawPreview(pos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
+                }
+                break;
+
+                case Mode::BP_ICON:
+                {
+                    _ASSERT_EXPR(false, "Henry made a mistake.");
+                }
+                break;
+                }
+
+                // Global UI
+
+                // Buttons
+                if (cursorPos.y <= 16)
+                {
+                    if (cursorPos.x <= 16)
+                    {
+                        const char* text;
+                        switch (baseMode)
+                        {
+                        case Mode::PEN:   text = "Mode: Draw";        break;
+                        case Mode::EDIT:  text = "Mode: Edit";        break;
+                        case Mode::GATE:  text = "Mode: Gate select"; break;
+                        case Mode::ERASE: text = "Mode: Erase";       break;
+                        default:          text = "";                  break;
+                        }
+                        DrawText(text, 20, 17, 8, WHITE);
+                        DrawRectangle(0, 0, 16, 16, SPACEGRAY);
+                    }
+                    else if (cursorPos.x <= 32)
+                    {
+                        const char* text;
+                        switch (data.gatePick)
+                        {
+                        case Gate::OR:  text = "Gate: | (or)";  break;
+                        case Gate::AND: text = "Gate: & (and)"; break;
+                        case Gate::NOR: text = "Gate: ! (nor)"; break;
+                        case Gate::XOR: text = "Gate: ^ (xor)"; break;
+                        default:        text = "";              break;
+                        }
+                        DrawText(text, 36, 17, 8, WHITE);
+                        DrawRectangle(16, 0, 16, 16, SPACEGRAY);
+                    }
+                }
+
+                IRect rec(0, 0, 16, 16);
+                DrawRectangleIRect(rec, SPACEGRAY);
+                DrawModeIcon(baseMode, rec.xy, WHITE);
                 rec.x += 16;
                 DrawRectangleIRect(rec, SPACEGRAY);
-                DrawTextureIVec2(clipboardIcon, rec.xy, WHITE);
+                DrawGateIcon16x(data.gatePick, rec.xy, WHITE);
+                if (!!data.clipboard)
+                {
+                    rec.x += 16;
+                    DrawRectangleIRect(rec, SPACEGRAY);
+                    DrawTextureIVec2(clipboardIcon, rec.xy, WHITE);
+                }
             }
 
         } EndDrawing();
