@@ -2085,8 +2085,6 @@ int main()
     SetMode(Mode::PEN);
 
     NodeWorld::Get(); // Construct
-
-    BlueprintIcon test(BlueprintIcon::Config::center, 53);
             
     while (!WindowShouldClose())
     {
@@ -2848,9 +2846,6 @@ int main()
                 DrawRectangleIRect(rec, SPACEGRAY);
                 DrawTextureIVec2(clipboardIcon, rec.xy, WHITE);
             }
-
-            test.DrawBackground(IVec2(32,32), SPACEGRAY);
-            test.Draw(IVec2(32,32), WHITE);
 
         } EndDrawing();
     }
