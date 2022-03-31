@@ -747,15 +747,48 @@ void DrawIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint)
 // Combo of up to four icons for representing a blueprint
 struct BlueprintIcon
 {
-public:
-    using Icon = uint16_t;
-
-private:
+private: // Global
     static constexpr Int_t g_size = 16;
     static Texture2D g_iconSheet;
     static IVec2 g_iconSheetDimensions; // Rows and columns, not pixels
 
 public:
+    using IconID_t = uint16_t;
+
+private:
+    static IVec2 ColRowFromIcon(IconID_t icon)
+    {
+        return IVec2((Int_t)icon % g_iconSheetDimensions.x, (Int_t)icon / g_iconSheetDimensions.y);
+    }
+
+public:
+    static void DrawBPIcon(IconID_t icon, IVec2 pos, Color tint)
+    {
+        if (icon != NULL)
+            DrawIcon<g_size>(g_iconSheet, ColRowFromIcon(icon), pos, tint);
+    }
+    struct IconPos
+    {
+        static constexpr Int_t g_unit = BlueprintIcon::g_size / 2;
+
+        BlueprintIcon::IconID_t id;
+        uint8_t x; // 0 for left, 1 for center, 2 for right
+        uint8_t y; // 0 for top,  1 for center, 2 for bottom
+
+        // Position on screen
+        IVec2 Pos() const
+        {
+            return IVec2(x * g_unit, y * g_unit);
+        }
+
+        void Draw(Color tint) const
+        {
+            if (id != NULL)
+                DrawBPIcon(id, Pos(), tint);
+        }
+    };
+
+    // Global
     static void Load(const char* filename)
     {
         g_iconSheet = LoadTexture(filename);
@@ -767,63 +800,11 @@ public:
         UnloadTexture(g_iconSheet);
     }
 
-#pragma push_macro("INDEX")
-#undef INDEX
-#define INDEX(count, value) ((value) | (count << 3))
-    enum class Config : uint8_t
-    {
-        // count = 0
-
-        null = INDEX(0, 0),
-
-        // count = 1
-
-        center = INDEX(1, 0),
-
-        // count == 2
-
-        horizontal = INDEX(2, 0),
-        vertical = INDEX(2, 1),
-        diagTLBR = INDEX(2, 2), // Top left bottom right
-        diagBLTR = INDEX(2, 3), // Bottom left top right
-
-        // count == 3
-
-        arrowDown = INDEX(3, 0),
-        arrowUp = INDEX(3, 1),
-        arrowRight = INDEX(3, 2),
-        arrowLeft = INDEX(3, 3),
-        arrowTL = INDEX(3, 4),
-        arrowTR = INDEX(3, 5),
-        arrowBL = INDEX(3, 6),
-        arrowBR = INDEX(3, 7),
-
-        // count == 4
-
-        full = INDEX(4, 0),
-    };
-#pragma pop_macro("INDEX")
-
-private:
-    Config config = Config::null;
-    Icon combo[4] = { NULL, NULL, NULL, NULL };
-
-    uint8_t Count() const
-    {
-        return (uint8_t)config >> 3;
-    }
-    static IVec2 ColRowFromIcon(Icon icon)
-    {
-        return IVec2((Int_t)icon % g_iconSheetDimensions.x, (Int_t)icon / g_iconSheetDimensions.y);
-    }
-
-public:
+    // Instance
     BlueprintIcon() = default;
-    BlueprintIcon(Config config, const std::vector<Icon>& icons)
+    BlueprintIcon(const std::vector<IconPos>& icons)
     {
-        this->config = config;
         _ASSERT_EXPR(icons.size() <= 4, "Icon vector too large");
-        _ASSERT_EXPR(((uint8_t)config >> 3) == icons.size(), "Incorrect config");
         size_t i = 0;
         for (; i < icons.size(); ++i)
         {
@@ -831,134 +812,36 @@ public:
         }
         for (; i < 4; ++i)
         {
-            combo[i] = NULL;
+            combo[i] = { NULL, 0,0 };
         }
 
     }
-    BlueprintIcon(Config config, Icon(&icons)[4])
+    BlueprintIcon(IconPos(&icons)[4])
     {
-        this->config = config;
-        memcpy(combo, icons, sizeof(Icon) * 4);
-#if _DEBUG
-        size_t count = 0;
-        for (Icon icon : icons)
-        {
-            if (icon != NULL)
-            {
-                ++count;
-            }
-        }
-        _ASSERT_EXPR(((uint8_t)config >> 3) == count, "Incorrect config");
-#endif
+        memcpy(combo, icons, sizeof(IconPos) * 4);
     }
 
-    void DrawBackground(IVec2 pos, Color color)
+    void DrawBackground(IVec2 pos, Color color) const
     {
         constexpr int width = g_size * 2;
         DrawRectangle(pos.x, pos.y, width, width, color);
     }
-    void Draw(IVec2 pos, Color tint)
+    void Draw(IVec2 pos, Color tint) const
     {
-        constexpr Int_t halfSize = g_size / 2;
-
-        _ASSERT_EXPR(Count() <= 4, "BlueprintIcon had count greater than 4");
-
-        IVec2 offs[4]{ IVec2Zero(), IVec2Zero(), IVec2Zero(), IVec2Zero() };
-
-        switch (config)
-        {
-#pragma region count = 0
-        case BlueprintIcon::Config::null:
-            return;
-#pragma endregion
-
-#pragma region count = 1
-        case BlueprintIcon::Config::center:
-            offs[0] = IVec2(halfSize, halfSize);
-            break;
-#pragma endregion
-
-#pragma region count = 2
-        case BlueprintIcon::Config::horizontal:
-            offs[0] = IVec2(0, halfSize);
-            offs[1] = IVec2(g_size, halfSize);
-            break;
-        case BlueprintIcon::Config::vertical:
-            offs[0] = IVec2(halfSize, 0);
-            offs[1] = IVec2(halfSize, g_size);
-            break;
-        case BlueprintIcon::Config::diagTLBR:
-            offs[0] = IVec2(0, 0);
-            offs[1] = IVec2(g_size, g_size);
-            break;
-        case BlueprintIcon::Config::diagBLTR:
-            offs[0] = IVec2(g_size, 0);
-            offs[1] = IVec2(0, g_size);
-            break;
-#pragma endregion
-
-#pragma region count = 3
-        case BlueprintIcon::Config::arrowDown:
-            offs[0] = IVec2(0, 0);
-            offs[1] = IVec2(g_size, 0);
-            offs[2] = IVec2(halfSize, g_size);
-            break;
-        case BlueprintIcon::Config::arrowUp:
-            offs[0] = IVec2(halfSize, 0);
-            offs[1] = IVec2(0, g_size);
-            offs[2] = IVec2(g_size, g_size);
-            break;
-        case BlueprintIcon::Config::arrowRight:
-            offs[0] = IVec2(0, 0);
-            offs[1] = IVec2(g_size, halfSize);
-            offs[2] = IVec2(0, g_size);
-            break;
-        case BlueprintIcon::Config::arrowLeft:
-            offs[0] = IVec2(0, halfSize);
-            offs[1] = IVec2(g_size, 0);
-            offs[2] = IVec2(g_size, g_size);
-            break;
-        case BlueprintIcon::Config::arrowTL:
-            offs[0] = IVec2(0, 0);
-            offs[1] = IVec2(g_size, 0);
-            offs[2] = IVec2(0, g_size);
-            break;
-        case BlueprintIcon::Config::arrowTR:
-            offs[0] = IVec2(0, 0);
-            offs[1] = IVec2(g_size, 0);
-            offs[2] = IVec2(g_size, g_size);
-            break;
-        case BlueprintIcon::Config::arrowBL:
-            offs[0] = IVec2(0, 0);
-            offs[1] = IVec2(0, g_size);
-            offs[2] = IVec2(g_size, g_size);
-            break;
-        case BlueprintIcon::Config::arrowBR:
-            offs[0] = IVec2(g_size, 0);
-            offs[1] = IVec2(0, g_size);
-            offs[2] = IVec2(g_size, g_size);
-            break;
-#pragma endregion
-
-#pragma region count = 4
-        case BlueprintIcon::Config::full:
-            offs[0] = IVec2(0, 0);
-            offs[1] = IVec2(g_size, 0);
-            offs[2] = IVec2(0, g_size);
-            offs[3] = IVec2(g_size, g_size);
-            break;
-#pragma endregion
-        }
-
         // Draw
-        for (size_t i = 0; i < Count(); ++i)
+        for (const IconPos& icon : combo)
         {
-            DrawIcon<g_size>(g_iconSheet, ColRowFromIcon(combo[i]), pos + offs[i], tint);
+            icon.Draw(tint);
         }
     }
+
+private: // Instance
+    IconPos combo[4] = { { NULL, 0,0 }, { NULL, 0,0 }, { NULL, 0,0 }, { NULL, 0,0 }, };
 };
+using BlueprintIconID_t = BlueprintIcon::IconID_t;
 Texture2D BlueprintIcon::g_iconSheet;
 IVec2 BlueprintIcon::g_iconSheetDimensions = IVec2Zero();
+
 
 struct NodeBP
 {
