@@ -317,6 +317,7 @@ struct Wire
     Node* start;
     Node* end;
 
+    bool GetState() const;
     static void Draw(IVec2 start, IVec2 joint, IVec2 end, Color color)
     {
         DrawLineIV(start, joint, color);
@@ -324,7 +325,11 @@ struct Wire
     }
     void Draw(Color color) const
     {
-        Draw(GetStartPos(), elbow, GetEndPos(), color);
+        constexpr IVec2 activeOffset = IVec2(1,-1);
+        if (GetState())
+            Draw(GetStartPos() + activeOffset, elbow + activeOffset, GetEndPos() + activeOffset, color);
+        else 
+            Draw(GetStartPos(), elbow, GetEndPos(), color);
     }
     static void DrawElbow(IVec2 pos, Color color)
     {
@@ -714,6 +719,10 @@ public:
     }
 };
 
+bool Wire::GetState() const
+{
+    return start->GetState();
+}
 IVec2 Wire::GetStartPos() const
 {
     return start->GetPosition();
@@ -1389,7 +1398,7 @@ public:
     {
         for (Wire* wire : wires)
         {
-            wire->Draw(wire->start->GetState() ? wire->g_wireColorActive : wire->g_wireColorInactive);
+            wire->Draw(wire->start->GetState() ? Wire::g_wireColorActive : Wire::g_wireColorInactive);
         }
     }
     void DrawNodes() const
