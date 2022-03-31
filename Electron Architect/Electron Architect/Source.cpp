@@ -141,7 +141,7 @@ bool InBoundingBox(IVec2 p, IVec2 a, IVec2 b)
            Between_Inclusive(p.y, a.y, b.y);
 }
 
-IVec2 IVec2Zero()
+constexpr IVec2 IVec2Zero()
 {
     constexpr IVec2 null(0,0);
     return null;
@@ -164,11 +164,11 @@ IVec2 operator/(IVec2 a, IVec2 b)
     return IVec2(a.x / b.x, a.y / b.y);
 }
 
-IVec2 IVec2Scale_i(IVec2 a, int b)
+IVec2 IVec2Scale_i(IVec2 a, Int_t b)
 {
     return IVec2(a.x * b, a.y * b);
 }
-inline IVec2 IVec2Scale_i(int a, IVec2 b)
+inline IVec2 IVec2Scale_i(Int_t a, IVec2 b)
 {
     return IVec2Scale_i(b, a);
 }
@@ -179,6 +179,14 @@ IVec2 IVec2Scale_f(IVec2 a, float b)
 inline IVec2 IVec2Scale_f(float a, IVec2 b)
 {
     return IVec2Scale_f(b, a);
+}
+IVec2 IVec2Divide_i(IVec2 a, Int_t b)
+{
+    return IVec2(a.x / b, a.y / b);
+}
+IVec2 IVec2Divide_i(Int_t a, IVec2 b)
+{
+    return IVec2(a / b.x, a / b.y);
 }
 
 bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2)
@@ -737,7 +745,7 @@ private: // Multithread functions
             std::numeric_limits<Int_t>::max(),
             std::numeric_limits<Int_t>::min(),
             std::numeric_limits<Int_t>::min());
-        bounds = boundsInit;
+        IRect bounds = boundsInit;
         for (Node* node : src)
         {
             const IVec2& compare = node->GetPosition();
@@ -755,6 +763,7 @@ private: // Multithread functions
         // Disabuse
         bounds.w -= bounds.x;
         bounds.h -= bounds.y;
+        extents = IVec2(bounds.w, bounds.h);
 
         IVec2 min = IVec2(bounds.x, bounds.y);
         nodes.reserve(src.size());
@@ -845,26 +854,29 @@ private: // Multithread functions
 public:
     Blueprint(const std::vector<Node*>& src)
     {        
-        bounds = IRect(0,0,0,0);
+        extents = IVec2Zero();
         std::thread nodeThread(&Blueprint::PopulateNodes, this, std::ref(src));
         std::thread wireThread(&Blueprint::PopulateWires, this, std::ref(src));
         nodeThread.join();
         wireThread.join();
     }
 
-    IRect bounds;
+    IVec2 extents;
 	std::vector<NodeBP> nodes;
 	std::vector<WireBP> wires;
 
     void DrawPreview(IVec2 pos, Color boxColor, Color nodeColor) const
     {
-        IRect rec = bounds;
-        rec.xy = rec.xy + pos;
-        DrawRectangleIRect(rec, boxColor);
+        constexpr Int_t halfGrid = g_gridSize / 2;
+        DrawRectangle(pos.x - halfGrid, pos.y - halfGrid, extents.x + g_gridSize, extents.y + g_gridSize, boxColor);
         for (const NodeBP& node_bp : nodes)
         {
             if (node_bp.b_io)
+            {
                 DrawCircleIV(node_bp.relativePosition + pos, Node::g_nodeRadius, nodeColor);
+                DrawCircleIV(node_bp.relativePosition + pos, Node::g_nodeRadius - 1.0f, BLACK); // In case boxColor is transparent
+                DrawCircleIV(node_bp.relativePosition + pos, Node::g_nodeRadius - 1.0f, boxColor);
+            }
         }
     }
 };
@@ -2471,9 +2483,15 @@ int main()
 
         case Mode::PASTE:
         {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
-                NodeWorld::Get().SpawnBlueprint(data.clipboard, cursorPos);
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    IVec2 pos = cursorPos - IVec2Divide_i(data.clipboard->extents, 2);
+                    pos = IVec2Scale_i(IVec2Divide_i(pos, g_gridSize), g_gridSize);
+                    pos = pos + IVec2(g_gridSize / 2, g_gridSize / 2);
+                    NodeWorld::Get().SpawnBlueprint(data.clipboard, pos);
+                }
                 data.selection.clear();
                 SetMode(baseMode);
             }
@@ -2775,7 +2793,10 @@ int main()
                 NodeWorld::Get().DrawWires();
                 NodeWorld::Get().DrawNodes();
 
-                data.clipboard->DrawPreview(cursorPos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
+                IVec2 pos = cursorPos - IVec2Divide_i(data.clipboard->extents, 2);
+                pos = IVec2Scale_i(IVec2Divide_i(pos, g_gridSize), g_gridSize);
+                pos = pos + IVec2(g_gridSize / 2, g_gridSize / 2);
+                data.clipboard->DrawPreview(pos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
             }
             break;
             }
