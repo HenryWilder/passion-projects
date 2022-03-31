@@ -1607,11 +1607,7 @@ void DrawIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint)
 struct BlueprintIcon
 {
 public:
-    enum class Icon : uint16_t
-    {
-        null = 0, // Leave this also blank on the icon sheet
-        // TODO
-    };
+    using Icon = uint16_t;
 
 private:
     static constexpr Int_t g_size = 16;
@@ -1669,7 +1665,7 @@ public:
 
 private:
     Config config = Config::null;
-    Icon combo[4] = { Icon::null, Icon::null, Icon::null, Icon::null };
+    Icon combo[4] = { NULL, NULL, NULL, NULL };
 
     uint8_t Count() const
     {
@@ -1681,6 +1677,32 @@ private:
     }
 
 public:
+    BlueprintIcon() = default;
+
+    BlueprintIcon(Config config, Icon icon1)
+        : config(config), combo{ icon1,  NULL,  NULL,  NULL }
+    {
+        _ASSERT_EXPR(((uint8_t)config >> 3) == 1, "Incorrect config");
+    }
+
+    BlueprintIcon(Config config, Icon icon1, Icon icon2)
+        : config(config), combo{ icon1, icon2,  NULL,  NULL }
+    {
+        _ASSERT_EXPR(((uint8_t)config >> 3) == 2, "Incorrect config");
+    }
+
+    BlueprintIcon(Config config, Icon icon1, Icon icon2, Icon icon3)
+        : config(config), combo{ icon1, icon2, icon3,  NULL }
+    {
+        _ASSERT_EXPR(((uint8_t)config >> 3) == 3, "Incorrect config");
+    }
+
+    BlueprintIcon(Config config, Icon icon1, Icon icon2, Icon icon3, Icon icon4)
+        : config(config), combo{ icon1, icon2, icon3, icon4 }
+    {
+        _ASSERT_EXPR(((uint8_t)config >> 3) == 4, "Incorrect config");
+    }
+
     void Draw(IVec2 pos, Color tint)
     {
         constexpr Int_t halfSize = g_size / 2;
@@ -1980,6 +2002,8 @@ int main()
     SetMode(Mode::PEN);
 
     NodeWorld::Get(); // Construct
+
+    BlueprintIcon test;
             
     while (!WindowShouldClose())
     {
@@ -2734,6 +2758,8 @@ int main()
                 DrawRectangleIRect(rec, SPACEGRAY);
                 DrawTextureIVec2(clipboardIcon, rec.xy, WHITE);
             }
+
+            
 
         } EndDrawing();
     }
