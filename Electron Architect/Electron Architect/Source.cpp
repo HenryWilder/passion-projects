@@ -764,8 +764,9 @@ private:
 public:
     static IconID_t GetIconAtColRow(IVec2 colRow)
     {
-        colRow.x = std::min(std::max(colRow.x, 0), g_iconSheetDimensions.x);
-        colRow.y = std::min(std::max(colRow.y, 0), g_iconSheetDimensions.y);
+        if (colRow.x < 0 || colRow.x >= g_iconSheetDimensions.x ||
+            colRow.y < 0 || colRow.y >= g_iconSheetDimensions.y)
+            return NULL;
         return (IconID_t)((colRow.y * g_iconSheetDimensions.x) + colRow.x);
     }
     static IVec2 PixelToColRow(IVec2 sheetPos, IVec2 selectPos)
@@ -799,10 +800,10 @@ public:
             return IVec2(x * g_unit, y * g_unit);
         }
 
-        void Draw(Color tint) const
+        void Draw(IVec2 start, Color tint) const
         {
             if (id != NULL)
-                DrawBPIcon(id, Pos(), tint);
+                DrawBPIcon(id, start + Pos(), tint);
         }
     };
 
@@ -856,11 +857,11 @@ public:
         // Draw
         for (const IconPos& icon : combo)
         {
-            icon.Draw(tint);
+            icon.Draw(pos, tint);
         }
     }
 
-private: // Instance
+public: // Instance
     IconPos combo[4] = { { NULL, 0,0 }, { NULL, 0,0 }, { NULL, 0,0 }, { NULL, 0,0 }, };
 };
 using BlueprintIconID_t = BlueprintIcon::IconID_t;
@@ -1903,7 +1904,10 @@ int main()
             struct {
                 BlueprintIcon* object;
                 IVec2 pos; // Width and height are fixed
+                IRect sheetRec;
                 BlueprintIconID_t iconID;
+                uint8_t iconCount;
+                bool b_dragging;
             } bp_icon;
         };
     } data;
@@ -1988,6 +1992,10 @@ int main()
         case Mode::BP_ICON:
             data.bp_icon.object = nullptr;
             data.bp_icon.pos = IVec2Zero();
+            data.bp_icon.sheetRec = IRect(0,0,0,0);
+            data.bp_icon.iconID = NULL;
+            data.bp_icon.iconCount = 0;
+            data.bp_icon.b_dragging = false;
             break;
         }
     };
@@ -2063,11 +2071,13 @@ int main()
                         SetMode(Mode::BP_ICON);
                         data.bp_icon.object = new BlueprintIcon;
                         data.bp_icon.pos = cursorPos - IVec2(BlueprintIcon::IconPos::g_unit, BlueprintIcon::IconPos::g_unit);
+                        data.bp_icon.sheetRec.xy = data.bp_icon.pos + IVec2(BlueprintIcon::IconPos::g_unit * 4, BlueprintIcon::IconPos::g_unit * 4);
+                        data.bp_icon.sheetRec.wh = BlueprintIcon::GetSheetSize_Px();
                     }
                     // Save file
                     else
                     {
-                        // TODO
+                        NodeWorld::Get().Save_SmallFile("dataS.cg");
                     }
                 }
             }
@@ -2444,8 +2454,37 @@ int main()
 
         case Mode::BP_ICON:
         {
-            constexpr IVec2 offset(BlueprintIcon::IconPos::g_unit * 4, BlueprintIcon::IconPos::g_unit * 4);
-            data.bp_icon.iconID = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.bp_icon.pos + offset, cursorPos));
+            if (b_cursorMoved && !data.bp_icon.b_dragging)
+            {
+                data.bp_icon.iconID = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.bp_icon.sheetRec.xy, cursorPos));
+            }
+
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && InBoundingBox(data.bp_icon.sheetRec, cursorPos) && data.bp_icon.iconCount < 4)
+            {
+                cursorPos = data.bp_icon.pos;
+                SetMousePosition(cursorPos.x + BlueprintIcon::IconPos::g_unit, cursorPos.y + BlueprintIcon::IconPos::g_unit);
+                data.bp_icon.object->combo[data.bp_icon.iconCount] = { data.bp_icon.iconID, 0,0 };
+                data.bp_icon.iconCount++;
+                data.bp_icon.b_dragging = true;
+            }
+            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+            {
+                if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+                {
+                    data.bp_icon.iconCount--;
+                    data.bp_icon.object->combo[data.bp_icon.iconCount] = { NULL, 0,0 };
+                }
+                data.bp_icon.b_dragging = false;
+            }
+            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.bp_icon.iconID)
+            {
+                constexpr IVec2 centerOffset(BlueprintIcon::IconPos::g_unit, BlueprintIcon::IconPos::g_unit);
+                IVec2 colRow = IVec2Divide_i(cursorPos - data.bp_icon.pos - centerOffset, BlueprintIcon::IconPos::g_unit);
+                colRow.x = std::min(std::max(colRow.x, 0), 2);
+                colRow.y = std::min(std::max(colRow.y, 0), 2);
+                data.bp_icon.object->combo[data.bp_icon.iconCount - 1].x = colRow.x;
+                data.bp_icon.object->combo[data.bp_icon.iconCount - 1].y = colRow.y;
+            }
         }
         break;
         }
@@ -2469,10 +2508,10 @@ int main()
 
                 data.bp_icon.object->DrawBackground(data.bp_icon.pos, SPACEGRAY);
                 data.bp_icon.object->Draw(data.bp_icon.pos, WHITE);
-                constexpr IVec2 offset(BlueprintIcon::IconPos::g_unit * 4, BlueprintIcon::IconPos::g_unit * 4);
-                BlueprintIcon::DrawSheet(data.bp_icon.pos + offset, SPACEGRAY, WHITE);
-                BlueprintIcon::DrawBPIcon(data.bp_icon.iconID, data.bp_icon.pos, WIPBLUE);
-                
+                if (data.bp_icon.b_dragging)
+                    BlueprintIcon::DrawBPIcon(data.bp_icon.iconID, data.bp_icon.pos + data.bp_icon.object->combo[data.bp_icon.iconCount - 1].Pos(), WIPBLUE);
+
+                BlueprintIcon::DrawSheet(data.bp_icon.sheetRec.xy, SPACEGRAY, WHITE);
             }
             else
             {
@@ -2836,9 +2875,6 @@ int main()
 
     if (data.clipboard != nullptr)
         delete data.clipboard;
-
-    NodeWorld::Get().Save_LargeFile("dataL.cg");
-    NodeWorld::Get().Save_SmallFile("dataS.cg");
 
     BlueprintIcon::Unload();
     UnloadTexture(gateIcons32x);
