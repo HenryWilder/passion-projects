@@ -540,7 +540,7 @@ public:
     }
     bool IsInputOnly() const
     {
-        _ASSERT_EXPR(m_wires.size() < m_inputs, "Malformed Node inputs");
+        _ASSERT_EXPR(m_wires.size() >= m_inputs, "Malformed Node inputs");
         return m_wires.size() == m_inputs;
     }
     bool IsOutputOnly() const
@@ -2775,9 +2775,7 @@ int main()
                 NodeWorld::Get().DrawWires();
                 NodeWorld::Get().DrawNodes();
 
-                IRect rec = data.clipboard->bounds;
-                rec.xy = cursorPos;
-                DrawRectangleIRect(rec, ColorAlpha(LIFELESSNEBULA, 0.5f));
+                data.clipboard->DrawPreview(cursorPos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
             }
             break;
             }
