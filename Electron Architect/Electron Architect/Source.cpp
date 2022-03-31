@@ -538,6 +538,11 @@ public:
     {
         return m_wires.size() - m_inputs;
     }
+    bool IsInputOnly() const
+    {
+        _ASSERT_EXPR(m_wires.size() < m_inputs, "Malformed Node inputs");
+        return m_wires.size() == m_inputs;
+    }
     bool IsOutputOnly() const
     {
         return !m_inputs;
@@ -713,6 +718,7 @@ IVec2 Wire::GetEndPos() const
 
 struct NodeBP
 {
+    bool b_io;
     Gate gate;
     IVec2 relativePosition;
 };
@@ -752,9 +758,24 @@ private: // Multithread functions
 
         IVec2 min = IVec2(bounds.x, bounds.y);
         nodes.reserve(src.size());
+        std::unordered_set<Node*> nodeSet(src.begin(), src.end());
         for (Node* node : src)
         {
+            bool isIO = node->IsOutputOnly() || node->IsInputOnly();
+            if (!isIO)
+            {
+                for (Wire* wire : node->GetWires())
+                {
+                    if (nodeSet.find(wire->start == node ? wire->end : wire->start) == nodeSet.end())
+                    {
+                        isIO = true;
+                        break;
+                    }
+                }
+            }
+
             nodes.emplace_back(
+                isIO,
                 node->GetGate(),
                 node->GetPosition() - min);
         }
@@ -834,6 +855,18 @@ public:
     IRect bounds;
 	std::vector<NodeBP> nodes;
 	std::vector<WireBP> wires;
+
+    void DrawPreview(IVec2 pos, Color boxColor, Color nodeColor) const
+    {
+        IRect rec = bounds;
+        rec.xy = rec.xy + pos;
+        DrawRectangleIRect(rec, boxColor);
+        for (const NodeBP& node_bp : nodes)
+        {
+            if (node_bp.b_io)
+                DrawCircleIV(node_bp.relativePosition + pos, Node::g_nodeRadius, nodeColor);
+        }
+    }
 };
 
 
@@ -1679,6 +1712,39 @@ private:
 public:
     BlueprintIcon() = default;
 
+    BlueprintIcon(Config config, const std::vector<Icon>& icons)
+        : config(config)
+    {
+        _ASSERT_EXPR(icons.size() <= 4, "Icon vector too large");
+        _ASSERT_EXPR(((uint8_t)config >> 3) == icons.size(), "Incorrect config");
+        size_t i = 0;
+        for (; i < icons.size(); ++i)
+        {
+            combo[i] = icons[i];
+        }
+        for (; i < 4; ++i)
+        {
+            combo[i] = NULL;
+        }
+
+    }
+    
+    BlueprintIcon(Config config, Icon(&icons)[4])
+        : config(config), combo{ icons[0],icons[1],icons[2],icons[3], }
+    {
+#if _DEBUG
+        size_t count = 0;
+        for (Icon icon : icons)
+        {
+            if (icon != NULL)
+            {
+                ++count;
+            }
+        }
+        _ASSERT_EXPR(((uint8_t)config >> 3) == count, "Incorrect config");
+#endif
+    }
+
     BlueprintIcon(Config config, Icon icon1)
         : config(config), combo{ icon1,  NULL,  NULL,  NULL }
     {
@@ -1703,6 +1769,11 @@ public:
         _ASSERT_EXPR(((uint8_t)config >> 3) == 4, "Incorrect config");
     }
 
+    void DrawBackground(IVec2 pos, Color color)
+    {
+        constexpr int width = g_size * 2;
+        DrawRectangle(pos.x, pos.y, width, width, color);
+    }
     void Draw(IVec2 pos, Color tint)
     {
         constexpr Int_t halfSize = g_size / 2;
@@ -2003,7 +2074,7 @@ int main()
 
     NodeWorld::Get(); // Construct
 
-    BlueprintIcon test;
+    BlueprintIcon test(BlueprintIcon::Config::center, 53);
             
     while (!WindowShouldClose())
     {
@@ -2759,7 +2830,8 @@ int main()
                 DrawTextureIVec2(clipboardIcon, rec.xy, WHITE);
             }
 
-            
+            test.DrawBackground(IVec2(32,32), SPACEGRAY);
+            test.Draw(IVec2(32,32), WHITE);
 
         } EndDrawing();
     }
