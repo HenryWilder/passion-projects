@@ -1907,7 +1907,7 @@ int main()
                 IRect sheetRec;
                 BlueprintIconID_t iconID;
                 uint8_t iconCount;
-                bool b_dragging;
+                int draggingIcon; // -1 for none/not dragging
             } bp_icon;
         };
     } data;
@@ -1995,7 +1995,7 @@ int main()
             data.bp_icon.sheetRec = IRect(0,0,0,0);
             data.bp_icon.iconID = NULL;
             data.bp_icon.iconCount = 0;
-            data.bp_icon.b_dragging = false;
+            data.bp_icon.draggingIcon = -1;
             break;
         }
     };
@@ -2081,43 +2081,46 @@ int main()
                     }
                 }
             }
-            else if (IsKeyPressed(KEY_ESCAPE))
+            else
             {
-                if (mode != baseMode)
-                    SetMode(baseMode);
-                else if (!!data.clipboard)
+                if (IsKeyPressed(KEY_ESCAPE))
                 {
-                    delete data.clipboard;
-                    data.clipboard = nullptr;
+                    if (mode != baseMode)
+                        SetMode(baseMode);
+                    else if (!!data.clipboard)
+                    {
+                        delete data.clipboard;
+                        data.clipboard = nullptr;
+                    }
                 }
-            }
-            else if (IsKeyPressed(KEY_B))
-            {
-                SetMode(Mode::PEN);
-            }
-            else if (IsKeyPressed(KEY_V))
-            {
-                SetMode(Mode::EDIT);
-            }
-            else if (IsKeyPressed(KEY_G))
-            {
-                SetMode(Mode::GATE);
-                data.gate.radialMenuCenter = cursorPos;
-            }
-            else if (IsKeyPressed(KEY_X))
-            {
-                SetMode(Mode::ERASE);
-            }
-            else if (IsKeyPressed(KEY_F))
-            {
-                SetMode(Mode::INTERACT);
-            }
-            else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mode != Mode::BP_ICON && (cursorPos.y <= 16 && cursorPos.x <= 32) &&
-                (mode == Mode::BUTTON ? data.button.dropdownActive != (cursorPos.x / 16) : true))
-            {
-                SetMode(Mode::BUTTON);
-                data.button.dropdownActive = cursorPos.x / 16;
-                goto EVAL;
+                else if (IsKeyPressed(KEY_B))
+                {
+                    SetMode(Mode::PEN);
+                }
+                else if (IsKeyPressed(KEY_V))
+                {
+                    SetMode(Mode::EDIT);
+                }
+                else if (IsKeyPressed(KEY_G))
+                {
+                    SetMode(Mode::GATE);
+                    data.gate.radialMenuCenter = cursorPos;
+                }
+                else if (IsKeyPressed(KEY_X))
+                {
+                    SetMode(Mode::ERASE);
+                }
+                else if (IsKeyPressed(KEY_F))
+                {
+                    SetMode(Mode::INTERACT);
+                }
+                else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mode != Mode::BP_ICON && (cursorPos.y <= 16 && cursorPos.x <= 32) &&
+                    (mode == Mode::BUTTON ? data.button.dropdownActive != (cursorPos.x / 16) : true))
+                {
+                    SetMode(Mode::BUTTON);
+                    data.button.dropdownActive = cursorPos.x / 16;
+                    goto EVAL;
+                }
             }
         }
 
@@ -2454,27 +2457,59 @@ int main()
 
         case Mode::BP_ICON:
         {
-            if (b_cursorMoved && !data.bp_icon.b_dragging)
+            if (b_cursorMoved && data.bp_icon.draggingIcon == -1)
             {
                 data.bp_icon.iconID = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.bp_icon.sheetRec.xy, cursorPos));
             }
 
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && InBoundingBox(data.bp_icon.sheetRec, cursorPos) && data.bp_icon.iconCount < 4)
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
-                cursorPos = data.bp_icon.pos;
-                SetMousePosition(cursorPos.x + BlueprintIcon::IconPos::g_unit, cursorPos.y + BlueprintIcon::IconPos::g_unit);
-                data.bp_icon.object->combo[data.bp_icon.iconCount] = { data.bp_icon.iconID, 0,0 };
-                data.bp_icon.iconCount++;
-                data.bp_icon.b_dragging = true;
+                if (InBoundingBox(data.bp_icon.sheetRec, cursorPos) && data.bp_icon.iconCount < 4 && !!data.bp_icon.iconID)
+                {
+                    cursorPos = data.bp_icon.pos;
+                    SetMousePosition(cursorPos.x + BlueprintIcon::IconPos::g_unit, cursorPos.y + BlueprintIcon::IconPos::g_unit);
+                    data.bp_icon.object->combo[data.bp_icon.iconCount] = { data.bp_icon.iconID, 0,0 };
+                    data.bp_icon.draggingIcon = data.bp_icon.iconCount;
+                    data.bp_icon.iconCount++;
+                }
+                else if (InBoundingBox(IRect(data.bp_icon.pos.x, data.bp_icon.pos.y, BlueprintIcon::IconPos::g_unit * 4, BlueprintIcon::IconPos::g_unit * 4), cursorPos))
+                {
+                    data.bp_icon.draggingIcon = -1;
+                    for (decltype(data.bp_icon.draggingIcon) i = 0; i < 4; ++i)
+                    {
+                        if (data.bp_icon.object->combo[i].id == NULL)
+                            continue;
+
+                        IRect bounds(
+                            data.bp_icon.pos.x,
+                            data.bp_icon.pos.y,
+                            BlueprintIcon::IconPos::g_unit * 2,
+                            BlueprintIcon::IconPos::g_unit * 2
+                        );
+                        bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
+                        if (InBoundingBox(bounds, cursorPos))
+                        {
+                            data.bp_icon.draggingIcon = i;
+                            break;
+                        }
+                    }
+                }
             }
-            if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+            if ((IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) && data.bp_icon.draggingIcon != -1)
             {
                 if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
                 {
+                    if (data.bp_icon.draggingIcon < 3)
+                    {
+                        memcpy(
+                            data.bp_icon.object->combo + data.bp_icon.draggingIcon,
+                            data.bp_icon.object->combo + data.bp_icon.draggingIcon + 1,
+                            sizeof(BlueprintIcon::IconPos) * (4ull - (size_t)data.bp_icon.draggingIcon));
+                    }
+                    data.bp_icon.object->combo[3] = { NULL, 0,0 };
                     data.bp_icon.iconCount--;
-                    data.bp_icon.object->combo[data.bp_icon.iconCount] = { NULL, 0,0 };
                 }
-                data.bp_icon.b_dragging = false;
+                data.bp_icon.draggingIcon = -1;
             }
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.bp_icon.iconID)
             {
@@ -2482,8 +2517,8 @@ int main()
                 IVec2 colRow = IVec2Divide_i(cursorPos - data.bp_icon.pos - centerOffset, BlueprintIcon::IconPos::g_unit);
                 colRow.x = std::min(std::max(colRow.x, 0), 2);
                 colRow.y = std::min(std::max(colRow.y, 0), 2);
-                data.bp_icon.object->combo[data.bp_icon.iconCount - 1].x = colRow.x;
-                data.bp_icon.object->combo[data.bp_icon.iconCount - 1].y = colRow.y;
+                data.bp_icon.object->combo[data.bp_icon.draggingIcon].x = colRow.x;
+                data.bp_icon.object->combo[data.bp_icon.draggingIcon].y = colRow.y;
             }
         }
         break;
@@ -2508,8 +2543,29 @@ int main()
 
                 data.bp_icon.object->DrawBackground(data.bp_icon.pos, SPACEGRAY);
                 data.bp_icon.object->Draw(data.bp_icon.pos, WHITE);
-                if (data.bp_icon.b_dragging)
-                    BlueprintIcon::DrawBPIcon(data.bp_icon.iconID, data.bp_icon.pos + data.bp_icon.object->combo[data.bp_icon.iconCount - 1].Pos(), WIPBLUE);
+
+                for (size_t i = 0; i < 4; ++i)
+                {
+                    for (decltype(data.bp_icon.draggingIcon) i = 0; i < 4; ++i)
+                    {
+                        if (data.bp_icon.object->combo[i].id == NULL)
+                            continue;
+
+                        IRect bounds(
+                            data.bp_icon.pos.x,
+                            data.bp_icon.pos.y,
+                            BlueprintIcon::IconPos::g_unit * 2,
+                            BlueprintIcon::IconPos::g_unit * 2
+                        );
+                        bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
+                        if (InBoundingBox(bounds, cursorPos))
+                        {
+                            DrawRectangleIRect(bounds, ColorAlpha(WIPBLUE, 0.25f));
+                        }
+                    }
+                }
+                if (data.bp_icon.draggingIcon != -1)
+                    BlueprintIcon::DrawBPIcon(data.bp_icon.iconID, data.bp_icon.pos + data.bp_icon.object->combo[data.bp_icon.draggingIcon].Pos(), WIPBLUE);
 
                 BlueprintIcon::DrawSheet(data.bp_icon.sheetRec.xy, SPACEGRAY, WHITE);
             }
