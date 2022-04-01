@@ -2490,6 +2490,7 @@ int main()
                         if (InBoundingBox(bounds, cursorPos))
                         {
                             data.bp_icon.draggingIcon = i;
+				data.bp_icon.iconID = data.bp_icon.object->combo[i].id;
                             break;
                         }
                     }
