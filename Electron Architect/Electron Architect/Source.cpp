@@ -2582,7 +2582,7 @@ int main()
                 else if (InBoundingBox(IRect(data.bp_icon.pos.x, data.bp_icon.pos.y, BlueprintIcon::IconPos::g_unit * 4, BlueprintIcon::IconPos::g_unit * 4), cursorPos))
                 {
                     data.bp_icon.draggingIcon = -1;
-                    for (decltype(data.bp_icon.draggingIcon) i = 0; i < 4; ++i)
+                    for (decltype(data.bp_icon.draggingIcon) i = 0; i < data.bp_icon.iconCount; ++i)
                     {
                         if (data.bp_icon.object->combo[i].id == NULL)
                             continue;
@@ -2597,6 +2597,7 @@ int main()
                         if (InBoundingBox(bounds, cursorPos))
                         {
                             data.bp_icon.draggingIcon = i;
+				data.bp_icon.iconID = data.bp_icon.object->combo[i].id;
                             break;
                         }
                     }
