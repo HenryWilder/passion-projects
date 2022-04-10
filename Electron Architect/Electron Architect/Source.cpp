@@ -710,9 +710,32 @@ private: // Helpers usable only by NodeWorld
         return m_wires.end();
     }
 
-protected: // Accessible by NodeWorld
+    void SetResistance(int resistance)
+    {
+        m_ntd.r.resistance = resistance;
+    }
+    void SetCapacity(int capacity)
+    {
+        m_ntd.c.capacity = capacity;
+    }
+    void SetCharge(int charge)
+    {
+        m_ntd.c.charge = charge;
+    }
+    void IncrementCharge()
+    {
+        m_ntd.c.charge++;
+    }
+    void DecrementCharge()
+    {
+        m_ntd.c.charge--;
+    }
+
+private: // Accessible by NodeWorld
     Node() = default;
-    Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) {}
+    Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_ntd() {}
+    Node(IVec2 position, Gate gate, int resistance) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) { m_ntd.r = { resistance }; }
+    Node(IVec2 position, Gate gate, int capacity, int charge) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) { m_ntd.c = { capacity, charge }; }
 
 public:
     static constexpr Color g_nodeColorActive = RED;
@@ -724,6 +747,22 @@ private:
     Gate m_gate;
     bool m_state;
     size_t m_inputs;
+    union NonTransistorData
+    {
+        struct ResistorData
+        {
+            int resistance; // Number of nodes needed to evaluate true
+        } r;
+
+        struct CapacitorData
+        {
+            int capacity; // Max value of charge
+            int charge; // Stored ticks of evaluating true
+        } c;
+
+        NonTransistorData() { memset(this, 0, sizeof(NonTransistorData)); }
+
+    } m_ntd;
     std::deque<Wire*> m_wires; // Please keep this partitioned by inputs vs outputs
 
 public:
@@ -731,79 +770,23 @@ public:
     {
         return it != m_wires.end();
     }
-};
 
-class Resistor : public Node
-{
-private:
-    int m_resistance; // Number of nodes needed to evaluate true
-
-protected:
-    Resistor() = default;
-    Resistor(IVec2 position, Gate gate) : Node(position, gate), m_resistance(0) {}
-    Resistor(IVec2 position, Gate gate, int resistance) : Node(position, gate), m_resistance(resistance) {}
-
-private: // Helpers usable only by NodeWorld
-    void SetResistance(int resistance)
-    {
-        m_resistance = resistance;
-    }
-
-public:
+    // Only use if this is a resistor
     int GetResistance() const
     {
-        return m_resistance;
+        return m_ntd.r.resistance;
     }
-};
-class Capacitor : public Node
-{
-private:
-    int m_capacity; // Ticks of capacity
-    int m_charge;   // Ticks remaining
-
-protected:
-    Capacitor() = default;
-    Capacitor(IVec2 position, Gate gate) : Node(position, gate), m_capacity(0), m_charge(0) {}
-    Capacitor(IVec2 position, Gate gate, int capacity) : Node(position, gate), m_capacity(capacity), m_charge(0) {}
-
-private: // Helpers usable only by NodeWorld
-    void SetCapacity(int capacity)
-    {
-        m_capacity = capacity;
-    }
-
-    void SetCharge(int charge)
-    {
-        m_charge = charge;
-    }
-
-public:
+    // Only use if this is a capacitor
     int GetCapacity() const
     {
-        return m_capacity;
+        return m_ntd.c.capacity;
     }
+    // Only use if this is a capacitor
     int GetCharge() const
     {
-        return m_charge;
-    }
-    void IncrementCharge()
-    {
-        ++m_charge;
-    int GetCharge()
-    {
-        return m_charge;
-    }
-    }
-    void DecrementCharge()
-    {
-        --m_charge;
+        return m_ntd.c.charge;
     }
 };
-
-Node* Convert(Node* node, Gate newType)
-{
-    if (node->GetGate() != Gate::RESISTOR && node->GetGate() != Gate::CAPACITOR)
-}
 
 bool Wire::GetState() const
 {
