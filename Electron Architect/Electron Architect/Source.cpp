@@ -27,6 +27,35 @@
 #define WIPBLUE CLITERAL(Color){ 26, 68, 161, 255 }
 #define CAUTIONYELLOW CLITERAL(Color){ 250, 222, 37, 255 }
 
+template <class Iter>
+class Range {
+    Iter b;
+    Iter e;
+
+public:
+    Range(Iter begin, Iter end) : b(begin), e(end) {}
+
+    Iter begin() { return begin; }
+    Iter end() { return e; }
+};
+
+template <class Container>
+Range<typename Container::iterator> MakeRange(Container& container, size_t begin, size_t end)
+{
+    return {
+        container.begin() + begin,
+        container.begin() + end
+    };
+}
+template <class Container>
+Range<typename Container::const_iterator> MakeRange(const Container& container, size_t begin, size_t end)
+{
+    return {
+        container.begin() + begin,
+        container.begin() + end
+    };
+}
+
 // Returns true on success
 template<typename T>
 bool FindAndErase(std::vector<T>& vec, const T& element)
@@ -521,27 +550,6 @@ public:
         return m_state;
     }
 
-    const std::deque<Wire*>& GetWires() const
-    {
-        return m_wires;
-    }
-    auto Inputs_Begin() const
-    {
-        return m_wires.begin();
-    }
-    auto Inputs_End() const
-    {
-        return Inputs_Begin() + m_inputs;
-    }
-    auto Outputs_Begin() const
-    {
-        return Inputs_End();
-    }
-    auto Outputs_End() const
-    {
-        return m_wires.end();
-    }
-
     auto FindConnection(Node* other) const
     {
         return std::find_if(m_wires.begin(), m_wires.end(), [&other](Wire* wire) { return wire->start == other || wire->end == other; });
@@ -693,23 +701,6 @@ private: // Helpers usable only by NodeWorld
         AddWireOutput(wire);
     }
 
-    auto Inputs_Begin()
-    {
-        return m_wires.begin();
-    }
-    auto Inputs_End()
-    {
-        return Inputs_Begin() + m_inputs;
-    }
-    auto Outputs_Begin()
-    {
-        return Inputs_End();
-    }
-    auto Outputs_End()
-    {
-        return m_wires.end();
-    }
-
     // Only use if this is a resistor
     void SetResistance(int resistance)
     {
@@ -775,7 +766,30 @@ private:
     } m_ntd;
     std::deque<Wire*> m_wires; // Please keep this partitioned by inputs vs outputs
 
+private:
+    Range<decltype(m_wires)::iterator> GetInputs()
+    {
+        return MakeRange<decltype(m_wires)>(m_wires, 0, m_inputs);
+    }
+    Range<decltype(m_wires)::iterator> GetOutputs()
+    {
+        return MakeRange<decltype(m_wires)>(m_wires, m_inputs, m_wires.size());
+    }
+
 public:
+    const decltype(m_wires)& GetWires() const
+    {
+        return m_wires;
+    }
+    Range<decltype(m_wires)::const_iterator> GetInputs() const
+    {
+        return MakeRange<decltype(m_wires)>(m_wires, 0, m_inputs);
+    }
+    Range<decltype(m_wires)::const_iterator> GetOutputs() const
+    {
+        return MakeRange<decltype(m_wires)>(m_wires, m_inputs, m_wires.size());
+    }
+
     bool IsValidConnection(decltype(m_wires)::const_iterator it) const
     {
         return it != m_wires.end();
@@ -1200,15 +1214,13 @@ private: // Internal
     }
     void _ClearNodeReferences(Node* node)
     {
-        for (auto it = node->Inputs_Begin(); it != node->Inputs_End(); ++it)
+        for (Wire* input : node->GetInputs())
         {
-            Wire* input = *it;
             input->start->RemoveWire_Expected(input);
             _DestroyWire(input);
         }
-        for (auto it = node->Outputs_Begin(); it != node->Outputs_End(); ++it)
+        for (Wire* output : node->GetOutputs())
         {
-            Wire* output = *it;
             output->end->RemoveWire_Expected(output);
             _DestroyWire(output);
         }
@@ -1505,99 +1517,68 @@ public:
         switch (node->m_gate)
         {
         case Gate::OR:
-            node->m_state = false;
-            for (Wire* wire : node->m_wires)
+            node->m_state = true;
+            for (Wire* wire : node->GetInputs())
             {
-                if (wire->start == node)
-                    continue;
-
-                if (wire->start->m_state)
-                {
-                    node->m_state = true;
-                    break;
-                }
+                if (wire->GetState())
+                    return;
             }
+            node->m_state = false;
             break;
 
         case Gate::NOR:
-            node->m_state = true;
-            for (Wire* wire : node->m_wires)
+            node->m_state = false;
+            for (Wire* wire : node->GetInputs())
             {
-                if (wire->start == node)
-                    continue;
-
-                if (wire->start->m_state)
-                {
-                    node->m_state = false;
-                    break;
-                }
+                if (wire->GetState())
+                    return;
             }
+            node->m_state = true;
             break;
 
         case Gate::AND:
-            if (node->m_inputs == 0)
+            node->m_state = false;
+            for (Wire* wire : node->GetInputs())
             {
-                node->m_state = false;
-                break;
+                if (!wire->GetState())
+                    return;
             }
-
             node->m_state = true;
-            for (Wire* wire : node->m_wires)
-            {
-                if (wire->start == node)
-                    continue;
-
-                if (!wire->start->m_state)
-                {
-                    node->m_state = false;
-                    break;
-                }
-            }
             break;
 
         case Gate::XOR:
             node->m_state = false;
-            bool x = false;
-            for (Wire* wire : node->m_wires)
+            for (Wire* wire : node->GetInputs())
             {
-                if (wire->start == node)
-                    continue;
-
-                if (wire->start->m_state)
-                {
-                    if (x)
-                    {
-                        node->m_state = false;
-                        break;
-                    }
-                    else
-                    {
-                        x = true;
-                        node->m_state = true;
-                    }
-                }
+                if (wire->GetState() && !(node->m_state = !node->m_state))
+                    return;
             }
             break;
 
         case Gate::RESISTOR:
-            if (node->m_inputs == 0)
-            {
-                node->m_state = false;
-                break;
-            }
-
+        {
             node->m_state = true;
-            for (Wire* wire : node->m_wires)
+            int activeInputs = 0;
+            for (Wire* wire : node->GetInputs())
             {
-                if (wire->start == node)
-                    continue;
-
-                if (!wire->start->m_state)
-                {
-                    node->m_state = false;
-                    break;
-                }
+                if (wire->GetState() && !!(++activeInputs > node->GetResistance()))
+                    return;
             }
+            node->m_state = false;
+        }
+            break;
+
+        case Gate::CAPACITOR:
+            node->m_state = true;
+            if (node->GetCharge())
+                return node->DecrementCharge();
+            for (Wire* wire : node->GetInputs())
+            {
+                if (wire->GetState())
+                    return (node->GetCharge() < node->GetCapacity()) ?
+                        node->IncrementCharge() : void();
+            }
+            node->m_state = false;
             break;
         }
     }
@@ -2032,6 +2013,9 @@ int main()
         Gate::AND,
         Gate::NOR,
         Gate::XOR,
+
+        Gate::RESISTOR,
+        Gate::CAPACITOR,
     };
     constexpr IRect dropdownBounds[] = {
         IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
