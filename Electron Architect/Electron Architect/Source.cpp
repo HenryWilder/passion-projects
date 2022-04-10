@@ -479,6 +479,7 @@ public:
     {
         return m_position;
     }
+    /// Sets the position of the node and updates its collision in NodeWorld
     void SetPosition(IVec2 position);
     // Moves the node without updating its collision
     void SetPosition_Temporary(IVec2 position)
@@ -510,7 +511,6 @@ public:
     {
         return m_gate;
     }
-    // Does not change this into a resistor or capacitor!!
     void SetGate(Gate gate)
     {
         m_gate = gate;
@@ -710,24 +710,34 @@ private: // Helpers usable only by NodeWorld
         return m_wires.end();
     }
 
+    // Only use if this is a resistor
     void SetResistance(int resistance)
     {
+        _ASSERT_EXPR(m_gate == Gate::RESISTOR, "Cannot access the resistance of a non-resistor.");
         m_ntd.r.resistance = resistance;
     }
+    // Only use if this is a capacitor
     void SetCapacity(int capacity)
     {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the capacity of a non-capacitor.");
         m_ntd.c.capacity = capacity;
     }
+    // Only use if this is a capacitor
     void SetCharge(int charge)
     {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
         m_ntd.c.charge = charge;
     }
+    // Only use if this is a capacitor
     void IncrementCharge()
     {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
         m_ntd.c.charge++;
     }
+    // Only use if this is a capacitor
     void DecrementCharge()
     {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
         m_ntd.c.charge--;
     }
 
@@ -774,16 +784,19 @@ public:
     // Only use if this is a resistor
     int GetResistance() const
     {
+        _ASSERT_EXPR(m_gate == Gate::RESISTOR, "Cannot access the resistance of a non-resistor.");
         return m_ntd.r.resistance;
     }
     // Only use if this is a capacitor
     int GetCapacity() const
     {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the capacity of a non-capacitor.");
         return m_ntd.c.capacity;
     }
     // Only use if this is a capacitor
     int GetCharge() const
     {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
         return m_ntd.c.charge;
     }
 };
@@ -1923,6 +1936,9 @@ int main()
         case Gate::AND: offset = IVec2(1, 0); break;
         case Gate::NOR: offset = IVec2(0, 1); break;
         case Gate::XOR: offset = IVec2(1, 1); break;
+
+        case Gate::RESISTOR:  offset = IVec2(0, 2); break;
+        case Gate::CAPACITOR: offset = IVec2(1, 2); break;
         default: return;
         }
         DrawIcon<16>(gateIcons16x, offset, pos, tint);
@@ -1938,6 +1954,9 @@ int main()
         case Gate::AND: offset = IVec2(1, 0); break;
         case Gate::NOR: offset = IVec2(0, 1); break;
         case Gate::XOR: offset = IVec2(1, 1); break;
+
+        case Gate::RESISTOR:  offset = IVec2(0, 2); break;
+        case Gate::CAPACITOR: offset = IVec2(1, 2); break;
         default: return;
         }
         DrawIcon<32>(gateIcons32x, offset, pos, tint);
