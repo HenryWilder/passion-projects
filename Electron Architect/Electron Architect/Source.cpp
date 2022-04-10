@@ -467,6 +467,9 @@ enum class Gate : char
     AND = '&',
     NOR = '!',
     XOR = '^',
+
+    RESISTOR = '~',
+    CAPACITOR = '=',
 };
 
 class Node
@@ -507,6 +510,7 @@ public:
     {
         return m_gate;
     }
+    // Does not change this into a resistor or capacitor!!
     void SetGate(Gate gate)
     {
         m_gate = gate;
@@ -580,6 +584,16 @@ public:
             DrawCircle(position.x, position.y, nodeRadius + 1.0f, color);
             DrawCircle(position.x, position.y, nodeRadius, BLACK);
             DrawCircle(position.x, position.y, nodeRadius - 1.0f, color);
+            break;
+
+        case Gate::RESISTOR:
+            DrawRectangle(position.x - nodeRadius, position.y - nodeRadius, nodeRadius * 2, nodeRadius * 2, color);
+            DrawRectangle(position.x - nodeRadius + 1, position.y - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, BLACK);
+            break;
+        case Gate::CAPACITOR:
+            DrawRectangle(position.x - nodeRadius - 1, position.y - nodeRadius - 1, nodeRadius * 2 + 2, nodeRadius * 2 + 2, color);
+            DrawRectangle(position.x - nodeRadius, position.y - nodeRadius, nodeRadius * 2, nodeRadius * 2, BLACK);
+            DrawRectangle(position.x - nodeRadius + 1, position.y - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, color);
             break;
         }
     }
@@ -696,7 +710,7 @@ private: // Helpers usable only by NodeWorld
         return m_wires.end();
     }
 
-private: // Accessible by NodeWorld
+protected: // Accessible by NodeWorld
     Node() = default;
     Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) {}
 
@@ -718,6 +732,78 @@ public:
         return it != m_wires.end();
     }
 };
+
+class Resistor : public Node
+{
+private:
+    int m_resistance; // Number of nodes needed to evaluate true
+
+protected:
+    Resistor() = default;
+    Resistor(IVec2 position, Gate gate) : Node(position, gate), m_resistance(0) {}
+    Resistor(IVec2 position, Gate gate, int resistance) : Node(position, gate), m_resistance(resistance) {}
+
+private: // Helpers usable only by NodeWorld
+    void SetResistance(int resistance)
+    {
+        m_resistance = resistance;
+    }
+
+public:
+    int GetResistance() const
+    {
+        return m_resistance;
+    }
+};
+class Capacitor : public Node
+{
+private:
+    int m_capacity; // Ticks of capacity
+    int m_charge;   // Ticks remaining
+
+protected:
+    Capacitor() = default;
+    Capacitor(IVec2 position, Gate gate) : Node(position, gate), m_capacity(0), m_charge(0) {}
+    Capacitor(IVec2 position, Gate gate, int capacity) : Node(position, gate), m_capacity(capacity), m_charge(0) {}
+
+private: // Helpers usable only by NodeWorld
+    void SetCapacity(int capacity)
+    {
+        m_capacity = capacity;
+    }
+
+    void SetCharge(int charge)
+    {
+        m_charge = charge;
+    }
+
+public:
+    int GetCapacity() const
+    {
+        return m_capacity;
+    }
+    int GetCharge() const
+    {
+        return m_charge;
+    }
+    void IncrementCharge()
+    {
+        ++m_charge;
+    int GetCharge()
+    {
+        return m_charge;
+    }
+    }
+    void DecrementCharge()
+    {
+        --m_charge;
+    }
+};
+
+Node* Convert(Node* node, Gate newType)
+{
+    if (node->GetGate() != Gate::RESISTOR && node->GetGate() != Gate::CAPACITOR)
+}
 
 bool Wire::GetState() const
 {
@@ -1493,6 +1579,27 @@ public:
                         x = true;
                         node->m_state = true;
                     }
+                }
+            }
+            break;
+
+        case Gate::RESISTOR:
+            if (node->m_inputs == 0)
+            {
+                node->m_state = false;
+                break;
+            }
+
+            node->m_state = true;
+            for (Wire* wire : node->m_wires)
+            {
+                if (wire->start == node)
+                    continue;
+
+                if (!wire->start->m_state)
+                {
+                    node->m_state = false;
+                    break;
                 }
             }
             break;
