@@ -35,7 +35,7 @@ class Range {
 public:
     Range(Iter begin, Iter end) : b(begin), e(end) {}
 
-    Iter begin() { return begin; }
+    Iter begin() { return b; }
     Iter end() { return e; }
 };
 
@@ -2114,7 +2114,7 @@ int main()
 
         // Hotkeys
         {
-            if (mode == baseMode)
+            if (mode == baseMode || mode == Mode::GATE)
             {
                 if (IsKeyPressed(KEY_ONE))
                     data.gatePick = Gate::OR;
@@ -2124,6 +2124,10 @@ int main()
                     data.gatePick = Gate::NOR;
                 else if (IsKeyPressed(KEY_FOUR))
                     data.gatePick = Gate::XOR;
+                else if (IsKeyPressed(KEY_FIVE))
+                    data.gatePick = Gate::RESISTOR;
+                else if (IsKeyPressed(KEY_SIX))
+                    data.gatePick = Gate::CAPACITOR;
             }
 
             // KEY COMBOS BEFORE INDIVIDUAL KEYS!
