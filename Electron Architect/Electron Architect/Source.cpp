@@ -3088,7 +3088,7 @@ int main()
                         const char* text;
                         if (data.gatePick == Gate::RESISTOR)
                             text = "Resistance: %i inputs";
-                        else if (data.gatePick == Gate::RESISTOR)
+                        else if (data.gatePick == Gate::CAPACITOR)
                             text = "Capacity : %i ticks";
                         else
                             text = "Component parameter: %i";
