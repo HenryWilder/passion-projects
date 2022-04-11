@@ -2429,6 +2429,10 @@ int main()
             else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!data.hoveredNode)
             {
                 data.hoveredNode->SetGate(data.gatePick);
+                if (data.hoveredNode->GetGate() == Gate::RESISTOR)
+                    data.hoveredNode->SetResistance(data.storedResistance);
+                else if (data.hoveredNode->GetGate() == Gate::CAPACITOR)
+                    data.hoveredNode->SetCapacity(data.storedCapacity);
             }
         }
         break;
