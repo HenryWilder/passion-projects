@@ -1894,7 +1894,7 @@ int main()
     int windowHeight = 720;
     InitWindow(windowWidth, windowHeight, "Electron Architect");
     SetExitKey(0);
-    SetTargetFPS(60);
+    SetTargetFPS(30);
 
     /******************************************
     *   Load textures, shaders, and meshes
