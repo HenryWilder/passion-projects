@@ -1593,13 +1593,13 @@ public:
 
         case Gate::CAPACITOR:
             node->m_state = true;
-            if (node->GetCharge())
-                return node->DecrementCharge();
             for (Wire* wire : node->GetInputs())
             {
                 if (wire->GetState())
                     return (node->GetCharge() < node->GetCapacity()) ? node->IncrementCharge() : void();
             }
+            if (node->GetCharge())
+                return node->DecrementCharge();
             node->m_state = false;
             break;
         }
