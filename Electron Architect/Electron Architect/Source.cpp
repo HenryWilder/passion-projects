@@ -545,6 +545,62 @@ public:
         m_gate = gate;
     }
 
+    // Only use if this is a resistor
+    uint8_t GetResistance() const
+    {
+        _ASSERT_EXPR(m_gate == Gate::RESISTOR, "Cannot access the resistance of a non-resistor.");
+        return m_ntd.r.resistance;
+    }
+    // Only use if this is a capacitor
+    uint8_t GetCapacity() const
+    {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the capacity of a non-capacitor.");
+        return m_ntd.c.capacity;
+    }
+    // Only use if this is a capacitor
+    uint8_t GetCharge() const
+    {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
+        return m_ntd.c.charge;
+    }
+    // Only use if this is a capacitor
+    float GetChargePercent() const
+    {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access capacitor members of a non-capacitor.");
+        return (float)m_ntd.c.charge / (float)m_ntd.c.capacity;
+    }
+    // Only use if this is a resistor
+    void SetResistance(uint8_t resistance)
+    {
+        _ASSERT_EXPR(m_gate == Gate::RESISTOR, "Cannot access the resistance of a non-resistor.");
+        _ASSERT_EXPR(resistance <= 9, "Resistance must be <= 9");
+        m_ntd.r.resistance = resistance;
+    }
+    // Only use if this is a capacitor
+    void SetCapacity(uint8_t capacity)
+    {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the capacity of a non-capacitor.");
+        m_ntd.c.capacity = capacity;
+    }
+    // Only use if this is a capacitor
+    void SetCharge(uint8_t charge)
+    {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
+        m_ntd.c.charge = charge;
+    }
+    // Only use if this is a capacitor
+    void IncrementCharge()
+    {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
+        m_ntd.c.charge++;
+    }
+    // Only use if this is a capacitor
+    void DecrementCharge()
+    {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
+        m_ntd.c.charge--;
+    }
+
     bool GetState() const
     {
         return m_state;
@@ -713,48 +769,24 @@ private: // Helpers usable only by NodeWorld
         AddWireOutput(wire);
     }
 
-    // Only use if this is a resistor
-    void SetResistance(uint8_t resistance)
-    {
-        _ASSERT_EXPR(m_gate == Gate::RESISTOR, "Cannot access the resistance of a non-resistor.");
-        _ASSERT_EXPR(resistance <= 9, "Resistance must be <= 9");
-        m_ntd.r.resistance = resistance;
-    }
-    // Only use if this is a capacitor
-    void SetCapacity(uint8_t capacity)
-    {
-        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the capacity of a non-capacitor.");
-        m_ntd.c.capacity = capacity;
-    }
-    // Only use if this is a capacitor
-    void SetCharge(uint8_t charge)
-    {
-        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
-        m_ntd.c.charge = charge;
-    }
-    // Only use if this is a capacitor
-    void IncrementCharge()
-    {
-        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
-        m_ntd.c.charge++;
-    }
-    // Only use if this is a capacitor
-    void DecrementCharge()
-    {
-        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
-        m_ntd.c.charge--;
-    }
-
 private: // Accessible by NodeWorld
     Node() = default;
     Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_ntd() {}
-    Node(IVec2 position, Gate gate, uint8_t resistance) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) { m_ntd.r = { resistance }; }
-    Node(IVec2 position, Gate gate, uint8_t capacity, uint8_t charge) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) { m_ntd.c = { capacity, charge }; }
+    Node(IVec2 position, Gate gate, uint8_t extraParam) : m_position(position), m_gate(gate), m_state(false), m_inputs(0)
+    {
+        if (gate == Gate::RESISTOR)
+            m_ntd.r.resistance = extraParam;
+        else if (gate == Gate::CAPACITOR)
+        {
+            m_ntd.c.capacity = extraParam;
+            m_ntd.c.charge = 0;
+        }
+    }
 
 public:
     static constexpr Color g_nodeColorActive = RED;
     static constexpr Color g_nodeColorInactive = LIGHTGRAY;
-    static constexpr Color g_resistanceBands[] = { BLACK, BROWN, RED, ORANGE, YELLOW, GREEN, BLUE, VIOLET, GRAY, WHITE, GOLD, LIGHTGRAY };
+    static constexpr Color g_resistanceBands[] = { BLACK, BROWN, RED, ORANGE, YELLOW, GREEN, BLUE, VIOLET, GRAY, INTERFERENCEGRAY };
     static constexpr float g_nodeRadius = 3.0f;
 
 private:
@@ -807,30 +839,6 @@ public:
     bool IsValidConnection(decltype(m_wires)::const_iterator it) const
     {
         return it != m_wires.end();
-    }
-
-    // Only use if this is a resistor
-    uint8_t GetResistance() const
-    {
-        _ASSERT_EXPR(m_gate == Gate::RESISTOR, "Cannot access the resistance of a non-resistor.");
-        return m_ntd.r.resistance;
-    }
-    // Only use if this is a capacitor
-    uint8_t GetCapacity() const
-    {
-        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the capacity of a non-capacitor.");
-        return m_ntd.c.capacity;
-    }
-    // Only use if this is a capacitor
-    uint8_t GetCharge() const
-    {
-        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
-        return m_ntd.c.charge;
-    }
-    float GetChargePercent() const
-    {
-        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access capacitor members of a non-capacitor.");
-        return (float)m_ntd.c.charge / (float)m_ntd.c.capacity;
     }
 };
 
@@ -1296,11 +1304,11 @@ public:
 
     // Node functions
 
-    // CreateNode does not insert at the end of the `nodes`.
-    Node* CreateNode(IVec2 position, Gate gate)
+    /// <summary>CreateNode does not insert at the end of the <see cref="nodes"/>.</summary>
+    Node* CreateNode(IVec2 position, Gate gate, uint8_t extendedParam = 0)
     {
         // The order is not dirty at this time due to the node having no connections yet
-        return _CreateNode(Node(position, gate));
+        return _CreateNode(Node(position, gate, extendedParam));
     }
     void DestroyNode(Node* node)
     {
@@ -1962,6 +1970,11 @@ int main()
     struct {
         Gate gatePick = Gate::OR;
         Gate lastGate = Gate::OR;
+        union { // Alternate names for the same value
+            uint8_t storedResistance;
+            uint8_t storedCapacity;
+            uint8_t storedExtendedParam = 0;
+        };
         Node* hoveredNode = nullptr;
         Wire* hoveredWire = nullptr;
         Blueprint* clipboard = nullptr;
@@ -2034,6 +2047,7 @@ int main()
     constexpr IRect dropdownBounds[] = {
         IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
         IRect(16, 16, 16, 16 * (_countof(dropdownGateOrder) - 1)), // Gate
+        IRect(32, 16, 16, 16 * (_countof(Node::g_resistanceBands) - 1)), // Parameter
     };
 
     constexpr Gate radialGateOrder[] = {
@@ -2225,7 +2239,7 @@ int main()
                 {
                     SetMode(Mode::INTERACT);
                 }
-                else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mode != Mode::BP_ICON && (cursorPos.y <= 16 && cursorPos.x <= 32) &&
+                else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mode != Mode::BP_ICON && (cursorPos.y <= 16 && cursorPos.x <= 48) &&
                     (mode == Mode::BUTTON ? data.button.dropdownActive != (cursorPos.x / 16) : true))
                 {
                     SetMode(Mode::BUTTON);
@@ -2256,7 +2270,7 @@ int main()
                 Node* newNode = data.hoveredNode;
                 if (!newNode)
                 {
-                    newNode = NodeWorld::Get().CreateNode(cursorPos, data.gatePick);
+                    newNode = NodeWorld::Get().CreateNode(cursorPos, data.gatePick, data.storedExtendedParam);
                     if (!!data.hoveredWire)
                     {
                         NodeWorld::Get().BisectWire(data.hoveredWire, newNode);
@@ -2528,6 +2542,26 @@ int main()
                             if (InBoundingBox(rec, cursorPos))
                             {
                                 data.gatePick = g;
+                                break;
+                            }
+
+                            rec.y += 16;
+                        }
+
+                        SetMode(baseMode);
+                    }
+                    break;
+
+                    case 2: // Resistance
+                    {
+                        for (uint8_t v = 0; v < 10; ++v)
+                        {
+                            if (v == data.storedExtendedParam)
+                                continue;
+
+                            if (InBoundingBox(rec, cursorPos))
+                            {
+                                data.storedExtendedParam = v;
                                 break;
                             }
 
@@ -2962,6 +2996,31 @@ int main()
                         }
                     }
                     break;
+
+                    case 2: // Resistance
+                    {
+                        for (uint8_t v = 0; v < 10; ++v)
+                        {
+                            _ASSERT_EXPR(v < _countof(Node::g_resistanceBands), "Resistance out of bounds");
+                            if (v == data.storedExtendedParam)
+                                continue;
+                            Color color = Node::g_resistanceBands[v];
+                            if (InBoundingBox(rec, cursorPos))
+                            {
+                                DrawRectangleIRect(rec, WIPBLUE);
+                                IRect smaller = rec;
+                                smaller.x += 2;
+                                smaller.y += 2;
+                                smaller.w -= 4;
+                                smaller.h -= 4;
+                                DrawRectangleIRect(smaller, color);
+                            }
+                            else
+                                DrawRectangleIRect(rec, color);
+                            rec.y += 16;
+                        }
+                    }
+                    break;
                     }
                 }
                 break;
@@ -3020,6 +3079,21 @@ int main()
                         DrawText(text, 36, 17, 8, WHITE);
                         DrawRectangle(16, 0, 16, 16, SPACEGRAY);
                     }
+                    else if (cursorPos.x <= 48)
+                    {
+                        const char* text;
+                        if (data.gatePick == Gate::RESISTOR)
+                            text = "Resistance: %i inputs";
+                        else if (data.gatePick == Gate::RESISTOR)
+                            text = "Capacity : %i ticks";
+                        else
+                            text = "Stored data: %i";
+                        DrawText(TextFormat(text, data.storedExtendedParam), 52, 17, 8, WHITE);
+                        _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), "Stored resistance out of bounds");
+                        Color color = Node::g_resistanceBands[data.storedExtendedParam];
+                        DrawRectangle(32, 0, 16, 16, WIPBLUE);
+                        DrawRectangle(34, 2, 12, 12, Node::g_resistanceBands[data.storedExtendedParam]);
+                    }
                 }
 
                 IRect rec(0, 0, 16, 16);
@@ -3028,6 +3102,12 @@ int main()
                 rec.x += 16;
                 DrawRectangleIRect(rec, SPACEGRAY);
                 DrawGateIcon16x(data.gatePick, rec.xy, WHITE);
+                rec.x += 16;
+                if (!(cursorPos.y <= 16 && cursorPos.x > 32 && cursorPos.x <= 48))
+                {
+                    _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), "Stored resistance out of bounds");
+                    DrawRectangleIRect(rec, Node::g_resistanceBands[data.storedExtendedParam]);
+                }
                 if (!!data.clipboard)
                 {
                     rec.x += 16;
