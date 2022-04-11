@@ -18,7 +18,7 @@ ElbowConfig& operator--(ElbowConfig& ec);
 
 struct Wire
 {
-    Wire();
+    Wire() = default;
     Wire(Node* start, Node* end);
     Wire(Node* start, Node* end, ElbowConfig elbowConfig);
 

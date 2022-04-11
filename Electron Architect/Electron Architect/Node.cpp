@@ -108,7 +108,7 @@ bool Node::GetState() const
     return m_state;
 }
 
-auto Node::FindConnection(Node* other) const
+std::deque<Wire*>::const_iterator Node::FindConnection(Node* other) const
 {
     return std::find_if(m_wires.begin(), m_wires.end(), [&other](Wire* wire) { return wire->start == other || wire->end == other; });
 }
@@ -190,13 +190,13 @@ bool Node::WireIsOutput(Wire* wire) const
 }
 
 
-auto Node::FindWireIter_Expected(Wire* wire)
+std::deque<Wire*>::iterator Node::FindWireIter_Expected(Wire* wire)
 {
     auto it = std::find(m_wires.begin(), m_wires.end(), wire);
     _ASSERT_EXPR(it != m_wires.end(), "Expected wire");
     return it;
 }
-auto Node::FindWireIter(Wire* wire)
+std::deque<Wire*>::iterator Node::FindWireIter(Wire* wire)
 {
     return std::find(m_wires.begin(), m_wires.end(), wire);
 }
@@ -268,7 +268,6 @@ void Node::MakeWireOutput(Wire* wire)
 }
 
 
-Node::Node() = default;
 Node::Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_ntd() {}
 Node::Node(IVec2 position, Gate gate, uint8_t extraParam) : m_position(position), m_gate(gate), m_state(false), m_inputs(0)
 {

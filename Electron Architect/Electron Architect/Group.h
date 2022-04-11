@@ -15,7 +15,7 @@ private:
     friend class NodeWorld;
 
 public:
-    Group();
+    Group() = default;
     // Takes captureBounds as rec
     Group(IRect rec, Color color);
     Group(IRect rec, Color color, const std::string& label);

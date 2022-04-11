@@ -21,7 +21,6 @@ ElbowConfig& operator--(ElbowConfig& ec)
     return ec;
 }
 
-Wire::Wire() = default;
 Wire::Wire(Node * start, Node * end) : elbow(), elbowConfig((ElbowConfig)0), start(start), end(end) {}
 Wire::Wire(Node * start, Node * end, ElbowConfig elbowConfig) : elbow(), elbowConfig(elbowConfig), start(start), end(end) { UpdateElbowToLegal(); }
 

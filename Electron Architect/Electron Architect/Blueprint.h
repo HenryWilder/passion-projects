@@ -9,9 +9,8 @@
 
 struct IconPos
 {
-    static constexpr int g_unit = BlueprintIcon::g_size / 2;
-
-    BlueprintIcon::IconID_t id;
+    using IconID_t = uint16_t;
+    IconID_t id;
     uint8_t x; // 0 for left, 1 for center, 2 for right
     uint8_t y; // 0 for top,  1 for center, 2 for bottom
 
@@ -24,13 +23,13 @@ struct IconPos
 struct BlueprintIcon
 {
 public:
-    using IconID_t = uint16_t;
+    using IconID_t = IconPos::IconID_t;
     static constexpr int g_size = 16;
 private:
     static Texture2D g_iconSheet;
     static IVec2 g_iconSheetDimensions; // Rows and columns, not pixels
 public:
-    IconPos combo[4] = { { NULL, 0,0 }, { NULL, 0,0 }, { NULL, 0,0 }, { NULL, 0,0 }, };
+    IconPos combo[4] = { IconPos{ NULL, 0,0 }, IconPos{ NULL, 0,0 }, IconPos{ NULL, 0,0 }, IconPos{ NULL, 0,0 }, };
 
 
 private:

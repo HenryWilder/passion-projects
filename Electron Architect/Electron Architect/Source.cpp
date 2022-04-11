@@ -1,6 +1,3 @@
-#include <fstream>
-#include <time.h>
-#include <thread>
 #include <raylib.h>
 #include "HUtility.h"
 #include "IVec.h"
@@ -181,7 +178,7 @@ int main()
         Gate::NOR,
     };
 
-    IVec2 cursorPosPrev = IVec2Zero(); // For checking if there was movement
+    IVec2 cursorPosPrev = IVec2::Zero(); // For checking if there was movement
 
     auto SetMode = [&baseMode, &mode, &data, &cursorPosPrev](Mode newMode)
     {
@@ -204,9 +201,9 @@ int main()
 
         case Mode::EDIT:
             baseMode = Mode::EDIT;
-            data.edit.fallbackPos = IVec2Zero();
+            data.edit.fallbackPos = IVec2::Zero();
             data.edit.selectionWIP = false;
-            data.edit.selectionStart = IVec2Zero();
+            data.edit.selectionStart = IVec2::Zero();
             data.edit.selectionRec = IRect(0,0,0,0);
             data.edit.draggingGroup = false;
             data.edit.hoveredGroup = nullptr;
@@ -223,7 +220,7 @@ int main()
             break;
 
         case Mode::GATE:
-            data.gate.radialMenuCenter = IVec2Zero();
+            data.gate.radialMenuCenter = IVec2::Zero();
             data.gate.overlappedSection = 0;
             break;
 
@@ -236,7 +233,7 @@ int main()
 
         case Mode::BP_ICON:
             data.bp_icon.object = nullptr;
-            data.bp_icon.pos = IVec2Zero();
+            data.bp_icon.pos = IVec2::Zero();
             data.bp_icon.sheetRec = IRect(0,0,0,0);
             data.bp_icon.iconID = NULL;
             data.bp_icon.iconCount = 0;
@@ -319,8 +316,8 @@ int main()
                     {
                         SetMode(Mode::BP_ICON);
                         data.bp_icon.object = new BlueprintIcon;
-                        data.bp_icon.pos = cursorPos - IVec2(IconPos::g_unit, IconPos::g_unit);
-                        data.bp_icon.sheetRec.xy = data.bp_icon.pos + IVec2(IconPos::g_unit * 4, IconPos::g_unit * 4);
+                        data.bp_icon.pos = cursorPos - IVec2(BlueprintIcon::g_size / 2, BlueprintIcon::g_size / 2);
+                        data.bp_icon.sheetRec.xy = data.bp_icon.pos + IVec2(BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2);
                         data.bp_icon.sheetRec.wh = BlueprintIcon::GetSheetSize_Px();
                     }
                     // Save file
@@ -738,12 +735,12 @@ int main()
                 if (InBoundingBox(data.bp_icon.sheetRec, cursorPos) && data.bp_icon.iconCount < 4 && !!data.bp_icon.iconID)
                 {
                     cursorPos = data.bp_icon.pos;
-                    SetMousePosition(cursorPos.x + IconPos::g_unit, cursorPos.y + IconPos::g_unit);
+                    SetMousePosition(cursorPos.x + BlueprintIcon::g_size / 2, cursorPos.y + BlueprintIcon::g_size / 2);
                     data.bp_icon.object->combo[data.bp_icon.iconCount] = { data.bp_icon.iconID, 0,0 };
                     data.bp_icon.draggingIcon = data.bp_icon.iconCount;
                     data.bp_icon.iconCount++;
                 }
-                else if (InBoundingBox(IRect(data.bp_icon.pos.x, data.bp_icon.pos.y, IconPos::g_unit * 4, IconPos::g_unit * 4), cursorPos))
+                else if (InBoundingBox(IRect(data.bp_icon.pos.x, data.bp_icon.pos.y, BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2), cursorPos))
                 {
                     data.bp_icon.draggingIcon = -1;
                     for (decltype(data.bp_icon.draggingIcon) i = 0; i < data.bp_icon.iconCount; ++i)
@@ -754,8 +751,8 @@ int main()
                         IRect bounds(
                             data.bp_icon.pos.x,
                             data.bp_icon.pos.y,
-                            IconPos::g_unit * 2,
-                            IconPos::g_unit * 2
+                            BlueprintIcon::g_size,
+                            BlueprintIcon::g_size
                         );
                         bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
                         if (InBoundingBox(bounds, cursorPos))
@@ -785,8 +782,8 @@ int main()
             }
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.bp_icon.iconID)
             {
-                constexpr IVec2 centerOffset(IconPos::g_unit, IconPos::g_unit);
-                IVec2 colRow = IVec2Divide_i(cursorPos - data.bp_icon.pos - centerOffset, IconPos::g_unit);
+                constexpr IVec2 centerOffset(BlueprintIcon::g_size / 2, BlueprintIcon::g_size / 2);
+                IVec2 colRow = IVec2Divide_i(cursorPos - data.bp_icon.pos - centerOffset, BlueprintIcon::g_size / 2);
                 colRow.x = std::min(std::max(colRow.x, 0), 2);
                 colRow.y = std::min(std::max(colRow.y, 0), 2);
                 data.bp_icon.object->combo[data.bp_icon.draggingIcon].x = colRow.x;
@@ -826,8 +823,8 @@ int main()
                         IRect bounds(
                             data.bp_icon.pos.x,
                             data.bp_icon.pos.y,
-                            IconPos::g_unit * 2,
-                            IconPos::g_unit * 2
+                            BlueprintIcon::g_size,
+                            BlueprintIcon::g_size
                         );
                         bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
                         if (InBoundingBox(bounds, cursorPos))

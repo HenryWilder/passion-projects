@@ -1,7 +1,6 @@
 #include "HUtility.h"
 #include "Group.h"
 
-Group::Group() = default;
 // Takes captureBounds as rec
 Group::Group(IRect rec, Color color) : labelBounds(rec.x, rec.y - g_labelHeight, rec.w, g_labelHeight), captureBounds(rec), color(color), label() {}
 Group::Group(IRect rec, Color color, const std::string & label) : labelBounds(rec.x, rec.y - g_labelHeight, rec.w, g_labelHeight), captureBounds(rec), color(color), label(label) {}

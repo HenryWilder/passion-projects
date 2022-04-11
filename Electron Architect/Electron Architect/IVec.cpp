@@ -1,6 +1,12 @@
 #include "HUtility.h"
 #include "IVec.h"
 
+inline constexpr IVec2::IVec2(int x) : x(x), y(x) {}
+
+inline constexpr IVec2::IVec2(int x, int y) : x(x), y(y) {}
+
+inline constexpr IVec2::IVec2(Vector2 v) : x(v.x), y(v.y) {}
+
 bool IVec2::operator==(IVec2 b) const
 {
     return x == b.x && y == b.y;
@@ -9,6 +15,28 @@ bool IVec2::operator!=(IVec2 b) const
 {
     return x != b.x || y != b.y;
 }
+
+constexpr IVec2 IVec2::One()
+{
+    return IVec2(1);
+}
+
+constexpr IVec2 IVec2::Zero()
+{
+    return IVec2(0);
+}
+
+constexpr IVec2 IVec2::UnitX()
+{
+    return IVec2(1,0);
+}
+
+constexpr IVec2 IVec2::UnitY()
+{
+    return IVec2(0,1);
+}
+
+inline constexpr IVec2::operator Vector2() { return { (float)x, (float)y }; }
 
 namespace std
 {
@@ -47,7 +75,7 @@ bool InBoundingBox(IVec2 p, IVec2 a, IVec2 b)
         Between_Inclusive(p.y, a.y, b.y);
 }
 
-constexpr IVec2 IVec2Zero()
+constexpr IVec2 IVec2::Zero()
 {
     constexpr IVec2 null(0, 0);
     return null;
@@ -70,29 +98,29 @@ IVec2 operator/(IVec2 a, IVec2 b)
     return IVec2(a.x / b.x, a.y / b.y);
 }
 
-IVec2 IVec2Scale_i(IVec2 a, int b)
+IVec2 operator*(IVec2 a, int b)
 {
     return IVec2(a.x * b, a.y * b);
 }
-inline IVec2 IVec2Scale_i(int a, IVec2 b)
-{
-    return IVec2Scale_i(b, a);
-}
-IVec2 IVec2Scale_f(IVec2 a, float b)
-{
-    return IVec2((int)((float)a.x * b), (int)((float)a.y * b));
-}
-inline IVec2 IVec2Scale_f(float a, IVec2 b)
-{
-    return IVec2Scale_f(b, a);
-}
-IVec2 IVec2Divide_i(IVec2 a, int b)
+
+IVec2 operator/(IVec2 a, int b)
 {
     return IVec2(a.x / b, a.y / b);
 }
-IVec2 IVec2Divide_i(int a, IVec2 b)
+
+inline IVec2 operator*(int a, IVec2 b)
+{
+    return b * a;
+}
+
+IVec2 operator/(int a, IVec2 b)
 {
     return IVec2(a / b.x, a / b.y);
+}
+
+IVec2 IVec2Scale_f(IVec2 a, float b)
+{
+    return IVec2((int)((float)a.x * b), (int)((float)a.y * b));
 }
 
 bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2)

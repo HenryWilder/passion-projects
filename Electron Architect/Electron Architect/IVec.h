@@ -6,18 +6,26 @@
 struct IVec2
 {
     IVec2() = default;
-    constexpr IVec2(int x, int y) : x(x), y(y) {}
+    constexpr IVec2(int x);
+    constexpr IVec2(int x, int y);
+    constexpr IVec2(Vector2 v);
 
     int x, y;
 
     bool operator==(IVec2 b) const;
     bool operator!=(IVec2 b) const;
+
+    static constexpr IVec2 One();
+    static constexpr IVec2 Zero();
+    static constexpr IVec2 UnitX();
+    static constexpr IVec2 UnitY();
+
+    constexpr operator Vector2();
 };
 
 namespace std
 {
-    template<>
-    struct hash<IVec2>
+    template<> struct hash<IVec2>
     {
         size_t operator()(const IVec2& k) const;
     };
@@ -32,19 +40,17 @@ IVec2 Normal(IVec2 vec);
 
 bool InBoundingBox(IVec2 p, IVec2 a, IVec2 b);
 
-constexpr IVec2 IVec2Zero();
-
 IVec2 operator+(IVec2 a, IVec2 b);
 IVec2 operator-(IVec2 a, IVec2 b);
 IVec2 operator*(IVec2 a, IVec2 b);
 IVec2 operator/(IVec2 a, IVec2 b);
 
-IVec2 IVec2Scale_i(IVec2 a, int b);
-inline IVec2 IVec2Scale_i(int a, IVec2 b);
+IVec2 operator*(IVec2 a, int b);
+IVec2 operator/(IVec2 a, int b);
+IVec2 operator*(int a, IVec2 b);
+IVec2 operator/(int a, IVec2 b);
+
 IVec2 IVec2Scale_f(IVec2 a, float b);
-inline IVec2 IVec2Scale_f(float a, IVec2 b);
-IVec2 IVec2Divide_i(IVec2 a, int b);
-IVec2 IVec2Divide_i(int a, IVec2 b);
 
 bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2);
 

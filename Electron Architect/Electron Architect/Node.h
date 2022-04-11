@@ -43,7 +43,7 @@ public:
 
     bool GetState() const;
 
-    auto FindConnection(Node* other) const;
+    std::deque<Wire*>::const_iterator FindConnection(Node* other) const;
 
     size_t GetInputCount() const;
     size_t GetOutputCount() const;
@@ -61,8 +61,8 @@ public:
 
 private: // Helpers usable only by NodeWorld
 
-    auto FindWireIter_Expected(Wire* wire);
-    auto FindWireIter(Wire* wire);
+    std::deque<Wire*>::iterator FindWireIter_Expected(Wire* wire);
+    std::deque<Wire*>::iterator FindWireIter(Wire* wire);
 
     void SetState(bool state);
 
@@ -83,7 +83,7 @@ private: // Helpers usable only by NodeWorld
     void MakeWireOutput(Wire* wire);
 
 private: // Accessible by NodeWorld
-    Node();
+    Node() = default;
     Node(IVec2 position, Gate gate);
     Node(IVec2 position, Gate gate, uint8_t extraParam);
 

@@ -4,7 +4,8 @@
 // Position on screen
 IVec2 IconPos::Pos() const
 {
-    return IVec2(x * g_unit, y * g_unit);
+    constexpr int unit = BlueprintIcon::g_size / 2;
+    return IVec2(x * unit, y * unit);
 }
 
 void IconPos::Draw(IVec2 start, Color tint) const
@@ -99,7 +100,7 @@ void BlueprintIcon::Draw(IVec2 pos, Color tint) const
 }
 
 Texture2D BlueprintIcon::g_iconSheet;
-IVec2 BlueprintIcon::g_iconSheetDimensions = IVec2Zero();
+IVec2 BlueprintIcon::g_iconSheetDimensions = IVec2::Zero();
 
 
 void Blueprint::PopulateNodes(const std::vector<Node*>& src)
@@ -217,7 +218,7 @@ void Blueprint::PopulateWires(const std::vector<Node*>& src)
 
 Blueprint::Blueprint(const std::vector<Node*>& src)
 {
-    extents = IVec2Zero();
+    extents = IVec2::Zero();
     std::thread nodeThread(&Blueprint::PopulateNodes, this, std::ref(src));
     std::thread wireThread(&Blueprint::PopulateWires, this, std::ref(src));
     nodeThread.join();
