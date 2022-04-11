@@ -3091,7 +3091,7 @@ int main()
                         else if (data.gatePick == Gate::RESISTOR)
                             text = "Capacity : %i ticks";
                         else
-                            text = "Stored data: %i";
+                            text = "Component parameter: %i";
                         DrawText(TextFormat(text, data.storedExtendedParam), 52, 17, 8, WHITE);
                         _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), "Stored resistance out of bounds");
                         Color color = Node::g_resistanceBands[data.storedExtendedParam];
