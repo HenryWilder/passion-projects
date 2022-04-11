@@ -674,7 +674,7 @@ public:
         }
         else if (m_gate == Gate::CAPACITOR)
         {
-            DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, ColorAlpha(g_nodeColorActive, GetChargePercent()));
+            DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, ColorAlpha(g_nodeColorInactive, 1.0f - GetChargePercent()));
         }
     }
 
