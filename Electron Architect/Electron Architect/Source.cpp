@@ -508,8 +508,6 @@ public:
     {
         return m_position;
     }
-    /// Sets the position of the node and updates its collision in NodeWorld
-    void SetPosition(IVec2 position);
     // Moves the node without updating its collision
     void SetPosition_Temporary(IVec2 position)
     {
@@ -518,6 +516,12 @@ public:
         {
             wire->UpdateElbowToLegal(); // Keep current configuration but move the elbow
         }
+    }
+    // Sets the position of the node and updates its collision in NodeWorld
+    // NOTE: NodeWorld collision is currently a saved-for-later feature
+    void SetPosition(IVec2 position)
+    {
+        SetPosition_Temporary(position);
     }
     Int_t GetX() const
     {
@@ -1201,13 +1205,10 @@ private:
     bool orderDirty = false;
 
     std::vector<Node*> nodes;
+    std::vector<Node*> startNodes;
     std::vector<Wire*> wires; // Inputs/outputs don't exist here
     std::vector<Blueprint*> blueprints;
     std::vector<Group*> groups;
-
-    std::vector<Node*> startNodes;
-    std::vector<decltype(nodes)::const_iterator> layers;
-    std::unordered_map<IVec2, Node*> nodeGrid;
 
     NodeWorld() = default;
     ~NodeWorld()
@@ -1236,7 +1237,6 @@ private: // Internal
         Node* node = new Node(base);
         nodes.insert(nodes.begin(), node);
         startNodes.push_back(node);
-        nodeGrid.emplace(base.m_position, node);
         return node;
     }
     void _ClearNodeReferences(Node* node)
@@ -1257,9 +1257,6 @@ private: // Internal
     {
         FindAndErase_ExpectExisting(nodes, node);
         FindAndErase(startNodes, node);
-        auto it = nodeGrid.find(node->m_position);
-        if (it != nodeGrid.end() && it->second == node)
-            nodeGrid.erase(it);
         delete node;
         orderDirty = true;
     }
@@ -1297,10 +1294,6 @@ public:
     {
         return startNodes;
     }
-    size_t LayerCount() const
-    {
-        return layers.size() - 1;
-    }
 
     // Node functions
 
@@ -1315,12 +1308,6 @@ public:
         _ClearNodeReferences(node);
         _DestroyNode(node);
         orderDirty = true;
-    }
-    // Only affects node collision
-    void MoveNode(Node* node, IVec2 newPosition)
-    {
-        nodeGrid.erase(node->GetPosition());
-        nodeGrid.emplace(newPosition, node);
     }
 
     // Wire functions
@@ -1519,21 +1506,6 @@ public:
             visited.insert({ firstUnvisitedNode, 0 });
         }
 
-        layers.clear();
-        layers.reserve(nodes.size() + 1);
-        layers.push_back(nodes.begin());
-        size_t depth = 0;
-        for (auto it = nodes.begin(); it != nodes.end(); ++it)
-        {
-            if (visited.find(*it)->second != depth)
-            {
-                ++depth;
-                layers.push_back(it);
-            }
-        }
-        layers.push_back(nodes.end());
-        layers.shrink_to_fit();
-
         nodes.swap(sorted);
 
         orderDirty = false;
@@ -1605,23 +1577,6 @@ public:
         }
     }
 
-    void EvaluateStep(size_t depth)
-    {
-        if (orderDirty)
-        {
-            Sort();
-            orderDirty = false;
-        }
-
-        if (depth >= LayerCount())
-            return;
-
-        for (decltype(nodes)::const_iterator it = layers[depth]; it != layers[depth + 1] && it != nodes.end(); ++it)
-        {
-            EvaluateNode(*it);
-        }
-    }
-
     void Evaluate()
     {
         if (orderDirty)
@@ -1660,9 +1615,11 @@ public:
 
     Node* FindNodeAtPos(IVec2 pos) const
     {
-        auto it = nodeGrid.find(pos);
-        if (it != nodeGrid.end())
-            return it->second;
+        for (Node* node : nodes)
+        {
+            if (node->GetPosition() == pos)
+                return node;
+        }
         return nullptr;
     }
     Wire* FindWireAtPos(IVec2 pos) const
@@ -1687,29 +1644,10 @@ public:
 
     void FindNodesInRect(std::vector<Node*>& result, IRect rec) const
     {
-        // Find by node
-        size_t area = (size_t)rec.w * (size_t)rec.h;
-        if (area < nodes.size())
+        for (Node* node : nodes)
         {
-            IVec2 pt;
-            for (pt.x = rec.x; pt.x < (rec.x + rec.w); ++pt.x)
-            {
-                for (pt.y = rec.y; pt.y < (rec.y + rec.h); ++pt.y)
-                {
-                    auto it = nodeGrid.find(pt);
-                    if (it != nodeGrid.end())
-                        result.push_back(it->second);
-                }
-            }
-        }
-        // Find by grid
-        else
-        {
-            for (Node* node : nodes)
-            {
-                if (InBoundingBox(rec, node->GetPosition()))
-                    result.push_back(node);
-            }
+            if (InBoundingBox(rec, node->GetPosition()))
+                result.push_back(node);
         }
     }
 
@@ -1747,73 +1685,11 @@ public: // Serialization
         blueprints.push_back(bp);
     }
 
-    // Larger file, faster startup/save (less analysis)
-    void Save_LargeFile(const char* filename) const
+    void Save(const char* filename) const
     {
         std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
         {
-            file << "0 l\n" << std::time(nullptr) << '\n';
-
-            {
-                std::unordered_map<Node*, size_t> nodeIDs;
-                nodeIDs.reserve(nodes.size());
-                for (size_t i = 0; i < nodes.size(); ++i)
-                {
-                    nodeIDs.insert({ nodes[i], i });
-                }
-
-                std::unordered_map<Wire*, size_t> wireIDs;
-                wireIDs.reserve(wires.size());
-                for (size_t i = 0; i < wires.size(); ++i)
-                {
-                    wireIDs.insert({ wires[i], i });
-                }
-
-                file << "\nn " << nodes.size() << '\n';
-                for (Node* node : nodes)
-                {
-                    file <<
-                        (char)node->m_gate << ' ' << node->m_state << ' ' <<
-                        node->m_position.x << ' ' << node->m_position.y << ' ' <<
-                        node->m_wires.size() << ' ' << node->m_inputs;
-                    for (Wire* wire : node->m_wires)
-                    {
-                        size_t wireID = wireIDs.find(wire)->second;
-                        file << ' ' << wireID;
-                    }
-                    file << '\n';
-                }
-
-                file << "\ns " << startNodes.size();
-                for (Node* node : startNodes)
-                {
-                    size_t nodeID = nodeIDs.find(node)->second;
-                    file << ' ' << nodeID;
-                }
-                file << '\n';
-
-                file << "\nw " << wires.size() << '\n';
-                for (Wire* wire : wires)
-                {
-                    size_t startID = nodeIDs.find(wire->start)->second;
-                    size_t endID = nodeIDs.find(wire->end)->second;
-                    file <<
-                        (int)wire->elbowConfig << ' ' <<
-                        wire->elbow.x << ' ' << wire->elbow.y << ' ' <<
-                        startID << ' ' << endID <<
-                        '\n';
-                }
-            }
-        }
-        file.close();
-    }
-
-    // Smaller file, slower startup/save (more analysis)
-    void Save_SmallFile(const char* filename) const
-    {
-        std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
-        {
-            file << "0 s\n" << std::time(nullptr) << '\n';
+            file << "0\n" << std::time(nullptr) << '\n';
 
             {
                 std::unordered_map<Node*, size_t> nodeIDs;
@@ -1869,24 +1745,11 @@ public: // Serialization
             if (version != 0) return;
             file >> relSize >> time;
 
-            if (relSize == 'l') // Large
-            {
 
-            }
-            else if (relSize == 's') // Small
-            {
-                
-            }
         }
         file.close();
     }
 };
-
-void Node::SetPosition(IVec2 position)
-{
-    NodeWorld::Get().MoveNode(this, position);
-    SetPosition_Temporary(position);
-}
 
 int main()
 {
@@ -2124,7 +1987,7 @@ int main()
     mode = Mode::PEN;
     SetMode(Mode::PEN);
 
-    NodeWorld::Get(); // Construct
+    NodeWorld::Get().Load("session.cg"); // Construct and load last session
             
     while (!WindowShouldClose())
     {
@@ -2202,7 +2065,7 @@ int main()
                     // Save file
                     else
                     {
-                        NodeWorld::Get().Save_SmallFile("dataS.cg");
+                        NodeWorld::Get().Save("save.cg");
                     }
                 }
             }
@@ -3130,6 +2993,7 @@ int main()
     if (data.clipboard != nullptr)
         delete data.clipboard;
 
+    NodeWorld::Get().Save("session.cg");
     BlueprintIcon::Unload();
     UnloadTexture(gateIcons32x);
     UnloadTexture(gateIcons16x);
