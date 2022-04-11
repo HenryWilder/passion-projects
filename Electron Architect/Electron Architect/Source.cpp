@@ -607,7 +607,19 @@ public:
     }
     void Draw(Color color) const
     {
+        constexpr Int_t nodeRadius = static_cast<int>(g_nodeRadius);
+
         Draw(m_position, m_gate, color);
+
+        if (m_gate == Gate::RESISTOR)
+        {
+            DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, g_resistanceBands[GetResistance()]);
+            DrawRectangle(GetX() - nodeRadius + 2, GetY() - nodeRadius + 2, nodeRadius * 2 - 4, nodeRadius * 2 - 4, BLACK);
+        }
+        else if (m_gate == Gate::CAPACITOR)
+        {
+            DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, ColorAlpha(g_nodeColorActive, GetChargePercent()));
+        }
     }
 
     bool WireIsInput(Wire* wire) const
@@ -702,19 +714,20 @@ private: // Helpers usable only by NodeWorld
     }
 
     // Only use if this is a resistor
-    void SetResistance(int resistance)
+    void SetResistance(uint8_t resistance)
     {
         _ASSERT_EXPR(m_gate == Gate::RESISTOR, "Cannot access the resistance of a non-resistor.");
+        _ASSERT_EXPR(resistance <= 9, "Resistance must be <= 9");
         m_ntd.r.resistance = resistance;
     }
     // Only use if this is a capacitor
-    void SetCapacity(int capacity)
+    void SetCapacity(uint8_t capacity)
     {
         _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the capacity of a non-capacitor.");
         m_ntd.c.capacity = capacity;
     }
     // Only use if this is a capacitor
-    void SetCharge(int charge)
+    void SetCharge(uint8_t charge)
     {
         _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
         m_ntd.c.charge = charge;
@@ -735,12 +748,13 @@ private: // Helpers usable only by NodeWorld
 private: // Accessible by NodeWorld
     Node() = default;
     Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_ntd() {}
-    Node(IVec2 position, Gate gate, int resistance) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) { m_ntd.r = { resistance }; }
-    Node(IVec2 position, Gate gate, int capacity, int charge) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) { m_ntd.c = { capacity, charge }; }
+    Node(IVec2 position, Gate gate, uint8_t resistance) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) { m_ntd.r = { resistance }; }
+    Node(IVec2 position, Gate gate, uint8_t capacity, uint8_t charge) : m_position(position), m_gate(gate), m_state(false), m_inputs(0) { m_ntd.c = { capacity, charge }; }
 
 public:
     static constexpr Color g_nodeColorActive = RED;
     static constexpr Color g_nodeColorInactive = LIGHTGRAY;
+    static constexpr Color g_resistanceBands[] = { BLACK, BROWN, RED, ORANGE, YELLOW, GREEN, BLUE, VIOLET, GRAY, WHITE, GOLD, LIGHTGRAY };
     static constexpr float g_nodeRadius = 3.0f;
 
 private:
@@ -752,13 +766,13 @@ private:
     {
         struct ResistorData
         {
-            int resistance; // Number of nodes needed to evaluate true
+            uint8_t resistance; // Number of nodes needed to evaluate true
         } r;
 
         struct CapacitorData
         {
-            int capacity; // Max value of charge
-            int charge; // Stored ticks of evaluating true
+            uint8_t capacity; // Max value of charge
+            uint8_t charge; // Stored ticks of evaluating true
         } c;
 
         NonTransistorData() { memset(this, 0, sizeof(NonTransistorData)); }
@@ -796,22 +810,27 @@ public:
     }
 
     // Only use if this is a resistor
-    int GetResistance() const
+    uint8_t GetResistance() const
     {
         _ASSERT_EXPR(m_gate == Gate::RESISTOR, "Cannot access the resistance of a non-resistor.");
         return m_ntd.r.resistance;
     }
     // Only use if this is a capacitor
-    int GetCapacity() const
+    uint8_t GetCapacity() const
     {
         _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the capacity of a non-capacitor.");
         return m_ntd.c.capacity;
     }
     // Only use if this is a capacitor
-    int GetCharge() const
+    uint8_t GetCharge() const
     {
         _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
         return m_ntd.c.charge;
+    }
+    float GetChargePercent() const
+    {
+        _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access capacitor members of a non-capacitor.");
+        return (float)m_ntd.c.charge / (float)m_ntd.c.capacity;
     }
 };
 
@@ -1517,33 +1536,30 @@ public:
         switch (node->m_gate)
         {
         case Gate::OR:
-            node->m_state = true;
             for (Wire* wire : node->GetInputs())
             {
                 if (wire->GetState())
-                    return;
+                    return void(node->m_state = true);
             }
             node->m_state = false;
             break;
 
         case Gate::NOR:
-            node->m_state = false;
             for (Wire* wire : node->GetInputs())
             {
                 if (wire->GetState())
-                    return;
+                    return void(node->m_state = false);
             }
             node->m_state = true;
             break;
 
         case Gate::AND:
-            node->m_state = false;
             for (Wire* wire : node->GetInputs())
             {
                 if (!wire->GetState())
-                    return;
+                    return void(node->m_state = false);
             }
-            node->m_state = true;
+            node->m_state = !!node->GetInputCount();
             break;
 
         case Gate::XOR:
@@ -1557,12 +1573,11 @@ public:
 
         case Gate::RESISTOR:
         {
-            node->m_state = true;
             int activeInputs = 0;
             for (Wire* wire : node->GetInputs())
             {
                 if (wire->GetState() && !!(++activeInputs > node->GetResistance()))
-                    return;
+                    return void(node->m_state = true);
             }
             node->m_state = false;
         }
@@ -1575,8 +1590,7 @@ public:
             for (Wire* wire : node->GetInputs())
             {
                 if (wire->GetState())
-                    return (node->GetCharge() < node->GetCapacity()) ?
-                        node->IncrementCharge() : void();
+                    return (node->GetCharge() < node->GetCapacity()) ? node->IncrementCharge() : void();
             }
             node->m_state = false;
             break;
@@ -2995,11 +3009,13 @@ int main()
                         const char* text;
                         switch (data.gatePick)
                         {
-                        case Gate::OR:  text = "Gate: | (or)";  break;
-                        case Gate::AND: text = "Gate: & (and)"; break;
-                        case Gate::NOR: text = "Gate: ! (nor)"; break;
-                        case Gate::XOR: text = "Gate: ^ (xor)"; break;
-                        default:        text = "";              break;
+                        case Gate::OR:        text = "Gate: | (or)";         break;
+                        case Gate::AND:       text = "Gate: & (and)";        break;
+                        case Gate::NOR:       text = "Gate: ! (nor)";        break;
+                        case Gate::XOR:       text = "Gate: ^ (xor)";        break;
+                        case Gate::RESISTOR:  text = "Component: Resistor";  break;
+                        case Gate::CAPACITOR: text = "Component: Capacitor"; break;
+                        default:              text = "";                     break;
                         }
                         DrawText(text, 36, 17, 8, WHITE);
                         DrawRectangle(16, 0, 16, 16, SPACEGRAY);
