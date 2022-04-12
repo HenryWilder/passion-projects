@@ -159,3 +159,8 @@ IRect& IRect::Expand(int outline)
     h += outline * 2;
     return *this;
 }
+
+inline IRect& IRect::Shrink(int outline)
+{
+    return Expand(-outline);
+}

@@ -831,12 +831,7 @@ int main()
                         if (data.bp_icon.object->combo[i].id == NULL)
                             continue;
 
-                        IRect bounds(
-                            data.bp_icon.pos.x,
-                            data.bp_icon.pos.y,
-                            BlueprintIcon::g_size,
-                            BlueprintIcon::g_size
-                        );
+                        IRect bounds(data.bp_icon.pos, BlueprintIcon::g_size);
                         bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
                         if (InBoundingBox(bounds, cursorPos))
                         {
@@ -1142,12 +1137,7 @@ int main()
                             if (InBoundingBox(rec, cursorPos))
                             {
                                 DrawRectangleIRect(rec, WIPBLUE);
-                                IRect smaller = rec;
-                                smaller.x += 2;
-                                smaller.y += 2;
-                                smaller.w -= 4;
-                                smaller.h -= 4;
-                                DrawRectangleIRect(smaller, color);
+                                DrawRectangleIRect(ExpandIRect(rec, -2), color);
                             }
                             else
                                 DrawRectangleIRect(rec, color);

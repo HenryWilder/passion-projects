@@ -80,6 +80,10 @@ struct IRect
         : x(x), y(y), w(w), h(w) {}
     constexpr IRect(int x, int y, int w, int h)
         : x(x), y(y), w(w), h(h) {}
+    constexpr IRect(IVec2 v, int w)
+        : x(v.x), y(v.y), w(w), h(w) {}
+    constexpr IRect(IVec2 v, int w, int h)
+        : x(v.x), y(v.y), w(w), h(h) {}
     constexpr IRect(Rectangle r)
         : x((int)r.x), y((int)r.y), w((int)r.width), h((int)r.height) {}
 
@@ -93,16 +97,21 @@ struct IRect
 
     constexpr operator Rectangle() { return Rectangle{ (float)x, (float)y, (float)w, (float)h }; }
 
-    IRect& Expand(int outline);
+    IRect& Expand(int outline = 1);
+    IRect& Shrink(int outline = 1);
 };
 
-constexpr IRect ExpandIRect(IRect rec, int outline)
+constexpr IRect ExpandIRect(IRect rec, int outline = 1)
 {
     return IRect(
         rec.x - outline,
         rec.y - outline,
         rec.w + 2 * outline,
         rec.h + 2 * outline);
+}
+inline constexpr IRect ShrinkIRect(IRect rec, int outline = 1)
+{
+    return ExpandIRect(rec, -outline);
 }
 
 bool InBoundingBox(IRect bounds, IVec2 pt);

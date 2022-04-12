@@ -137,30 +137,37 @@ void Node::Draw(IVec2 position, Gate gate, Color color)
     switch (gate)
     {
     case Gate::OR:
-        DrawCircle(position.x, position.y, nodeRadius, color);
-        break;
-    case Gate::AND:
-        DrawRectangle(position.x - nodeRadius, position.y - nodeRadius, nodeRadius * 2, nodeRadius * 2, color);
-        break;
+        DrawCircleIV(position, nodeRadius, color);
+        return;
     case Gate::NOR:
-        DrawCircle(position.x, position.y, nodeRadius, color);
-        DrawCircle(position.x, position.y, nodeRadius - 1.0f, BLACK);
-        break;
+        DrawCircleIV(position, nodeRadius, color);
+        DrawCircleIV(position, nodeRadius - 1.0f, BLACK);
+        return;
     case Gate::XOR:
-        DrawCircle(position.x, position.y, nodeRadius + 1.0f, color);
-        DrawCircle(position.x, position.y, nodeRadius, BLACK);
-        DrawCircle(position.x, position.y, nodeRadius - 1.0f, color);
-        break;
+        DrawCircleIV(position, nodeRadius + 1.0f, color);
+        DrawCircleIV(position, nodeRadius, BLACK);
+        DrawCircleIV(position, nodeRadius - 1.0f, color);
+        return;
+    }
 
+    IRect rec(position - IVec2(nodeRadius), nodeRadius * 2);
+    switch (gate)
+    {
+    case Gate::AND:
+        DrawRectangleIRect(rec, color);
+        return;
     case Gate::RESISTOR:
-        DrawRectangle(position.x - nodeRadius, position.y - nodeRadius, nodeRadius * 2, nodeRadius * 2, color);
-        DrawRectangle(position.x - nodeRadius + 1, position.y - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, BLACK);
-        break;
+        DrawRectangleIRect(rec, color);
+        DrawRectangleIRect(ShrinkIRect(rec), BLACK);
+        return;
     case Gate::CAPACITOR:
-        DrawRectangle(position.x - nodeRadius - 1, position.y - nodeRadius - 1, nodeRadius * 2 + 2, nodeRadius * 2 + 2, color);
-        DrawRectangle(position.x - nodeRadius, position.y - nodeRadius, nodeRadius * 2, nodeRadius * 2, BLACK);
-        DrawRectangle(position.x - nodeRadius + 1, position.y - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, color);
-        break;
+        DrawRectangleIRect(ExpandIRect(rec), color);
+        DrawRectangleIRect(rec, BLACK);
+        DrawRectangleIRect(ShrinkIRect(rec), color);
+        return;
+    default:
+        _ASSERT_EXPR(false, L"Gate type not given specialize draw method");
+        return;
     }
 }
 void Node::Draw(Color color) const
