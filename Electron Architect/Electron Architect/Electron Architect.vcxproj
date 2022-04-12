@@ -201,9 +201,6 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="Wire.h" />
   </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Electron Architect.rc" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
