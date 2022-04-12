@@ -92,7 +92,18 @@ struct IRect
     };
 
     constexpr operator Rectangle() { return Rectangle{ (float)x, (float)y, (float)w, (float)h }; }
+
+    IRect& Expand(int outline);
 };
+
+constexpr IRect ExpandIRect(IRect rec, int outline)
+{
+    return IRect(
+        rec.x - outline,
+        rec.y - outline,
+        rec.w + 2 * outline,
+        rec.h + 2 * outline);
+}
 
 bool InBoundingBox(IRect bounds, IVec2 pt);
 

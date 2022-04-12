@@ -1197,7 +1197,7 @@ int main()
                                           text = "";                  break;
                         }
                         DrawText(text, 20, 17, 8, WHITE);
-                        DrawRectangle(0, 0, 16, 16, SPACEGRAY);
+                        DrawRectangleIRect(IRect(0, 0, 16), SPACEGRAY);
                     }
                     else if (cursorPos.x <= 32)
                     {
@@ -1214,7 +1214,7 @@ int main()
                                               text = "";                     break;
                         }
                         DrawText(text, 36, 17, 8, WHITE);
-                        DrawRectangle(16, 0, 16, 16, SPACEGRAY);
+                        DrawRectangleIRect((IRect(16, 0, 16)), SPACEGRAY);
                     }
                     else if (cursorPos.x <= 48)
                     {
@@ -1228,12 +1228,12 @@ int main()
                         DrawText(TextFormat(text, data.storedExtendedParam), 52, 17, 8, WHITE);
                         _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
                         Color color = Node::g_resistanceBands[data.storedExtendedParam];
-                        DrawRectangle(32, 0, 16, 16, WIPBLUE);
-                        DrawRectangle(34, 2, 12, 12, Node::g_resistanceBands[data.storedExtendedParam]);
+                        DrawRectangleIRect(IRect(32, 0, 16), WIPBLUE);
+                        DrawRectangleIRect(IRect(34, 2, 12), Node::g_resistanceBands[data.storedExtendedParam]);
                     }
                 }
 
-                IRect rec(0, 0, 16, 16);
+                IRect rec(16);
                 DrawRectangleIRect(rec, SPACEGRAY);
                 DrawModeIcon(baseMode, rec.xy, WHITE);
                 rec.x += 16;

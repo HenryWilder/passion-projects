@@ -14,10 +14,20 @@ ElbowConfig& operator++(ElbowConfig& ec)
 ElbowConfig& operator--(ElbowConfig& ec)
 {
     uint8_t newValue = (uint8_t)ec - 1;
-    if (newValue > 3)
-        ec = (ElbowConfig)0;
+    if constexpr (decltype(newValue)(-1) > 0)
+    {
+        if (newValue > 3)
+            ec = (ElbowConfig)0;
+        else
+            ec = (ElbowConfig)newValue;
+    }
     else
-        ec = (ElbowConfig)newValue;
+    {
+        if (newValue < 0)
+            ec = (ElbowConfig)0;
+        else
+            ec = (ElbowConfig)newValue;
+    }
     return ec;
 }
 
