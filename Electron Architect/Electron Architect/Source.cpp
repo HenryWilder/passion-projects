@@ -177,9 +177,118 @@ int main()
         Gate::NOR,
     };
 
-    IVec2 cursorPosPrev = IVec2::Zero(); // For checking if there was movement
+    auto GetModeTooltipName = [](Mode mode)
+    {
+        switch (mode)
+        {
+        case Mode::PEN:
+            return "Mode: Draw [b]";
+        case Mode::EDIT:
+            return "Mode: Edit [v]";
+        case Mode::ERASE:
+            return "Mode: Erase [x]";
+        case Mode::INTERACT:
+            return "Mode: Interact [f]";
+        default:
+            _ASSERT_EXPR(false, L"Missing tooltip for selected mode");
+            return "";
+        }
+    };
+    auto GetModeTooltipDescription = [](Mode mode)
+    {
+        switch (mode)
+        {
+        case Mode::PEN:
+            return
+                "Left click to create a new node and start a wire from it, or to start a wire from an existing node.\n"
+                "Left click again to connect the wire to a new node or an existing one, and start a new wire from there.\n"
+                "Right click while creating a wire to cancel it.";
+        case Mode::EDIT:
+            return
+                "Left click and drag nodes to move them around.\n"
+                "Left click and drag wire elbows to snap them to a preferred angle.\n"
+                "Right click nodes to apply the currently selected gate/settings to them.";
+        case Mode::ERASE:
+            return
+                "Left click a node to erase it and all wires directly connected to it (collateral will render in MAGENTA).\n"
+                "Left click a wire to erase only that wire, disconnecting the nodes without erasing them.";
+        case Mode::INTERACT:
+            return
+                "Left click a node without any inputs (such nodes will render in BLUE) to toggle it between outputting true and false.\n"
+                "NOTE: Framerate is intentionally lowered from 120 to 24 while in this mode for ease of inspection.";
 
-    auto SetMode = [targetFPS, &baseMode, &mode, &data, &cursorPosPrev](Mode newMode)
+        default:
+            _ASSERT_EXPR(false, L"Missing tooltip description for selected mode");
+            return "";
+        }
+    };
+    auto GetGateTooltipName = [](Gate gate)
+    {
+        switch (gate)
+        {
+        case Gate::OR:
+            return "Gate: Or [1]";
+        case Gate::AND:
+            return "Gate: And [2]";
+        case Gate::NOR:
+            return "Gate: Nor [3]";
+        case Gate::XOR:
+            return "Gate: Xor [4]";
+        case Gate::RESISTOR:
+            return "Device: Resistor [5]";
+        case Gate::CAPACITOR:
+            return "Device: Capacitor [6]";
+
+        default:
+            _ASSERT_EXPR(false, L"Missing tooltip for selected gate");
+            return "";
+        }
+    };
+    auto GetGateTooltipDescription = [](Gate gate)
+    {
+        switch (gate)
+        {
+        case Gate::OR:
+            return
+                "Outputs true if any input is true,\n"
+                "Outputs false otherwise.";
+        case Gate::AND:
+            return
+                "Outputs true if all inputs are true,\n"
+                "Outputs false otherwise.";
+        case Gate::NOR:
+            return
+                "Outputs false if any input is true.\n"
+                "Outputs true otherwise.";
+        case Gate::XOR:
+            return
+                "Outputs true if exactly 1 input is true,\n"
+                "Outputs false otherwise.\n"
+                "Order of inputs does not matter.";
+        case Gate::RESISTOR:
+            return
+                "Outputs true if greater than [resistance] inputs are true,\n"
+                "Outputs false otherwise.\n"
+                "Order of inputs does not matter.";
+        case Gate::CAPACITOR:
+            return
+                "Stores charge while any input is true.\n"
+                "Stops charging once charge equals [capacity].\n"
+                "Drains charge while no input is true.\n"
+                "Outputs true while charge is greater than zero,\n"
+                "Outputs true while any input is true,\n"
+                "Outputs false otherwise.";
+
+        default:
+            _ASSERT_EXPR(false, L"Missing tooltip description for selected gate");
+            return "";
+        }
+    };
+
+    IVec2 cursorPosPrev = IVec2::Zero(); // For checking if there was movement
+    bool b_cursorMoved = false;
+
+    auto SetMode = [targetFPS, &baseMode, &mode, &data, &cursorPosPrev, &b_cursorMoved](Mode newMode)
     {
         if (mode == Mode::BP_ICON)
         {
@@ -198,7 +307,7 @@ int main()
             }
         }
 
-        cursorPosPrev = IVec2(-1,-1);
+        b_cursorMoved = true;
         mode = newMode;
 
         switch (newMode)
@@ -269,7 +378,7 @@ int main()
         };
         cursorPos = cursorPos * g_gridSize + IVec2(g_gridSize / 2);
 
-        bool b_cursorMoved = cursorPosPrev != cursorPos;
+        b_cursorMoved = cursorPosPrev != cursorPos;
 
         // Hotkeys
         {
@@ -812,6 +921,15 @@ int main()
         *   Draw the frame
         ******************************************/
 
+        // todo: refactor to not do unnecesary tests every frame
+        const char* deviceParameterTextFmt;
+        if (data.gatePick == Gate::RESISTOR)
+            deviceParameterTextFmt = "Resistance: %i inputs";
+        else if (data.gatePick == Gate::CAPACITOR)
+            deviceParameterTextFmt = "Capacity : %i ticks";
+        else
+            deviceParameterTextFmt = "Component parameter: %i";
+
         BeginDrawing(); {
 
             ClearBackground(BLACK);
@@ -1095,7 +1213,7 @@ int main()
                     NodeWorld::Get().DrawNodes();
 
                     IRect rec = dropdownBounds[data.button.dropdownActive];
-                    DrawRectangleIRect(dropdownBounds[data.button.dropdownActive], SPACEGRAY);
+                    DrawRectangleIRect(rec, SPACEGRAY);
                     rec.h = 16;
 
                     switch (data.button.dropdownActive)
@@ -1106,7 +1224,14 @@ int main()
                         {
                             if (m == baseMode)
                                 continue;
-                            Color color = InBoundingBox(rec, cursorPos) ? WHITE : DEADCABLE;
+                            Color color;
+                            if (InBoundingBox(rec, cursorPos))
+                            {
+                                color = WHITE;
+                                DrawText(GetModeTooltipName(m), 20, 17 + rec.y, 8, WHITE);
+                            }
+                            else
+                                color = DEADCABLE;
                             DrawModeIcon(m, rec.xy, color);
                             rec.y += 16;
                         }
@@ -1119,7 +1244,14 @@ int main()
                         {
                             if (g == data.gatePick)
                                 continue;
-                            Color color = InBoundingBox(rec, cursorPos) ? WHITE : GRAY;
+                            Color color;
+                            if (InBoundingBox(rec, cursorPos))
+                            {
+                                color = WHITE;
+                                DrawText(GetGateTooltipName(g), 20 + 16, 17 + rec.y, 8, WHITE);
+                            }
+                            else
+                                color = DEADCABLE;
                             DrawGateIcon16x(g, rec.xy, color);
                             rec.y += 16;
                         }
@@ -1138,6 +1270,7 @@ int main()
                             {
                                 DrawRectangleIRect(rec, WIPBLUE);
                                 DrawRectangleIRect(ExpandIRect(rec, -2), color);
+                                DrawText(TextFormat(deviceParameterTextFmt, v), 20 + 32, 17 + rec.y, 8, WHITE);
                             }
                             else
                                 DrawRectangleIRect(rec, color);
@@ -1171,76 +1304,51 @@ int main()
 
                 // Global UI
 
+
+                DrawRectangleIRect(IRect(32, 16), SPACEGRAY);
+                if (!!data.clipboard)
+                {
+                    DrawRectangleIRect(IRect(48, 0, 16), SPACEGRAY);
+                    DrawTextureIV(clipboardIcon, 16 * 4, WHITE);
+                }
+
+                _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
+                DrawRectangleIRect(IRect(32, 0, 16), Node::g_resistanceBands[data.storedExtendedParam]);
+
                 // Buttons
                 if (cursorPos.y <= 16)
                 {
+                    // Mode
                     if (cursorPos.x <= 16)
                     {
-                        const char* text;
-                        switch (baseMode)
-                        {
-                        case Mode::PEN:   text = "Mode: Draw";        break;
-                        case Mode::EDIT:  text = "Mode: Edit";        break;
-                        case Mode::GATE:  text = "Mode: Gate select"; break;
-                        case Mode::ERASE: text = "Mode: Erase";       break;
-                        default: _ASSERT_EXPR(false, L"Missing tooltip for selected mode");
-                                          text = "";                  break;
-                        }
-                        DrawText(text, 20, 17, 8, WHITE);
                         DrawRectangleIRect(IRect(0, 0, 16), SPACEGRAY);
+                        const char* name = GetModeTooltipName(baseMode);
+                        DrawText(name, 20, 17, 8, WHITE);
+                        DrawLine(20, 17 + 12, 20 + MeasureText(name, 8), 17 + 12, WHITE);
+                        DrawText(GetModeTooltipDescription(baseMode), 20, 17 + 16, 8, WHITE);
                     }
+                    // Gate
                     else if (cursorPos.x <= 32)
                     {
-                        const char* text;
-                        switch (data.gatePick)
-                        {
-                        case Gate::OR:        text = "Gate: | (or)";         break;
-                        case Gate::AND:       text = "Gate: & (and)";        break;
-                        case Gate::NOR:       text = "Gate: ! (nor)";        break;
-                        case Gate::XOR:       text = "Gate: ^ (xor)";        break;
-                        case Gate::RESISTOR:  text = "Component: Resistor";  break;
-                        case Gate::CAPACITOR: text = "Component: Capacitor"; break;
-                        default: _ASSERT_EXPR(false, L"Missing tooltip for selected gate");
-                                              text = "";                     break;
-                        }
-                        DrawText(text, 36, 17, 8, WHITE);
                         DrawRectangleIRect((IRect(16, 0, 16)), SPACEGRAY);
+                        const char* name = GetGateTooltipName(data.gatePick);
+                        DrawText(name, 36, 17, 8, WHITE);
+                        DrawLine(36, 17 + 12, 36 + MeasureText(name, 8), 17 + 12, WHITE);
+                        DrawText(GetGateTooltipDescription(data.gatePick), 36, 17 + 16, 8, WHITE);
                     }
+                    // Extra param
                     else if (cursorPos.x <= 48)
                     {
-                        const char* text;
-                        if (data.gatePick == Gate::RESISTOR)
-                            text = "Resistance: %i inputs";
-                        else if (data.gatePick == Gate::CAPACITOR)
-                            text = "Capacity : %i ticks";
-                        else
-                            text = "Component parameter: %i";
-                        DrawText(TextFormat(text, data.storedExtendedParam), 52, 17, 8, WHITE);
                         _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
-                        Color color = Node::g_resistanceBands[data.storedExtendedParam];
-                        DrawRectangleIRect(IRect(32, 0, 16), WIPBLUE);
-                        DrawRectangleIRect(IRect(34, 2, 12), Node::g_resistanceBands[data.storedExtendedParam]);
+                        IRect rec(32, 0, 16);
+                        DrawRectangleIRect(rec, WIPBLUE);
+                        DrawRectangleIRect(rec.Shrink(2), Node::g_resistanceBands[data.storedExtendedParam]);
+                        DrawText(TextFormat(deviceParameterTextFmt, data.storedExtendedParam), 52, 17, 8, WHITE);
                     }
                 }
 
-                IRect rec(16);
-                DrawRectangleIRect(rec, SPACEGRAY);
-                DrawModeIcon(baseMode, rec.xy, WHITE);
-                rec.x += 16;
-                DrawRectangleIRect(rec, SPACEGRAY);
-                DrawGateIcon16x(data.gatePick, rec.xy, WHITE);
-                rec.x += 16;
-                if (!(cursorPos.y <= 16 && cursorPos.x > 32 && cursorPos.x <= 48))
-                {
-                    _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
-                    DrawRectangleIRect(rec, Node::g_resistanceBands[data.storedExtendedParam]);
-                }
-                if (!!data.clipboard)
-                {
-                    rec.x += 16;
-                    DrawRectangleIRect(rec, SPACEGRAY);
-                    DrawTextureIV(clipboardIcon, rec.xy, WHITE);
-                }
+                DrawModeIcon(baseMode, IVec2(0), WHITE);
+                DrawGateIcon16x(data.gatePick, IVec2(16,0), WHITE);
             }
 
         } EndDrawing();

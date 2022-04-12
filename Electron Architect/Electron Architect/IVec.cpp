@@ -160,7 +160,7 @@ IRect& IRect::Expand(int outline)
     return *this;
 }
 
-inline IRect& IRect::Shrink(int outline)
+IRect& IRect::Shrink(int outline)
 {
     return Expand(-outline);
 }
