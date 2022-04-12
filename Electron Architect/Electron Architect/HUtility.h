@@ -76,7 +76,7 @@ template<typename Container>
 void FindAndErase_ExpectExisting(Container& container, const typename Container::value_type& element)
 {
     auto it = std::find(container.begin(), container.end(), element);
-    _ASSERT_EXPR(it != container.end(), "Expected element to be present");
+    _ASSERT_EXPR(it != container.end(), L"Expected element to be present");
     container.erase(it);
 }
 

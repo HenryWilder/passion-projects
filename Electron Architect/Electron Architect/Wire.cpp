@@ -93,7 +93,7 @@ int Wire::GetEndY() const
 IVec2 Wire::GetLegalElbowPosition(IVec2 start, IVec2 end, ElbowConfig config)
 {
     uint8_t index = (uint8_t)config;
-    _ASSERT_EXPR(index < 4, "Subscript error");
+    _ASSERT_EXPR(index < 4, L"Elbow index out of bounds");
     if (index == 0)
         return IVec2(start.x, end.y);
     else if (index == 1)

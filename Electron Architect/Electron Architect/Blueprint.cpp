@@ -68,7 +68,7 @@ void BlueprintIcon::Unload()
 BlueprintIcon::BlueprintIcon() = default;
 BlueprintIcon::BlueprintIcon(const std::vector<IconPos>&icons)
 {
-    _ASSERT_EXPR(icons.size() <= 4, "Icon vector too large");
+    _ASSERT_EXPR(icons.size() <= 4, L"Icon vector too large");
     size_t i = 0;
     for (; i < icons.size(); ++i)
     {

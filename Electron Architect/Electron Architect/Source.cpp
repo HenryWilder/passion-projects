@@ -6,8 +6,6 @@
 #include "Blueprint.h"
 #include "Group.h"
 #include "NodeWorld.h"
-//#include <raymath.h>
-//#include <extras\raygui.h>
 
 int main()
 {
@@ -15,6 +13,7 @@ int main()
     int windowHeight = 720;
     InitWindow(windowWidth, windowHeight, "Electron Architect");
     SetExitKey(0);
+    constexpr int targetFPS = 120;
     SetTargetFPS(120);
 
     /******************************************
@@ -180,7 +179,7 @@ int main()
 
     IVec2 cursorPosPrev = IVec2::Zero(); // For checking if there was movement
 
-    auto SetMode = [&baseMode, &mode, &data, &cursorPosPrev](Mode newMode)
+    auto SetMode = [targetFPS, &baseMode, &mode, &data, &cursorPosPrev](Mode newMode)
     {
         if (mode == Mode::BP_ICON)
         {
@@ -191,7 +190,7 @@ int main()
         {
             if (mode == Mode::INTERACT)
             {
-                SetTargetFPS(120);
+                SetTargetFPS(targetFPS);
             }
             if (newMode == Mode::INTERACT)
             {
@@ -819,8 +818,8 @@ int main()
 
             if (mode == Mode::BP_ICON)
             {
-                _ASSERT_EXPR(!!data.bp_icon.object, "Blueprint icon object not initialized");
-                _ASSERT_EXPR(!!data.clipboard, "Bad entry into Mode::BP_ICON");
+                _ASSERT_EXPR(!!data.bp_icon.object, L"Blueprint icon object not initialized");
+                _ASSERT_EXPR(!!data.clipboard, L"Bad entry into Mode::BP_ICON");
 
                 data.bp_icon.object->DrawBackground(data.bp_icon.pos, SPACEGRAY);
                 data.bp_icon.object->Draw(data.bp_icon.pos, WHITE);
@@ -1020,7 +1019,7 @@ int main()
 
                 // Overlay mode
 
-                case Mode::GATE: // Todo: Maybe change rect to vec?
+                case Mode::GATE:
                 {
                     if (baseMode == Mode::PEN)
                     {
@@ -1085,10 +1084,10 @@ int main()
 
                         float startAngle = static_cast<float>(i * 90);
                         DrawCircleSector({ static_cast<float>(x), static_cast<float>(y) }, static_cast<float>(radius), startAngle, startAngle + 90.0f, 8, colorA);
-                        IRect rec = iconDest[i];
+                        IVec2 rec = iconDest[i].xy;
                         rec.x += x;
                         rec.y += y;
-                        DrawGateIcon32x(radialGateOrder[i], rec.xy, colorB);
+                        DrawGateIcon32x(radialGateOrder[i], rec, colorB);
 
                         EndScissorMode();
                     }
@@ -1136,7 +1135,7 @@ int main()
                     {
                         for (uint8_t v = 0; v < 10; ++v)
                         {
-                            _ASSERT_EXPR(v < _countof(Node::g_resistanceBands), "Resistance out of bounds");
+                            _ASSERT_EXPR(v < _countof(Node::g_resistanceBands), L"Resistance out of bounds");
                             if (v == data.storedExtendedParam)
                                 continue;
                             Color color = Node::g_resistanceBands[v];
@@ -1175,7 +1174,7 @@ int main()
 
                 case Mode::BP_ICON:
                 {
-                    _ASSERT_EXPR(false, "Henry made a mistake.");
+                    _ASSERT_EXPR(false, L"Henry made a mistake.");
                 }
                 break;
                 }
@@ -1194,7 +1193,8 @@ int main()
                         case Mode::EDIT:  text = "Mode: Edit";        break;
                         case Mode::GATE:  text = "Mode: Gate select"; break;
                         case Mode::ERASE: text = "Mode: Erase";       break;
-                        default:          text = "";                  break;
+                        default: _ASSERT_EXPR(false, L"Missing tooltip for selected mode");
+                                          text = "";                  break;
                         }
                         DrawText(text, 20, 17, 8, WHITE);
                         DrawRectangle(0, 0, 16, 16, SPACEGRAY);
@@ -1210,7 +1210,8 @@ int main()
                         case Gate::XOR:       text = "Gate: ^ (xor)";        break;
                         case Gate::RESISTOR:  text = "Component: Resistor";  break;
                         case Gate::CAPACITOR: text = "Component: Capacitor"; break;
-                        default:              text = "";                     break;
+                        default: _ASSERT_EXPR(false, L"Missing tooltip for selected gate");
+                                              text = "";                     break;
                         }
                         DrawText(text, 36, 17, 8, WHITE);
                         DrawRectangle(16, 0, 16, 16, SPACEGRAY);
@@ -1225,7 +1226,7 @@ int main()
                         else
                             text = "Component parameter: %i";
                         DrawText(TextFormat(text, data.storedExtendedParam), 52, 17, 8, WHITE);
-                        _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), "Stored resistance out of bounds");
+                        _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
                         Color color = Node::g_resistanceBands[data.storedExtendedParam];
                         DrawRectangle(32, 0, 16, 16, WIPBLUE);
                         DrawRectangle(34, 2, 12, 12, Node::g_resistanceBands[data.storedExtendedParam]);
@@ -1241,7 +1242,7 @@ int main()
                 rec.x += 16;
                 if (!(cursorPos.y <= 16 && cursorPos.x > 32 && cursorPos.x <= 48))
                 {
-                    _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), "Stored resistance out of bounds");
+                    _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
                     DrawRectangleIRect(rec, Node::g_resistanceBands[data.storedExtendedParam]);
                 }
                 if (!!data.clipboard)

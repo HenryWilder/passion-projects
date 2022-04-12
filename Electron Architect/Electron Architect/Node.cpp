@@ -50,56 +50,56 @@ void Node::SetGate(Gate gate)
 // Only use if this is a resistor
 uint8_t Node::GetResistance() const
 {
-    _ASSERT_EXPR(m_gate == Gate::RESISTOR, "Cannot access the resistance of a non-resistor.");
+    _ASSERT_EXPR(m_gate == Gate::RESISTOR, L"Cannot access the resistance of a non-resistor.");
     return m_ntd.r.resistance;
 }
 // Only use if this is a capacitor
 uint8_t Node::GetCapacity() const
 {
-    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the capacity of a non-capacitor.");
+    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, L"Cannot access the capacity of a non-capacitor.");
     return m_ntd.c.capacity;
 }
 // Only use if this is a capacitor
 uint8_t Node::GetCharge() const
 {
-    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
+    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, L"Cannot access the charge of a non-capacitor.");
     return m_ntd.c.charge;
 }
 // Only use if this is a capacitor
 float Node::GetChargePercent() const
 {
-    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access capacitor members of a non-capacitor.");
+    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, L"Cannot access capacitor members of a non-capacitor.");
     return (float)m_ntd.c.charge / (float)m_ntd.c.capacity;
 }
 // Only use if this is a resistor
 void Node::SetResistance(uint8_t resistance)
 {
-    _ASSERT_EXPR(m_gate == Gate::RESISTOR, "Cannot access the resistance of a non-resistor.");
-    _ASSERT_EXPR(resistance <= 9, "Resistance must be <= 9");
+    _ASSERT_EXPR(m_gate == Gate::RESISTOR, L"Cannot access the resistance of a non-resistor.");
+    _ASSERT_EXPR(resistance <= 9, L"Selected resistance out of bounds");
     m_ntd.r.resistance = resistance;
 }
 // Only use if this is a capacitor
 void Node::SetCapacity(uint8_t capacity)
 {
-    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the capacity of a non-capacitor.");
+    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, L"Cannot access the capacity of a non-capacitor.");
     m_ntd.c.capacity = capacity;
 }
 // Only use if this is a capacitor
 void Node::SetCharge(uint8_t charge)
 {
-    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
+    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, L"Cannot access the charge of a non-capacitor.");
     m_ntd.c.charge = charge;
 }
 // Only use if this is a capacitor
 void Node::IncrementCharge()
 {
-    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
+    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, L"Cannot access the charge of a non-capacitor.");
     m_ntd.c.charge++;
 }
 // Only use if this is a capacitor
 void Node::DecrementCharge()
 {
-    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, "Cannot access the charge of a non-capacitor.");
+    _ASSERT_EXPR(m_gate == Gate::CAPACITOR, L"Cannot access the charge of a non-capacitor.");
     m_ntd.c.charge--;
 }
 
@@ -123,7 +123,7 @@ size_t Node::GetOutputCount() const
 }
 bool Node::IsInputOnly() const
 {
-    _ASSERT_EXPR(m_wires.size() >= m_inputs, "Malformed Node inputs");
+    _ASSERT_EXPR(m_wires.size() >= m_inputs, L"Malformed Node inputs");
     return m_wires.size() == m_inputs;
 }
 bool Node::IsOutputOnly() const
@@ -193,7 +193,7 @@ bool Node::WireIsOutput(Wire* wire) const
 std::deque<Wire*>::iterator Node::FindWireIter_Expected(Wire* wire)
 {
     auto it = std::find(m_wires.begin(), m_wires.end(), wire);
-    _ASSERT_EXPR(it != m_wires.end(), "Expected wire");
+    _ASSERT_EXPR(it != m_wires.end(), L"Wire expected to be connected to node was not found in node's data");
     return it;
 }
 std::deque<Wire*>::iterator Node::FindWireIter(Wire* wire)
@@ -238,7 +238,7 @@ void Node::RemoveWire(Wire* wire)
 void Node::RemoveConnection_Expected(Node* node)
 {
     auto it = FindConnection(node);
-    _ASSERT_EXPR(it != m_wires.end(), "Expected connection to be pre-existing");
+    _ASSERT_EXPR(it != m_wires.end(), L"Expected connection to be pre-existing");
     m_wires.erase(it);
 }
 void Node::RemoveConnection(Node* node)

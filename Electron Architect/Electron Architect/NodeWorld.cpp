@@ -107,8 +107,8 @@ void NodeWorld::DestroyNode(Node* node)
 // CreateWire can affect the positions of parameter `end` in `nodes`
 Wire* NodeWorld::CreateWire(Node* start, Node* end)
 {
-    _ASSERT_EXPR(start != nullptr && end != nullptr, "Tried to create a wire to nullptr");
-    _ASSERT_EXPR(start != end, "Cannot create self-reference wire");
+    _ASSERT_EXPR(start != nullptr && end != nullptr, L"Tried to create a wire to nullptr");
+    _ASSERT_EXPR(start != end, L"Cannot create self-reference wire");
 
     // Duplicate guard
     {
@@ -137,8 +137,8 @@ Wire* NodeWorld::CreateWire(Node* start, Node* end)
 // CreateWire can affect the positions of parameter `end` in `nodes`
 Wire* NodeWorld::CreateWire(Node* start, Node* end, ElbowConfig elbowConfig)
 {
-    _ASSERT_EXPR(start != nullptr && end != nullptr, "Tried to create a wire to nullptr");
-    _ASSERT_EXPR(start != end, "Cannot create self-reference wire");
+    _ASSERT_EXPR(start != nullptr && end != nullptr, L"Tried to create a wire to nullptr");
+    _ASSERT_EXPR(start != end, L"Cannot create self-reference wire");
 
     // Duplicate guard
     {
@@ -173,8 +173,8 @@ void NodeWorld::DestroyWire(Wire* wire)
 }
 Node* NodeWorld::MergeNodes(Node* composite, Node* tbRemoved)
 {
-    _ASSERT_EXPR(!!composite && !!tbRemoved, "Tried to merge a node with nullptr");
-    _ASSERT_EXPR(composite != tbRemoved, "Tried to merge a node with itself");
+    _ASSERT_EXPR(!!composite && !!tbRemoved, L"Tried to merge a node with nullptr");
+    _ASSERT_EXPR(composite != tbRemoved, L"Tried to merge a node with itself");
 
     for (Wire* wire : tbRemoved->m_wires)
     {
@@ -194,8 +194,8 @@ Node* NodeWorld::MergeNodes(Node* composite, Node* tbRemoved)
 // Invalidates input wire!
 Wire* NodeWorld::ReverseWire(Wire* wire)
 {
-    _ASSERT_EXPR(wire != nullptr, "Cannot reverse null wire");
-    _ASSERT_EXPR(wire->start != nullptr && wire->end != nullptr, "Malformed wire");
+    _ASSERT_EXPR(wire != nullptr, L"Cannot reverse null wire");
+    _ASSERT_EXPR(wire->start != nullptr && wire->end != nullptr, L"Malformed wire");
     // Swap
     Node* tbStart = wire->end;
     Node* tbEnd = wire->start;
@@ -460,12 +460,12 @@ void NodeWorld::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
         Node* end;
         {
             auto it = nodeID.find(wire_bp.startNodeIndex);
-            _ASSERT_EXPR(it != nodeID.end(), "Malformed nodeID");
+            _ASSERT_EXPR(it != nodeID.end(), L"Malformed nodeID");
             start = it->second;
         }
         {
             auto it = nodeID.find(wire_bp.endNodeIndex);
-            _ASSERT_EXPR(it != nodeID.end(), "Malformed nodeID");
+            _ASSERT_EXPR(it != nodeID.end(), L"Malformed nodeID");
             end = it->second;
         }
         Wire* wire = CreateWire(start, end, wire_bp.elbowConfig);
