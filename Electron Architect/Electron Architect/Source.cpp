@@ -911,6 +911,10 @@ int main()
             }
         }
         break;
+
+        default:
+            _ASSERT_EXPR(false, L"Missing sim phase specialization for selected mode");
+            break;
         }
 
     EVAL:
@@ -1296,10 +1300,12 @@ int main()
                 break;
 
                 case Mode::BP_ICON:
-                {
-                    _ASSERT_EXPR(false, L"Henry made a mistake.");
-                }
-                break;
+                    _ASSERT_EXPR(false, L"How did we get here?");
+                    break;
+
+                default:
+                    _ASSERT_EXPR(false, L"Missing draw phase specialization for selected mode");
+                    break;
                 }
 
                 // Global UI
@@ -1389,7 +1395,6 @@ int main()
 *
 * Stretch goals
 * -Multiple color pallets
-* -Step-by-step evaluation option
 * -Log files for debug/crashes
 * -Export as SVG
 */
