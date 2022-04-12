@@ -58,6 +58,7 @@ public:
 
     // Only NodeWorld can play with a node's wires/state
     friend class NodeWorld;
+    friend class Component;
 
 private: // Helpers usable only by NodeWorld
 

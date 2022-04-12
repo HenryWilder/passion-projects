@@ -176,6 +176,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Blueprint.cpp" />
+    <ClCompile Include="Component.cpp" />
     <ClCompile Include="Group.cpp" />
     <ClCompile Include="HUtility.cpp" />
     <ClCompile Include="IVec.cpp" />
@@ -193,6 +194,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Blueprint.h" />
+    <ClInclude Include="Component.h" />
     <ClInclude Include="Group.h" />
     <ClInclude Include="HUtility.h" />
     <ClInclude Include="IVec.h" />
