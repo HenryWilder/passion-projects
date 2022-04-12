@@ -15,7 +15,7 @@ int main()
     int windowHeight = 720;
     InitWindow(windowWidth, windowHeight, "Electron Architect");
     SetExitKey(0);
-    SetTargetFPS(30);
+    SetTargetFPS(120);
 
     /******************************************
     *   Load textures, shaders, and meshes
@@ -186,6 +186,17 @@ int main()
         {
             delete data.bp_icon.object;
             data.bp_icon.object = nullptr;
+        }
+        else if (newMode != mode)
+        {
+            if (mode == Mode::INTERACT)
+            {
+                SetTargetFPS(120);
+            }
+            if (newMode == Mode::INTERACT)
+            {
+                SetTargetFPS(24);
+            }
         }
 
         cursorPosPrev = IVec2(-1,-1);
