@@ -1368,6 +1368,7 @@ int main()
         delete data.clipboard;
 
     NodeWorld::Get().Save("session.cg");
+    NodeWorld::Get().Export("render.svg");
     BlueprintIcon::Unload();
     UnloadTexture(gateIcons32x);
     UnloadTexture(gateIcons16x);

@@ -523,7 +523,69 @@ void NodeWorld::Save(const char* filename) const
     file.close();
 }
 
-// Reads both large and small
+void NodeWorld::Export(const char* filename) const
+{
+    std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
+    {
+        file << "<svg viewBox=\"0 0 1280 720\" xmlns=\"http://www.w3.org/2000/svg\">\n";
+        for (Wire* wire : wires)
+        {
+            int x1 = wire->GetStartX();
+            int x2 = wire->GetElbowX();
+            int x3 = wire->GetEndX();
+            int y1 = wire->GetStartY();
+            int y2 = wire->GetElbowY();
+            int y3 = wire->GetEndY();
+            file << TextFormat("<line x1=\"%i\" y1=\"%i\" x2=\"%i\" y2=\"%i\" stroke=\"black\" stroke-width=\"1\" />\n", x1, y1, x2, y2);
+            file << TextFormat("<line x1=\"%i\" y1=\"%i\" x2=\"%i\" y2=\"%i\" stroke=\"black\" stroke-width=\"1\" />\n", x2, y2, x3, y3);
+        }
+        for (Node* node : nodes)
+        {
+            constexpr int nodeRadius = (int)Node::g_nodeRadius;
+            // Circle
+            {
+                int x = node->GetX();
+                int y = node->GetY();
+                constexpr int r = nodeRadius;
+                switch (node->GetGate())
+                {
+                case Gate::OR:
+                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x, y, r);
+                    break;
+                case Gate::NOR:
+                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"none\"  />\n", x, y, r);
+                    break;
+                case Gate::XOR:
+                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"none\"  />\n", x, y, r);
+                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x, y, r - 1);
+                    break;
+                }
+            }
+            // Square
+            {
+                int x = node->GetX() - nodeRadius;
+                int y = node->GetY() - nodeRadius;
+                constexpr int w = nodeRadius * 2;
+                switch (node->GetGate())
+                {
+                case Gate::AND:
+                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x, y, w, w);
+                    break;
+                case Gate::RESISTOR:
+                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"none\"  />\n", x, y, w, w);
+                    break;
+                case Gate::CAPACITOR:
+                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"none\"  />\n", x, y, w, w);
+                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x + 1, y + 1, w - 2, w - 2);
+                    break;
+                }
+            }
+        }
+        file << "</svg>";
+    }
+    file.close();
+}
+
 // TODO
 void NodeWorld::Load(const char* filename)
 {
