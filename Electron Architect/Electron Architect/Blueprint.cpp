@@ -29,7 +29,7 @@ BlueprintIcon::IconID_t BlueprintIcon::GetIconAtColRow(IVec2 colRow)
 }
 IVec2 BlueprintIcon::PixelToColRow(IVec2 sheetPos, IVec2 selectPos)
 {
-    return IVec2Divide_i(selectPos - sheetPos, g_size);
+    return (selectPos - sheetPos) / g_size;
 }
 IVec2 BlueprintIcon::GetSheetSize_RC() // Rows and columns
 {
@@ -37,7 +37,7 @@ IVec2 BlueprintIcon::GetSheetSize_RC() // Rows and columns
 }
 IVec2 BlueprintIcon::GetSheetSize_Px() // Pixels
 {
-    return IVec2Scale_i(g_iconSheetDimensions, g_size);
+    return g_iconSheetDimensions * g_size;
 }
 void BlueprintIcon::DrawBPIcon(IconID_t icon, IVec2 pos, Color tint)
 {

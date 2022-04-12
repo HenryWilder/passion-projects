@@ -1,7 +1,7 @@
 #pragma once
 #include "IVec.h"
 
-class Wire;
+struct Wire;
 
 enum class Gate : char
 {

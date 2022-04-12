@@ -1,12 +1,6 @@
 #include "HUtility.h"
 #include "IVec.h"
 
-inline constexpr IVec2::IVec2(int x) : x(x), y(x) {}
-
-inline constexpr IVec2::IVec2(int x, int y) : x(x), y(y) {}
-
-inline constexpr IVec2::IVec2(Vector2 v) : x(v.x), y(v.y) {}
-
 bool IVec2::operator==(IVec2 b) const
 {
     return x == b.x && y == b.y;
@@ -15,28 +9,6 @@ bool IVec2::operator!=(IVec2 b) const
 {
     return x != b.x || y != b.y;
 }
-
-constexpr IVec2 IVec2::One()
-{
-    return IVec2(1);
-}
-
-constexpr IVec2 IVec2::Zero()
-{
-    return IVec2(0);
-}
-
-constexpr IVec2 IVec2::UnitX()
-{
-    return IVec2(1,0);
-}
-
-constexpr IVec2 IVec2::UnitY()
-{
-    return IVec2(0,1);
-}
-
-inline constexpr IVec2::operator Vector2() { return { (float)x, (float)y }; }
 
 namespace std
 {
@@ -63,9 +35,12 @@ long DistanceSqr(IVec2 a, IVec2 b)
 }
 IVec2 Normal(IVec2 vec)
 {
+    int xSqr = vec.x * vec.x;
+    int ySqr = vec.y * vec.y;
+    int lenSqr = xSqr + ySqr;
     return {
-        (vec.x > 0 ? 1 : 0) - (vec.x < 0 ? 1 : 0),
-        (vec.x > 0 ? 1 : 0) - (vec.x < 0 ? 1 : 0)
+        xSqr / lenSqr,
+        ySqr / lenSqr
     };
 }
 
@@ -73,49 +48,6 @@ bool InBoundingBox(IVec2 p, IVec2 a, IVec2 b)
 {
     return Between_Inclusive(p.x, a.x, b.x) &&
         Between_Inclusive(p.y, a.y, b.y);
-}
-
-constexpr IVec2 IVec2::Zero()
-{
-    constexpr IVec2 null(0, 0);
-    return null;
-}
-
-IVec2 operator+(IVec2 a, IVec2 b)
-{
-    return IVec2(a.x + b.x, a.y + b.y);
-}
-IVec2 operator-(IVec2 a, IVec2 b)
-{
-    return IVec2(a.x - b.x, a.y - b.y);
-}
-IVec2 operator*(IVec2 a, IVec2 b)
-{
-    return IVec2(a.x * b.x, a.y * b.y);
-}
-IVec2 operator/(IVec2 a, IVec2 b)
-{
-    return IVec2(a.x / b.x, a.y / b.y);
-}
-
-IVec2 operator*(IVec2 a, int b)
-{
-    return IVec2(a.x * b, a.y * b);
-}
-
-IVec2 operator/(IVec2 a, int b)
-{
-    return IVec2(a.x / b, a.y / b);
-}
-
-inline IVec2 operator*(int a, IVec2 b)
-{
-    return b * a;
-}
-
-IVec2 operator/(int a, IVec2 b)
-{
-    return IVec2(a / b.x, a / b.y);
 }
 
 IVec2 IVec2Scale_f(IVec2 a, float b)

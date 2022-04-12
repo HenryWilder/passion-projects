@@ -90,7 +90,7 @@ const decltype(NodeWorld::startNodes)& NodeWorld::GetStartNodes() const
 // Node functions
 
 /// <summary>CreateNode does not insert at the end of the <see cref="nodes"/>.</summary>
-Node* NodeWorld::CreateNode(IVec2 position, Gate gate, uint8_t extendedParam = 0)
+Node* NodeWorld::CreateNode(IVec2 position, Gate gate, uint8_t extendedParam)
 {
     // The order is not dirty at this time due to the node having no connections yet
     return _CreateNode(Node(position, gate, extendedParam));

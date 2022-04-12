@@ -257,7 +257,7 @@ int main()
             GetMouseX() / g_gridSize,
             GetMouseY() / g_gridSize
         };
-        cursorPos = IVec2Scale_i(cursorPos, g_gridSize) + IVec2(g_gridSize / 2, g_gridSize / 2);
+        cursorPos = cursorPos * g_gridSize + IVec2(g_gridSize / 2);
 
         bool b_cursorMoved = cursorPosPrev != cursorPos;
 
@@ -712,9 +712,10 @@ int main()
             {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 {
-                    IVec2 pos = cursorPos - IVec2Divide_i(data.clipboard->extents, 2);
-                    pos = IVec2Scale_i(IVec2Divide_i(pos, g_gridSize), g_gridSize);
-                    pos = pos + IVec2(g_gridSize / 2, g_gridSize / 2);
+                    IVec2 pos = cursorPos - data.clipboard->extents / 2;
+                    pos /= g_gridSize;
+                    pos *= g_gridSize;
+                    pos = pos + IVec2(g_gridSize / 2);
                     NodeWorld::Get().SpawnBlueprint(data.clipboard, pos);
                 }
                 data.selection.clear();
@@ -782,8 +783,8 @@ int main()
             }
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.bp_icon.iconID)
             {
-                constexpr IVec2 centerOffset(BlueprintIcon::g_size / 2, BlueprintIcon::g_size / 2);
-                IVec2 colRow = IVec2Divide_i(cursorPos - data.bp_icon.pos - centerOffset, BlueprintIcon::g_size / 2);
+                constexpr IVec2 centerOffset = IVec2(BlueprintIcon::g_size / 2);
+                IVec2 colRow = (cursorPos - data.bp_icon.pos - centerOffset) / centerOffset;
                 colRow.x = std::min(std::max(colRow.x, 0), 2);
                 colRow.y = std::min(std::max(colRow.y, 0), 2);
                 data.bp_icon.object->combo[data.bp_icon.draggingIcon].x = colRow.x;
@@ -1153,8 +1154,9 @@ int main()
                     NodeWorld::Get().DrawWires();
                     NodeWorld::Get().DrawNodes();
 
-                    IVec2 pos = cursorPos - IVec2Divide_i(data.clipboard->extents, 2);
-                    pos = IVec2Scale_i(IVec2Divide_i(pos, g_gridSize), g_gridSize);
+                    IVec2 pos = cursorPos - data.clipboard->extents / 2;
+                    pos *= g_gridSize;
+                    pos /= g_gridSize;
                     pos = pos + IVec2(g_gridSize / 2, g_gridSize / 2);
                     data.clipboard->DrawPreview(pos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
                 }
