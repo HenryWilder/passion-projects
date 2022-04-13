@@ -1,32 +1,17 @@
-<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
-<line x1="420" y1="332" x2="420" y2="220" stroke="black" stroke-width="1" />
-<line x1="420" y1="220" x2="508" y2="220" stroke="black" stroke-width="1" />
-<line x1="508" y1="220" x2="508" y2="316" stroke="black" stroke-width="1" />
-<line x1="508" y1="316" x2="548" y2="316" stroke="black" stroke-width="1" />
-<line x1="436" y1="284" x2="460" y2="260" stroke="black" stroke-width="1" />
-<line x1="460" y1="260" x2="620" y2="260" stroke="black" stroke-width="1" />
-<line x1="492" y1="380" x2="556" y2="316" stroke="black" stroke-width="1" />
-<line x1="556" y1="316" x2="596" y2="316" stroke="black" stroke-width="1" />
-<line x1="596" y1="316" x2="612" y2="300" stroke="black" stroke-width="1" />
-<line x1="612" y1="300" x2="652" y2="300" stroke="black" stroke-width="1" />
-<line x1="596" y1="316" x2="604" y2="324" stroke="black" stroke-width="1" />
-<line x1="604" y1="324" x2="620" y2="324" stroke="black" stroke-width="1" />
-<line x1="620" y1="324" x2="620" y2="324" stroke="black" stroke-width="1" />
-<line x1="620" y1="324" x2="652" y2="324" stroke="black" stroke-width="1" />
-<line x1="620" y1="324" x2="636" y2="340" stroke="black" stroke-width="1" />
-<line x1="636" y1="340" x2="652" y2="340" stroke="black" stroke-width="1" />
-<circle cx="420" cy="332" r="3" stroke="none"  stroke-width="0" fill="black" />
-<circle cx="436" cy="284" r="3" stroke="black" stroke-width="1" fill="white" />
-<rect x="489" y="377" width="6" height="6" stroke="black" stroke-width="1" fill="white" />
-<circle cx="508" cy="220" r="3" stroke="none"  stroke-width="0" fill="black" />
-<rect x="617" y="257" width="6" height="6" stroke="black" stroke-width="1" fill="white" />
-<rect x="618" y="258" width="4" height="4" stroke="none"  stroke-width="0" fill="black" />
-<rect x="593" y="313" width="6" height="6" stroke="black" stroke-width="1" fill="white" />
-<circle cx="548" cy="316" r="3" stroke="none"  stroke-width="0" fill="black" />
-<circle cx="652" cy="300" r="3" stroke="black" stroke-width="1" fill="white" />
-<circle cx="652" cy="300" r="2" stroke="none"  stroke-width="0" fill="black" />
-<rect x="617" y="321" width="6" height="6" stroke="black" stroke-width="1" fill="white" />
-<rect x="618" y="322" width="4" height="4" stroke="none"  stroke-width="0" fill="black" />
-<rect x="649" y="321" width="6" height="6" stroke="black" stroke-width="1" fill="white" />
-<rect x="649" y="337" width="6" height="6" stroke="none"  stroke-width="0" fill="black" />
+<svg width="1280" height="720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- reusable 'OR' gate shape -->
+    <g id="gate_or">
+      <circle cx="0" cy="0" r="3" stroke="none" stroke-width="0" fill="black" />
+    </g>
+  </defs>
+  <!-- Wires (drawn first so they don't obscure nodes) -->
+  <g style="stroke:black; stroke-width:1; fill:none;">
+    <path d="M380,380 L380,252 L524,252" />
+    <path d="M524,252 L524,356 L572,356" />
+  </g>
+  <!-- Nodes (reuse shapes defined in header <def> section) -->
+  <use href="#gate_or" x="380" y="380" />
+  <use href="#gate_or" x="524" y="252" />
+  <use href="#gate_or" x="572" y="356" />
 </svg>

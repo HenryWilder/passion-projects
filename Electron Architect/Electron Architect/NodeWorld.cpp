@@ -527,59 +527,124 @@ void NodeWorld::Export(const char* filename) const
 {
     std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
     {
-        file << "<svg viewBox=\"0 0 1280 720\" xmlns=\"http://www.w3.org/2000/svg\">\n";
-        for (Wire* wire : wires)
+        constexpr int r = (int)Node::g_nodeRadius;
+        constexpr int w = r * 2;
+
+        file << "<svg width=\"1280\" height=\"720\" xmlns=\"http://www.w3.org/2000/svg\">\n";
+
+        if (nodes.empty())
         {
-            int x1 = wire->GetStartX();
-            int x2 = wire->GetElbowX();
-            int x3 = wire->GetEndX();
-            int y1 = wire->GetStartY();
-            int y2 = wire->GetElbowY();
-            int y3 = wire->GetEndY();
-            file << TextFormat("<line x1=\"%i\" y1=\"%i\" x2=\"%i\" y2=\"%i\" stroke=\"black\" stroke-width=\"1\" />\n", x1, y1, x2, y2);
-            file << TextFormat("<line x1=\"%i\" y1=\"%i\" x2=\"%i\" y2=\"%i\" stroke=\"black\" stroke-width=\"1\" />\n", x2, y2, x3, y3);
+            file << "</svg>";
+            return;
         }
+
+        int ORs = 0;
+        int ANDs = 0;
+        int NORs = 0;
+        int XORs = 0;
+        int RESs = 0;
+        int CAPs = 0;
+
         for (Node* node : nodes)
         {
-            constexpr int nodeRadius = (int)Node::g_nodeRadius;
-            // Circle
+            switch (node->GetGate())
             {
-                int x = node->GetX();
-                int y = node->GetY();
-                constexpr int r = nodeRadius;
-                switch (node->GetGate())
-                {
-                case Gate::OR:
-                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x, y, r);
-                    break;
-                case Gate::NOR:
-                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n", x, y, r);
-                    break;
-                case Gate::XOR:
-                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n", x, y, r);
-                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x, y, r - 1);
-                    break;
-                }
+            case Gate::OR:        ++ORs;  break;
+            case Gate::AND:       ++ANDs; break;
+            case Gate::NOR:       ++NORs; break;
+            case Gate::XOR:       ++XORs; break;
+            case Gate::RESISTOR:  ++RESs; break;
+            case Gate::CAPACITOR: ++CAPs; break;
             }
-            // Square
+        }
+
+        file << "  <defs>\n"; // As long as there's at least one node on the graph we're sure to have a def.
+        if (ORs > 0)
+        {
+            file <<
+                "    <!-- reusable 'OR' gate shape -->\n"
+                "    <g id=\"gate_or\">\n"
+                "      <circle cx=\"0\" cy=\"0\" r=\"" << r << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
+                "    </g>\n";
+        }
+        if (ANDs > 0)
+        {
+            file <<
+                "    <!-- reusable 'AND' gate shape -->\n"
+                "    <g id=\"gate_and\">\n"
+                "      <rect x=\"" << -r << "\" y=\"" << -r << "\" width=\"" << w << "\" height=\"" << w << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
+                "    </g>\n";
+        }
+        if (NORs > 0)
+        {
+            file <<
+                "    <!-- reusable 'NOR' gate shape -->\n"
+                "    <g id=\"gate_nor\">\n"
+                "      <circle cx=\"0\" cy=\"0\" r=\"" << r << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
+                "    </g>\n";
+        }
+        if (XORs > 0)
+        {
+            file <<
+                "    <!-- reusable 'XOR' gate shape -->\n"
+                "    <g id=\"gate_xor\">\n"
+                "      <circle cx=\"0\" cy=\"0\" r=\"" << r << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
+                "      <circle cx=\"0\" cy=\"0\" r=\"" << r << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
+                "    </g>\n";
+        }
+        if (RESs > 0)
+        {
+            file <<
+                "    <!-- reusable resistor shape -->\n"
+                "    <g id=\"gate_res\">\n"
+                "      <rect x=\"" << -r << "\" y=\"" << -r << "\" width=\"" << w << "\" height=\"" << w << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
+                "    </g>\n";
+        }
+        if (CAPs > 0)
+        {
+            file <<
+                "    <!-- reusable capacitor shape -->\n"
+                "    <g id=\"gate_cap\">\n"
+                "      <rect x=\"" << -r << "\" y=\"" << -r << "\" width=\"" << w << "\" height=\"" << w << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
+                "      <rect x=\"" << -r + 1 << "\" y=\"" << -r + 1 << "\" width=\"" << w - 2 << "\" height=\"" << w - 2 << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
+                "    </g>\n";
+        }
+        file << "  </defs>\n";
+
+        if (!wires.empty())
+        {
+            file <<
+                "  <!-- Wires (drawn first so they don't obscure nodes) -->\n"
+                "  <g style=\"stroke:black; stroke-width:1; fill:none;\">\n"; // Style applied to all wires
+            for (Wire* wire : wires)
             {
-                int x = node->GetX() - nodeRadius;
-                int y = node->GetY() - nodeRadius;
-                constexpr int w = nodeRadius * 2;
-                switch (node->GetGate())
-                {
-                case Gate::AND:
-                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x, y, w, w);
-                    break;
-                case Gate::RESISTOR:
-                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n", x, y, w, w);
-                    break;
-                case Gate::CAPACITOR:
-                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n", x, y, w, w);
-                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x + 1, y + 1, w - 2, w - 2);
-                    break;
-                }
+                int x1 = wire->GetStartX();
+                int x2 = wire->GetElbowX();
+                int x3 = wire->GetEndX();
+                int y1 = wire->GetStartY();
+                int y2 = wire->GetElbowY();
+                int y3 = wire->GetEndY();
+                file << "    <path d=\"M" << x1 << ',' << y1 << " L" << x2 << ',' << y2 << " L" << x3 << ',' << y3 << "\" />\n";
             }
+            file << "  </g>\n";
+        }
+        file << "  <!-- Nodes (reuse shapes defined in header <def> section) -->\n";
+        for (Node* node : nodes)
+        {
+            const char* id;
+            int x = node->GetX();
+            int y = node->GetY();
+            switch (node->GetGate())
+            {
+            case Gate::OR:        id = "#gate_or";  break;
+            case Gate::AND:       id = "#gate_and"; break;
+            case Gate::NOR:       id = "#gate_and"; break;
+            case Gate::XOR:       id = "#gate_xor"; break;
+            case Gate::RESISTOR:  id = "#gate_res"; break;
+            case Gate::CAPACITOR: id = "#gate_cap"; break;
+            default: _ASSERT_EXPR(false, L"No SVG export specialization for selected gate"); id = ""; break;
+            }
+            file << "  <use href=\"" << id << "\" x=\"" << x <<"\" y=\"" << y << "\" />\n";
         }
         file << "</svg>";
     }
