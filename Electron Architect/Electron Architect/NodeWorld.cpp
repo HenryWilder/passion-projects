@@ -553,10 +553,10 @@ void NodeWorld::Export(const char* filename) const
                     file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x, y, r);
                     break;
                 case Gate::NOR:
-                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"none\"  />\n", x, y, r);
+                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n", x, y, r);
                     break;
                 case Gate::XOR:
-                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"none\"  />\n", x, y, r);
+                    file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n", x, y, r);
                     file << TextFormat("<circle cx=\"%i\" cy=\"%i\" r=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x, y, r - 1);
                     break;
                 }
@@ -572,10 +572,10 @@ void NodeWorld::Export(const char* filename) const
                     file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x, y, w, w);
                     break;
                 case Gate::RESISTOR:
-                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"none\"  />\n", x, y, w, w);
+                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n", x, y, w, w);
                     break;
                 case Gate::CAPACITOR:
-                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"none\"  />\n", x, y, w, w);
+                    file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n", x, y, w, w);
                     file << TextFormat("<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" stroke=\"none\"  stroke-width=\"0\" fill=\"black\" />\n", x + 1, y + 1, w - 2, w - 2);
                     break;
                 }
