@@ -534,7 +534,9 @@ void NodeWorld::Export(const char* filename) const
 
         if (nodes.empty())
         {
-            file << "</svg>";
+            file <<
+                "  <!-- No data. -->\n"
+                "</svg>";
             return;
         }
 
