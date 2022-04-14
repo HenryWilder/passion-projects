@@ -30,7 +30,13 @@ int main()
         BUTTON,
         PASTE,
         BP_ICON,
+        BP_SELECT,
     } mode, baseMode;
+
+    auto ModeIsMenu = [](Mode mode) {
+        // Modes which disable use of basic UI and drawing of certain UI elements
+        return mode == Mode::BP_ICON || mode == Mode::BP_SELECT;
+    };
 
     Texture2D clipboardIcon = LoadTexture("icon_clipboard.png");
 
@@ -146,6 +152,10 @@ int main()
                 uint8_t iconCount;
                 int draggingIcon; // -1 for none/not dragging
             } bp_icon;
+
+            struct {
+                int hovering; // -1 for none
+            } bp_select;
         };
     } data;
 
@@ -358,6 +368,10 @@ int main()
             data.bp_icon.iconCount = 0;
             data.bp_icon.draggingIcon = -1;
             break;
+
+        case Mode::BP_SELECT:
+            data.bp_select.hovering = -1;
+            break;
         }
     };
 
@@ -479,13 +493,21 @@ int main()
                 {
                     SetMode(Mode::INTERACT);
                 }
-                else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mode != Mode::BP_ICON && (cursorPos.y <= 16 && cursorPos.x <= 48) &&
-                    (mode == Mode::BUTTON ? data.button.dropdownActive != (cursorPos.x / 16) : true))
-                {
-                    SetMode(Mode::BUTTON);
-                    data.button.dropdownActive = cursorPos.x / 16;
-                    goto EVAL;
-                }
+            }
+        }
+
+        // UI buttons
+        {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !ModeIsMenu(mode) && (cursorPos.y <= 16 && cursorPos.x <= (16 * 3)) &&
+                (mode == Mode::BUTTON ? data.button.dropdownActive != (cursorPos.x / 16) : true))
+            {
+                SetMode(Mode::BUTTON);
+                data.button.dropdownActive = cursorPos.x / 16;
+                goto EVAL; // Skip button sim this frame
+            }
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !ModeIsMenu(mode) && (cursorPos.y <= 16 && cursorPos.x >= (16 * 3) &&cursorPos.x <= (16 * 4)))
+            {
+                SetMode(Mode::BP_SELECT);
             }
         }
 
@@ -834,7 +856,7 @@ int main()
                     IVec2 pos = cursorPos - data.clipboard->extents / 2;
                     pos /= g_gridSize;
                     pos *= g_gridSize;
-                    pos = pos + IVec2(g_gridSize / 2);
+                    pos = pos + IVec2(0, g_gridSize / 2);
                     NodeWorld::Get().SpawnBlueprint(data.clipboard, pos);
                 }
                 data.selection.clear();
@@ -912,6 +934,12 @@ int main()
         }
         break;
 
+        case Mode::BP_SELECT:
+        {
+            // todo
+        }
+        break;
+
         default:
             _ASSERT_EXPR(false, L"Missing sim phase specialization for selected mode");
             break;
@@ -938,33 +966,48 @@ int main()
 
             ClearBackground(BLACK);
 
-            if (mode == Mode::BP_ICON)
+            if (ModeIsMenu(mode))
             {
-                _ASSERT_EXPR(!!data.bp_icon.object, L"Blueprint icon object not initialized");
-                _ASSERT_EXPR(!!data.clipboard, L"Bad entry into Mode::BP_ICON");
-
-                data.bp_icon.object->DrawBackground(data.bp_icon.pos, SPACEGRAY);
-                data.bp_icon.object->Draw(data.bp_icon.pos, WHITE);
-
-                for (size_t i = 0; i < 4; ++i)
+                switch (mode)
                 {
-                    for (decltype(data.bp_icon.draggingIcon) i = 0; i < 4; ++i)
-                    {
-                        if (data.bp_icon.object->combo[i].id == NULL)
-                            continue;
+                case Mode::BP_ICON:
+                {
+                    _ASSERT_EXPR(!!data.bp_icon.object, L"Blueprint icon object not initialized");
+                    _ASSERT_EXPR(!!data.clipboard, L"Bad entry into Mode::BP_ICON");
 
-                        IRect bounds(data.bp_icon.pos, BlueprintIcon::g_size);
-                        bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
-                        if (InBoundingBox(bounds, cursorPos))
+                    data.bp_icon.object->DrawBackground(data.bp_icon.pos, SPACEGRAY);
+                    data.bp_icon.object->Draw(data.bp_icon.pos, WHITE);
+
+                    for (size_t i = 0; i < 4; ++i)
+                    {
+                        for (decltype(data.bp_icon.draggingIcon) i = 0; i < 4; ++i)
                         {
-                            DrawRectangleIRect(bounds, ColorAlpha(WIPBLUE, 0.25f));
+                            if (data.bp_icon.object->combo[i].id == NULL)
+                                continue;
+
+                            IRect bounds(data.bp_icon.pos, BlueprintIcon::g_size);
+                            bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
+                            if (InBoundingBox(bounds, cursorPos))
+                            {
+                                DrawRectangleIRect(bounds, ColorAlpha(WIPBLUE, 0.25f));
+                            }
                         }
                     }
-                }
-                if (data.bp_icon.draggingIcon != -1)
-                    BlueprintIcon::DrawBPIcon(data.bp_icon.iconID, data.bp_icon.pos + data.bp_icon.object->combo[data.bp_icon.draggingIcon].Pos(), WIPBLUE);
+                    if (data.bp_icon.draggingIcon != -1)
+                        BlueprintIcon::DrawBPIcon(data.bp_icon.iconID, data.bp_icon.pos + data.bp_icon.object->combo[data.bp_icon.draggingIcon].Pos(), WIPBLUE);
 
-                BlueprintIcon::DrawSheet(data.bp_icon.sheetRec.xy, SPACEGRAY, WHITE);
+                    BlueprintIcon::DrawSheet(data.bp_icon.sheetRec.xy, SPACEGRAY, WHITE);
+                }
+                break;
+                case Mode::BP_SELECT:
+                {
+                    // todo
+                }
+                break;
+                default:
+                    _ASSERT_EXPR(false, L"No specialization for selected menu mode");
+                    break;
+                }
             }
             else
             {
@@ -1294,12 +1337,13 @@ int main()
                     IVec2 pos = cursorPos - data.clipboard->extents / 2;
                     pos *= g_gridSize;
                     pos /= g_gridSize;
-                    pos = pos + IVec2(g_gridSize / 2, g_gridSize / 2);
+                    pos = pos + IVec2(0, g_gridSize / 2);
                     data.clipboard->DrawPreview(pos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
                 }
                 break;
 
                 case Mode::BP_ICON:
+                case Mode::BP_SELECT:
                     _ASSERT_EXPR(false, L"How did we get here?");
                     break;
 
@@ -1314,8 +1358,9 @@ int main()
                 DrawRectangleIRect(IRect(32, 16), SPACEGRAY);
                 if (!!data.clipboard)
                 {
-                    DrawRectangleIRect(IRect(48, 0, 16), SPACEGRAY);
-                    DrawTextureIV(clipboardIcon, 16 * 4, WHITE);
+                    constexpr int clipboardX = 16 * 5;
+                    DrawRectangleIRect(IRect(clipboardX, 0, 16), SPACEGRAY);
+                    DrawTextureIV(clipboardIcon, clipboardX, WHITE);
                 }
 
                 _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
@@ -1327,7 +1372,8 @@ int main()
                     // Mode
                     if (cursorPos.x <= 16)
                     {
-                        DrawRectangleIRect(IRect(0, 0, 16), SPACEGRAY);
+                        constexpr IRect rec(0, 0, 16);
+                        DrawRectangleIRect(rec, WIPBLUE);
                         const char* name = GetModeTooltipName(baseMode);
                         DrawText(name, 20, 17, 8, WHITE);
                         DrawLine(20, 17 + 12, 20 + MeasureText(name, 8), 17 + 12, WHITE);
@@ -1336,7 +1382,8 @@ int main()
                     // Gate
                     else if (cursorPos.x <= 32)
                     {
-                        DrawRectangleIRect((IRect(16, 0, 16)), SPACEGRAY);
+                        constexpr IRect rec(16, 0, 16);
+                        DrawRectangleIRect(rec, WIPBLUE);
                         const char* name = GetGateTooltipName(data.gatePick);
                         DrawText(name, 36, 17, 8, WHITE);
                         DrawLine(36, 17 + 12, 36 + MeasureText(name, 8), 17 + 12, WHITE);
@@ -1345,11 +1392,17 @@ int main()
                     // Extra param
                     else if (cursorPos.x <= 48)
                     {
-                        _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
-                        IRect rec(32, 0, 16);
+                        constexpr IRect rec(32, 0, 16);
                         DrawRectangleIRect(rec, WIPBLUE);
-                        DrawRectangleIRect(rec.Shrink(2), Node::g_resistanceBands[data.storedExtendedParam]);
+                        _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
+                        DrawRectangleIRect(ShrinkIRect(rec, 2), Node::g_resistanceBands[data.storedExtendedParam]);
                         DrawText(TextFormat(deviceParameterTextFmt, data.storedExtendedParam), 52, 17, 8, WHITE);
+                    }
+                    // Blueprints
+                    else if (cursorPos.x <= 64)
+                    {
+                        constexpr IRect rec(48, 0, 16);
+                        DrawRectangleIRect(rec, WIPBLUE);
                     }
                 }
 
