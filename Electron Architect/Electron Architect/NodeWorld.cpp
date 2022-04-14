@@ -530,20 +530,29 @@ void NodeWorld::Save(const char* filename) const
 
 void NodeWorld::Export(const char* filename) const
 {
+    if (nodes.empty())
+        return;
+
     std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
     {
         constexpr int r = (int)Node::g_nodeRadius;
         constexpr int w = r * 2;
 
-        file << "<svg width=\"1280\" height=\"720\" xmlns=\"http://www.w3.org/2000/svg\">\n";
+        int minx = INT_MAX;
+        int miny = INT_MAX;
+        int maxx = INT_MIN;
+        int maxy = INT_MIN;
 
-        if (nodes.empty())
+        // Get extents
+        for (Node* node : nodes)
         {
-            file <<
-                "  <!-- No data. -->\n"
-                "</svg>";
-            return;
+            if (node->GetX() < minx)      minx = node->GetX();
+            else if (node->GetX() > maxx) maxx = node->GetX();
+            if (node->GetY() < miny)      miny = node->GetY();
+            else if (node->GetY() > maxy) maxy = node->GetY();
         }
+
+        file << "<svg viewbox=\"" << TextFormat("%i %i %i %i", minx, miny, maxx, maxy) << "\" xmlns=\"http://www.w3.org/2000/svg\">\n";
 
         bool ORs  = false;
         bool ANDs = false;
@@ -622,11 +631,19 @@ void NodeWorld::Export(const char* filename) const
         }
         if (LEDs > 0)
         {
+            static const float v[] =
+            {
+                0,
+                r * 1.5f,
+                r * sinf(2 * PI / 3) * 1.5f,
+                r * cosf(2 * PI / 3) * 1.5f,
+                r * sinf(4 * PI / 3) * 1.5f,
+                r * cosf(4 * PI / 3) * 1.5f
+            };
             file <<
                 "    <!-- reusable LED shape -->\n"
                 "    <g id=\"gate_led\">\n"
-                "      <rect x=\"" << -r << "\" y=\"" << -r << "\" width=\"" << w << "\" height=\"" << w << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
-                "      <rect x=\"" << -r + 1 << "\" y=\"" << -r + 1 << "\" width=\"" << w - 2 << "\" height=\"" << w - 2 << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
+                "      <polygon points=\"" << TextFormat("%f,%f %f,%f %f,%f", v[0],v[1], v[2],v[3], v[4],v[5]) << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
                 "    </g>\n";
         }
         file << "  </defs>\n";

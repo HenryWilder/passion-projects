@@ -179,17 +179,24 @@ void Node::Draw(IVec2 position, Gate gate, Color color)
     }
     else if (gate == Gate::LED)
     {
-        const float sin60 = sin(60);
-        const float cos60 = cos(60);
-        const float sin120 = sin(120);
-        const float cos120 = cos(120);
+        static const float unitVerts[] =
+        {
+            0,
+            nodeRadius * 1.5f,
+            nodeRadius * sinf(2 * PI / 3) * 1.5f,
+            nodeRadius * cosf(2 * PI / 3) * 1.5f,
+            nodeRadius * sinf(4 * PI / 3) * 1.5f,
+            nodeRadius * cosf(4 * PI / 3) * 1.5f
+        };
 
         Vector2 tri[3] { position, position, position };
-        tri[0].y += nodeRadius;
-        tri[1].x += nodeRadius * sin60;
-        tri[1].y += nodeRadius * cos60;
-        tri[2].x += nodeRadius * sin120;
-        tri[2].y += nodeRadius * cos120;
+        tri[0].x += unitVerts[0];
+        tri[0].y += unitVerts[1];
+        tri[1].x += unitVerts[2];
+        tri[1].y += unitVerts[3];
+        tri[2].x += unitVerts[4];
+        tri[2].y += unitVerts[5];
+        
         switch (gate)
         {
         case Gate::LED:
