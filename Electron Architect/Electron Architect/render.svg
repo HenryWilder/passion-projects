@@ -7,9 +7,15 @@
   </defs>
   <!-- Wires (drawn first so they don't obscure nodes) -->
   <g style="stroke:black; stroke-width:1; fill:none;">
-    <path d="M252,172 L252,220 L316,220" />
+    <path d="M100,124 L100,124 L212,124" />
+    <path d="M100,140 L100,140 L212,140" />
+    <path d="M108,180 L108,196 L188,196" />
   </g>
   <!-- Nodes (reuse shapes defined in header <def> section) -->
-  <use href="#gate_or" x="252" y="172" />
-  <use href="#gate_or" x="316" y="220" />
+  <use href="#gate_or" x="100" y="124" />
+  <use href="#gate_or" x="100" y="140" />
+  <use href="#gate_or" x="108" y="180" />
+  <use href="#gate_or" x="212" y="124" />
+  <use href="#gate_or" x="212" y="140" />
+  <use href="#gate_or" x="188" y="196" />
 </svg>

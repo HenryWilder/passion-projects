@@ -996,7 +996,7 @@ int main()
                 case Mode::BP_SELECT:
                 {
                     // todo
-                    DrawText("[ @TODO make blueprint selection screen ]\nPress Esc to return to program.", 4,4,8,WHITE);
+                    DrawText("[ @TODO make blueprint selection screen ]\nPress Esc to return to circuit graph.", 4,4,8,WHITE);
                 }
                 break;
                 default:
@@ -1347,6 +1347,7 @@ int main()
 
 
                 DrawRectangleIRect(IRect(32, 16), SPACEGRAY);
+                DrawRectangleIRect(IRect(64, 16), SPACEGRAY);
                 if (!!data.clipboard)
                 {
                     constexpr IRect clipboardRec(16 * 4, 0, 16);
