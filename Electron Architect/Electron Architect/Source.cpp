@@ -852,13 +852,7 @@ int main()
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-                {
-                    IVec2 pos = cursorPos - data.clipboard->extents / 2;
-                    pos /= g_gridSize;
-                    pos *= g_gridSize;
-                    pos = pos + IVec2(0, g_gridSize / 2);
-                    NodeWorld::Get().SpawnBlueprint(data.clipboard, pos);
-                }
+                    NodeWorld::Get().SpawnBlueprint(data.clipboard, cursorPos);
                 data.selection.clear();
                 SetMode(baseMode);
             }
@@ -1334,11 +1328,7 @@ int main()
                     NodeWorld::Get().DrawWires();
                     NodeWorld::Get().DrawNodes();
 
-                    IVec2 pos = cursorPos - data.clipboard->extents / 2;
-                    pos *= g_gridSize;
-                    pos /= g_gridSize;
-                    pos = pos + IVec2(0, g_gridSize / 2);
-                    data.clipboard->DrawPreview(pos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
+                    data.clipboard->DrawPreview(cursorPos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
                 }
                 break;
 
