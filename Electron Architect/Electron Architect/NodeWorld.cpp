@@ -640,12 +640,13 @@ void NodeWorld::Export(const char* filename) const
             {
             case Gate::OR:        id = "#gate_or";  break;
             case Gate::AND:       id = "#gate_and"; break;
-            case Gate::NOR:       id = "#gate_nor"; break;
+            case Gate::NOR:       id = "#gate_and"; break;
             case Gate::XOR:       id = "#gate_xor"; break;
             case Gate::RESISTOR:  id = "#gate_res"; break;
             case Gate::CAPACITOR: id = "#gate_cap"; break;
             default: _ASSERT_EXPR(false, L"No SVG export specialization for selected gate"); id = ""; break;
             }
+            file << "  <use href=\"" << id << "\" x=\"" << x <<"\" y=\"" << y << "\" />\n";
         }
         file << "</svg>";
     }
