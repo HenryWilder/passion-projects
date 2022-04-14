@@ -1348,9 +1348,9 @@ int main()
                 DrawRectangleIRect(IRect(32, 16), SPACEGRAY);
                 if (!!data.clipboard)
                 {
-                    constexpr int clipboardX = 16 * 5;
-                    DrawRectangleIRect(IRect(clipboardX, 0, 16), SPACEGRAY);
-                    DrawTextureIV(clipboardIcon, clipboardX, WHITE);
+                    constexpr IRect clipboardRec(16 * 4, 0, 16);
+                    DrawRectangleIRect(clipboardRec, SPACEGRAY);
+                    DrawTextureIV(clipboardIcon, clipboardRec.xy, WHITE);
                 }
 
                 _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
