@@ -307,6 +307,7 @@ void NodeWorld::EvaluateNode(Node* node)
 {
     switch (node->m_gate)
     {
+    case Gate::LED:
     case Gate::OR:
         for (Wire* wire : node->GetInputs())
         {
@@ -365,6 +366,10 @@ void NodeWorld::EvaluateNode(Node* node)
         if (node->GetCharge())
             return node->DecrementCharge();
         node->m_state = false;
+        break;
+
+    default:
+        _ASSERT_EXPR(false, L"No specialization for selected gate evaluation");
         break;
     }
 }
@@ -540,24 +545,28 @@ void NodeWorld::Export(const char* filename) const
             return;
         }
 
-        int ORs = 0;
-        int ANDs = 0;
-        int NORs = 0;
-        int XORs = 0;
-        int RESs = 0;
-        int CAPs = 0;
+        bool ORs  = false;
+        bool ANDs = false;
+        bool NORs = false;
+        bool XORs = false;
+        bool RESs = false;
+        bool CAPs = false;
+        bool LEDs = false;
 
         for (Node* node : nodes)
         {
             switch (node->GetGate())
             {
-            case Gate::OR:        ++ORs;  break;
-            case Gate::AND:       ++ANDs; break;
-            case Gate::NOR:       ++NORs; break;
-            case Gate::XOR:       ++XORs; break;
-            case Gate::RESISTOR:  ++RESs; break;
-            case Gate::CAPACITOR: ++CAPs; break;
+            case Gate::OR:        ORs  = true; break;
+            case Gate::AND:       ANDs = true; break;
+            case Gate::NOR:       NORs = true; break;
+            case Gate::XOR:       XORs = true; break;
+            case Gate::RESISTOR:  RESs = true; break;
+            case Gate::CAPACITOR: CAPs = true; break;
+            case Gate::LED:       LEDs = true; break;
             }
+            if (ORs && ANDs && NORs && XORs && RESs && CAPs && LEDs)
+                break;
         }
 
         file << "  <defs>\n"; // As long as there's at least one node on the graph we're sure to have a def.
@@ -611,6 +620,15 @@ void NodeWorld::Export(const char* filename) const
                 "      <rect x=\"" << -r + 1 << "\" y=\"" << -r + 1 << "\" width=\"" << w - 2 << "\" height=\"" << w - 2 << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
                 "    </g>\n";
         }
+        if (LEDs > 0)
+        {
+            file <<
+                "    <!-- reusable LED shape -->\n"
+                "    <g id=\"gate_led\">\n"
+                "      <rect x=\"" << -r << "\" y=\"" << -r << "\" width=\"" << w << "\" height=\"" << w << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
+                "      <rect x=\"" << -r + 1 << "\" y=\"" << -r + 1 << "\" width=\"" << w - 2 << "\" height=\"" << w - 2 << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
+                "    </g>\n";
+        }
         file << "  </defs>\n";
 
         if (!wires.empty())
@@ -644,6 +662,7 @@ void NodeWorld::Export(const char* filename) const
             case Gate::XOR:       id = "#gate_xor"; break;
             case Gate::RESISTOR:  id = "#gate_res"; break;
             case Gate::CAPACITOR: id = "#gate_cap"; break;
+            case Gate::LED:       id = "#gate_led"; break;
             default: _ASSERT_EXPR(false, L"No SVG export specialization for selected gate"); id = ""; break;
             }
             file << "  <use href=\"" << id << "\" x=\"" << x <<"\" y=\"" << y << "\" />\n";

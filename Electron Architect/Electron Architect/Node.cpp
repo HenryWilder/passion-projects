@@ -179,10 +179,10 @@ void Node::Draw(IVec2 position, Gate gate, Color color)
     }
     else if (gate == Gate::LED)
     {
-        static const float sin60 = sin(60);
-        static const float cos60 = cos(60);
-        static const float sin120 = sin(120);
-        static const float cos120 = cos(120);
+        const float sin60 = sin(60);
+        const float cos60 = cos(60);
+        const float sin120 = sin(120);
+        const float cos120 = cos(120);
 
         Vector2 tri[3] { position, position, position };
         tri[0].y += nodeRadius;
