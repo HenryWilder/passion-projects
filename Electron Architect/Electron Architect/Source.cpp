@@ -996,6 +996,7 @@ int main()
                 case Mode::BP_SELECT:
                 {
                     // todo
+                    DrawText("[ @TODO make blueprint selection screen ]\nPress Esc to return to program.", 4,4,8,WHITE);
                 }
                 break;
                 default:
@@ -1440,5 +1441,4 @@ int main()
 * Stretch goals
 * -Multiple color pallets
 * -Log files for debug/crashes
-* -Export as SVG
 */
