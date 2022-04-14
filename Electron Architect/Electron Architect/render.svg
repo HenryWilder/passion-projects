@@ -1,3 +1,10 @@
 <svg width="1280" height="720" xmlns="http://www.w3.org/2000/svg">
-  <!-- No data. -->
+  <defs>
+    <!-- reusable 'OR' gate shape -->
+    <g id="gate_or">
+      <circle cx="0" cy="0" r="3" stroke="none" stroke-width="0" fill="black" />
+    </g>
+  </defs>
+  <!-- Nodes (reuse shapes defined in header <def> section) -->
+  <use href="#gate_or" x="308" y="316" />
 </svg>

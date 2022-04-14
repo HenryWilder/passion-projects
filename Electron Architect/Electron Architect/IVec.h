@@ -18,13 +18,13 @@ struct IVec2
     bool operator==(IVec2 b) const;
     bool operator!=(IVec2 b) const;
 
-    constexpr IVec2 operator+=(IVec2 b) { return x += b.x, y += b.y, *this; }
-    constexpr IVec2 operator-=(IVec2 b) { return x -= b.x, y -= b.y, *this; }
-    constexpr IVec2 operator*=(IVec2 b) { return x *= b.x, y *= b.y, *this; }
-    constexpr IVec2 operator/=(IVec2 b) { return x /= b.x, y /= b.y, *this; }
+    constexpr IVec2& operator+=(IVec2 b) { x += b.x; y += b.y; return *this; }
+    constexpr IVec2& operator-=(IVec2 b) { x -= b.x; y -= b.y; return *this; }
+    constexpr IVec2& operator*=(IVec2 b) { x *= b.x; y *= b.y; return *this; }
+    constexpr IVec2& operator/=(IVec2 b) { x /= b.x; y /= b.y; return *this; }
 
-    constexpr IVec2 operator*=(int b) { return x += b, y += b, *this; }
-    constexpr IVec2 operator/=(int b) { return x += b, y += b, *this; }
+    constexpr IVec2& operator*=(int b) { x *= b; y *= b; return *this; }
+    constexpr IVec2& operator/=(int b) { x /= b; y /= b; return *this; }
 
     static constexpr IVec2 One()   { return IVec2(1);   }
     static constexpr IVec2 Zero()  { return IVec2(0);   }
@@ -84,6 +84,8 @@ struct IRect
         : x(v.x), y(v.y), w(w), h(w) {}
     constexpr IRect(IVec2 v, int w, int h)
         : x(v.x), y(v.y), w(w), h(h) {}
+    constexpr IRect(IVec2 v, IVec2 e)
+        : x(v.x), y(v.y), w(e.x), h(e.y) {}
     constexpr IRect(Rectangle r)
         : x((int)r.x), y((int)r.y), w((int)r.width), h((int)r.height) {}
 

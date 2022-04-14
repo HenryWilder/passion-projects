@@ -379,20 +379,46 @@ int main()
     SetMode(Mode::PEN);
 
     NodeWorld::Get().Load("session.cg"); // Construct and load last session
-            
+
+    Camera2D camera;
+    camera.offset = { 0,0 };
+    camera.target = { 0,0 };
+    camera.rotation = 0;
+    camera.zoom = 1;
+                
     while (!WindowShouldClose())
     {
         /******************************************
         *   Simulate frame and update variables
         ******************************************/
 
-        IVec2 cursorPos{
-            GetMouseX() / g_gridSize,
-            GetMouseY() / g_gridSize
-        };
-        cursorPos = cursorPos * g_gridSize + IVec2(g_gridSize / 2);
+        IVec2 cursorUIPos(GetMouseX(), GetMouseY());
+
+        IVec2 cursorPos(
+            (int)(GetMouseX() / camera.zoom) + (int)camera.target.x,
+            (int)(GetMouseY() / camera.zoom) + (int)camera.target.y
+        );
+        cursorPos /= g_gridSize;
+        cursorPos *= g_gridSize;
+        {
+            constexpr int halfgrid = g_gridSize / 2;
+            if (cursorPos.x < 0) cursorPos.x -= halfgrid;
+            else                 cursorPos.x += halfgrid;
+            if (cursorPos.y < 0) cursorPos.y -= halfgrid;
+            else                 cursorPos.y += halfgrid;
+        }
 
         b_cursorMoved = cursorPosPrev != cursorPos;
+
+        if (!ModeIsMenu(mode))
+        {
+            if (GetMouseWheelMove() > 0 && camera.zoom < 2.0f)
+                camera.zoom *= 2;
+            else if (GetMouseWheelMove() < 0 && camera.zoom > 0.25f)
+                camera.zoom /= 2;
+            camera.target.x += (float)(IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT)) * g_gridSize;
+            camera.target.y += (float)(IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP)) * g_gridSize;
+        }
 
         // Hotkeys
         {
@@ -483,7 +509,7 @@ int main()
                 else if (IsKeyPressed(KEY_G))
                 {
                     SetMode(Mode::GATE);
-                    data.gate.radialMenuCenter = cursorPos;
+                    data.gate.radialMenuCenter = cursorUIPos;
                 }
                 else if (IsKeyPressed(KEY_X))
                 {
@@ -498,14 +524,14 @@ int main()
 
         // UI buttons
         {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !ModeIsMenu(mode) && (cursorPos.y <= 16 && cursorPos.x <= (16 * 3)) &&
-                (mode == Mode::BUTTON ? data.button.dropdownActive != (cursorPos.x / 16) : true))
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !ModeIsMenu(mode) && (cursorUIPos.y <= 16 && cursorUIPos.x <= (16 * 3)) &&
+                (mode == Mode::BUTTON ? data.button.dropdownActive != (cursorUIPos.x / 16) : true))
             {
                 SetMode(Mode::BUTTON);
-                data.button.dropdownActive = cursorPos.x / 16;
+                data.button.dropdownActive = cursorUIPos.x / 16;
                 goto EVAL; // Skip button sim this frame
             }
-            else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !ModeIsMenu(mode) && (cursorPos.y <= 16 && cursorPos.x >= (16 * 3) &&cursorPos.x <= (16 * 4)))
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !ModeIsMenu(mode) && (cursorUIPos.y <= 16 && cursorUIPos.x >= (16 * 3) && cursorUIPos.x <= (16 * 4)))
             {
                 SetMode(Mode::BP_SELECT);
             }
@@ -738,16 +764,16 @@ int main()
         {
             if (b_cursorMoved)
             {
-                if (cursorPos.x < data.gate.radialMenuCenter.x)
+                if (cursorUIPos.x < data.gate.radialMenuCenter.x)
                 {
-                    if (cursorPos.y < data.gate.radialMenuCenter.y)
+                    if (cursorUIPos.y < data.gate.radialMenuCenter.y)
                         data.gate.overlappedSection = 2;
                     else // cursorPos.y > data.gate.radialMenuCenter.y
                         data.gate.overlappedSection = 3;
                 }
                 else // cursorPos.x > data.gate.radialMenuCenter.x
                 {
-                    if (cursorPos.y < data.gate.radialMenuCenter.y)
+                    if (cursorUIPos.y < data.gate.radialMenuCenter.y)
                         data.gate.overlappedSection = 1;
                     else // cursorPos.y > data.gate.radialMenuCenter.y
                         data.gate.overlappedSection = 0;
@@ -762,7 +788,7 @@ int main()
 
                 mode = baseMode;
                 SetMousePosition(data.gate.radialMenuCenter.x, data.gate.radialMenuCenter.y);
-                cursorPos = data.gate.radialMenuCenter;
+                cursorUIPos = data.gate.radialMenuCenter;
             }
         }
         break;
@@ -772,7 +798,7 @@ int main()
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
                 IRect rec = dropdownBounds[data.button.dropdownActive];
-                if (InBoundingBox(rec, cursorPos))
+                if (InBoundingBox(rec, cursorUIPos))
                 {
                     rec.h = 16;
 
@@ -785,7 +811,7 @@ int main()
                             if (m == baseMode)
                                 continue;
 
-                            if (InBoundingBox(rec, cursorPos))
+                            if (InBoundingBox(rec, cursorUIPos))
                             {
                                 SetMode(m);
                                 break;
@@ -803,7 +829,7 @@ int main()
                             if (g == data.gatePick)
                                 continue;
 
-                            if (InBoundingBox(rec, cursorPos))
+                            if (InBoundingBox(rec, cursorUIPos))
                             {
                                 data.gatePick = g;
                                 break;
@@ -823,7 +849,7 @@ int main()
                             if (v == data.storedExtendedParam)
                                 continue;
 
-                            if (InBoundingBox(rec, cursorPos))
+                            if (InBoundingBox(rec, cursorUIPos))
                             {
                                 data.storedExtendedParam = v;
                                 break;
@@ -863,20 +889,20 @@ int main()
         {
             if (b_cursorMoved && data.bp_icon.draggingIcon == -1)
             {
-                data.bp_icon.iconID = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.bp_icon.sheetRec.xy, cursorPos));
+                data.bp_icon.iconID = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.bp_icon.sheetRec.xy, cursorUIPos));
             }
 
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
-                if (InBoundingBox(data.bp_icon.sheetRec, cursorPos) && data.bp_icon.iconCount < 4 && !!data.bp_icon.iconID)
+                if (InBoundingBox(data.bp_icon.sheetRec, cursorUIPos) && data.bp_icon.iconCount < 4 && !!data.bp_icon.iconID)
                 {
-                    cursorPos = data.bp_icon.pos;
-                    SetMousePosition(cursorPos.x + BlueprintIcon::g_size / 2, cursorPos.y + BlueprintIcon::g_size / 2);
+                    cursorUIPos = data.bp_icon.pos;
+                    SetMousePosition(cursorUIPos.x + BlueprintIcon::g_size / 2, cursorUIPos.y + BlueprintIcon::g_size / 2);
                     data.bp_icon.object->combo[data.bp_icon.iconCount] = { data.bp_icon.iconID, 0,0 };
                     data.bp_icon.draggingIcon = data.bp_icon.iconCount;
                     data.bp_icon.iconCount++;
                 }
-                else if (InBoundingBox(IRect(data.bp_icon.pos.x, data.bp_icon.pos.y, BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2), cursorPos))
+                else if (InBoundingBox(IRect(data.bp_icon.pos.x, data.bp_icon.pos.y, BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2), cursorUIPos))
                 {
                     data.bp_icon.draggingIcon = -1;
                     for (decltype(data.bp_icon.draggingIcon) i = 0; i < data.bp_icon.iconCount; ++i)
@@ -891,7 +917,7 @@ int main()
                             BlueprintIcon::g_size
                         );
                         bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
-                        if (InBoundingBox(bounds, cursorPos))
+                        if (InBoundingBox(bounds, cursorUIPos))
                         {
                             data.bp_icon.draggingIcon = i;
 				            data.bp_icon.iconID = data.bp_icon.object->combo[i].id;
@@ -919,7 +945,7 @@ int main()
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.bp_icon.iconID)
             {
                 constexpr IVec2 centerOffset = IVec2(BlueprintIcon::g_size / 2);
-                IVec2 colRow = (cursorPos - data.bp_icon.pos - centerOffset) / centerOffset;
+                IVec2 colRow = (cursorUIPos - data.bp_icon.pos - centerOffset) / centerOffset;
                 colRow.x = std::min(std::max(colRow.x, 0), 2);
                 colRow.y = std::min(std::max(colRow.y, 0), 2);
                 data.bp_icon.object->combo[data.bp_icon.draggingIcon].x = colRow.x;
@@ -981,7 +1007,7 @@ int main()
 
                             IRect bounds(data.bp_icon.pos, BlueprintIcon::g_size);
                             bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
-                            if (InBoundingBox(bounds, cursorPos))
+                            if (InBoundingBox(bounds, cursorUIPos))
                             {
                                 DrawRectangleIRect(bounds, ColorAlpha(WIPBLUE, 0.25f));
                             }
@@ -1006,14 +1032,23 @@ int main()
             }
             else
             {
+                BeginMode2D(camera);
+
                 // Grid
-                for (int y = 0; y < windowHeight; y += g_gridSize)
                 {
-                    DrawLine(0, y, windowWidth, y, SPACEGRAY);
-                }
-                for (int x = 0; x < windowWidth; x += g_gridSize)
-                {
-                    DrawLine(x, 0, x, windowHeight, SPACEGRAY);
+                    IVec2 extents((int)((float)windowWidth / camera.zoom), (int)((float)windowHeight / camera.zoom));
+                    IRect bounds(IVec2(camera.target), extents);
+
+                    for (int y = bounds.y; y < bounds.y + bounds.h; y += g_gridSize)
+                    {
+                        DrawLine(bounds.x, y, bounds.x + bounds.w, y, SPACEGRAY);
+                    }
+                    for (int x = bounds.x; x < bounds.x + bounds.w; x += g_gridSize)
+                    {
+                        DrawLine(x, bounds.y, x, bounds.y + bounds.h, SPACEGRAY);
+                    }
+                    DrawLine(bounds.x, 0, bounds.x + bounds.w, 0, LIFELESSNEBULA);
+                    DrawLine(0, bounds.y, 0, bounds.y + bounds.h, LIFELESSNEBULA);
                 }
 
                 NodeWorld::Get().DrawGroups();
@@ -1198,6 +1233,8 @@ int main()
                         NodeWorld::Get().DrawNodes();
                     }
 
+                    EndMode2D();
+
                     constexpr int menuRadius = 64;
                     constexpr int menuIconOffset = 12;
                     constexpr IVec2 menuOff[4] = {
@@ -1254,6 +1291,8 @@ int main()
                     NodeWorld::Get().DrawWires();
                     NodeWorld::Get().DrawNodes();
 
+                    EndMode2D();
+
                     IRect rec = dropdownBounds[data.button.dropdownActive];
                     DrawRectangleIRect(rec, SPACEGRAY);
                     rec.h = 16;
@@ -1267,7 +1306,7 @@ int main()
                             if (m == baseMode)
                                 continue;
                             Color color;
-                            if (InBoundingBox(rec, cursorPos))
+                            if (InBoundingBox(rec, cursorUIPos))
                             {
                                 color = WHITE;
                                 DrawText(GetModeTooltipName(m), 20, 17 + rec.y, 8, WHITE);
@@ -1287,7 +1326,7 @@ int main()
                             if (g == data.gatePick)
                                 continue;
                             Color color;
-                            if (InBoundingBox(rec, cursorPos))
+                            if (InBoundingBox(rec, cursorUIPos))
                             {
                                 color = WHITE;
                                 DrawText(GetGateTooltipName(g), 20 + 16, 17 + rec.y, 8, WHITE);
@@ -1308,7 +1347,7 @@ int main()
                             if (v == data.storedExtendedParam)
                                 continue;
                             Color color = Node::g_resistanceBands[v];
-                            if (InBoundingBox(rec, cursorPos))
+                            if (InBoundingBox(rec, cursorUIPos))
                             {
                                 DrawRectangleIRect(rec, WIPBLUE);
                                 DrawRectangleIRect(ExpandIRect(rec, -2), color);
@@ -1343,6 +1382,8 @@ int main()
                     break;
                 }
 
+                EndMode2D();
+
                 // Global UI
 
 
@@ -1359,10 +1400,10 @@ int main()
                 DrawRectangleIRect(IRect(32, 0, 16), Node::g_resistanceBands[data.storedExtendedParam]);
 
                 // Buttons
-                if (cursorPos.y <= 16)
+                if (cursorUIPos.y <= 16)
                 {
                     // Mode
-                    if (cursorPos.x <= 16)
+                    if (cursorUIPos.x <= 16)
                     {
                         constexpr IRect rec(0, 0, 16);
                         DrawRectangleIRect(rec, WIPBLUE);
@@ -1372,7 +1413,7 @@ int main()
                         DrawText(GetModeTooltipDescription(baseMode), 20, 17 + 16, 8, WHITE);
                     }
                     // Gate
-                    else if (cursorPos.x <= 32)
+                    else if (cursorUIPos.x <= 32)
                     {
                         constexpr IRect rec(16, 0, 16);
                         DrawRectangleIRect(rec, WIPBLUE);
@@ -1382,7 +1423,7 @@ int main()
                         DrawText(GetGateTooltipDescription(data.gatePick), 36, 17 + 16, 8, WHITE);
                     }
                     // Extra param
-                    else if (cursorPos.x <= 48)
+                    else if (cursorUIPos.x <= 48)
                     {
                         constexpr IRect rec(32, 0, 16);
                         DrawRectangleIRect(rec, WIPBLUE);
@@ -1391,7 +1432,7 @@ int main()
                         DrawText(TextFormat(deviceParameterTextFmt, data.storedExtendedParam), 52, 17, 8, WHITE);
                     }
                     // Blueprints
-                    else if (cursorPos.x <= 64)
+                    else if (cursorUIPos.x <= 64)
                     {
                         constexpr IRect rec(48, 0, 16);
                         DrawRectangleIRect(rec, WIPBLUE);
@@ -1430,6 +1471,7 @@ int main()
 * -Zoom and pan
 * -Selection move-together and delete-together
 * -LEDs
+* -Improve groups
 * -More explanation of controls
 * -Blueprint pallet
 * -Blueprint pallet icons (User-made combination of 4 premade icons. See Factorio for inspiration)
