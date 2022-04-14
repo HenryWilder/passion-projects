@@ -1427,7 +1427,10 @@ int main()
 
 /* Todo
 * Major
+* -Zoom and pan
 * -Selection move-together and delete-together
+* -LEDs
+* -More explanation of controls
 * -Blueprint pallet
 * -Blueprint pallet icons (User-made combination of 4 premade icons. See Factorio for inspiration)
 * -Save/load (https://en.cppreference.com/w/cpp/filesystem/directory_iterator)

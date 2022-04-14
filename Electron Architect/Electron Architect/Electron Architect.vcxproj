@@ -100,7 +100,12 @@
       <AdditionalLibraryDirectories>$(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y /b $(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll $(OutDir)raylib.dll</Command>
+      <Command>copy /b "$(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll" "$(OutDir)raylib.dll";
+copy /b "$(ProjectDir)icon_clipboard.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_blueprint.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_gate16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_gate32x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -125,7 +130,12 @@
       <AdditionalLibraryDirectories>$(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y /b $(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll $(OutDir)raylib.dll</Command>
+      <Command>copy /b "$(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll" "$(OutDir)raylib.dll";
+copy /b "$(ProjectDir)icon_clipboard.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_blueprint.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_gate16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_gate32x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -146,7 +156,12 @@
       <AdditionalDependencies>raylib.lib;kernel32.lib;user32.lib;gdi32.lib;winmm.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy /b "$(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll" "$(OutDir)raylib.dll"</Command>
+      <Command>copy /b "$(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll" "$(OutDir)raylib.dll";
+copy /b "$(ProjectDir)icon_clipboard.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_blueprint.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_gate16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_gate32x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -171,7 +186,12 @@
       <AdditionalDependencies>raylib.lib;kernel32.lib;user32.lib;gdi32.lib;winmm.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy /y /b $(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll $(OutDir)raylib.dll</Command>
+      <Command>copy /b "$(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll" "$(OutDir)raylib.dll";
+copy /b "$(ProjectDir)icon_clipboard.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_blueprint.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_gate16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_gate32x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
