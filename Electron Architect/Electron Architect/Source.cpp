@@ -68,6 +68,7 @@ int main()
 
         case Gate::RESISTOR:  offset = IVec2(0, 2); break;
         case Gate::CAPACITOR: offset = IVec2(1, 2); break;
+        case Gate::LED:       offset = IVec2(0, 3); break;
         default: return;
         }
         DrawIcon<16>(gateIcons16x, offset, pos, tint);
@@ -86,6 +87,7 @@ int main()
 
         case Gate::RESISTOR:  offset = IVec2(0, 2); break;
         case Gate::CAPACITOR: offset = IVec2(1, 2); break;
+        case Gate::LED:       offset = IVec2(0, 3); break;
         default: return;
         }
         DrawIcon<32>(gateIcons32x, offset, pos, tint);
@@ -173,6 +175,7 @@ int main()
 
         Gate::RESISTOR,
         Gate::CAPACITOR,
+        Gate::LED,
     };
     constexpr IRect dropdownBounds[] = {
         IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
@@ -248,6 +251,8 @@ int main()
             return "Device: Resistor [5]";
         case Gate::CAPACITOR:
             return "Device: Capacitor [6]";
+        case Gate::LED:
+            return "Device: LED [7]";
 
         default:
             _ASSERT_EXPR(false, L"Missing tooltip for selected gate");
@@ -288,6 +293,10 @@ int main()
                 "Outputs true while charge is greater than zero,\n"
                 "Outputs true while any input is true,\n"
                 "Outputs false otherwise.";
+        case Gate::LED:
+            return
+                "Treats I/O the same as an OR gate.\n"
+                "Lights up with the selected color when powered.";
 
         default:
             _ASSERT_EXPR(false, L"Missing tooltip description for selected gate");
@@ -436,6 +445,8 @@ int main()
                     data.gatePick = Gate::RESISTOR;
                 else if (IsKeyPressed(KEY_SIX))
                     data.gatePick = Gate::CAPACITOR;
+                else if (IsKeyPressed(KEY_SEVEN))
+                    data.gatePick = Gate::LED;
             }
 
             // KEY COMBOS BEFORE INDIVIDUAL KEYS!

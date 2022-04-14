@@ -78,6 +78,12 @@ void Node::SetResistance(uint8_t resistance)
     _ASSERT_EXPR(resistance <= 9, L"Selected resistance out of bounds");
     m_ntd.r.resistance = resistance;
 }
+void Node::SetColorIndex(uint8_t colorIndex)
+{
+    _ASSERT_EXPR(m_gate == Gate::RESISTOR, L"Cannot access the color of a non-LED.");
+    _ASSERT_EXPR(colorIndex <= 9, L"Selected color out of bounds");
+    m_ntd.l.colorIndex = colorIndex;
+}
 // Only use if this is a capacitor
 void Node::SetCapacity(uint8_t capacity)
 {
@@ -134,41 +140,65 @@ bool Node::IsOutputOnly() const
 void Node::Draw(IVec2 position, Gate gate, Color color)
 {
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
-    switch (gate)
+    if (gate == Gate::OR || gate == Gate::NOR || gate == Gate::XOR)
     {
-    case Gate::OR:
-        DrawCircleIV(position, nodeRadius, color);
-        return;
-    case Gate::NOR:
-        DrawCircleIV(position, nodeRadius, color);
-        DrawCircleIV(position, nodeRadius - 1.0f, BLACK);
-        return;
-    case Gate::XOR:
-        DrawCircleIV(position, nodeRadius + 1.0f, color);
-        DrawCircleIV(position, nodeRadius, BLACK);
-        DrawCircleIV(position, nodeRadius - 1.0f, color);
-        return;
+        switch (gate)
+        {
+        case Gate::OR:
+            DrawCircleIV(position, nodeRadius, color);
+            return;
+        case Gate::NOR:
+            DrawCircleIV(position, nodeRadius, color);
+            DrawCircleIV(position, nodeRadius - 1.0f, BLACK);
+            return;
+        case Gate::XOR:
+            DrawCircleIV(position, nodeRadius + 1.0f, color);
+            DrawCircleIV(position, nodeRadius, BLACK);
+            DrawCircleIV(position, nodeRadius - 1.0f, color);
+            return;
+        }
     }
+    else if (gate == Gate::AND || gate == Gate::RESISTOR || gate == Gate::CAPACITOR)
+    {
+        IRect rec(position - IVec2(nodeRadius), nodeRadius * 2);
+        switch (gate)
+        {
+        case Gate::AND:
+            DrawRectangleIRect(rec, color);
+            return;
+        case Gate::RESISTOR:
+            DrawRectangleIRect(rec, color);
+            DrawRectangleIRect(ShrinkIRect(rec), BLACK);
+            return;
+        case Gate::CAPACITOR:
+            DrawRectangleIRect(ExpandIRect(rec), color);
+            DrawRectangleIRect(rec, BLACK);
+            DrawRectangleIRect(ShrinkIRect(rec), color);
+            return;
+        }
+    }
+    else if (gate == Gate::LED)
+    {
+        static const float sin60 = sin(60);
+        static const float cos60 = cos(60);
+        static const float sin120 = sin(120);
+        static const float cos120 = cos(120);
 
-    IRect rec(position - IVec2(nodeRadius), nodeRadius * 2);
-    switch (gate)
-    {
-    case Gate::AND:
-        DrawRectangleIRect(rec, color);
-        return;
-    case Gate::RESISTOR:
-        DrawRectangleIRect(rec, color);
-        DrawRectangleIRect(ShrinkIRect(rec), BLACK);
-        return;
-    case Gate::CAPACITOR:
-        DrawRectangleIRect(ExpandIRect(rec), color);
-        DrawRectangleIRect(rec, BLACK);
-        DrawRectangleIRect(ShrinkIRect(rec), color);
-        return;
-    default:
-        _ASSERT_EXPR(false, L"Gate type not given specialize draw method");
-        return;
+        Vector2 tri[3] { position, position, position };
+        tri[0].y += nodeRadius;
+        tri[1].x += nodeRadius * sin60;
+        tri[1].y += nodeRadius * cos60;
+        tri[2].x += nodeRadius * sin120;
+        tri[2].y += nodeRadius * cos120;
+        switch (gate)
+        {
+        case Gate::LED:
+            DrawTriangle(tri[0], tri[1], tri[2], color);
+            return;
+        }
     }
+    else
+        _ASSERT_EXPR(false, L"Gate type not given specialize draw method");
 }
 void Node::Draw(Color color) const
 {

@@ -12,6 +12,7 @@ enum class Gate : char
 
     RESISTOR = '~',
     CAPACITOR = '=',
+    LED = '@',
 };
 
 class Node
@@ -36,6 +37,7 @@ public:
     uint8_t GetCharge() const;
     float GetChargePercent() const;
     void SetResistance(uint8_t resistance);
+    void SetColorIndex(uint8_t colorIndex);
     void SetCapacity(uint8_t capacity);
     void SetCharge(uint8_t charge);
     void IncrementCharge();
@@ -105,6 +107,11 @@ private:
         {
             uint8_t resistance; // Number of nodes needed to evaluate true
         } r;
+
+        struct LEDData
+        {
+            uint8_t colorIndex; // Number of nodes needed to evaluate true
+        } l;
 
         struct CapacitorData
         {
