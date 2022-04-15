@@ -1569,6 +1569,7 @@ int main()
 /* Todo
 * Requirements for v1.0.0
 * -Improve groups
+* -Fix wonky zooming
 * -More explanation of controls
 * -Undo/redo
 * -Blueprint pallet
