@@ -1084,8 +1084,9 @@ int main()
                     {
                         DrawRectangleIRect(bounds, SPACEGRAY);
                     }
-                    DrawLine(bounds.x, 0, bounds.x + bounds.w, 0, LIFELESSNEBULA);
-                    DrawLine(0, bounds.y, 0, bounds.y + bounds.h, LIFELESSNEBULA);
+                    constexpr int halfgrid = g_gridSize / 2;
+                    DrawLine(bounds.x, -halfgrid, bounds.x + bounds.w, -halfgrid, LIFELESSNEBULA);
+                    DrawLine(-halfgrid, bounds.y, -halfgrid, bounds.y + bounds.h, LIFELESSNEBULA);
                 }
 
                 NodeWorld::Get().DrawGroups();
