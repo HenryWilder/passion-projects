@@ -1518,7 +1518,7 @@ int main()
 
 /* Todo
 * Requirements for v1.0.0
-* -Selection move-together and delete-together
+* -Selection move-together
 * -Improve groups
 * -Add "buffer" (delay) gate
 * -Change overlapping nodes to swap gates instead of merging
