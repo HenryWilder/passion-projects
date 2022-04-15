@@ -81,9 +81,9 @@ public: // Serialization
     void StoreBlueprint(Blueprint* bp);
 
     void Save(const char* filename) const;
-    // Saves the graph in SVG format
-    void Export(const char* filename) const;
-
     // TODO
     void Load(const char* filename);
+
+    // Saves the graph in SVG format
+    void Export(const char* filename) const;
 };

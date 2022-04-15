@@ -1,4 +1,4 @@
-#include <time.h>
+#include <thread>
 #include <fstream>
 #include "HUtility.h"
 #include "NodeWorld.h"
@@ -485,45 +485,63 @@ void NodeWorld::Save(const char* filename) const
 {
     std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
     {
-        file << "0\n" << std::time(nullptr) << '\n';
+        file << "v1\n";
 
+        std::unordered_map<Node*, size_t> nodeIDs;
+        std::unordered_map<Wire*, size_t> wireIDs;
+        auto aLambda = [&nodeIDs](const std::vector<Node*>& nodes)
         {
-            std::unordered_map<Node*, size_t> nodeIDs;
             nodeIDs.reserve(nodes.size());
             for (size_t i = 0; i < nodes.size(); ++i)
             {
                 nodeIDs.insert({ nodes[i], i });
             }
-
-            std::unordered_map<Wire*, size_t> wireIDs;
+        };
+        auto bLambda = [&wireIDs](const std::vector<Wire*>& wires)
+        {
             wireIDs.reserve(wires.size());
             for (size_t i = 0; i < wires.size(); ++i)
             {
                 wireIDs.insert({ wires[i], i });
             }
+        };
+        std::thread a(aLambda, nodes);
+        std::thread b(bLambda, wires);
 
-            file << "n " << nodes.size() << '\n';
-            for (Node* node : nodes)
-            {
-                file <<
-                    (char)node->m_gate << ' ' <<
-                    node->m_position.x << ' ' << node->m_position.y;
-                for (Wire* wire : node->m_wires)
-                {
-                    size_t wireID = wireIDs.find(wire)->second;
-                    file << ' ' << wireID;
-                }
-                file << '\n';
-            }
+        file << TextFormat("n %i\n", nodes.size());
 
-            file << "w " << wires.size() << '\n';
-            for (Wire* wire : wires)
-            {
-                size_t startID = nodeIDs.find(wire->start)->second;
-                size_t endID = nodeIDs.find(wire->end)->second;
-                file << (int)wire->elbowConfig << ' ' << startID << ' ' << endID << '\n';
-            }
+        for (Node* node : nodes)
+        {
+            file << TextFormat("%c %i %i %i\n",
+                (char)node->m_gate,
+                node->GetX(),
+                node->GetY(),
+                node->m_wires.size());
         }
+
+        file << TextFormat("w %i\n", wires.size());
+
+        for (Wire* wire : wires)
+        {
+            file << TextFormat("%i %i %i\n",
+                wire->elbowConfig,
+                nodeIDs.find(wire->start)->second,
+                nodeIDs.find(wire->end)->second);
+        }
+    }
+    file.close();
+}
+
+void NodeWorld::Load(const char* filename)
+{
+    std::ifstream file(filename, std::fstream::in);
+    {
+        int version;
+        file >> version;
+        if (version != 0)
+            return;
+
+
     }
     file.close();
 }
@@ -546,9 +564,9 @@ void NodeWorld::Export(const char* filename) const
         // Get extents
         for (Node* node : nodes)
         {
-            if (node->GetX() < minx)      minx = node->GetX();
+            if      (node->GetX() < minx) minx = node->GetX();
             else if (node->GetX() > maxx) maxx = node->GetX();
-            if (node->GetY() < miny)      miny = node->GetY();
+            if      (node->GetY() < miny) miny = node->GetY();
             else if (node->GetY() > maxy) maxy = node->GetY();
         }
 
@@ -685,23 +703,6 @@ void NodeWorld::Export(const char* filename) const
             file << "  <use href=\"" << id << "\" x=\"" << x <<"\" y=\"" << y << "\" />\n";
         }
         file << "</svg>";
-    }
-    file.close();
-}
-
-// TODO
-void NodeWorld::Load(const char* filename)
-{
-    std::ifstream file(filename, std::fstream::in);
-    {
-        int version;
-        char relSize;
-        time_t time;
-        file >> version;
-        if (version != 0) return;
-        file >> relSize >> time;
-
-
     }
     file.close();
 }
