@@ -1531,7 +1531,7 @@ int main()
 *
 * Minor
 * -Fix tickrate changing when switching to an overlay mode
-* -Refactor to store deviceParameterTextFmt instead of doing per-frame tests
+* -Refactor deviceParameterTextFmt to be event-updated rather than a per-frame test
 * 
 * Quality of Life
 * -Special erase (keep wires, erase node)
