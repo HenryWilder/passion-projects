@@ -651,19 +651,43 @@ int main()
             // Press
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
-                data.selection.clear();
-                data.edit.nodeBeingDragged = data.hoveredNode;
-                data.edit.wireBeingDragged = data.hoveredWire;
-
-                // selectionStart being used as an offset here
-                if (data.edit.draggingGroup = !!data.edit.hoveredGroup)
+                if (!data.selection.empty() && !!data.hoveredNode) // There is a selection, and a node has been pressed
                 {
-                    NodeWorld::Get().FindNodesInGroup(data.selection, data.edit.hoveredGroup);
-                    data.edit.selectionStart = (cursorPos - (data.edit.fallbackPos = data.edit.hoveredGroup->GetPosition()));
-                }
+                    data.edit.nodeBeingDragged = data.hoveredNode;
+                    data.edit.wireBeingDragged = nullptr;
 
-                if (data.edit.selectionWIP = !(data.edit.nodeBeingDragged || data.edit.wireBeingDragged || data.edit.draggingGroup))
-                    data.edit.selectionStart = data.edit.fallbackPos = cursorPos;
+                    int minx = INT_MAX;
+                    int miny = INT_MAX;
+                    int maxx = INT_MIN;
+                    int maxy = INT_MIN;
+
+                    for (Node* node : data.selection)
+                    {
+                        if      (node->GetX() < minx) minx = node->GetX();
+                        else if (node->GetX() > maxx) maxx = node->GetX();
+                        if      (node->GetY() < miny) miny = node->GetY();
+                        else if (node->GetY() > maxy) maxy = node->GetY();
+                    }
+
+                    data.edit.selectionRec.w = maxx - (data.edit.selectionRec.x = minx);
+                    data.edit.selectionRec.h = maxy - (data.edit.selectionRec.y = miny);
+                }
+                else
+                {
+                    data.selection.clear();
+                    data.edit.nodeBeingDragged = data.hoveredNode;
+                    data.edit.wireBeingDragged = data.hoveredWire;
+
+                    // selectionStart being used as an offset here
+                    if (data.edit.draggingGroup = !!data.edit.hoveredGroup)
+                    {
+                        NodeWorld::Get().FindNodesInGroup(data.selection, data.edit.hoveredGroup);
+                        data.edit.selectionStart = (cursorPos - (data.edit.fallbackPos = data.edit.hoveredGroup->GetPosition()));
+                    }
+
+                    if (data.edit.selectionWIP = !(data.edit.nodeBeingDragged || data.edit.wireBeingDragged || data.edit.draggingGroup))
+                        data.edit.selectionStart = data.edit.fallbackPos = cursorPos;
+                }
             }
 
             // Selection
@@ -677,7 +701,18 @@ int main()
             // Node
             else if (!!data.edit.nodeBeingDragged)
             {
-                data.edit.nodeBeingDragged->SetPosition_Temporary(cursorPos);
+                // Multiple selection
+                if (!data.selection.empty())
+                {
+                    const IVec2 offset = cursorPos - cursorPosPrev;
+                    for (Node* node : data.selection)
+                    {
+                        node->SetPosition_Temporary(node->GetPosition() + offset);
+                    }
+                    data.edit.selectionRec.position += offset;
+                }
+                else
+                    data.edit.nodeBeingDragged->SetPosition_Temporary(cursorPos);
             }
             // Wire
             else if (!!data.edit.wireBeingDragged)
@@ -1531,7 +1566,7 @@ int main()
 * -Menu screen (Open to file menu with "new" at the top)
 *
 * Refactors
-* -Refactor NodeWorld to have a bulk destroy function to make this process more efficient
+* -Refactor NodeWorld to have a bulk destroy function to make bulk deletion more efficient
 * -Refactor buttons to be classes/structs instead of freeform
 * 
 * Beyond v1.0.0
