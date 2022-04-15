@@ -13,6 +13,7 @@ enum class Gate : char
     RESISTOR = '~',
     CAPACITOR = '=',
     LED = '@',
+    DELAY = ';',
 };
 
 class Node
@@ -132,6 +133,11 @@ private:
             uint8_t capacity; // Max value of charge
             uint8_t charge; // Stored ticks of evaluating true
         } c;
+
+        struct DelayData
+        {
+            bool lastState = false; // State previous tick
+        } d;
 
         NonTransistorData() { memset(this, 0, sizeof(NonTransistorData)); }
 

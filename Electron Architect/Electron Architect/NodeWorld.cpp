@@ -372,6 +372,16 @@ void NodeWorld::EvaluateNode(Node* node)
         node->m_state = false;
         break;
 
+    case Gate::DELAY:
+        node->m_state = node->m_ntd.d.lastState;
+        for (Wire* wire : node->GetInputs())
+        {
+            if (wire->GetState())
+                return void(node->m_ntd.d.lastState = true);
+        }
+        node->m_ntd.d.lastState = false;
+        break;
+
     default:
         _ASSERT_EXPR(false, L"No specialization for selected gate evaluation");
         break;
@@ -684,6 +694,7 @@ void NodeWorld::Export(const char* filename) const
         bool RESs = false;
         bool CAPs = false;
         bool LEDs = false;
+        bool DELs = false;
 
         for (Node* node : nodes)
         {
@@ -696,8 +707,9 @@ void NodeWorld::Export(const char* filename) const
             case Gate::RESISTOR:  RESs = true; break;
             case Gate::CAPACITOR: CAPs = true; break;
             case Gate::LED:       LEDs = true; break;
+            case Gate::DELAY:     DELs = true; break;
             }
-            if (ORs && ANDs && NORs && XORs && RESs && CAPs && LEDs)
+            if (ORs && ANDs && NORs && XORs && RESs && CAPs && LEDs && DELs)
                 break;
         }
 
@@ -766,7 +778,17 @@ void NodeWorld::Export(const char* filename) const
             file <<
                 "    <!-- reusable LED shape -->\n"
                 "    <g id=\"gate_led\">\n"
-                "      <polygon points=\"" << TextFormat("%f,%f %f,%f %f,%f", v[0],v[1], v[2],v[3], v[4],v[5]) << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
+                "      <polygon points=\"" << TextFormat("%f,%f %f,%f %f,%f", v[0],v[1], v[2],v[3], v[4],v[5]) << "\" stroke=\"black\" stroke-width=\"1\" fill=\"black\" />\n"
+                "    </g>\n";
+        }
+        if (DELs)
+        {
+            file <<
+                "    <!-- reusable delay shape -->\n"
+                "    <g id=\"gate_del\">\n"
+                "      <rect x=\"" << -r << "\" y=\"" << -r << "\" width=\"" << w << "\" height=\"" << w << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
+                "      <line x1=\"" << 0 << "\" y1=\"" << -r << "\" x2=\"" << 0 << "\" y2=\"" << r << "\" stroke=\"black\" stroke-width=\"1\" fill=\"none\" />\n"
+                "      <line x1=\"" << -r << "\" y1=\"" << 0 << "\" x2=\"" << r << "\" y2=\"" << 0 << "\" stroke=\"black\" stroke-width=\"1\" fill=\"none\" />\n"
                 "    </g>\n";
         }
         file << "  </defs>\n";
@@ -803,6 +825,7 @@ void NodeWorld::Export(const char* filename) const
             case Gate::RESISTOR:  id = "#gate_res"; break;
             case Gate::CAPACITOR: id = "#gate_cap"; break;
             case Gate::LED:       id = "#gate_led"; break;
+            case Gate::DELAY:     id = "#gate_del"; break;
             default: _ASSERT_EXPR(false, L"No SVG export specialization for selected gate"); id = ""; break;
             }
             file << "  <use href=\"" << id << "\" x=\"" << x <<"\" y=\"" << y << "\" />\n";

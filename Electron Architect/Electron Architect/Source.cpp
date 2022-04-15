@@ -68,6 +68,7 @@ int main()
         case Gate::RESISTOR:  offset = IVec2(0, 2); break;
         case Gate::CAPACITOR: offset = IVec2(1, 2); break;
         case Gate::LED:       offset = IVec2(0, 3); break;
+        case Gate::DELAY:     offset = IVec2(1, 3); break;
         default: return;
         }
         DrawIcon<16>(gateIcons16x, offset, pos, tint);
@@ -175,6 +176,7 @@ int main()
         Gate::RESISTOR,
         Gate::CAPACITOR,
         Gate::LED,
+        Gate::DELAY,
     };
     constexpr IRect dropdownBounds[] = {
         IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
@@ -252,6 +254,8 @@ int main()
             return "Device: Capacitor [6]";
         case Gate::LED:
             return "Device: LED [7]";
+        case Gate::DELAY:
+            return "Device: Delay [8]";
 
         default:
             _ASSERT_EXPR(false, L"Missing tooltip for selected gate");
@@ -296,6 +300,11 @@ int main()
             return
                 "Treats I/O the same as an OR gate.\n"
                 "Lights up with the selected color when powered.";
+        case Gate::DELAY:
+            return
+                "Treats I/O the same as an OR gate.\n"
+                "Outputs with a 1-tick delay.\n"
+                "Sequntial delay devices are recommended for delay greater than 1 tick.";
 
         default:
             _ASSERT_EXPR(false, L"Missing tooltip description for selected gate");
@@ -466,6 +475,8 @@ int main()
                     SetGate(Gate::CAPACITOR);
                 else if (IsKeyPressed(KEY_SEVEN))
                     SetGate(Gate::LED);
+                else if (IsKeyPressed(KEY_EIGHT))
+                    SetGate(Gate::DELAY);
             }
 
             // KEY COMBOS BEFORE INDIVIDUAL KEYS!
