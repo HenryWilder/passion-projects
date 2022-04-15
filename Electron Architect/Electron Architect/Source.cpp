@@ -990,10 +990,26 @@ int main()
         const char* deviceParameterTextFmt;
         if (data.gatePick == Gate::RESISTOR)
             deviceParameterTextFmt = "Resistance: %i inputs";
+        else if (data.gatePick == Gate::LED)
+            deviceParameterTextFmt = "Color: %s";
         else if (data.gatePick == Gate::CAPACITOR)
-            deviceParameterTextFmt = "Capacity : %i ticks";
+            deviceParameterTextFmt = "Capacity: %i ticks";
         else
             deviceParameterTextFmt = "Component parameter: %i";
+
+        constexpr const char* colorName[]
+        {
+            "black",
+            "brown",
+            "red",
+            "orange",
+            "yellow",
+            "green",
+            "blue",
+            "violet",
+            "gray",
+            "white",
+        };
 
         BeginDrawing(); {
 
@@ -1364,7 +1380,12 @@ int main()
                             {
                                 DrawRectangleIRect(rec, WIPBLUE);
                                 DrawRectangleIRect(ExpandIRect(rec, -2), color);
-                                DrawText(TextFormat(deviceParameterTextFmt, v), 20 + 32, 17 + rec.y, 8, WHITE);
+                                const char* text;
+                                if (data.gatePick == Gate::LED)
+                                    text = TextFormat(deviceParameterTextFmt, colorName[v]);
+                                else
+                                    text = TextFormat(deviceParameterTextFmt, v);
+                                DrawText(text, 20 + 32, 17 + rec.y, 8, WHITE);
                             }
                             else
                                 DrawRectangleIRect(rec, color);
@@ -1442,7 +1463,12 @@ int main()
                         DrawRectangleIRect(rec, WIPBLUE);
                         _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
                         DrawRectangleIRect(ShrinkIRect(rec, 2), Node::g_resistanceBands[data.storedExtendedParam]);
-                        DrawText(TextFormat(deviceParameterTextFmt, data.storedExtendedParam), 52, 17, 8, WHITE);
+                        const char* text;
+                        if (data.gatePick == Gate::LED)
+                            text = TextFormat(deviceParameterTextFmt, colorName[data.storedExtendedParam]);
+                        else
+                            text = TextFormat(deviceParameterTextFmt, data.storedExtendedParam);
+                        DrawText(text, 52, 17, 8, WHITE);
                     }
                     // Blueprints
                     else if (cursorUIPos.x <= 64)
