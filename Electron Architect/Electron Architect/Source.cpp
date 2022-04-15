@@ -1515,6 +1515,7 @@ int main()
 
 /* Todo
 * Major
+* -Untie tick rate from framerate (Interact mode's low FPS makes the program appear to be having performance issues when panning)
 * -Selection move-together and delete-together
 * -Improve groups
 * -Add "buffer" (delay) gate
@@ -1528,6 +1529,10 @@ int main()
 * -Save file thumbnails (based on file contents)
 * -Menu screen (Open to file menu with "new" at the top)
 *
+* Minor
+* -Fix tickrate changing when switching to an overlay mode
+* -Refactor to store deviceParameterTextFmt instead of doing per-frame tests
+* 
 * Quality of Life
 * -Special erase (keep wires, erase node)
 * -Hotkeys for output-only gate state toggles (Like the Reason on-screen piano)
