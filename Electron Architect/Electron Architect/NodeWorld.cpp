@@ -503,7 +503,7 @@ void NodeWorld::Save(const char* filename) const
 
     std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
     {
-        file << "v1\n";
+        file << "1\n";
 
         std::unordered_map<Node*, size_t> nodeIDs;
         std::unordered_map<Wire*, size_t> wireIDs;
