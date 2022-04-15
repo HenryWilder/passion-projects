@@ -1515,9 +1515,7 @@ int main()
 
 /* Todo
 * Major
-* -Zoom and pan
 * -Selection move-together and delete-together
-* -LEDs
 * -Improve groups
 * -More explanation of controls
 * -Blueprint pallet
