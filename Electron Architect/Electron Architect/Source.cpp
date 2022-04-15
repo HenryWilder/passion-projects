@@ -1517,12 +1517,15 @@ int main()
 * Major
 * -Selection move-together and delete-together
 * -Improve groups
+* -Add "buffer" (delay) gate
+* -Change overlapping nodes to swap gates instead of merging
 * -More explanation of controls
 * -Blueprint pallet
+* -Prefab blueprints for things like timers, counters, and latches
 * -Blueprint pallet icons (User-made combination of 4 premade icons. See Factorio for inspiration)
-* -Save/load (https://en.cppreference.com/w/cpp/filesystem/directory_iterator)
-* -Save file menu
-* -Save file thumbnails (based on cropped screenshot)
+* -Save/load
+* -Save file menu (https://en.cppreference.com/w/cpp/filesystem/directory_iterator)
+* -Save file thumbnails (based on file contents)
 * -Menu screen (Open to file menu with "new" at the top)
 *
 * Quality of Life
