@@ -489,7 +489,7 @@ void NodeWorld::Save(const char* filename) const
 
         std::unordered_map<Node*, size_t> nodeIDs;
         std::unordered_map<Wire*, size_t> wireIDs;
-        auto aLambda = [&nodeIDs](const std::vector<Node*>& nodes)
+        auto aLambda = [](std::unordered_map<Node*, size_t>& nodeIDs, const std::vector<Node*>& nodes)
         {
             nodeIDs.reserve(nodes.size());
             for (size_t i = 0; i < nodes.size(); ++i)
@@ -497,7 +497,7 @@ void NodeWorld::Save(const char* filename) const
                 nodeIDs.insert({ nodes[i], i });
             }
         };
-        auto bLambda = [&wireIDs](const std::vector<Wire*>& wires)
+        auto bLambda = [](std::unordered_map<Wire*, size_t>& wireIDs, const std::vector<Wire*>& wires)
         {
             wireIDs.reserve(wires.size());
             for (size_t i = 0; i < wires.size(); ++i)
@@ -505,8 +505,8 @@ void NodeWorld::Save(const char* filename) const
                 wireIDs.insert({ wires[i], i });
             }
         };
-        std::thread a(aLambda, nodes);
-        std::thread b(bLambda, wires);
+        std::thread a(aLambda, std::ref(nodeIDs), std::cref(nodes));
+        std::thread b(bLambda, std::ref(wireIDs), std::cref(wires));
 
         file << TextFormat("n %i\n", nodes.size());
 
@@ -597,7 +597,7 @@ void NodeWorld::Export(const char* filename) const
         }
 
         file << "  <defs>\n"; // As long as there's at least one node on the graph we're sure to have a def.
-        if (ORs > 0)
+        if (ORs)
         {
             file <<
                 "    <!-- reusable 'OR' gate shape -->\n"
@@ -605,7 +605,7 @@ void NodeWorld::Export(const char* filename) const
                 "      <circle cx=\"0\" cy=\"0\" r=\"" << r << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
                 "    </g>\n";
         }
-        if (ANDs > 0)
+        if (ANDs)
         {
             file <<
                 "    <!-- reusable 'AND' gate shape -->\n"
@@ -613,7 +613,7 @@ void NodeWorld::Export(const char* filename) const
                 "      <rect x=\"" << -r << "\" y=\"" << -r << "\" width=\"" << w << "\" height=\"" << w << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
                 "    </g>\n";
         }
-        if (NORs > 0)
+        if (NORs)
         {
             file <<
                 "    <!-- reusable 'NOR' gate shape -->\n"
@@ -621,7 +621,7 @@ void NodeWorld::Export(const char* filename) const
                 "      <circle cx=\"0\" cy=\"0\" r=\"" << r << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
                 "    </g>\n";
         }
-        if (XORs > 0)
+        if (XORs)
         {
             file <<
                 "    <!-- reusable 'XOR' gate shape -->\n"
@@ -630,7 +630,7 @@ void NodeWorld::Export(const char* filename) const
                 "      <circle cx=\"0\" cy=\"0\" r=\"" << r << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
                 "    </g>\n";
         }
-        if (RESs > 0)
+        if (RESs)
         {
             file <<
                 "    <!-- reusable resistor shape -->\n"
@@ -638,7 +638,7 @@ void NodeWorld::Export(const char* filename) const
                 "      <rect x=\"" << -r << "\" y=\"" << -r << "\" width=\"" << w << "\" height=\"" << w << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
                 "    </g>\n";
         }
-        if (CAPs > 0)
+        if (CAPs)
         {
             file <<
                 "    <!-- reusable capacitor shape -->\n"
@@ -647,7 +647,7 @@ void NodeWorld::Export(const char* filename) const
                 "      <rect x=\"" << -r + 1 << "\" y=\"" << -r + 1 << "\" width=\"" << w - 2 << "\" height=\"" << w - 2 << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
                 "    </g>\n";
         }
-        if (LEDs > 0)
+        if (LEDs)
         {
             static const float v[] =
             {
