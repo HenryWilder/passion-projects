@@ -556,6 +556,8 @@ int main()
                     {
                         NodeWorld::Get().DestroyNode(node);
                     }
+                    if (mode == Mode::EDIT)
+                        data.edit.selectionRec = IRect(0);
                 }
             }
         }
