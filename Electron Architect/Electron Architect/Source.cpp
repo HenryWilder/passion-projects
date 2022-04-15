@@ -1570,6 +1570,7 @@ int main()
 * Requirements for v1.0.0
 * -Improve groups
 * -More explanation of controls
+* -Undo/redo
 * -Blueprint pallet
 * -Prefab blueprints for things like timers, counters, and latches
 * -Blueprint pallet icons (User-made combination of 4 premade icons. See Factorio for inspiration)
