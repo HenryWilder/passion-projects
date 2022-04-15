@@ -1567,7 +1567,6 @@ int main()
 /* Todo
 * Requirements for v1.0.0
 * -Improve groups
-* -Add "buffer" (delay) gate
 * -Change overlapping nodes to swap gates instead of merging
 * -More explanation of controls
 * -Blueprint pallet
