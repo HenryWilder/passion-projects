@@ -1,4 +1,4 @@
-<svg viewbox="436 308 676 388" xmlns="http://www.w3.org/2000/svg">
+<svg viewbox="508 292 604 300" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <!-- reusable 'OR' gate shape -->
     <g id="gate_or">
@@ -11,13 +11,19 @@
   </defs>
   <!-- Wires (drawn first so they don't obscure nodes) -->
   <g style="stroke:black; stroke-width:1; fill:none;">
-    <path d="M436,420 L436,308 L540,308" />
-    <path d="M540,308 L540,308 L676,308" />
-    <path d="M676,308 L676,388 L628,388" />
+    <path d="M508,380 L508,292 L588,292" />
+    <path d="M588,292 L588,300 L588,300" />
+    <path d="M588,300 L588,300 L596,300" />
+    <path d="M596,300 L596,292 L596,292" />
+    <path d="M596,292 L596,292 L604,292" />
+    <path d="M604,292 L604,300 L604,300" />
   </g>
   <!-- Nodes (reuse shapes defined in header <def> section) -->
-  <use href="#gate_or" x="436" y="420" />
-  <use href="#gate_or" x="540" y="308" />
-  <use href="#gate_led" x="676" y="308" />
-  <use href="#gate_led" x="628" y="388" />
+  <use href="#gate_or" x="508" y="380" />
+  <use href="#gate_led" x="588" y="292" />
+  <use href="#gate_led" x="588" y="300" />
+  <use href="#gate_led" x="596" y="300" />
+  <use href="#gate_led" x="596" y="292" />
+  <use href="#gate_led" x="604" y="292" />
+  <use href="#gate_led" x="604" y="300" />
 </svg>

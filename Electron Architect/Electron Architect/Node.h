@@ -33,6 +33,7 @@ public:
     void SetGate(Gate gate);
 
     uint8_t GetResistance() const;
+    uint8_t GetColorIndex() const;
     uint8_t GetCapacity() const;
     uint8_t GetCharge() const;
     float GetChargePercent() const;
@@ -93,7 +94,18 @@ private: // Accessible by NodeWorld
 public:
     static constexpr Color g_nodeColorActive = RED;
     static constexpr Color g_nodeColorInactive = LIGHTGRAY;
-    static constexpr Color g_resistanceBands[] = { BLACK, BROWN, RED, ORANGE, YELLOW, GREEN, BLUE, VIOLET, GRAY, INTERFERENCEGRAY };
+    static constexpr Color g_resistanceBands[] = {
+        { 0,0,0, 255 },
+        { 126,63,0, 255 },
+        { 255,0,0, 255 },
+        { 255,127,0, 255 },
+        { 255,255,0, 255 },
+        { 0,255,0, 255 },
+        { 0,0,255, 255 },
+        { 127,0,255, 255 },
+        { 127,127,127, 255 },
+        { 255,255,255, 255 }
+    };
     static constexpr float g_nodeRadius = 3.0f;
 
 private:

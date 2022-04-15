@@ -53,6 +53,11 @@ uint8_t Node::GetResistance() const
     _ASSERT_EXPR(m_gate == Gate::RESISTOR, L"Cannot access the resistance of a non-resistor.");
     return m_ntd.r.resistance;
 }
+uint8_t Node::GetColorIndex() const
+{
+    _ASSERT_EXPR(m_gate == Gate::LED, L"Cannot access the color of a non-LED.");
+    return m_ntd.l.colorIndex;
+}
 // Only use if this is a capacitor
 uint8_t Node::GetCapacity() const
 {
@@ -80,7 +85,7 @@ void Node::SetResistance(uint8_t resistance)
 }
 void Node::SetColorIndex(uint8_t colorIndex)
 {
-    _ASSERT_EXPR(m_gate == Gate::RESISTOR, L"Cannot access the color of a non-LED.");
+    _ASSERT_EXPR(m_gate == Gate::LED, L"Cannot access the color of a non-LED.");
     _ASSERT_EXPR(colorIndex <= 9, L"Selected color out of bounds");
     m_ntd.l.colorIndex = colorIndex;
 }
@@ -211,6 +216,12 @@ void Node::Draw(Color color) const
 {
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
 
+    if (m_gate == Gate::LED && GetState())
+    {
+        DrawRectangle(GetX() - nodeRadius - 1, GetY() - nodeRadius - 1, nodeRadius * 2 + 2, nodeRadius * 2 + 2, g_resistanceBands[GetColorIndex()]);
+        return;
+    }
+
     Draw(m_position, m_gate, color);
 
     if (m_gate == Gate::RESISTOR)
@@ -317,6 +328,8 @@ Node::Node(IVec2 position, Gate gate, uint8_t extraParam) : m_position(position)
 {
     if (gate == Gate::RESISTOR)
         m_ntd.r.resistance = extraParam;
+    else if (gate == Gate::LED)
+        m_ntd.l.colorIndex = extraParam;
     else if (gate == Gate::CAPACITOR)
     {
         m_ntd.c.capacity = extraParam;
