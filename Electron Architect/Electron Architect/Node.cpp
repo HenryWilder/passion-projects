@@ -200,7 +200,6 @@ void Node::Draw(IVec2 position, Gate gate, Color color)
         case Gate::DELAY:
             DrawRectangleIRect(ExpandIRect(rec), color);
             DrawRectangleIRect(rec, BLACK);
-            DrawLine(rec.x + rec.w / 2, rec.y, rec.x + rec.w / 2, rec.y + rec.h, color);
             DrawLine(rec.x, rec.y + rec.h / 2, rec.x + rec.w, rec.y + rec.h / 2, color);
             return;
         }

@@ -770,10 +770,10 @@ void NodeWorld::Export(const char* filename) const
             {
                 0,
                 r * 1.5f,
-                r * sinf(2 * PI / 3) * 1.5f,
-                r * cosf(2 * PI / 3) * 1.5f,
-                r * sinf(4 * PI / 3) * 1.5f,
-                r * cosf(4 * PI / 3) * 1.5f
+                r * sinf(2 * PI / 3) * 1.25f,
+                r * cosf(2 * PI / 3) * 1.25f,
+                r * sinf(4 * PI / 3) * 1.25f,
+                r * cosf(4 * PI / 3) * 1.25f
             };
             file <<
                 "    <!-- reusable LED shape -->\n"
@@ -787,7 +787,6 @@ void NodeWorld::Export(const char* filename) const
                 "    <!-- reusable delay shape -->\n"
                 "    <g id=\"gate_del\">\n"
                 "      <rect x=\"" << -r << "\" y=\"" << -r << "\" width=\"" << w << "\" height=\"" << w << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
-                "      <line x1=\"" << 0 << "\" y1=\"" << -r << "\" x2=\"" << 0 << "\" y2=\"" << r << "\" stroke=\"black\" stroke-width=\"1\" fill=\"none\" />\n"
                 "      <line x1=\"" << -r << "\" y1=\"" << 0 << "\" x2=\"" << r << "\" y2=\"" << 0 << "\" stroke=\"black\" stroke-width=\"1\" fill=\"none\" />\n"
                 "    </g>\n";
         }
