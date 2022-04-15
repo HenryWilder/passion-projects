@@ -1514,8 +1514,9 @@ int main()
 }
 
 /* Todo
-* Major
+* Requirements for v1.0.0
 * -Untie tick rate from framerate (Interact mode's low FPS makes the program appear to be having performance issues when panning)
+* -Ability to load graph files
 * -Selection move-together and delete-together
 * -Improve groups
 * -Add "buffer" (delay) gate
@@ -1524,22 +1525,22 @@ int main()
 * -Blueprint pallet
 * -Prefab blueprints for things like timers, counters, and latches
 * -Blueprint pallet icons (User-made combination of 4 premade icons. See Factorio for inspiration)
-* -Save/load
-* -Save file menu (https://en.cppreference.com/w/cpp/filesystem/directory_iterator)
-* -Save file thumbnails (based on file contents)
+* -File menu (https://en.cppreference.com/w/cpp/filesystem/directory_iterator)
+* -File thumbnails (based on file contents)
 * -Menu screen (Open to file menu with "new" at the top)
 *
-* Minor
+* Refactors
 * -Fix tickrate changing when switching to an overlay mode
 * -Refactor deviceParameterTextFmt to be event-updated rather than a per-frame test
+* -Refactor buttons to be classes/structs instead of freeform
 * 
-* Quality of Life
+* Beyond v1.0.0
+* -Parallel node drawing with pen (multiple nodes created with parallel wires)
 * -Special erase (keep wires, erase node)
 * -Multiple wire stacking on single node
-* -Hotkeys for output-only gate state toggles (Like the Reason on-screen piano)
+* -Hotkeys for output-only gate state toggles (Like the Reason on-screen piano (Yes, this is different from interact mode))
 *
-* Stretch goals
-* -Parallel node drawing with pen (multiple nodes created with parallel wires)
+* Optional
 * -Multiple color pallets
 * -Log files for debug/crashes
 */
