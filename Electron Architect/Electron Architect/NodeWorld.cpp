@@ -1,3 +1,7 @@
+#if _DEBUG
+#include <string>
+#include <format>
+#endif
 #include <thread>
 #include <fstream>
 #include "HUtility.h"
@@ -612,14 +616,14 @@ void NodeWorld::Load(const char* filename)
         }
 
         std::thread allocNodesThread(allocNodes, std::ref(nodes), nodeCount);
-        _ASSERT_EXPR(nodes.size() == nodeCount, L"Node array size mismatch!");
         std::thread allocWiresThread(allocWires, std::ref(wires), wireCount);
-        _ASSERT_EXPR(wires.size() == wireCount, L"Wire array size mismatch!");
 
         allocNodesThread.join(); // Nodes do not rely on wire pointers to start initialization
+        _ASSERT_EXPR(nodes.size() == nodeCount, L"Node array size mismatch!");
         std::thread initNodesThread(initNodes, std::ref(nodes), nodeData);
 
         allocWiresThread.join(); // Wires rely on node pointers to start initialization
+        _ASSERT_EXPR(wires.size() == wireCount, L"Wire array size mismatch!");
         std::thread initWiresThread(initWires, std::cref(nodes), std::ref(wires), wireData);
 
         initNodesThread.join();
