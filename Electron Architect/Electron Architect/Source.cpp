@@ -13,8 +13,7 @@ int main()
     int windowHeight = 720;
     InitWindow(windowWidth, windowHeight, "Electron Architect");
     SetExitKey(0);
-    constexpr int targetFPS = 120;
-    SetTargetFPS(120);
+    SetTargetFPS(60);
 
     /******************************************
     *   Load textures, shaders, and meshes
@@ -307,23 +306,12 @@ int main()
     IVec2 cursorPosPrev = IVec2::Zero(); // For checking if there was movement
     bool b_cursorMoved = false;
 
-    auto SetMode = [targetFPS, &baseMode, &mode, &data, &cursorPosPrev, &b_cursorMoved](Mode newMode)
+    auto SetMode = [&baseMode, &mode, &data, &cursorPosPrev, &b_cursorMoved](Mode newMode)
     {
         if (mode == Mode::BP_ICON)
         {
             delete data.bp_icon.object;
             data.bp_icon.object = nullptr;
-        }
-        else if (newMode != mode)
-        {
-            if (mode == Mode::INTERACT)
-            {
-                SetTargetFPS(targetFPS);
-            }
-            if (newMode == Mode::INTERACT)
-            {
-                SetTargetFPS(24);
-            }
         }
 
         b_cursorMoved = true;
@@ -395,8 +383,9 @@ int main()
     camera.rotation = 0;
     camera.zoom = 1;
 
-    uint8_t tickMod = 4; // Number of frames in a tick
-    uint8_t tick = tickMod - 1; // Evaluate on 0
+    uint8_t framesPerTick = 3; // Number of frames in a tick
+    uint8_t tickFrame = framesPerTick - 1; // Evaluate on 0
+    bool tickThisFrame;
 
     while (!WindowShouldClose())
     {
@@ -404,14 +393,9 @@ int main()
         *   Simulate frame and update variables
         ******************************************/
 
-#define I_AM_RIGHT true
-#if I_AM_RIGHT
-        ++tick %= tickMod;
-#else
-        ++tick;
-        tick %= tickMod;
-#endif
-#undef I_AM_RIGHT
+        ++tickFrame;
+        tickFrame %= framesPerTick;
+        tickThisFrame = tickFrame == 0;
 
         IVec2 cursorUIPos(GetMouseX(), GetMouseY());
 
@@ -993,7 +977,7 @@ int main()
 
     EVAL:
         cursorPosPrev = cursorPos;
-        if (tick == 0)
+        if (tickThisFrame)
             NodeWorld::Get().Evaluate();
 
         /******************************************

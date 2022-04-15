@@ -89,6 +89,7 @@ private: // Helpers usable only by NodeWorld
 private: // Accessible by NodeWorld
     Node() = default;
     Node(IVec2 position, Gate gate);
+    // It is entirely safe to pass in an extra param even if the node cannot use it!
     Node(IVec2 position, Gate gate, uint8_t extraParam);
 
 public:

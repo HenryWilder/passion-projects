@@ -507,7 +507,7 @@ void NodeWorld::Save(const char* filename) const
 
     std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
     {
-        file << "1\n";
+        file << "1.1\n";
 
         std::unordered_map<Node*, size_t> nodeIDs;
         std::unordered_map<Wire*, size_t> wireIDs;
@@ -520,7 +520,14 @@ void NodeWorld::Save(const char* filename) const
 
         for (Node* node : nodes)
         {
-            file << TextFormat("%c %i %i\n", (char)node->m_gate, node->GetX(), node->GetY());
+            file << TextFormat("%c %i %i", (char)node->m_gate, node->GetX(), node->GetY());
+            if (node->GetGate() == Gate::RESISTOR)
+                file << TextFormat(" %i", node->GetResistance());
+            else if (node->GetGate() == Gate::LED)
+                file << TextFormat(" %i", node->GetColorIndex());
+            else if (node->GetGate() == Gate::CAPACITOR)
+                file << TextFormat(" %i", node->GetCapacity());
+            file << '\n';
         }
 
         file << TextFormat("w %i\n", wires.size());
@@ -555,12 +562,12 @@ void NodeWorld::Load(const char* filename)
     };
 
 
-    struct FNodeData { char gate; IVec2 pos; };
+    struct FNodeData { char gate; IVec2 pos; int extra; };
     auto initNodes = [](std::vector<Node*>& nodes, const FNodeData* nodeData)
     {
         for (size_t i = 0; i < nodes.size(); ++i)
         {
-            *nodes[i] = Node(nodeData[i].pos, (Gate)nodeData[i].gate);
+            *nodes[i] = Node(nodeData[i].pos, (Gate)nodeData[i].gate, (uint8_t)nodeData[i].extra);
         }
     };
 
@@ -575,9 +582,9 @@ void NodeWorld::Load(const char* filename)
 
     std::ifstream file(filename, std::fstream::in);
     {
-        int version;
+        double version;
         file >> version;
-        if (version != 1)
+        if (version != 1.1)
             return;
 
         // Unload existing
@@ -602,6 +609,8 @@ void NodeWorld::Load(const char* filename)
         for (size_t i = 0; i < nodeCount; ++i)
         {
             file >> nodeData[i].gate >> nodeData[i].pos.x >> nodeData[i].pos.y;
+            if ((Gate)nodeData[i].gate == Gate::RESISTOR || (Gate)nodeData[i].gate == Gate::LED || (Gate)nodeData[i].gate == Gate::CAPACITOR)
+                file >> nodeData[i].extra;
         }
 
         file.ignore(64, 'w');
