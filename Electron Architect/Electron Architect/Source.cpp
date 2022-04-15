@@ -1516,7 +1516,6 @@ int main()
 /* Todo
 * Requirements for v1.0.0
 * -Untie tick rate from framerate (Interact mode's low FPS makes the program appear to be having performance issues when panning)
-* -Ability to load graph files
 * -Selection move-together and delete-together
 * -Improve groups
 * -Add "buffer" (delay) gate
