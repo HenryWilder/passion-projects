@@ -483,30 +483,32 @@ void NodeWorld::StoreBlueprint(Blueprint* bp)
 
 void NodeWorld::Save(const char* filename) const
 {
+    auto prepNodeIDs = [](std::unordered_map<Node*, size_t>& nodeIDs, const std::vector<Node*>& nodes)
+    {
+        nodeIDs.reserve(nodes.size());
+        for (size_t i = 0; i < nodes.size(); ++i)
+        {
+            nodeIDs.insert({ nodes[i], i });
+        }
+    };
+
+    auto prepWireIDs = [](std::unordered_map<Wire*, size_t>& wireIDs, const std::vector<Wire*>& wires)
+    {
+        wireIDs.reserve(wires.size());
+        for (size_t i = 0; i < wires.size(); ++i)
+        {
+            wireIDs.insert({ wires[i], i });
+        }
+    };
+
     std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
     {
         file << "v1\n";
 
         std::unordered_map<Node*, size_t> nodeIDs;
         std::unordered_map<Wire*, size_t> wireIDs;
-        auto aLambda = [](std::unordered_map<Node*, size_t>& nodeIDs, const std::vector<Node*>& nodes)
-        {
-            nodeIDs.reserve(nodes.size());
-            for (size_t i = 0; i < nodes.size(); ++i)
-            {
-                nodeIDs.insert({ nodes[i], i });
-            }
-        };
-        auto bLambda = [](std::unordered_map<Wire*, size_t>& wireIDs, const std::vector<Wire*>& wires)
-        {
-            wireIDs.reserve(wires.size());
-            for (size_t i = 0; i < wires.size(); ++i)
-            {
-                wireIDs.insert({ wires[i], i });
-            }
-        };
-        std::thread a(aLambda, std::ref(nodeIDs), std::cref(nodes));
-        std::thread b(bLambda, std::ref(wireIDs), std::cref(wires));
+        std::thread a(prepNodeIDs, std::ref(nodeIDs), std::cref(nodes));
+        std::thread b(prepWireIDs, std::ref(wireIDs), std::cref(wires));
         a.join();
         b.join();
 
@@ -514,21 +516,14 @@ void NodeWorld::Save(const char* filename) const
 
         for (Node* node : nodes)
         {
-            file << TextFormat("%c %i %i %i\n",
-                (char)node->m_gate,
-                node->GetX(),
-                node->GetY(),
-                node->m_wires.size());
+            file << TextFormat("%c %i %i\n", (char)node->m_gate, node->GetX(), node->GetY());
         }
 
         file << TextFormat("w %i\n", wires.size());
 
         for (Wire* wire : wires)
         {
-            file << TextFormat("%i %i %i\n",
-                wire->elbowConfig,
-                nodeIDs.find(wire->start)->second,
-                nodeIDs.find(wire->end)->second);
+            file << TextFormat("%i %i %i\n", wire->elbowConfig, nodeIDs.find(wire->start)->second, nodeIDs.find(wire->end)->second);
         }
     }
     file.close();
@@ -536,6 +531,44 @@ void NodeWorld::Save(const char* filename) const
 
 void NodeWorld::Load(const char* filename)
 {
+    // HACK: Does not conform to standard _CreateNode/Wire functions!!
+    auto allocNodes = [](std::vector<Node*>& nodes, size_t nodeCount)
+    {
+        nodes.reserve(nodeCount);
+        for (size_t i = 0; i < nodeCount; ++i)
+        {
+            nodes.push_back(new Node);
+        }
+    };
+
+    auto allocWires = [](std::vector<Wire*>& wires, size_t wireCount)
+    {
+        wires.reserve(wireCount);
+        for (size_t i = 0; i < wireCount; ++i)
+        {
+            wires.push_back(new Wire);
+        }
+    };
+
+
+    struct FNodeData { char gate; IVec2 pos; };
+    auto initNodes = [](std::vector<Node*>& nodes, const FNodeData* nodeData)
+    {
+        for (size_t i = 0; i < nodes.size(); ++i)
+        {
+            *nodes[i] = Node(nodeData[i].pos, (Gate)nodeData[i].gate);
+        }
+    };
+
+    struct FWireData { int config; size_t startID, endID; };
+    auto initWires = [](const std::vector<Node*>& nodes, std::vector<Wire*>& wires, const FWireData* wireData)
+    {
+        for (size_t i = 0; i < wires.size(); ++i)
+        {
+            *wires[i] = Wire(nodes[wireData[i].startID], nodes[wireData[i].endID], (ElbowConfig)(uint8_t)wireData[i].config);
+        }
+    };
+
     std::ifstream file(filename, std::fstream::in);
     {
         int version;
@@ -560,65 +593,45 @@ void NodeWorld::Load(const char* filename)
         size_t nodeCount;
         file >> nodeCount;
 
-        for (Node* node : nodes)
+        FNodeData* nodeData = new FNodeData[nodeCount]; // Living a little dangerous here...
+
+        for (size_t i = 0; i < nodeCount; ++i)
         {
-            char gate;
-            IVec2 pos;
-            size_t connectionCount;
-            file >> gate >> pos.x >> pos.y >> connectionCount;
+            file >> nodeData[i].gate >> nodeData[i].pos.x >> nodeData[i].pos.y;
         }
 
         file.ignore(64, 'w');
         size_t wireCount;
         file >> wireCount;
 
-        for (Wire* wire : wires)
+        FWireData* wireData = new FWireData[wireCount];
+
+        for (size_t i = 0; i < wireCount; ++i)
         {
-            int config;
-            size_t startID, endID;
-            file >> config >> startID >> endID;
+            file >> wireData[i].config >> wireData[i].startID >> wireData[i].endID;
         }
 
-        // HACK: Does not conform to standard _CreateNode/Wire functions!!
-        auto allocNodes = [](std::vector<Node*>& nodes, size_t nodeCount)
-        {
-            nodes.reserve(nodeCount);
-            for (size_t i = 0; i < nodeCount; ++i)
-            {
-                nodes.push_back(new Node);
-            }
-        };
-        auto allocWires = [](std::vector<Wire*>& wires, size_t wireCount)
-        {
-            wires.reserve(wireCount);
-            for (size_t i = 0; i < wireCount; ++i)
-            {
-                wires.push_back(new Wire);
-            }
-        };
         std::thread allocNodesThread(allocNodes, std::ref(nodes), nodeCount);
+        _ASSERT_EXPR(nodes.size() == nodeCount, L"Node array size mismatch!");
         std::thread allocWiresThread(allocWires, std::ref(wires), wireCount);
-        allocNodesThread.join();
-        allocWiresThread.join();
+        _ASSERT_EXPR(wires.size() == wireCount, L"Wire array size mismatch!");
 
-        auto initNodes = [](std::vector<Node*>& nodes)
-        {
-            for (Node* node : nodes)
-            {
-                node; // Wait... Where data?...
-            }
-        };
-        auto initWires = [](std::vector<Wire*>& wires)
-        {
-            for (Wire* wire : wires)
-            {
-                wire;
-            }
-        };
-        std::thread initNodesThread(initNodes, std::ref(nodes));
-        std::thread initWiresThread(initWires, std::ref(wires));
+        allocNodesThread.join(); // Nodes do not rely on wire pointers to start initialization
+        std::thread initNodesThread(initNodes, std::ref(nodes), nodeData);
+
+        allocWiresThread.join(); // Wires rely on node pointers to start initialization
+        std::thread initWiresThread(initWires, std::cref(nodes), std::ref(wires), wireData);
+
         initNodesThread.join();
+        delete[] nodeData;
         initWiresThread.join();
+        delete[] wireData;
+        
+        for (Wire* wire : wires)
+        {
+            wire->start->AddWireOutput(wire);
+            wire->end->AddWireInput(wire);
+        }
 
         orderDirty = true;
     }
