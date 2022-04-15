@@ -229,6 +229,10 @@ void Node::Draw(Color color) const
         DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, g_resistanceBands[GetResistance()]);
         DrawRectangle(GetX() - nodeRadius + 2, GetY() - nodeRadius + 2, nodeRadius * 2 - 4, nodeRadius * 2 - 4, BLACK);
     }
+    else if (m_gate == Gate::LED)
+    {
+        DrawCircle(GetX(), GetY(), 1.0f, g_resistanceBands[GetColorIndex()]);
+    }
     else if (m_gate == Gate::CAPACITOR)
     {
         DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, ColorAlpha(g_nodeColorInactive, 1.0f - GetChargePercent()));

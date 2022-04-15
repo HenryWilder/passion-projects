@@ -419,11 +419,12 @@ int main()
 
         b_cursorMoved = cursorPosPrev != cursorPos;
 
+        // Zoom/pan
         if (!ModeIsMenu(mode))
         {
             if (GetMouseWheelMove() > 0 && camera.zoom < 2.0f)
                 camera.zoom *= 2;
-            else if (GetMouseWheelMove() < 0 && camera.zoom > 0.25f)
+            else if (GetMouseWheelMove() < 0 && camera.zoom > 0.125f)
                 camera.zoom /= 2;
             camera.target.x += (float)(IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT)) * g_gridSize;
             camera.target.y += (float)(IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP)) * g_gridSize;
@@ -1068,13 +1069,20 @@ int main()
                     IVec2 extents((int)((float)windowWidth / camera.zoom), (int)((float)windowHeight / camera.zoom));
                     IRect bounds(IVec2(camera.target), extents);
 
-                    for (int y = bounds.y; y < bounds.y + bounds.h; y += g_gridSize)
+                    if (camera.zoom > 0.125)
                     {
-                        DrawLine(bounds.x, y, bounds.x + bounds.w, y, SPACEGRAY);
+                        for (int y = bounds.y; y < bounds.y + bounds.h; y += g_gridSize)
+                        {
+                            DrawLine(bounds.x, y, bounds.x + bounds.w, y, SPACEGRAY);
+                        }
+                        for (int x = bounds.x; x < bounds.x + bounds.w; x += g_gridSize)
+                        {
+                            DrawLine(x, bounds.y, x, bounds.y + bounds.h, SPACEGRAY);
+                        }
                     }
-                    for (int x = bounds.x; x < bounds.x + bounds.w; x += g_gridSize)
+                    else
                     {
-                        DrawLine(x, bounds.y, x, bounds.y + bounds.h, SPACEGRAY);
+                        DrawRectangleIRect(bounds, SPACEGRAY);
                     }
                     DrawLine(bounds.x, 0, bounds.x + bounds.w, 0, LIFELESSNEBULA);
                     DrawLine(0, bounds.y, 0, bounds.y + bounds.h, LIFELESSNEBULA);

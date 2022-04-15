@@ -1,10 +1,15 @@
-<svg viewbox="244 332 -2147483648 -2147483648" xmlns="http://www.w3.org/2000/svg">
+<svg viewbox="316 284 372 -2147483648" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <!-- reusable 'OR' gate shape -->
     <g id="gate_or">
       <circle cx="0" cy="0" r="3" stroke="none" stroke-width="0" fill="black" />
     </g>
   </defs>
+  <!-- Wires (drawn first so they don't obscure nodes) -->
+  <g style="stroke:black; stroke-width:1; fill:none;">
+    <path d="M316,308 L316,284 L372,284" />
+  </g>
   <!-- Nodes (reuse shapes defined in header <def> section) -->
-  <use href="#gate_or" x="244" y="332" />
+  <use href="#gate_or" x="316" y="308" />
+  <use href="#gate_or" x="372" y="284" />
 </svg>
