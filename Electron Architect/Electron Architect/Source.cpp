@@ -549,6 +549,14 @@ int main()
                 {
                     SetMode(Mode::INTERACT);
                 }
+                else if (IsKeyPressed(KEY_DELETE) && !data.selection.empty())
+                {
+                    // TODO: Refactor NodeWorld to have a bulk destroy function to make this process more efficient
+                    for (Node* node : data.selection)
+                    {
+                        NodeWorld::Get().DestroyNode(node);
+                    }
+                }
             }
         }
 
@@ -1523,7 +1531,7 @@ int main()
 * -Menu screen (Open to file menu with "new" at the top)
 *
 * Refactors
-* -Fix tickrate changing when switching to an overlay mode
+* -Refactor NodeWorld to have a bulk destroy function to make this process more efficient
 * -Refactor buttons to be classes/structs instead of freeform
 * 
 * Beyond v1.0.0
