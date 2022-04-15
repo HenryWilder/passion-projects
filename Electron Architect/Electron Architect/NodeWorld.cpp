@@ -654,6 +654,7 @@ void NodeWorld::Load(const char* filename)
         {
             wire->start->AddWireOutput(wire);
             wire->end->AddWireInput(wire);
+            wire->UpdateElbowToLegal();
         }
 
         orderDirty = true;
