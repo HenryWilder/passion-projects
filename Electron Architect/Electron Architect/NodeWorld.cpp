@@ -195,6 +195,10 @@ Node* NodeWorld::MergeNodes(Node* composite, Node* tbRemoved)
     orderDirty = true;
     return composite;
 }
+void NodeWorld::SwapNodes(Node* a, Node* b)
+{
+    std::swap(a->m_gate, b->m_gate);
+}
 // Invalidates input wire!
 Wire* NodeWorld::ReverseWire(Wire* wire)
 {

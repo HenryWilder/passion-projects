@@ -698,8 +698,9 @@ int main()
                         data.edit.selectionStart = (cursorPos - (data.edit.fallbackPos = data.edit.hoveredGroup->GetPosition()));
                     }
 
+                    data.edit.fallbackPos = cursorPos;
                     if (data.edit.selectionWIP = !(data.edit.nodeBeingDragged || data.edit.wireBeingDragged || data.edit.draggingGroup))
-                        data.edit.selectionStart = data.edit.fallbackPos = cursorPos;
+                        data.edit.selectionStart = cursorPos;
                 }
             }
 
@@ -772,11 +773,12 @@ int main()
                 {
                     if (!!data.edit.nodeBeingDragged)
                     {
+                        data.edit.nodeBeingDragged->SetPosition(data.edit.fallbackPos);
                         data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
                         if (!!data.hoveredNode && data.edit.nodeBeingDragged != data.hoveredNode)
-                            data.hoveredNode = data.edit.nodeBeingDragged = NodeWorld::Get().MergeNodes(data.edit.nodeBeingDragged, data.hoveredNode);
-
-                        data.edit.nodeBeingDragged->SetPosition(cursorPos);
+                            NodeWorld::Get().SwapNodes(data.edit.nodeBeingDragged, data.hoveredNode);
+                        else
+                            data.edit.nodeBeingDragged->SetPosition(cursorPos);
                     }
                     else if (data.edit.draggingGroup)
                     {
@@ -1567,7 +1569,6 @@ int main()
 /* Todo
 * Requirements for v1.0.0
 * -Improve groups
-* -Change overlapping nodes to swap gates instead of merging
 * -More explanation of controls
 * -Blueprint pallet
 * -Prefab blueprints for things like timers, counters, and latches

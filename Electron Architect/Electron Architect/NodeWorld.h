@@ -47,6 +47,8 @@ public:
     Wire* CreateWire(Node* start, Node* end, ElbowConfig elbowConfig);
     void DestroyWire(Wire* wire);
     Node* MergeNodes(Node* composite, Node* tbRemoved);
+    // Looks like it swaps the two nodes, but really only swaps the gate!
+    void SwapNodes(Node* a, Node* b);
     // Invalidates input wire!
     Wire* ReverseWire(Wire* wire);
     // Invalidates input wire! (obviously; it's being split in two)
