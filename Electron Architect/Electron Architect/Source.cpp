@@ -394,12 +394,24 @@ int main()
     camera.target = { 0,0 };
     camera.rotation = 0;
     camera.zoom = 1;
-                
+
+    uint8_t tickMod = 4; // Number of frames in a tick
+    uint8_t tick = tickMod - 1; // Evaluate on 0
+
     while (!WindowShouldClose())
     {
         /******************************************
         *   Simulate frame and update variables
         ******************************************/
+
+#define I_AM_RIGHT true
+#if I_AM_RIGHT
+        ++tick %= tickMod;
+#else
+        ++tick;
+        tick %= tickMod;
+#endif
+#undef I_AM_RIGHT
 
         IVec2 cursorUIPos(GetMouseX(), GetMouseY());
 
@@ -981,7 +993,8 @@ int main()
 
     EVAL:
         cursorPosPrev = cursorPos;
-        NodeWorld::Get().Evaluate();
+        if (tick == 0)
+            NodeWorld::Get().Evaluate();
 
         /******************************************
         *   Draw the frame
@@ -1282,10 +1295,10 @@ int main()
                         IVec2(-1, 0),
                     };
                     constexpr IRect iconDest[4] = {
-                        IRect(menuIconOffset,       menuIconOffset,      32, 32),
-                        IRect(menuIconOffset,      -menuIconOffset - 32, 32, 32),
+                        IRect(+menuIconOffset,      +menuIconOffset,      32, 32),
+                        IRect(+menuIconOffset,      -menuIconOffset - 32, 32, 32),
                         IRect(-menuIconOffset - 32, -menuIconOffset - 32, 32, 32),
-                        IRect(-menuIconOffset - 32,  menuIconOffset,      32, 32),
+                        IRect(-menuIconOffset - 32, +menuIconOffset,      32, 32),
                     };
                     int x = data.gate.radialMenuCenter.x;
                     int y = data.gate.radialMenuCenter.y;
