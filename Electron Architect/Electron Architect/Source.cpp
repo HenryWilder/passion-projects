@@ -306,6 +306,8 @@ int main()
     IVec2 cursorPosPrev = IVec2::Zero(); // For checking if there was movement
     bool b_cursorMoved = false;
 
+    const char* deviceParameterTextFmt;
+
     auto SetMode = [&baseMode, &mode, &data, &cursorPosPrev, &b_cursorMoved](Mode newMode)
     {
         if (mode == Mode::BP_ICON)
@@ -371,9 +373,28 @@ int main()
             break;
         }
     };
+    auto SetGate = [&data, &deviceParameterTextFmt](Gate newGate)
+    {
+        data.gatePick = newGate;
+        switch (newGate)
+        {
+        case Gate::RESISTOR:
+            deviceParameterTextFmt = "Resistance: %i inputs";
+            break;
+        case Gate::CAPACITOR:
+            deviceParameterTextFmt = "Capacity: %i ticks";
+            break;
+        case Gate::LED:
+            deviceParameterTextFmt = "Color: %s";
+            break;
+        default:
+            deviceParameterTextFmt = "Component parameter: %i";
+            break;
+        }
+    };
 
-    mode = Mode::PEN;
     SetMode(Mode::PEN);
+    SetGate(Gate::OR);
 
     NodeWorld::Get().Load("session.cg"); // Construct and load last session
 
@@ -386,6 +407,7 @@ int main()
     uint8_t framesPerTick = 3; // Number of frames in a tick
     uint8_t tickFrame = framesPerTick - 1; // Evaluate on 0
     bool tickThisFrame;
+
 
     while (!WindowShouldClose())
     {
@@ -431,19 +453,19 @@ int main()
             if (mode == baseMode || mode == Mode::GATE)
             {
                 if (IsKeyPressed(KEY_ONE))
-                    data.gatePick = Gate::OR;
+                    SetGate(Gate::OR);
                 else if (IsKeyPressed(KEY_TWO))
-                    data.gatePick = Gate::AND;
+                    SetGate(Gate::AND);
                 else if (IsKeyPressed(KEY_THREE))
-                    data.gatePick = Gate::NOR;
+                    SetGate(Gate::NOR);
                 else if (IsKeyPressed(KEY_FOUR))
-                    data.gatePick = Gate::XOR;
+                    SetGate(Gate::XOR);
                 else if (IsKeyPressed(KEY_FIVE))
-                    data.gatePick = Gate::RESISTOR;
+                    SetGate(Gate::RESISTOR);
                 else if (IsKeyPressed(KEY_SIX))
-                    data.gatePick = Gate::CAPACITOR;
+                    SetGate(Gate::CAPACITOR);
                 else if (IsKeyPressed(KEY_SEVEN))
-                    data.gatePick = Gate::LED;
+                    SetGate(Gate::LED);
             }
 
             // KEY COMBOS BEFORE INDIVIDUAL KEYS!
@@ -794,7 +816,7 @@ int main()
             if (leftMouse || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
             {
                 if (leftMouse)
-                    data.gatePick = radialGateOrder[data.gate.overlappedSection];
+                    SetGate(radialGateOrder[data.gate.overlappedSection]);
 
                 mode = baseMode;
                 SetMousePosition(data.gate.radialMenuCenter.x, data.gate.radialMenuCenter.y);
@@ -841,7 +863,7 @@ int main()
 
                             if (InBoundingBox(rec, cursorUIPos))
                             {
-                                data.gatePick = g;
+                                SetGate(g);
                                 break;
                             }
 
@@ -983,31 +1005,6 @@ int main()
         /******************************************
         *   Draw the frame
         ******************************************/
-
-        // todo: refactor to not do unnecesary tests every frame
-        const char* deviceParameterTextFmt;
-        if (data.gatePick == Gate::RESISTOR)
-            deviceParameterTextFmt = "Resistance: %i inputs";
-        else if (data.gatePick == Gate::LED)
-            deviceParameterTextFmt = "Color: %s";
-        else if (data.gatePick == Gate::CAPACITOR)
-            deviceParameterTextFmt = "Capacity: %i ticks";
-        else
-            deviceParameterTextFmt = "Component parameter: %i";
-
-        constexpr const char* colorName[]
-        {
-            "black",
-            "brown",
-            "red",
-            "orange",
-            "yellow",
-            "green",
-            "blue",
-            "violet",
-            "gray",
-            "white",
-        };
 
         BeginDrawing(); {
 
@@ -1388,7 +1385,7 @@ int main()
                                 DrawRectangleIRect(ExpandIRect(rec, -2), color);
                                 const char* text;
                                 if (data.gatePick == Gate::LED)
-                                    text = TextFormat(deviceParameterTextFmt, colorName[v]);
+                                    text = TextFormat(deviceParameterTextFmt, Node::GetColorName(v));
                                 else
                                     text = TextFormat(deviceParameterTextFmt, v);
                                 DrawText(text, 20 + 32, 17 + rec.y, 8, WHITE);
@@ -1471,7 +1468,7 @@ int main()
                         DrawRectangleIRect(ShrinkIRect(rec, 2), Node::g_resistanceBands[data.storedExtendedParam]);
                         const char* text;
                         if (data.gatePick == Gate::LED)
-                            text = TextFormat(deviceParameterTextFmt, colorName[data.storedExtendedParam]);
+                            text = TextFormat(deviceParameterTextFmt, Node::GetColorName(data.storedExtendedParam));
                         else
                             text = TextFormat(deviceParameterTextFmt, data.storedExtendedParam);
                         DrawText(text, 52, 17, 8, WHITE);
@@ -1527,7 +1524,6 @@ int main()
 *
 * Refactors
 * -Fix tickrate changing when switching to an overlay mode
-* -Refactor deviceParameterTextFmt to be event-updated rather than a per-frame test
 * -Refactor buttons to be classes/structs instead of freeform
 * 
 * Beyond v1.0.0

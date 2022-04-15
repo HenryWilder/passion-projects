@@ -58,6 +58,23 @@ uint8_t Node::GetColorIndex() const
     _ASSERT_EXPR(m_gate == Gate::LED, L"Cannot access the color of a non-LED.");
     return m_ntd.l.colorIndex;
 }
+const char* Node::GetColorName(uint8_t index)
+{
+    constexpr const char* colorName[]
+    {
+        "black",
+        "brown",
+        "red",
+        "orange",
+        "yellow",
+        "green",
+        "blue",
+        "violet",
+        "gray",
+        "white",
+    };
+    return colorName[index];
+}
 // Only use if this is a capacitor
 uint8_t Node::GetCapacity() const
 {

@@ -34,6 +34,7 @@ public:
 
     uint8_t GetResistance() const;
     uint8_t GetColorIndex() const;
+    static const char* GetColorName(uint8_t index);
     uint8_t GetCapacity() const;
     uint8_t GetCharge() const;
     float GetChargePercent() const;
