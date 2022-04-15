@@ -507,6 +507,8 @@ void NodeWorld::Save(const char* filename) const
         };
         std::thread a(aLambda, std::ref(nodeIDs), std::cref(nodes));
         std::thread b(bLambda, std::ref(wireIDs), std::cref(wires));
+        a.join();
+        b.join();
 
         file << TextFormat("n %i\n", nodes.size());
 
@@ -538,10 +540,87 @@ void NodeWorld::Load(const char* filename)
     {
         int version;
         file >> version;
-        if (version != 0)
+        if (version != 1)
             return;
 
+        // Unload existing
+        for (Node* node : nodes)
+        {
+            DestroyNode(node);
+        }
+        for (Wire* wire : wires)
+        {
+            DestroyWire(wire);
+        }
+        nodes.clear();
+        wires.clear();
+        // Todo: groups?
 
+        file.ignore(64, 'n');
+        size_t nodeCount;
+        file >> nodeCount;
+
+        for (Node* node : nodes)
+        {
+            char gate;
+            IVec2 pos;
+            size_t connectionCount;
+            file >> gate >> pos.x >> pos.y >> connectionCount;
+        }
+
+        file.ignore(64, 'w');
+        size_t wireCount;
+        file >> wireCount;
+
+        for (Wire* wire : wires)
+        {
+            int config;
+            size_t startID, endID;
+            file >> config >> startID >> endID;
+        }
+
+        // HACK: Does not conform to standard _CreateNode/Wire functions!!
+        auto allocNodes = [](std::vector<Node*>& nodes, size_t nodeCount)
+        {
+            nodes.reserve(nodeCount);
+            for (size_t i = 0; i < nodeCount; ++i)
+            {
+                nodes.push_back(new Node);
+            }
+        };
+        auto allocWires = [](std::vector<Wire*>& wires, size_t wireCount)
+        {
+            wires.reserve(wireCount);
+            for (size_t i = 0; i < wireCount; ++i)
+            {
+                wires.push_back(new Wire);
+            }
+        };
+        std::thread allocNodesThread(allocNodes, std::ref(nodes), nodeCount);
+        std::thread allocWiresThread(allocWires, std::ref(wires), wireCount);
+        allocNodesThread.join();
+        allocWiresThread.join();
+
+        auto initNodes = [](std::vector<Node*>& nodes)
+        {
+            for (Node* node : nodes)
+            {
+                node; // Wait... Where data?...
+            }
+        };
+        auto initWires = [](std::vector<Wire*>& wires)
+        {
+            for (Wire* wire : wires)
+            {
+                wire;
+            }
+        };
+        std::thread initNodesThread(initNodes, std::ref(nodes));
+        std::thread initWiresThread(initWires, std::ref(wires));
+        initNodesThread.join();
+        initWiresThread.join();
+
+        orderDirty = true;
     }
     file.close();
 }
