@@ -1535,9 +1535,11 @@ int main()
 * 
 * Quality of Life
 * -Special erase (keep wires, erase node)
+* -Multiple wire stacking on single node
 * -Hotkeys for output-only gate state toggles (Like the Reason on-screen piano)
 *
 * Stretch goals
+* -Parallel node drawing with pen (multiple nodes created with parallel wires)
 * -Multiple color pallets
 * -Log files for debug/crashes
 */
