@@ -7,6 +7,811 @@
 #include "Group.h"
 #include "NodeWorld.h"
 
+enum class Mode
+{
+    PEN,
+    EDIT,
+    ERASE,
+    INTERACT,
+
+    GATE,
+    BUTTON,
+    PASTE,
+    BP_ICON,
+    BP_SELECT,
+};
+
+struct ProgramData
+{
+    static constexpr Mode dropdownModeOrder[]
+    {
+        Mode::PEN,
+        Mode::EDIT,
+        Mode::ERASE,
+        Mode::INTERACT,
+    };
+    static constexpr Gate dropdownGateOrder[]
+    {
+        Gate::OR,
+        Gate::AND,
+        Gate::NOR,
+        Gate::XOR,
+
+        Gate::RESISTOR,
+        Gate::CAPACITOR,
+        Gate::LED,
+        Gate::DELAY,
+    };
+    static constexpr IRect dropdownBounds[]
+    {
+        IRect(0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
+        IRect(16, 16, 16, 16 * (_countof(dropdownGateOrder) - 1)), // Gate
+        IRect(32, 16, 16, 16 * (_countof(Node::g_resistanceBands) - 1)), // Parameter
+    };
+
+    static constexpr Gate radialGateOrder[]
+    {
+        Gate::XOR,
+        Gate::AND,
+        Gate::OR,
+        Gate::NOR,
+    };
+
+    const char* GetModeTooltipName(Mode mode)
+    {
+        switch (mode)
+        {
+        case Mode::PEN:
+            return "Mode: Draw [b]";
+        case Mode::EDIT:
+            return "Mode: Edit [v]";
+        case Mode::ERASE:
+            return "Mode: Erase [x]";
+        case Mode::INTERACT:
+            return "Mode: Interact [f]";
+        default:
+            _ASSERT_EXPR(false, L"Missing tooltip for selected mode");
+            return "";
+        }
+    };
+    const char* GetModeTooltipDescription(Mode mode)
+    {
+        switch (mode)
+        {
+        case Mode::PEN:
+            return
+                "Left click to create a new node and start a wire from it, or to start a wire from an existing node.\n"
+                "Left click again to connect the wire to a new node or an existing one, and start a new wire from there.\n"
+                "Right click while creating a wire to cancel it.";
+        case Mode::EDIT:
+            return
+                "Left click and drag nodes to move them around.\n"
+                "Left click and drag wire elbows to snap them to a preferred angle.\n"
+                "Right click nodes to apply the currently selected gate/settings to them.";
+        case Mode::ERASE:
+            return
+                "Left click a node to erase it and all wires directly connected to it (collateral will render in MAGENTA).\n"
+                "Left click a wire to erase only that wire, disconnecting the nodes without erasing them.";
+        case Mode::INTERACT:
+            return
+                "Left click a node without any inputs (such nodes will render in BLUE) to toggle it between outputting true and false.\n"
+                "NOTE: Framerate is intentionally lowered from 120 to 24 while in this mode for ease of inspection.";
+
+        default:
+            _ASSERT_EXPR(false, L"Missing tooltip description for selected mode");
+            return "";
+        }
+    };
+    const char* GetGateTooltipName(Gate gate)
+    {
+        switch (gate)
+        {
+        case Gate::OR:
+            return "Gate: Or [1]";
+        case Gate::AND:
+            return "Gate: And [2]";
+        case Gate::NOR:
+            return "Gate: Nor [3]";
+        case Gate::XOR:
+            return "Gate: Xor [4]";
+        case Gate::RESISTOR:
+            return "Device: Resistor [5]";
+        case Gate::CAPACITOR:
+            return "Device: Capacitor [6]";
+        case Gate::LED:
+            return "Device: LED [7]";
+        case Gate::DELAY:
+            return "Device: Delay [8]";
+
+        default:
+            _ASSERT_EXPR(false, L"Missing tooltip for selected gate");
+            return "";
+        }
+    };
+    const char* GetGateTooltipDescription(Gate gate)
+    {
+        switch (gate)
+        {
+        case Gate::OR:
+            return
+                "Outputs true if any input is true,\n"
+                "Outputs false otherwise.";
+        case Gate::AND:
+            return
+                "Outputs true if all inputs are true,\n"
+                "Outputs false otherwise.";
+        case Gate::NOR:
+            return
+                "Outputs false if any input is true.\n"
+                "Outputs true otherwise.";
+        case Gate::XOR:
+            return
+                "Outputs true if exactly 1 input is true,\n"
+                "Outputs false otherwise.\n"
+                "Order of inputs does not matter.";
+        case Gate::RESISTOR:
+            return
+                "Outputs true if greater than [resistance] inputs are true,\n"
+                "Outputs false otherwise.\n"
+                "Order of inputs does not matter.";
+        case Gate::CAPACITOR:
+            return
+                "Stores charge while any input is true.\n"
+                "Stops charging once charge equals [capacity].\n"
+                "Drains charge while no input is true.\n"
+                "Outputs true while charge is greater than zero,\n"
+                "Outputs true while any input is true,\n"
+                "Outputs false otherwise.";
+        case Gate::LED:
+            return
+                "Treats I/O the same as an OR gate.\n"
+                "Lights up with the selected color when powered.";
+        case Gate::DELAY:
+            return
+                "Treats I/O the same as an OR gate.\n"
+                "Outputs with a 1-tick delay.\n"
+                "Sequntial delay devices are recommended for delay greater than 1 tick.";
+
+        default:
+            _ASSERT_EXPR(false, L"Missing tooltip description for selected gate");
+            return "";
+        }
+    };
+
+
+    Mode mode = Mode::PEN;
+    Mode baseMode = Mode::PEN;
+    IVec2 cursorUIPos = IVec2::Zero();
+    IVec2 cursorPos = IVec2::Zero();
+    IVec2 cursorPosPrev = IVec2::Zero(); // For checking if there was movement
+    bool b_cursorMoved = false;
+    const char* deviceParameterTextFmt = "";
+    Gate gatePick = Gate::OR;
+    Gate lastGate = Gate::OR;
+    uint8_t storedExtraParam = 0;
+    Camera2D camera{ .offset{ 0,0 }, .target{ 0,0 }, .rotation{ 0 }, .zoom{ 1 } };
+    Node* hoveredNode = nullptr;
+    Wire* hoveredWire = nullptr;
+    Blueprint* clipboard = nullptr;
+    std::vector<Node*> selection;
+
+
+    // Base mode
+    union
+    {
+        struct PenModeData
+        {
+            Node* currentWireStart;
+            ElbowConfig currentWireElbowConfig;
+        } pen;
+
+        struct EditModeData
+        {
+            IVec2 fallbackPos;
+            bool selectionWIP;
+            IVec2 selectionStart;
+            IRect selectionRec;
+            bool draggingGroup;
+            Group* hoveredGroup;
+            Node* nodeBeingDragged;
+            Wire* wireBeingDragged;
+        } edit;
+
+        struct EraseModeData
+        {
+        } erase;
+
+        struct InteractModeData
+        {
+        } interact;
+    };
+
+    // Overlay mode - doesn't reset the base mode
+    union
+    {
+        struct GateModeData
+        {
+            IVec2 radialMenuCenter;
+            uint8_t overlappedSection;
+        } gate;
+
+        struct ButtonModeData
+        {
+            int dropdownActive;
+        } button;
+
+        struct PasteModeData
+        {
+        } paste;
+
+        struct BP_IconModeData
+        {
+            BlueprintIcon* object;
+            IVec2 pos; // Width and height are fixed
+            IRect sheetRec;
+            BlueprintIconID_t iconID;
+            uint8_t iconCount;
+            int draggingIcon; // -1 for none/not dragging
+        } bp_icon;
+
+        struct BP_SelectModeData
+        {
+            int hovering; // -1 for none
+        } bp_select;
+    };
+
+    static bool ModeIsOverlay(Mode mode)
+    {
+        // Modes which can be active simultaneously with a non-overlay mode
+        return mode == Mode::BP_ICON || mode == Mode::BP_SELECT;
+    }
+    inline bool ModeIsOverlay() const
+    {
+        return ModeIsOverlay(this->mode);
+    }
+    static bool ModeIsMenu(Mode mode)
+    {
+        // Modes which disable use of basic UI and drawing of certain UI elements
+        return mode == Mode::BP_ICON || mode == Mode::BP_SELECT;
+    }
+    inline bool ModeIsMenu() const
+    {
+        return ModeIsMenu(this->mode);
+    }
+    bool ModeIsNonBasic() const
+    {
+        return this->mode != this->baseMode;
+    }
+
+    void SetMode(Mode newMode)
+    {
+        if (mode == Mode::BP_ICON)
+        {
+            delete bp_icon.object;
+            bp_icon.object = nullptr;
+        }
+
+        b_cursorMoved = true;
+        mode = newMode;
+
+        switch (newMode)
+        {
+        case Mode::PEN:
+            baseMode = Mode::PEN;
+            pen.currentWireStart = nullptr;
+            pen.currentWireElbowConfig = (ElbowConfig)0;
+            break;
+
+        case Mode::EDIT:
+            baseMode = Mode::EDIT;
+            edit.fallbackPos = IVec2::Zero();
+            edit.selectionWIP = false;
+            edit.selectionStart = IVec2::Zero();
+            edit.selectionRec = IRect(0, 0, 0, 0);
+            edit.draggingGroup = false;
+            edit.hoveredGroup = nullptr;
+            edit.nodeBeingDragged = nullptr;
+            edit.wireBeingDragged = nullptr;
+            break;
+
+        case Mode::ERASE:
+            baseMode = Mode::ERASE;
+            break;
+
+        case Mode::INTERACT:
+            baseMode = Mode::INTERACT;
+            break;
+
+        case Mode::GATE:
+            gate.radialMenuCenter = IVec2::Zero();
+            gate.overlappedSection = 0;
+            break;
+
+        case Mode::BUTTON:
+            button.dropdownActive = 0;
+            break;
+
+        case Mode::PASTE:
+            break;
+
+        case Mode::BP_ICON:
+            bp_icon.object = nullptr;
+            bp_icon.pos = IVec2::Zero();
+            bp_icon.sheetRec = IRect(0, 0, 0, 0);
+            bp_icon.iconID = NULL;
+            bp_icon.iconCount = 0;
+            bp_icon.draggingIcon = -1;
+            break;
+
+        case Mode::BP_SELECT:
+            bp_select.hovering = -1;
+            break;
+        }
+    };
+    void SetGate(Gate newGate)
+    {
+        gatePick = newGate;
+        switch (newGate)
+        {
+        case Gate::RESISTOR:
+            deviceParameterTextFmt = "Resistance: %i inputs";
+            break;
+        case Gate::CAPACITOR:
+            deviceParameterTextFmt = "Capacity: %i ticks";
+            break;
+        case Gate::LED:
+            deviceParameterTextFmt = "Color: %s";
+            break;
+        default:
+            deviceParameterTextFmt = "Component parameter: %i";
+            break;
+        }
+    };
+};
+
+void Update_Pen(ProgramData& data, IVec2 cursorPos, bool b_cursorMoved)
+{
+    if (b_cursorMoved)
+    {
+        data.hoveredWire = nullptr;
+        data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+        if (!data.hoveredNode)
+            data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+    }
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    {
+        Node* newNode = data.hoveredNode;
+        if (!newNode)
+        {
+            newNode = NodeWorld::Get().CreateNode(cursorPos, data.gatePick, data.storedExtendedParam);
+            if (!!data.hoveredWire)
+            {
+                NodeWorld::Get().BisectWire(data.hoveredWire, newNode);
+                data.hoveredWire = nullptr;
+            }
+        }
+        // Do not create a new node/wire if already hovering the start node
+        if (!!data.pen.currentWireStart && newNode != data.pen.currentWireStart)
+        {
+            Wire* wire = NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
+            wire->elbowConfig = data.pen.currentWireElbowConfig;
+            wire->UpdateElbowToLegal();
+        }
+        data.pen.currentWireStart = newNode;
+    }
+    else if (IsKeyPressed(KEY_R))
+    {
+        if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+            --data.pen.currentWireElbowConfig;
+        else
+            ++data.pen.currentWireElbowConfig;
+    }
+    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+    {
+        data.pen.currentWireStart = nullptr;
+    }
+}
+void Update_Edit(ProgramData& data, IVec2 cursorPos, IVec2 cursorPosPrev, bool b_cursorMoved)
+{
+    if (b_cursorMoved)
+    {
+        if (!data.edit.nodeBeingDragged &&
+            !data.edit.wireBeingDragged &&
+            !data.edit.draggingGroup)
+        {
+            data.edit.hoveredGroup = nullptr;
+            data.hoveredWire = nullptr;
+            data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+            if (!data.hoveredNode)
+            {
+                data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(cursorPos);
+                if (!data.hoveredWire)
+                {
+                    data.edit.hoveredGroup = NodeWorld::Get().FindGroupAtPos(cursorPos);
+                }
+            }
+        }
+    }
+
+    // Press
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    {
+        if (!data.selection.empty() && !!data.hoveredNode) // There is a selection, and a node has been pressed
+        {
+            data.edit.nodeBeingDragged = data.hoveredNode;
+            data.edit.wireBeingDragged = nullptr;
+
+            int minx = INT_MAX;
+            int miny = INT_MAX;
+            int maxx = INT_MIN;
+            int maxy = INT_MIN;
+
+            for (Node* node : data.selection)
+            {
+                if (node->GetX() < minx) minx = node->GetX();
+                else if (node->GetX() > maxx) maxx = node->GetX();
+                if (node->GetY() < miny) miny = node->GetY();
+                else if (node->GetY() > maxy) maxy = node->GetY();
+            }
+
+            data.edit.selectionRec.w = maxx - (data.edit.selectionRec.x = minx);
+            data.edit.selectionRec.h = maxy - (data.edit.selectionRec.y = miny);
+        }
+        else
+        {
+            data.selection.clear();
+            data.edit.nodeBeingDragged = data.hoveredNode;
+            data.edit.wireBeingDragged = data.hoveredWire;
+
+            // selectionStart being used as an offset here
+            if (data.edit.draggingGroup = !!data.edit.hoveredGroup)
+            {
+                NodeWorld::Get().FindNodesInGroup(data.selection, data.edit.hoveredGroup);
+                data.edit.selectionStart = (cursorPos - (data.edit.fallbackPos = data.edit.hoveredGroup->GetPosition()));
+            }
+
+            data.edit.fallbackPos = cursorPos;
+            if (data.edit.selectionWIP = !(data.edit.nodeBeingDragged || data.edit.wireBeingDragged || data.edit.draggingGroup))
+                data.edit.selectionStart = cursorPos;
+        }
+    }
+
+    // Selection
+    if (data.edit.selectionWIP)
+    {
+        auto [minx, maxx] = std::minmax(cursorPos.x, data.edit.selectionStart.x);
+        auto [miny, maxy] = std::minmax(cursorPos.y, data.edit.selectionStart.y);
+        data.edit.selectionRec.w = maxx - (data.edit.selectionRec.x = minx);
+        data.edit.selectionRec.h = maxy - (data.edit.selectionRec.y = miny);
+    }
+    // Node
+    else if (!!data.edit.nodeBeingDragged)
+    {
+        // Multiple selection
+        if (!data.selection.empty())
+        {
+            const IVec2 offset = cursorPos - cursorPosPrev;
+            for (Node* node : data.selection)
+            {
+                node->SetPosition_Temporary(node->GetPosition() + offset);
+            }
+            data.edit.selectionRec.position += offset;
+        }
+        else
+            data.edit.nodeBeingDragged->SetPosition_Temporary(cursorPos);
+    }
+    // Wire
+    else if (!!data.edit.wireBeingDragged)
+    {
+        data.edit.wireBeingDragged->SnapElbowToLegal(cursorPos);
+    }
+    // Group
+    else if (data.edit.draggingGroup)
+    {
+        data.edit.hoveredGroup->SetPosition(cursorPos - data.edit.selectionStart);
+        for (Node* node : data.selection)
+        {
+            IVec2 offset = cursorPos - cursorPosPrev;
+            node->SetPosition_Temporary(node->GetPosition() + offset);
+        }
+    }
+
+    // Release
+    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)))
+    {
+        // Cancel
+        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+        {
+            if (!!data.edit.nodeBeingDragged)
+            {
+                data.edit.nodeBeingDragged->SetPosition(data.edit.fallbackPos);
+            }
+            else if (data.edit.draggingGroup)
+            {
+                data.edit.hoveredGroup->SetPosition(data.edit.fallbackPos);
+                for (Node* node : data.selection)
+                {
+                    IVec2 offset = (data.edit.fallbackPos + data.edit.selectionStart) - cursorPos;
+                    node->SetPosition_Temporary(node->GetPosition() + offset);
+                }
+            }
+            else if (data.edit.selectionWIP)
+            {
+                data.edit.selectionRec = IRect(0, 0, 0, 0);
+            }
+        }
+        // Finalize
+        else
+        {
+            if (!!data.edit.nodeBeingDragged)
+            {
+                data.edit.nodeBeingDragged->SetPosition(data.edit.fallbackPos);
+                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+                if (!!data.hoveredNode && data.edit.nodeBeingDragged != data.hoveredNode)
+                    NodeWorld::Get().SwapNodes(data.edit.nodeBeingDragged, data.hoveredNode);
+                else
+                    data.edit.nodeBeingDragged->SetPosition(cursorPos);
+            }
+            else if (data.edit.draggingGroup)
+            {
+                for (Node* node : data.selection)
+                {
+                    node->SetPosition(node->GetPosition());
+                }
+            }
+            else if (data.edit.selectionWIP)
+            {
+                NodeWorld::Get().FindNodesInRect(data.selection, data.edit.selectionRec);
+            }
+        }
+        if (data.edit.draggingGroup)
+            data.selection.clear();
+        data.edit.nodeBeingDragged = nullptr;
+        data.edit.selectionWIP = false;
+        data.edit.draggingGroup = false;
+        data.edit.wireBeingDragged = nullptr;
+    }
+    // Right click
+    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!data.hoveredNode)
+    {
+        data.hoveredNode->SetGate(data.gatePick);
+        if (data.hoveredNode->GetGate() == Gate::RESISTOR)
+            data.hoveredNode->SetResistance(data.storedResistance);
+        else if (data.hoveredNode->GetGate() == Gate::LED)
+            data.hoveredNode->SetColorIndex(data.storedExtendedParam);
+        else if (data.hoveredNode->GetGate() == Gate::CAPACITOR)
+            data.hoveredNode->SetCapacity(data.storedCapacity);
+    }
+}
+void Update_Erase(ProgramData& data, IVec2 cursorPos, bool b_cursorMoved)
+{
+    if (b_cursorMoved)
+    {
+        data.hoveredWire = nullptr;
+        data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+        if (!data.hoveredNode)
+            data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+    }
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    {
+        if (!!data.hoveredNode)
+            NodeWorld::Get().DestroyNode(data.hoveredNode);
+        else if (!!data.hoveredWire)
+            NodeWorld::Get().DestroyWire(data.hoveredWire);
+
+        data.hoveredNode = nullptr;
+        data.hoveredWire = nullptr;
+    }
+}
+void Update_Interact(ProgramData& data, IVec2 cursorPos)
+{
+    data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+    if (!!data.hoveredNode && !data.hoveredNode->IsOutputOnly())
+        data.hoveredNode = nullptr;
+
+    if (!!data.hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        data.hoveredNode->SetGate(data.hoveredNode->GetGate() == Gate::NOR ? Gate::OR : Gate::NOR);
+}
+void Update_Overlay_Gate(ProgramData& data, IVec2 cursorPos, IVec2 cursorUIPos, bool b_cursorMoved)
+{
+    if (b_cursorMoved)
+    {
+        if (cursorUIPos.x < data.gate.radialMenuCenter.x)
+        {
+            if (cursorUIPos.y < data.gate.radialMenuCenter.y)
+                data.gate.overlappedSection = 2;
+            else // cursorPos.y > data.gate.radialMenuCenter.y
+                data.gate.overlappedSection = 3;
+        }
+        else // cursorPos.x > data.gate.radialMenuCenter.x
+        {
+            if (cursorUIPos.y < data.gate.radialMenuCenter.y)
+                data.gate.overlappedSection = 1;
+            else // cursorPos.y > data.gate.radialMenuCenter.y
+                data.gate.overlappedSection = 0;
+        }
+    }
+
+    bool leftMouse = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+    if (leftMouse || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+    {
+        if (leftMouse)
+            SetGate(radialGateOrder[data.gate.overlappedSection]);
+
+        mode = baseMode;
+        SetMousePosition(data.gate.radialMenuCenter.x, data.gate.radialMenuCenter.y);
+        cursorUIPos = data.gate.radialMenuCenter;
+    }
+}
+void Update_Overlay_Button()
+{
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    {
+        IRect rec = dropdownBounds[data.button.dropdownActive];
+        if (InBoundingBox(rec, cursorUIPos))
+        {
+            rec.h = 16;
+
+            switch (data.button.dropdownActive)
+            {
+            case 0: // Mode
+            {
+                for (Mode m : dropdownModeOrder)
+                {
+                    if (m == baseMode)
+                        continue;
+
+                    if (InBoundingBox(rec, cursorUIPos))
+                    {
+                        SetMode(m);
+                        break;
+                    }
+
+                    rec.y += 16;
+                }
+            }
+            break;
+
+            case 1: // Gate
+            {
+                for (Gate g : dropdownGateOrder)
+                {
+                    if (g == data.gatePick)
+                        continue;
+
+                    if (InBoundingBox(rec, cursorUIPos))
+                    {
+                        SetGate(g);
+                        break;
+                    }
+
+                    rec.y += 16;
+                }
+
+                SetMode(baseMode);
+            }
+            break;
+
+            case 2: // Resistance
+            {
+                for (uint8_t v = 0; v < 10; ++v)
+                {
+                    if (v == data.storedExtendedParam)
+                        continue;
+
+                    if (InBoundingBox(rec, cursorUIPos))
+                    {
+                        data.storedExtendedParam = v;
+                        break;
+                    }
+
+                    rec.y += 16;
+                }
+
+                SetMode(baseMode);
+            }
+            break;
+            }
+        }
+        else
+            SetMode(baseMode);
+    }
+    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+    {
+        SetMode(baseMode);
+    }
+}
+void Update_Overlay_Paste()
+{
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+    {
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            NodeWorld::Get().SpawnBlueprint(data.clipboard, cursorPos);
+        data.selection.clear();
+        SetMode(baseMode);
+    }
+}
+void Update_Menu_Icon()
+{
+    if (b_cursorMoved && data.bp_icon.draggingIcon == -1)
+    {
+        data.bp_icon.iconID = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.bp_icon.sheetRec.xy, cursorUIPos));
+    }
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
+        if (InBoundingBox(data.bp_icon.sheetRec, cursorUIPos) && data.bp_icon.iconCount < 4 && !!data.bp_icon.iconID)
+        {
+            cursorUIPos = data.bp_icon.pos;
+            SetMousePosition(cursorUIPos.x + BlueprintIcon::g_size / 2, cursorUIPos.y + BlueprintIcon::g_size / 2);
+            data.bp_icon.object->combo[data.bp_icon.iconCount] = { data.bp_icon.iconID, 0,0 };
+            data.bp_icon.draggingIcon = data.bp_icon.iconCount;
+            data.bp_icon.iconCount++;
+        }
+        else if (InBoundingBox(IRect(data.bp_icon.pos.x, data.bp_icon.pos.y, BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2), cursorUIPos))
+        {
+            data.bp_icon.draggingIcon = -1;
+            for (decltype(data.bp_icon.draggingIcon) i = 0; i < data.bp_icon.iconCount; ++i)
+            {
+                if (data.bp_icon.object->combo[i].id == NULL)
+                    continue;
+
+                IRect bounds(
+                    data.bp_icon.pos.x,
+                    data.bp_icon.pos.y,
+                    BlueprintIcon::g_size,
+                    BlueprintIcon::g_size
+                );
+                bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
+                if (InBoundingBox(bounds, cursorUIPos))
+                {
+                    data.bp_icon.draggingIcon = i;
+                    data.bp_icon.iconID = data.bp_icon.object->combo[i].id;
+                    break;
+                }
+            }
+        }
+    }
+    if ((IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) && data.bp_icon.draggingIcon != -1)
+    {
+        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+        {
+            if (data.bp_icon.draggingIcon < 3)
+            {
+                memcpy(
+                    data.bp_icon.object->combo + data.bp_icon.draggingIcon,
+                    data.bp_icon.object->combo + data.bp_icon.draggingIcon + 1,
+                    sizeof(IconPos) * (4ull - (size_t)data.bp_icon.draggingIcon));
+            }
+            data.bp_icon.object->combo[3] = { NULL, 0,0 };
+            data.bp_icon.iconCount--;
+        }
+        data.bp_icon.draggingIcon = -1;
+    }
+    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.bp_icon.iconID)
+    {
+        constexpr IVec2 centerOffset = IVec2(BlueprintIcon::g_size / 2);
+        IVec2 colRow = (cursorUIPos - data.bp_icon.pos - centerOffset) / centerOffset;
+        colRow.x = std::min(std::max(colRow.x, 0), 2);
+        colRow.y = std::min(std::max(colRow.y, 0), 2);
+        data.bp_icon.object->combo[data.bp_icon.draggingIcon].x = colRow.x;
+        data.bp_icon.object->combo[data.bp_icon.draggingIcon].y = colRow.y;
+    }
+}
+// todo
+void Update_Menu_Select(ProgramData& data)
+{
+    
+}
+
+
+void Draw_Pen()
+{
+
+}
+
 int main()
 {
     int windowWidth = 1280;
@@ -19,23 +824,6 @@ int main()
     *   Load textures, shaders, and meshes
     ******************************************/
 
-    enum class Mode {
-        PEN,
-        EDIT,
-        ERASE,
-        INTERACT,
-
-        GATE,
-        BUTTON,
-        PASTE,
-        BP_ICON,
-        BP_SELECT,
-    } mode, baseMode;
-
-    auto ModeIsMenu = [](Mode mode) {
-        // Modes which disable use of basic UI and drawing of certain UI elements
-        return mode == Mode::BP_ICON || mode == Mode::BP_SELECT;
-    };
 
     Texture2D clipboardIcon = LoadTexture("icon_clipboard.png");
 
@@ -95,328 +883,16 @@ int main()
 
     BlueprintIcon::Load("icons_blueprint.png");
 
-    struct {
-        Gate gatePick = Gate::OR;
-        Gate lastGate = Gate::OR;
-        union { // Alternate names for the same value
-            uint8_t storedResistance;
-            uint8_t storedCapacity;
-            uint8_t storedExtendedParam = 0;
-        };
-        Node* hoveredNode = nullptr;
-        Wire* hoveredWire = nullptr;
-        Blueprint* clipboard = nullptr;
-        std::vector<Node*> selection;
+    ProgramData data;
 
-        union // Base mode
-        {
-            struct {
-                Node* currentWireStart;
-                ElbowConfig currentWireElbowConfig;
-            } pen;
-
-            struct {
-                IVec2 fallbackPos;
-                bool selectionWIP;
-                IVec2 selectionStart;
-                IRect selectionRec;
-                bool draggingGroup;
-                Group* hoveredGroup;
-                Node* nodeBeingDragged;
-                Wire* wireBeingDragged;
-            } edit;
-
-            struct {
-            } erase;
-
-            struct {
-            } interact = {};
-        };
-        union // Overlay mode - doesn't affect other modes
-        {
-            struct {
-                IVec2 radialMenuCenter;
-                uint8_t overlappedSection;
-            } gate;
-
-            struct {
-                int dropdownActive;
-            } button;
-
-            struct {
-            } paste = {};
-
-            struct {
-                BlueprintIcon* object;
-                IVec2 pos; // Width and height are fixed
-                IRect sheetRec;
-                BlueprintIconID_t iconID;
-                uint8_t iconCount;
-                int draggingIcon; // -1 for none/not dragging
-            } bp_icon;
-
-            struct {
-                int hovering; // -1 for none
-            } bp_select;
-        };
-    } data;
-
-    constexpr Mode dropdownModeOrder[] = {
-        Mode::PEN,
-        Mode::EDIT,
-        Mode::ERASE,
-        Mode::INTERACT,
-    };
-    constexpr Gate dropdownGateOrder[] = {
-        Gate::OR,
-        Gate::AND,
-        Gate::NOR,
-        Gate::XOR,
-
-        Gate::RESISTOR,
-        Gate::CAPACITOR,
-        Gate::LED,
-        Gate::DELAY,
-    };
-    constexpr IRect dropdownBounds[] = {
-        IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
-        IRect(16, 16, 16, 16 * (_countof(dropdownGateOrder) - 1)), // Gate
-        IRect(32, 16, 16, 16 * (_countof(Node::g_resistanceBands) - 1)), // Parameter
-    };
-
-    constexpr Gate radialGateOrder[] = {
-        Gate::XOR,
-        Gate::AND,
-        Gate::OR,
-        Gate::NOR,
-    };
-
-    auto GetModeTooltipName = [](Mode mode)
-    {
-        switch (mode)
-        {
-        case Mode::PEN:
-            return "Mode: Draw [b]";
-        case Mode::EDIT:
-            return "Mode: Edit [v]";
-        case Mode::ERASE:
-            return "Mode: Erase [x]";
-        case Mode::INTERACT:
-            return "Mode: Interact [f]";
-        default:
-            _ASSERT_EXPR(false, L"Missing tooltip for selected mode");
-            return "";
-        }
-    };
-    auto GetModeTooltipDescription = [](Mode mode)
-    {
-        switch (mode)
-        {
-        case Mode::PEN:
-            return
-                "Left click to create a new node and start a wire from it, or to start a wire from an existing node.\n"
-                "Left click again to connect the wire to a new node or an existing one, and start a new wire from there.\n"
-                "Right click while creating a wire to cancel it.";
-        case Mode::EDIT:
-            return
-                "Left click and drag nodes to move them around.\n"
-                "Left click and drag wire elbows to snap them to a preferred angle.\n"
-                "Right click nodes to apply the currently selected gate/settings to them.";
-        case Mode::ERASE:
-            return
-                "Left click a node to erase it and all wires directly connected to it (collateral will render in MAGENTA).\n"
-                "Left click a wire to erase only that wire, disconnecting the nodes without erasing them.";
-        case Mode::INTERACT:
-            return
-                "Left click a node without any inputs (such nodes will render in BLUE) to toggle it between outputting true and false.\n"
-                "NOTE: Framerate is intentionally lowered from 120 to 24 while in this mode for ease of inspection.";
-
-        default:
-            _ASSERT_EXPR(false, L"Missing tooltip description for selected mode");
-            return "";
-        }
-    };
-    auto GetGateTooltipName = [](Gate gate)
-    {
-        switch (gate)
-        {
-        case Gate::OR:
-            return "Gate: Or [1]";
-        case Gate::AND:
-            return "Gate: And [2]";
-        case Gate::NOR:
-            return "Gate: Nor [3]";
-        case Gate::XOR:
-            return "Gate: Xor [4]";
-        case Gate::RESISTOR:
-            return "Device: Resistor [5]";
-        case Gate::CAPACITOR:
-            return "Device: Capacitor [6]";
-        case Gate::LED:
-            return "Device: LED [7]";
-        case Gate::DELAY:
-            return "Device: Delay [8]";
-
-        default:
-            _ASSERT_EXPR(false, L"Missing tooltip for selected gate");
-            return "";
-        }
-    };
-    auto GetGateTooltipDescription = [](Gate gate)
-    {
-        switch (gate)
-        {
-        case Gate::OR:
-            return
-                "Outputs true if any input is true,\n"
-                "Outputs false otherwise.";
-        case Gate::AND:
-            return
-                "Outputs true if all inputs are true,\n"
-                "Outputs false otherwise.";
-        case Gate::NOR:
-            return
-                "Outputs false if any input is true.\n"
-                "Outputs true otherwise.";
-        case Gate::XOR:
-            return
-                "Outputs true if exactly 1 input is true,\n"
-                "Outputs false otherwise.\n"
-                "Order of inputs does not matter.";
-        case Gate::RESISTOR:
-            return
-                "Outputs true if greater than [resistance] inputs are true,\n"
-                "Outputs false otherwise.\n"
-                "Order of inputs does not matter.";
-        case Gate::CAPACITOR:
-            return
-                "Stores charge while any input is true.\n"
-                "Stops charging once charge equals [capacity].\n"
-                "Drains charge while no input is true.\n"
-                "Outputs true while charge is greater than zero,\n"
-                "Outputs true while any input is true,\n"
-                "Outputs false otherwise.";
-        case Gate::LED:
-            return
-                "Treats I/O the same as an OR gate.\n"
-                "Lights up with the selected color when powered.";
-        case Gate::DELAY:
-            return
-                "Treats I/O the same as an OR gate.\n"
-                "Outputs with a 1-tick delay.\n"
-                "Sequntial delay devices are recommended for delay greater than 1 tick.";
-
-        default:
-            _ASSERT_EXPR(false, L"Missing tooltip description for selected gate");
-            return "";
-        }
-    };
-
-    IVec2 cursorPosPrev = IVec2::Zero(); // For checking if there was movement
-    bool b_cursorMoved = false;
-
-    const char* deviceParameterTextFmt;
-
-    auto SetMode = [&baseMode, &mode, &data, &cursorPosPrev, &b_cursorMoved](Mode newMode)
-    {
-        if (mode == Mode::BP_ICON)
-        {
-            delete data.bp_icon.object;
-            data.bp_icon.object = nullptr;
-        }
-
-        b_cursorMoved = true;
-        mode = newMode;
-
-        switch (newMode)
-        {
-        case Mode::PEN:
-            baseMode = Mode::PEN;
-            data.pen.currentWireStart = nullptr;
-            data.pen.currentWireElbowConfig = (ElbowConfig)0;
-            break;
-
-        case Mode::EDIT:
-            baseMode = Mode::EDIT;
-            data.edit.fallbackPos = IVec2::Zero();
-            data.edit.selectionWIP = false;
-            data.edit.selectionStart = IVec2::Zero();
-            data.edit.selectionRec = IRect(0,0,0,0);
-            data.edit.draggingGroup = false;
-            data.edit.hoveredGroup = nullptr;
-            data.edit.nodeBeingDragged = nullptr;
-            data.edit.wireBeingDragged = nullptr;
-            break;
-
-        case Mode::ERASE:
-            baseMode = Mode::ERASE;
-            break;
-
-        case Mode::INTERACT:
-            baseMode = Mode::INTERACT;
-            break;
-
-        case Mode::GATE:
-            data.gate.radialMenuCenter = IVec2::Zero();
-            data.gate.overlappedSection = 0;
-            break;
-
-        case Mode::BUTTON:
-            data.button.dropdownActive = 0;
-            break;
-
-        case Mode::PASTE:
-            break;
-
-        case Mode::BP_ICON:
-            data.bp_icon.object = nullptr;
-            data.bp_icon.pos = IVec2::Zero();
-            data.bp_icon.sheetRec = IRect(0,0,0,0);
-            data.bp_icon.iconID = NULL;
-            data.bp_icon.iconCount = 0;
-            data.bp_icon.draggingIcon = -1;
-            break;
-
-        case Mode::BP_SELECT:
-            data.bp_select.hovering = -1;
-            break;
-        }
-    };
-    auto SetGate = [&data, &deviceParameterTextFmt](Gate newGate)
-    {
-        data.gatePick = newGate;
-        switch (newGate)
-        {
-        case Gate::RESISTOR:
-            deviceParameterTextFmt = "Resistance: %i inputs";
-            break;
-        case Gate::CAPACITOR:
-            deviceParameterTextFmt = "Capacity: %i ticks";
-            break;
-        case Gate::LED:
-            deviceParameterTextFmt = "Color: %s";
-            break;
-        default:
-            deviceParameterTextFmt = "Component parameter: %i";
-            break;
-        }
-    };
-
-    SetMode(Mode::PEN);
-    SetGate(Gate::OR);
+    data.SetMode(Mode::PEN);
+    data.SetGate(Gate::OR);
 
     NodeWorld::Get().Load("session.cg"); // Construct and load last session
-
-    Camera2D camera;
-    camera.offset = { 0,0 };
-    camera.target = { 0,0 };
-    camera.rotation = 0;
-    camera.zoom = 1;
 
     uint8_t framesPerTick = 3; // Number of frames in a tick
     uint8_t tickFrame = framesPerTick - 1; // Evaluate on 0
     bool tickThisFrame;
-
 
     while (!WindowShouldClose())
     {
@@ -593,460 +1069,40 @@ int main()
         {
 
         // Basic
-
-        case Mode::PEN:
-        {
-            if (b_cursorMoved)
-            {
-                data.hoveredWire = nullptr;
-                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-                if (!data.hoveredNode)
-                    data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
-            }
-
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            {
-                Node* newNode = data.hoveredNode;
-                if (!newNode)
-                {
-                    newNode = NodeWorld::Get().CreateNode(cursorPos, data.gatePick, data.storedExtendedParam);
-                    if (!!data.hoveredWire)
-                    {
-                        NodeWorld::Get().BisectWire(data.hoveredWire, newNode);
-                        data.hoveredWire = nullptr;
-                    }
-                }
-                // Do not create a new node/wire if already hovering the start node
-                if (!!data.pen.currentWireStart && newNode != data.pen.currentWireStart)
-                {
-                    Wire* wire = NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
-                    wire->elbowConfig = data.pen.currentWireElbowConfig;
-                    wire->UpdateElbowToLegal();
-                }
-                data.pen.currentWireStart = newNode;
-            }
-            else if (IsKeyPressed(KEY_R))
-            {
-                if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
-                    --data.pen.currentWireElbowConfig;
-                else
-                    ++data.pen.currentWireElbowConfig;
-            }
-            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-            {
-                data.pen.currentWireStart = nullptr;
-            }
-        }
-        break;
-
-        case Mode::EDIT:
-        {
-            if (b_cursorMoved)
-            {
-                if (!data.edit.nodeBeingDragged &&
-                    !data.edit.wireBeingDragged &&
-                    !data.edit.draggingGroup)
-                {
-                    data.edit.hoveredGroup = nullptr;
-                    data.hoveredWire = nullptr;
-                    data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-                    if (!data.hoveredNode)
-                    {
-                        data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(cursorPos);
-                        if (!data.hoveredWire)
-                        {
-                            data.edit.hoveredGroup = NodeWorld::Get().FindGroupAtPos(cursorPos);
-                        }
-                    }
-                }
-            }
-
-            // Press
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            {
-                if (!data.selection.empty() && !!data.hoveredNode) // There is a selection, and a node has been pressed
-                {
-                    data.edit.nodeBeingDragged = data.hoveredNode;
-                    data.edit.wireBeingDragged = nullptr;
-
-                    int minx = INT_MAX;
-                    int miny = INT_MAX;
-                    int maxx = INT_MIN;
-                    int maxy = INT_MIN;
-
-                    for (Node* node : data.selection)
-                    {
-                        if      (node->GetX() < minx) minx = node->GetX();
-                        else if (node->GetX() > maxx) maxx = node->GetX();
-                        if      (node->GetY() < miny) miny = node->GetY();
-                        else if (node->GetY() > maxy) maxy = node->GetY();
-                    }
-
-                    data.edit.selectionRec.w = maxx - (data.edit.selectionRec.x = minx);
-                    data.edit.selectionRec.h = maxy - (data.edit.selectionRec.y = miny);
-                }
-                else
-                {
-                    data.selection.clear();
-                    data.edit.nodeBeingDragged = data.hoveredNode;
-                    data.edit.wireBeingDragged = data.hoveredWire;
-
-                    // selectionStart being used as an offset here
-                    if (data.edit.draggingGroup = !!data.edit.hoveredGroup)
-                    {
-                        NodeWorld::Get().FindNodesInGroup(data.selection, data.edit.hoveredGroup);
-                        data.edit.selectionStart = (cursorPos - (data.edit.fallbackPos = data.edit.hoveredGroup->GetPosition()));
-                    }
-
-                    data.edit.fallbackPos = cursorPos;
-                    if (data.edit.selectionWIP = !(data.edit.nodeBeingDragged || data.edit.wireBeingDragged || data.edit.draggingGroup))
-                        data.edit.selectionStart = cursorPos;
-                }
-            }
-
-            // Selection
-            if (data.edit.selectionWIP)
-            {
-                auto [minx, maxx] = std::minmax(cursorPos.x, data.edit.selectionStart.x);
-                auto [miny, maxy] = std::minmax(cursorPos.y, data.edit.selectionStart.y);
-                data.edit.selectionRec.w = maxx - (data.edit.selectionRec.x = minx);
-                data.edit.selectionRec.h = maxy - (data.edit.selectionRec.y = miny);
-            }
-            // Node
-            else if (!!data.edit.nodeBeingDragged)
-            {
-                // Multiple selection
-                if (!data.selection.empty())
-                {
-                    const IVec2 offset = cursorPos - cursorPosPrev;
-                    for (Node* node : data.selection)
-                    {
-                        node->SetPosition_Temporary(node->GetPosition() + offset);
-                    }
-                    data.edit.selectionRec.position += offset;
-                }
-                else
-                    data.edit.nodeBeingDragged->SetPosition_Temporary(cursorPos);
-            }
-            // Wire
-            else if (!!data.edit.wireBeingDragged)
-            {
-                data.edit.wireBeingDragged->SnapElbowToLegal(cursorPos);
-            }
-            // Group
-            else if (data.edit.draggingGroup)
-            {
-                data.edit.hoveredGroup->SetPosition(cursorPos - data.edit.selectionStart);
-                for (Node* node : data.selection)
-                {
-                    IVec2 offset = cursorPos - cursorPosPrev;
-                    node->SetPosition_Temporary(node->GetPosition() + offset);
-                }
-            }
-
-            // Release
-            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)))
-            {
-                // Cancel
-                if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-                {
-                    if (!!data.edit.nodeBeingDragged)
-                    {
-                        data.edit.nodeBeingDragged->SetPosition(data.edit.fallbackPos);
-                    }
-                    else if (data.edit.draggingGroup)
-                    {
-                        data.edit.hoveredGroup->SetPosition(data.edit.fallbackPos);
-                        for (Node* node : data.selection)
-                        {
-                            IVec2 offset = (data.edit.fallbackPos + data.edit.selectionStart) - cursorPos;
-                            node->SetPosition_Temporary(node->GetPosition() + offset);
-                        }
-                    }
-                    else if (data.edit.selectionWIP)
-                    {
-                        data.edit.selectionRec = IRect(0,0,0,0);
-                    }
-                }
-                // Finalize
-                else
-                {
-                    if (!!data.edit.nodeBeingDragged)
-                    {
-                        data.edit.nodeBeingDragged->SetPosition(data.edit.fallbackPos);
-                        data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-                        if (!!data.hoveredNode && data.edit.nodeBeingDragged != data.hoveredNode)
-                            NodeWorld::Get().SwapNodes(data.edit.nodeBeingDragged, data.hoveredNode);
-                        else
-                            data.edit.nodeBeingDragged->SetPosition(cursorPos);
-                    }
-                    else if (data.edit.draggingGroup)
-                    {
-                        for (Node* node : data.selection)
-                        {
-                            node->SetPosition(node->GetPosition());
-                        }
-                    }
-                    else if (data.edit.selectionWIP)
-                    {
-                        NodeWorld::Get().FindNodesInRect(data.selection, data.edit.selectionRec);
-                    }
-                }
-                if (data.edit.draggingGroup)
-                    data.selection.clear();
-                data.edit.nodeBeingDragged = nullptr;
-                data.edit.selectionWIP = false;
-                data.edit.draggingGroup = false;
-                data.edit.wireBeingDragged = nullptr;
-            }
-            // Right click
-            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!data.hoveredNode)
-            {
-                data.hoveredNode->SetGate(data.gatePick);
-                if (data.hoveredNode->GetGate() == Gate::RESISTOR)
-                    data.hoveredNode->SetResistance(data.storedResistance);
-                else if (data.hoveredNode->GetGate() == Gate::LED)
-                    data.hoveredNode->SetColorIndex(data.storedExtendedParam);
-                else if (data.hoveredNode->GetGate() == Gate::CAPACITOR)
-                    data.hoveredNode->SetCapacity(data.storedCapacity);
-            }
-        }
-        break;
-
-        case Mode::ERASE:
-        {
-            if (b_cursorMoved)
-            {
-                data.hoveredWire = nullptr;
-                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-                if (!data.hoveredNode)
-                    data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
-            }
-
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            {
-                if (!!data.hoveredNode)
-                    NodeWorld::Get().DestroyNode(data.hoveredNode);
-                else if (!!data.hoveredWire)
-                    NodeWorld::Get().DestroyWire(data.hoveredWire);
-
-                data.hoveredNode = nullptr;
-                data.hoveredWire = nullptr;
-            }
-        }
-        break;
-
-        case Mode::INTERACT:
-        {
-            data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-            if (!!data.hoveredNode && !data.hoveredNode->IsOutputOnly())
-                data.hoveredNode = nullptr;
-
-            if (!!data.hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-                data.hoveredNode->SetGate(data.hoveredNode->GetGate() == Gate::NOR ? Gate::OR : Gate::NOR);
-        }
-        break;
-
+        case Mode::PEN:      Update_Pen(data, cursorPos, b_cursorMoved); break;
+        case Mode::EDIT:     Update_Edit(data, cursorPos, cursorPosPrev, b_cursorMoved); break;
+        case Mode::ERASE:    Update_Erase(data, cursorPos, b_cursorMoved);  break;
+        case Mode::INTERACT: Update_Interact(data, cursorPos); break;
 
         // Overlay
 
         case Mode::GATE:
         {
-            if (b_cursorMoved)
-            {
-                if (cursorUIPos.x < data.gate.radialMenuCenter.x)
-                {
-                    if (cursorUIPos.y < data.gate.radialMenuCenter.y)
-                        data.gate.overlappedSection = 2;
-                    else // cursorPos.y > data.gate.radialMenuCenter.y
-                        data.gate.overlappedSection = 3;
-                }
-                else // cursorPos.x > data.gate.radialMenuCenter.x
-                {
-                    if (cursorUIPos.y < data.gate.radialMenuCenter.y)
-                        data.gate.overlappedSection = 1;
-                    else // cursorPos.y > data.gate.radialMenuCenter.y
-                        data.gate.overlappedSection = 0;
-                }
-            }
-
-            bool leftMouse = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-            if (leftMouse || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-            {
-                if (leftMouse)
-                    SetGate(radialGateOrder[data.gate.overlappedSection]);
-
-                mode = baseMode;
-                SetMousePosition(data.gate.radialMenuCenter.x, data.gate.radialMenuCenter.y);
-                cursorUIPos = data.gate.radialMenuCenter;
-            }
+            
         }
         break;
 
         case Mode::BUTTON:
         {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            {
-                IRect rec = dropdownBounds[data.button.dropdownActive];
-                if (InBoundingBox(rec, cursorUIPos))
-                {
-                    rec.h = 16;
-
-                    switch (data.button.dropdownActive)
-                    {
-                    case 0: // Mode
-                    {
-                        for (Mode m : dropdownModeOrder)
-                        {
-                            if (m == baseMode)
-                                continue;
-
-                            if (InBoundingBox(rec, cursorUIPos))
-                            {
-                                SetMode(m);
-                                break;
-                            }
-
-                            rec.y += 16;
-                        }
-                    }
-                    break;
-
-                    case 1: // Gate
-                    {
-                        for (Gate g : dropdownGateOrder)
-                        {
-                            if (g == data.gatePick)
-                                continue;
-
-                            if (InBoundingBox(rec, cursorUIPos))
-                            {
-                                SetGate(g);
-                                break;
-                            }
-
-                            rec.y += 16;
-                        }
-
-                        SetMode(baseMode);
-                    }
-                    break;
-
-                    case 2: // Resistance
-                    {
-                        for (uint8_t v = 0; v < 10; ++v)
-                        {
-                            if (v == data.storedExtendedParam)
-                                continue;
-
-                            if (InBoundingBox(rec, cursorUIPos))
-                            {
-                                data.storedExtendedParam = v;
-                                break;
-                            }
-
-                            rec.y += 16;
-                        }
-
-                        SetMode(baseMode);
-                    }
-                    break;
-                    }
-                }
-                else
-                    SetMode(baseMode);
-            }
-            else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-            {
-                SetMode(baseMode);
-            }
+            
         }
         break;
 
         case Mode::PASTE:
         {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-            {
-                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-                    NodeWorld::Get().SpawnBlueprint(data.clipboard, cursorPos);
-                data.selection.clear();
-                SetMode(baseMode);
-            }
+            
         }
         break;
 
         case Mode::BP_ICON:
         {
-            if (b_cursorMoved && data.bp_icon.draggingIcon == -1)
-            {
-                data.bp_icon.iconID = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.bp_icon.sheetRec.xy, cursorUIPos));
-            }
-
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-            {
-                if (InBoundingBox(data.bp_icon.sheetRec, cursorUIPos) && data.bp_icon.iconCount < 4 && !!data.bp_icon.iconID)
-                {
-                    cursorUIPos = data.bp_icon.pos;
-                    SetMousePosition(cursorUIPos.x + BlueprintIcon::g_size / 2, cursorUIPos.y + BlueprintIcon::g_size / 2);
-                    data.bp_icon.object->combo[data.bp_icon.iconCount] = { data.bp_icon.iconID, 0,0 };
-                    data.bp_icon.draggingIcon = data.bp_icon.iconCount;
-                    data.bp_icon.iconCount++;
-                }
-                else if (InBoundingBox(IRect(data.bp_icon.pos.x, data.bp_icon.pos.y, BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2), cursorUIPos))
-                {
-                    data.bp_icon.draggingIcon = -1;
-                    for (decltype(data.bp_icon.draggingIcon) i = 0; i < data.bp_icon.iconCount; ++i)
-                    {
-                        if (data.bp_icon.object->combo[i].id == NULL)
-                            continue;
-
-                        IRect bounds(
-                            data.bp_icon.pos.x,
-                            data.bp_icon.pos.y,
-                            BlueprintIcon::g_size,
-                            BlueprintIcon::g_size
-                        );
-                        bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
-                        if (InBoundingBox(bounds, cursorUIPos))
-                        {
-                            data.bp_icon.draggingIcon = i;
-				            data.bp_icon.iconID = data.bp_icon.object->combo[i].id;
-                            break;
-                        }
-                    }
-                }
-            }
-            if ((IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) && data.bp_icon.draggingIcon != -1)
-            {
-                if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
-                {
-                    if (data.bp_icon.draggingIcon < 3)
-                    {
-                        memcpy(
-                            data.bp_icon.object->combo + data.bp_icon.draggingIcon,
-                            data.bp_icon.object->combo + data.bp_icon.draggingIcon + 1,
-                            sizeof(IconPos) * (4ull - (size_t)data.bp_icon.draggingIcon));
-                    }
-                    data.bp_icon.object->combo[3] = { NULL, 0,0 };
-                    data.bp_icon.iconCount--;
-                }
-                data.bp_icon.draggingIcon = -1;
-            }
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.bp_icon.iconID)
-            {
-                constexpr IVec2 centerOffset = IVec2(BlueprintIcon::g_size / 2);
-                IVec2 colRow = (cursorUIPos - data.bp_icon.pos - centerOffset) / centerOffset;
-                colRow.x = std::min(std::max(colRow.x, 0), 2);
-                colRow.y = std::min(std::max(colRow.y, 0), 2);
-                data.bp_icon.object->combo[data.bp_icon.draggingIcon].x = colRow.x;
-                data.bp_icon.object->combo[data.bp_icon.draggingIcon].y = colRow.y;
-            }
+            
         }
         break;
 
         case Mode::BP_SELECT:
         {
-            // todo
+            
         }
         break;
 
