@@ -124,8 +124,9 @@ public:
     Blueprint* clipboard = nullptr;
     std::vector<Node*> selection;
 
+private:
     // Base mode
-    union
+    union BaseModeData
     {
         struct PenModeData
         {
@@ -152,10 +153,10 @@ public:
         struct InteractModeData
         {
         } interact;
-    };
+    } base;
 
     // Overlay mode - doesn't reset the base mode
-    union
+    union OverlayModeData
     {
         struct GateModeData
         {
@@ -186,8 +187,53 @@ public:
         {
             int hovering; // -1 for none
         } bp_select;
-    };
+    } overlay;
 
+public: // Accessors for unions
+
+    /**********
+    * Basic
+    **********/
+
+    // Pen
+    Node*& Pen_CurrentWireStart()               { _ASSERT_EXPR(baseMode == Mode::PEN, "Tried to access member of different mode"); return base.pen.currentWireStart; }
+    ElbowConfig& Pen_CurrentWireElbowConfig()   { _ASSERT_EXPR(baseMode == Mode::PEN, "Tried to access member of different mode"); return base.pen.currentWireElbowConfig; }
+
+    // Edit
+    IVec2& Edit_FallbackPos()                   { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.fallbackPos; }
+    bool& Edit_SelectionWIP()                   { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.selectionWIP; }
+    IVec2& Edit_SelectionStart()                { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.selectionStart; }
+    IRect& Edit_SelectionRec()                  { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.selectionRec; }
+    bool& Edit_DraggingGroup()                  { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.draggingGroup; }
+    Group*& Edit_HoveredGroup()                 { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.hoveredGroup; }
+    Node*& Edit_NodeBeingDragged()              { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.nodeBeingDragged; }
+    Wire*& Edit_WireBeingDragged()              { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.wireBeingDragged; }
+
+    /**********
+    * Overlay
+    **********/
+
+    // Gate
+    IVec2& Gate_RadialMenuCenter()              { _ASSERT_EXPR(mode == Mode::GATE, "Tried to access member of different mode"); return overlay.gate.radialMenuCenter; }
+    uint8_t& Gate_OverlappedSection()           { _ASSERT_EXPR(mode == Mode::GATE, "Tried to access member of different mode"); return overlay.gate.overlappedSection; }
+
+    // Button
+    int& Button_DropdownActive()                { _ASSERT_EXPR(mode == Mode::GATE, "Tried to access member of different mode"); return overlay.button.dropdownActive; }
+
+    // BP_Icon
+    BlueprintIcon*& BPIcon_Object()             { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.object; }
+    // Width and height are fixed
+    IVec2& BPIcon_Pos()                         { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.pos; }
+    IRect& BPIcon_SheetRec()                    { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.sheetRec; }
+    BlueprintIconID_t& BPIcon_IconID()          { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.iconID; }
+    uint8_t& BPIcon_IconCount()                 { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.iconCount; }
+    // -1 for none/not dragging
+    int& BPIcon_DraggingIcon()                  { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.draggingIcon; }
+
+    // Select
+    int& BPSelect_Hovering()                    { _ASSERT_EXPR(mode == Mode::BP_SELECT, "Tried to access member of different mode"); return overlay.bp_select.hovering; }
+
+public:
 
     Texture2D GetClipboardIcon() const
     {
@@ -269,12 +315,14 @@ public:
     {
         if (mode == Mode::BP_ICON)
         {
-            delete bp_icon.object;
-            bp_icon.object = nullptr;
+            delete overlay.bp_icon.object;
+            overlay.bp_icon.object = nullptr;
         }
 
         b_cursorMoved = true;
         mode = newMode;
+
+        memset();
 
         switch (newMode)
         {
