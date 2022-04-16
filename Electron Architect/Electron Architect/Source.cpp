@@ -89,10 +89,10 @@ struct ProgramData
     };
 
 private:
-    Texture2D clipboardIcon;
-    Texture2D modeIcons;
-    Texture2D gateIcons16x;
-    Texture2D gateIcons32x;
+    static Texture2D clipboardIcon;
+    static Texture2D modeIcons;
+    static Texture2D gateIcons16x;
+    static Texture2D gateIcons32x;
 public:
 
     int windowWidth;
@@ -124,7 +124,9 @@ public:
     Blueprint* clipboard = nullptr;
     std::vector<Node*> selection;
 
+#if _DEBUG
 private:
+#endif
     // Base mode
     union BaseModeData
     {
@@ -191,6 +193,8 @@ private:
 
 public: // Accessors for unions
 
+#if _DEBUG
+
     /**********
     * Basic
     **********/
@@ -233,13 +237,59 @@ public: // Accessors for unions
     // Select
     int& BPSelect_Hovering()                    { _ASSERT_EXPR(mode == Mode::BP_SELECT, "Tried to access member of different mode"); return overlay.bp_select.hovering; }
 
+#else // Release
+
+    /**********
+    * Basic
+    **********/
+
+    // Pen
+#define Pen_CurrentWireStart() base.pen.currentWireStart
+#define Pen_CurrentWireElbowConfig() base.pen.currentWireElbowConfig
+
+    // Edit
+#define Edit_FallbackPos() base.edit.fallbackPos
+#define Edit_SelectionWIP() base.edit.selectionWIP
+#define Edit_SelectionStart() base.edit.selectionStart
+#define Edit_SelectionRec() base.edit.selectionRec
+#define Edit_DraggingGroup() base.edit.draggingGroup
+#define Edit_HoveredGroup() base.edit.hoveredGroup
+#define Edit_NodeBeingDragged() base.edit.nodeBeingDragged
+#define Edit_WireBeingDragged() base.edit.wireBeingDragged
+
+    /**********
+    * Overlay
+    **********/
+
+    // Gate
+#define Gate_RadialMenuCenter() overlay.gate.radialMenuCenter
+#define Gate_OverlappedSection() overlay.gate.overlappedSection
+
+    // Button
+#define Button_DropdownActive() overlay.button.dropdownActive
+
+    // BP_Icon
+#define BPIcon_Object() overlay.bp_icon.object
+    // Width and height are fixed
+#define BPIcon_Pos() overlay.bp_icon.pos
+#define BPIcon_SheetRec() overlay.bp_icon.sheetRec
+#define BPIcon_IconID() overlay.bp_icon.iconID
+#define BPIcon_IconCount() overlay.bp_icon.iconCount
+    // -1 for none/not dragging
+#define BPIcon_DraggingIcon() overlay.bp_icon.draggingIcon
+
+    // Select
+#define BPSelect_Hovering() overlay.bp_select.hovering
+
+#endif
+
 public:
 
-    Texture2D GetClipboardIcon() const
+    static Texture2D GetClipboardIcon()
     {
         return clipboardIcon;
     }
-    void DrawModeIcon(Mode mode, IVec2 pos, Color tint) const
+    static void DrawModeIcon(Mode mode, IVec2 pos, Color tint)
     {
         IVec2 offset;
         switch (mode)
@@ -252,7 +302,7 @@ public:
         }
         DrawIcon<16>(modeIcons, offset, pos, tint);
     };
-    void DrawGateIcon16x(Gate gate, IVec2 pos, Color tint) const
+    static void DrawGateIcon16x(Gate gate, IVec2 pos, Color tint)
     {
         IVec2 offset;
         switch (gate)
@@ -270,7 +320,7 @@ public:
         }
         DrawIcon<16>(gateIcons16x, offset, pos, tint);
     };
-    void DrawGateIcon32x(Gate gate, IVec2 pos, Color tint) const
+    static void DrawGateIcon32x(Gate gate, IVec2 pos, Color tint)
     {
         IVec2 offset;
         switch (gate)
@@ -757,7 +807,12 @@ public:
             IRect bounds(IVec2(camera.target), extents);
 
             constexpr float gridSpaceFrac = 1.0f / gridSize;
-            if (camera.zoom >= gridSpaceFrac)
+            // "If the fraction of a screen pixel in a grid space equals or exceeds the fraction of a screen pixel in a world pixel"
+            if (camera.zoom <= gridSpaceFrac)
+            {
+                DrawRectangleIRect(bounds, SPACEGRAY);
+            }
+            else
             {
                 for (int y = bounds.y; y < bounds.y + bounds.h; y += gridSize)
                 {
@@ -767,10 +822,6 @@ public:
                 {
                     DrawLine(x, bounds.y, x, bounds.y + bounds.h, SPACEGRAY);
                 }
-            }
-            else
-            {
-                DrawRectangleIRect(bounds, SPACEGRAY);
             }
             constexpr int halfgrid = gridSize / 2;
             DrawLine(bounds.x, -halfgrid, bounds.x + bounds.w, -halfgrid, LIFELESSNEBULA);
@@ -784,7 +835,12 @@ public:
             IVec2 extents((int)((float)windowWidth / camera.zoom), (int)((float)windowHeight / camera.zoom));
             IRect bounds(IVec2(camera.target), extents);
 
+            // "If the number of world pixels compacted into a single screen pixel equal or exceed the pixels between gridlines"
             if ((int)(1.0f / camera.zoom) >= gridSize)
+            {
+                DrawRectangleIRect(bounds, SPACEGRAY);
+            }
+            else
             {
                 for (int y = bounds.y; y < bounds.y + bounds.h; y += gridSize)
                 {
@@ -794,10 +850,6 @@ public:
                 {
                     DrawLine(x, bounds.y, x, bounds.y + bounds.h, SPACEGRAY);
                 }
-            }
-            else
-            {
-                DrawRectangleIRect(bounds, SPACEGRAY);
             }
             int halfgrid = gridSize / 2;
             DrawLine(bounds.x, -halfgrid, bounds.x + bounds.w, -halfgrid, LIFELESSNEBULA);
@@ -1286,11 +1338,11 @@ void Draw_Pen(ProgramData& data)
 }
 void Draw_Edit(ProgramData& data)
 {
-    if (!!data.edit.hoveredGroup)
-        data.edit.hoveredGroup->Highlight(INTERFERENCEGRAY);
+    if (!!data.Edit_HoveredGroup())
+        data.Edit_HoveredGroup()->Highlight(INTERFERENCEGRAY);
 
-    DrawRectangleIRect(data.edit.selectionRec, ColorAlpha(SPACEGRAY, 0.5));
-    DrawRectangleLines(data.edit.selectionRec.x, data.edit.selectionRec.y, data.edit.selectionRec.w, data.edit.selectionRec.h, LIFELESSNEBULA);
+    DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(SPACEGRAY, 0.5));
+    DrawRectangleLines(data.Edit_SelectionRec().x, data.Edit_SelectionRec().y, data.Edit_SelectionRec().w, data.Edit_SelectionRec().h, LIFELESSNEBULA);
 
     NodeWorld::Get().DrawWires();
 
@@ -1311,7 +1363,7 @@ void Draw_Edit(ProgramData& data)
 
         data.hoveredWire->Draw(WIPBLUE);
         Color elbowColor;
-        if (!!data.edit.wireBeingDragged)
+        if (!!data.Edit_WireBeingDragged())
             elbowColor = WIPBLUE;
         else
             elbowColor = CAUTIONYELLOW;
@@ -1338,11 +1390,11 @@ void Draw_Erase(ProgramData& data)
         int expandedRad = radius + 1;
         DrawRectangle(center.x - expandedRad, center.y - expandedRad, expandedRad * 2, expandedRad * 2, BLACK);
         DrawLine(center.x - radius, center.y - radius,
-            center.x + radius, center.y + radius,
-            color);
+                 center.x + radius, center.y + radius,
+                 color);
         DrawLine(center.x - radius, center.y + radius,
-            center.x + radius, center.y - radius,
-            color);
+                 center.x + radius, center.y - radius,
+                 color);
     };
 
     NodeWorld::Get().DrawWires();
@@ -1350,7 +1402,7 @@ void Draw_Erase(ProgramData& data)
     if (!!data.hoveredWire)
     {
         data.hoveredWire->Draw(MAGENTA);
-        DrawCross(cursorPos, DESTRUCTIVERED);
+        DrawCross(data.cursorPos, DESTRUCTIVERED);
     }
     else if (!!data.hoveredNode)
     {
@@ -1385,16 +1437,16 @@ void Draw_Interact(ProgramData& data)
 }
 void Draw_Overlay_Gate(ProgramData& data)
 {
-    if (baseMode == Mode::PEN)
+    if (data.baseMode == Mode::PEN)
     {
         NodeWorld::Get().DrawWires();
 
-        if (!!data.pen.currentWireStart)
+        if (!!data.Pen_CurrentWireStart())
         {
-            IVec2 start = data.pen.currentWireStart->GetPosition();
+            IVec2 start = data.Pen_CurrentWireStart()->GetPosition();
             IVec2 elbow;
-            IVec2 end = data.gate.radialMenuCenter;
-            elbow = Wire::GetLegalElbowPosition(start, end, data.pen.currentWireElbowConfig);
+            IVec2 end = data.Gate_RadialMenuCenter();
+            elbow = Wire::GetLegalElbowPosition(start, end, data.Pen_CurrentWireElbowConfig());
             Wire::Draw(start, elbow, end, WIPBLUE);
             Node::Draw(end, data.gatePick, WIPBLUE);
         }
@@ -1423,10 +1475,10 @@ void Draw_Overlay_Gate(ProgramData& data)
         IRect(-menuIconOffset - 32, -menuIconOffset - 32, 32, 32),
         IRect(-menuIconOffset - 32, +menuIconOffset,      32, 32),
     };
-    int x = data.gate.radialMenuCenter.x;
-    int y = data.gate.radialMenuCenter.y;
+    int x = data.Gate_RadialMenuCenter().x;
+    int y = data.Gate_RadialMenuCenter().y;
     constexpr Color menuBackground = SPACEGRAY;
-    DrawCircleIV(data.gate.radialMenuCenter, static_cast<float>(menuRadius + 4), menuBackground);
+    DrawCircleIV(data.Gate_RadialMenuCenter(), static_cast<float>(menuRadius + 4), menuBackground);
 
     for (int i = 0; i < 4; ++i)
     {
@@ -1434,7 +1486,7 @@ void Draw_Overlay_Gate(ProgramData& data)
         Color colorB;
         int radius;
 
-        if (i == data.gate.overlappedSection) // Active
+        if (i == data.Gate_OverlappedSection()) // Active
         {
             colorA = GLEEFULDUST;
             colorB = INTERFERENCEGRAY;
@@ -1453,7 +1505,7 @@ void Draw_Overlay_Gate(ProgramData& data)
         IVec2 rec = iconDest[i].xy;
         rec.x += x;
         rec.y += y;
-        DrawGateIcon32x(radialGateOrder[i], rec, colorB);
+        ProgramData::DrawGateIcon32x(ProgramData::radialGateOrder[i], rec, colorB);
 
         EndScissorMode();
     }
@@ -1465,27 +1517,27 @@ void Draw_Overlay_Button(ProgramData& data)
 
     EndMode2D();
 
-    IRect rec = dropdownBounds[data.button.dropdownActive];
+    IRect rec = data.dropdownBounds[data.Button_DropdownActive()];
     DrawRectangleIRect(rec, SPACEGRAY);
     rec.h = 16;
 
-    switch (data.button.dropdownActive)
+    switch (data.Button_DropdownActive())
     {
     case 0: // Mode
     {
-        for (Mode m : dropdownModeOrder)
+        for (Mode m : ProgramData::dropdownModeOrder)
         {
-            if (m == baseMode)
+            if (m == data.baseMode)
                 continue;
             Color color;
-            if (InBoundingBox(rec, cursorUIPos))
+            if (InBoundingBox(rec, data.cursorUIPos))
             {
                 color = WHITE;
-                DrawText(GetModeTooltipName(m), 20, 17 + rec.y, 8, WHITE);
+                DrawText(ProgramData::GetModeTooltipName(m), 20, 17 + rec.y, 8, WHITE);
             }
             else
                 color = DEADCABLE;
-            DrawModeIcon(m, rec.xy, color);
+            ProgramData::DrawModeIcon(m, rec.xy, color);
             rec.y += 16;
         }
     }
@@ -1493,19 +1545,19 @@ void Draw_Overlay_Button(ProgramData& data)
 
     case 1: // Gate
     {
-        for (Gate g : dropdownGateOrder)
+        for (Gate g : ProgramData::dropdownGateOrder)
         {
             if (g == data.gatePick)
                 continue;
             Color color;
-            if (InBoundingBox(rec, cursorUIPos))
+            if (InBoundingBox(rec, data.cursorUIPos))
             {
                 color = WHITE;
-                DrawText(GetGateTooltipName(g), 20 + 16, 17 + rec.y, 8, WHITE);
+                DrawText(ProgramData::GetGateTooltipName(g), 20 + 16, 17 + rec.y, 8, WHITE);
             }
             else
                 color = DEADCABLE;
-            DrawGateIcon16x(g, rec.xy, color);
+            ProgramData::DrawGateIcon16x(g, rec.xy, color);
             rec.y += 16;
         }
     }
@@ -1513,21 +1565,20 @@ void Draw_Overlay_Button(ProgramData& data)
 
     case 2: // Resistance
     {
-        for (uint8_t v = 0; v < 10; ++v)
+        for (uint8_t v = 0; v < _countof(Node::g_resistanceBands); ++v)
         {
-            _ASSERT_EXPR(v < _countof(Node::g_resistanceBands), L"Resistance out of bounds");
-            if (v == data.storedExtendedParam)
+            if (v == data.storedExtraParam)
                 continue;
             Color color = Node::g_resistanceBands[v];
-            if (InBoundingBox(rec, cursorUIPos))
+            if (InBoundingBox(rec, data.cursorUIPos))
             {
                 DrawRectangleIRect(rec, WIPBLUE);
                 DrawRectangleIRect(ExpandIRect(rec, -2), color);
                 const char* text;
                 if (data.gatePick == Gate::LED)
-                    text = TextFormat(deviceParameterTextFmt, Node::GetColorName(v));
+                    text = TextFormat(data.deviceParameterTextFmt, Node::GetColorName(v));
                 else
-                    text = TextFormat(deviceParameterTextFmt, v);
+                    text = TextFormat(data.deviceParameterTextFmt, v);
                 DrawText(text, 20 + 32, 17 + rec.y, 8, WHITE);
             }
             else
@@ -1543,35 +1594,33 @@ void Draw_Overlay_Paste(ProgramData& data)
     NodeWorld::Get().DrawWires();
     NodeWorld::Get().DrawNodes();
 
-    data.clipboard->DrawPreview(cursorPos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
+    data.clipboard->DrawPreview(data.cursorPos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
 }
 void Draw_Menu_Icon(ProgramData& data)
 {
-    _ASSERT_EXPR(!!data.bp_icon.object, L"Blueprint icon object not initialized");
-    _ASSERT_EXPR(!!data.clipboard, L"Bad entry into Mode::BP_ICON");
+    _ASSERT_EXPR(!!data.BPIcon_Object(), L"Blueprint icon object not initialized");
+    _ASSERT_EXPR(data.IsClipboardValid(), L"Bad entry into Mode::BP_ICON");
 
-    data.bp_icon.object->DrawBackground(data.bp_icon.pos, SPACEGRAY);
-    data.bp_icon.object->Draw(data.bp_icon.pos, WHITE);
+    data.BPIcon_Object()->DrawBackground(data.BPIcon_Pos(), SPACEGRAY);
+    data.BPIcon_Object()->Draw(data.BPIcon_Pos(), WHITE);
 
     for (size_t i = 0; i < 4; ++i)
     {
-        for (decltype(data.bp_icon.draggingIcon) i = 0; i < 4; ++i)
+        for (int i = 0; i < 4; ++i)
         {
-            if (data.bp_icon.object->combo[i].id == NULL)
+            if (data.BPIcon_Object()->combo[i].id == NULL)
                 continue;
 
-            IRect bounds(data.bp_icon.pos, BlueprintIcon::g_size);
-            bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
-            if (InBoundingBox(bounds, data.cursorUIPos))
-            {
+            IRect bounds(data.BPIcon_Pos(), BlueprintIcon::g_size);
+            bounds.xy = bounds.xy + data.BPIcon_Object()->combo[i].Pos();
+            if (data.CursorInUIBounds(bounds))
                 DrawRectangleIRect(bounds, ColorAlpha(WIPBLUE, 0.25f));
-            }
         }
     }
-    if (data.bp_icon.draggingIcon != -1)
-        BlueprintIcon::DrawBPIcon(data.bp_icon.iconID, data.bp_icon.pos + data.bp_icon.object->combo[data.bp_icon.draggingIcon].Pos(), WIPBLUE);
+    if (data.BPIcon_DraggingIcon() != -1)
+        BlueprintIcon::DrawBPIcon(data.BPIcon_IconID(), data.BPIcon_Pos() + data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].Pos(), WIPBLUE);
 
-    BlueprintIcon::DrawSheet(data.bp_icon.sheetRec.xy, SPACEGRAY, WHITE);
+    BlueprintIcon::DrawSheet(data.BPIcon_SheetRec().xy, SPACEGRAY, WHITE);
 }
 // todo
 void Draw_Menu_Select(ProgramData& data)
