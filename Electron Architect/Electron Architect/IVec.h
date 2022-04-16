@@ -92,6 +92,7 @@ struct IRect
     union
     {
         struct { int x, y, w, h; };
+        struct { int minx, miny, maxx, maxy; }; // Be careful when using these! It's just a rename, not a function!
         struct { int x, y, width, height; };
         struct { IVec2 xy, wh; };
         struct { IVec2 position, extents; };
@@ -101,6 +102,19 @@ struct IRect
 
     IRect& Expand(int outline = 1);
     IRect& Shrink(int outline = 1);
+
+    // Abuse as min and max instead of width and height
+    // Returns an IRect with INT_MIN and INT_MAX components for comparing
+    static constexpr IRect Abused()
+    {
+        return IRect(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
+    }
+    // Changes width and height from being abused maxx and maxy into normal width/height
+    void DeAbuse()
+    {
+        w = maxx - minx;
+        h = maxy - miny;
+    }
 };
 
 constexpr IRect ExpandIRect(IRect rec, int outline = 1)

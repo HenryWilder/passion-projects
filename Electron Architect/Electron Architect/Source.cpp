@@ -7,6 +7,21 @@
 #include "Group.h"
 #include "NodeWorld.h"
 
+template<class T>
+struct ValidatableIndex
+{
+    T index;
+
+    bool operator!() const
+    {
+        return index == -1;
+    }
+    operator bool() const
+    {
+        return !!index;
+    }
+};
+
 enum class Mode
 {
     PEN,
@@ -365,8 +380,8 @@ public:
     {
         if (mode == Mode::BP_ICON)
         {
-            delete overlay.bp_icon.object;
-            overlay.bp_icon.object = nullptr;
+            delete overlay.BPIcon_Object();
+            overlay.BPIcon_Object() = nullptr;
         }
 
         b_cursorMoved = true;
@@ -426,6 +441,11 @@ public:
             break;
         }
     };
+
+    inline void ClearOverlayMode()
+    {
+        SetMode(baseMode);
+    }
 
     static const char* GetModeTooltipName(Mode mode)
     {
@@ -617,10 +637,10 @@ public:
     void SaveBlueprint()
     {
         SetMode(Mode::BP_ICON);
-        bp_icon.object = new BlueprintIcon;
-        bp_icon.pos = cursorPos - IVec2(BlueprintIcon::g_size / 2, BlueprintIcon::g_size / 2);
-        bp_icon.sheetRec.xy = bp_icon.pos + IVec2(BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2);
-        bp_icon.sheetRec.wh = BlueprintIcon::GetSheetSize_Px();
+        BPIcon_Object() = new BlueprintIcon;
+        BPIcon_Pos() = cursorPos - IVec2(BlueprintIcon::g_size / 2, BlueprintIcon::g_size / 2);
+        BPIcon_SheetRec().xy = BPIcon_Pos() + IVec2(BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2);
+        BPIcon_SheetRec().wh = BlueprintIcon::GetSheetSize_Px();
     }
 
     bool IsClipboardValid() const
@@ -767,6 +787,11 @@ public:
             DestroySelection();
     }
 
+    inline IVec2 GetCursorDelta() const
+    {
+        return cursorPos - cursorPosPrev;
+    }
+
     // Inclusive
     inline bool CursorInRangeX(int xMin, int xMax) const
     {
@@ -856,16 +881,34 @@ public:
             DrawLine(-halfgrid, bounds.y, -halfgrid, bounds.y + bounds.h, LIFELESSNEBULA);
         }
     }
+
+    IRect GetSelectionBounds(const std::vector<Node*>& vec) const
+    {
+        IRect bounds = IRect::Abused();
+        for (Node* node : vec)
+        {
+            if      (node->GetX() < bounds.minx) bounds.minx = node->GetX();
+            else if (node->GetX() > bounds.maxx) bounds.maxx = node->GetX();
+            if      (node->GetY() < bounds.miny) bounds.miny = node->GetY();
+            else if (node->GetY() > bounds.maxy) bounds.maxy = node->GetY();
+        }
+        bounds.DeAbuse();
+        return bounds;
+    }
+    IRect GetSelectionBounds() const
+    {
+        return GetSelectionBounds(selection);
+    }
 };
 
 void Update_Pen(ProgramData& data)
 {
-    if (b_cursorMoved)
+    if (data.b_cursorMoved)
     {
         data.hoveredWire = nullptr;
-        data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+        data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
         if (!data.hoveredNode)
-            data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+            data.hoveredWire = NodeWorld::Get().FindWireAtPos(data.cursorPos);
     }
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -873,7 +916,7 @@ void Update_Pen(ProgramData& data)
         Node* newNode = data.hoveredNode;
         if (!newNode)
         {
-            newNode = NodeWorld::Get().CreateNode(cursorPos, data.gatePick, data.storedExtendedParam);
+            newNode = NodeWorld::Get().CreateNode(data.cursorPos, data.gatePick, data.storedExtraParam);
             if (!!data.hoveredWire)
             {
                 NodeWorld::Get().BisectWire(data.hoveredWire, newNode);
@@ -881,43 +924,43 @@ void Update_Pen(ProgramData& data)
             }
         }
         // Do not create a new node/wire if already hovering the start node
-        if (!!data.pen.currentWireStart && newNode != data.pen.currentWireStart)
+        if (!!data.Pen_CurrentWireStart() && newNode != data.Pen_CurrentWireStart())
         {
-            Wire* wire = NodeWorld::Get().CreateWire(data.pen.currentWireStart, newNode);
-            wire->elbowConfig = data.pen.currentWireElbowConfig;
+            Wire* wire = NodeWorld::Get().CreateWire(data.Pen_CurrentWireStart(), newNode);
+            wire->elbowConfig = data.Pen_CurrentWireElbowConfig();
             wire->UpdateElbowToLegal();
         }
-        data.pen.currentWireStart = newNode;
+        data.Pen_CurrentWireStart() = newNode;
     }
     else if (IsKeyPressed(KEY_R))
     {
         if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
-            --data.pen.currentWireElbowConfig;
+            --data.Pen_CurrentWireElbowConfig();
         else
-            ++data.pen.currentWireElbowConfig;
+            ++data.Pen_CurrentWireElbowConfig();
     }
     else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
-        data.pen.currentWireStart = nullptr;
+        data.Pen_CurrentWireStart() = nullptr;
     }
 }
 void Update_Edit(ProgramData& data)
 {
-    if (b_cursorMoved)
+    if (data.b_cursorMoved)
     {
-        if (!data.edit.nodeBeingDragged &&
-            !data.edit.wireBeingDragged &&
-            !data.edit.draggingGroup)
+        if (!data.Edit_NodeBeingDragged() &&
+            !data.Edit_WireBeingDragged() &&
+            !data.Edit_DraggingGroup())
         {
-            data.edit.hoveredGroup = nullptr;
+            data.Edit_HoveredGroup() = nullptr;
             data.hoveredWire = nullptr;
-            data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+            data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
             if (!data.hoveredNode)
             {
-                data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(cursorPos);
+                data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(data.cursorPos);
                 if (!data.hoveredWire)
                 {
-                    data.edit.hoveredGroup = NodeWorld::Get().FindGroupAtPos(cursorPos);
+                    data.Edit_HoveredGroup() = NodeWorld::Get().FindGroupAtPos(data.cursorPos);
                 }
             }
         }
@@ -928,80 +971,65 @@ void Update_Edit(ProgramData& data)
     {
         if (!data.selection.empty() && !!data.hoveredNode) // There is a selection, and a node has been pressed
         {
-            data.edit.nodeBeingDragged = data.hoveredNode;
-            data.edit.wireBeingDragged = nullptr;
-
-            int minx = INT_MAX;
-            int miny = INT_MAX;
-            int maxx = INT_MIN;
-            int maxy = INT_MIN;
-
-            for (Node* node : data.selection)
-            {
-                if (node->GetX() < minx) minx = node->GetX();
-                else if (node->GetX() > maxx) maxx = node->GetX();
-                if (node->GetY() < miny) miny = node->GetY();
-                else if (node->GetY() > maxy) maxy = node->GetY();
-            }
-
-            data.edit.selectionRec.w = maxx - (data.edit.selectionRec.x = minx);
-            data.edit.selectionRec.h = maxy - (data.edit.selectionRec.y = miny);
+            data.Edit_NodeBeingDragged() = data.hoveredNode;
+            data.Edit_WireBeingDragged() = nullptr;
+            data.Edit_SelectionRec() = data.GetSelectionBounds();
         }
         else
         {
             data.selection.clear();
-            data.edit.nodeBeingDragged = data.hoveredNode;
-            data.edit.wireBeingDragged = data.hoveredWire;
+            data.Edit_NodeBeingDragged() = data.hoveredNode;
+            data.Edit_WireBeingDragged() = data.hoveredWire;
 
             // selectionStart being used as an offset here
-            if (data.edit.draggingGroup = !!data.edit.hoveredGroup)
+            if (data.Edit_DraggingGroup() = !!data.Edit_HoveredGroup())
             {
-                NodeWorld::Get().FindNodesInGroup(data.selection, data.edit.hoveredGroup);
-                data.edit.selectionStart = (cursorPos - (data.edit.fallbackPos = data.edit.hoveredGroup->GetPosition()));
+                NodeWorld::Get().FindNodesInGroup(data.selection, data.Edit_HoveredGroup());
+                data.Edit_SelectionStart() = (data.cursorPos - (data.Edit_FallbackPos() = data.Edit_HoveredGroup()->GetPosition()));
             }
 
-            data.edit.fallbackPos = cursorPos;
-            if (data.edit.selectionWIP = !(data.edit.nodeBeingDragged || data.edit.wireBeingDragged || data.edit.draggingGroup))
-                data.edit.selectionStart = cursorPos;
+            data.Edit_FallbackPos() = data.cursorPos;
+            if (data.Edit_SelectionWIP() = !(data.Edit_NodeBeingDragged() || data.Edit_WireBeingDragged() || data.Edit_DraggingGroup()))
+                data.Edit_SelectionStart() = data.cursorPos;
         }
     }
 
     // Selection
-    if (data.edit.selectionWIP)
+    if (data.Edit_SelectionWIP())
     {
-        auto [minx, maxx] = std::minmax(cursorPos.x, data.edit.selectionStart.x);
-        auto [miny, maxy] = std::minmax(cursorPos.y, data.edit.selectionStart.y);
-        data.edit.selectionRec.w = maxx - (data.edit.selectionRec.x = minx);
-        data.edit.selectionRec.h = maxy - (data.edit.selectionRec.y = miny);
+        auto [minx, maxx] = std::minmax(data.cursorPos.x, data.Edit_SelectionStart().x);
+        auto [miny, maxy] = std::minmax(data.cursorPos.y, data.Edit_SelectionStart().y);
+        data.Edit_SelectionRec().w = maxx - (data.Edit_SelectionRec().x = minx);
+        data.Edit_SelectionRec().h = maxy - (data.Edit_SelectionRec().y = miny);
     }
     // Node
-    else if (!!data.edit.nodeBeingDragged)
+    else if (!!data.Edit_NodeBeingDragged())
     {
         // Multiple selection
         if (!data.selection.empty())
         {
-            const IVec2 offset = cursorPos - cursorPosPrev;
+            const IVec2 offset = data.GetCursorDelta();
             for (Node* node : data.selection)
             {
                 node->SetPosition_Temporary(node->GetPosition() + offset);
             }
-            data.edit.selectionRec.position += offset;
+            data.Edit_SelectionRec().position += offset;
         }
         else
-            data.edit.nodeBeingDragged->SetPosition_Temporary(cursorPos);
+            data.Edit_NodeBeingDragged()->SetPosition_Temporary(data.cursorPos);
     }
     // Wire
-    else if (!!data.edit.wireBeingDragged)
+    else if (!!data.Edit_WireBeingDragged())
     {
-        data.edit.wireBeingDragged->SnapElbowToLegal(cursorPos);
+        data.Edit_WireBeingDragged()->SnapElbowToLegal(data.cursorPos);
     }
     // Group
-    else if (data.edit.draggingGroup)
+    else if (data.Edit_DraggingGroup())
     {
-        data.edit.hoveredGroup->SetPosition(cursorPos - data.edit.selectionStart);
+        data.Edit_HoveredGroup()->SetPosition(data.cursorPos - data.Edit_SelectionStart());
         for (Node* node : data.selection)
         {
-            IVec2 offset = cursorPos - cursorPosPrev;
+            const IVec2 offset = data.GetCursorDelta();
             node->SetPosition_Temporary(node->GetPosition() + offset);
         }
     }
@@ -1012,75 +1040,75 @@ void Update_Edit(ProgramData& data)
         // Cancel
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
-            if (!!data.edit.nodeBeingDragged)
+            if (!!data.Edit_NodeBeingDragged())
             {
-                data.edit.nodeBeingDragged->SetPosition(data.edit.fallbackPos);
+                data.Edit_NodeBeingDragged()->SetPosition(data.Edit_FallbackPos());
             }
-            else if (data.edit.draggingGroup)
+            else if (data.Edit_DraggingGroup())
             {
-                data.edit.hoveredGroup->SetPosition(data.edit.fallbackPos);
+                data.Edit_HoveredGroup()->SetPosition(data.Edit_FallbackPos());
                 for (Node* node : data.selection)
                 {
-                    IVec2 offset = (data.edit.fallbackPos + data.edit.selectionStart) - cursorPos;
+                    IVec2 offset = (data.Edit_FallbackPos() + data.Edit_SelectionStart()) - data.cursorPos;
                     node->SetPosition_Temporary(node->GetPosition() + offset);
                 }
             }
-            else if (data.edit.selectionWIP)
+            else if (data.Edit_SelectionWIP())
             {
-                data.edit.selectionRec = IRect(0, 0, 0, 0);
+                data.Edit_SelectionRec() = IRect(0);
             }
         }
         // Finalize
         else
         {
-            if (!!data.edit.nodeBeingDragged)
+            if (!!data.Edit_NodeBeingDragged())
             {
-                data.edit.nodeBeingDragged->SetPosition(data.edit.fallbackPos);
-                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
-                if (!!data.hoveredNode && data.edit.nodeBeingDragged != data.hoveredNode)
-                    NodeWorld::Get().SwapNodes(data.edit.nodeBeingDragged, data.hoveredNode);
+                data.Edit_NodeBeingDragged()->SetPosition(data.Edit_FallbackPos());
+                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
+                if (!!data.hoveredNode && data.Edit_NodeBeingDragged() != data.hoveredNode)
+                    NodeWorld::Get().SwapNodes(data.Edit_NodeBeingDragged(), data.hoveredNode);
                 else
-                    data.edit.nodeBeingDragged->SetPosition(cursorPos);
+                    data.Edit_NodeBeingDragged()->SetPosition(data.cursorPos);
             }
-            else if (data.edit.draggingGroup)
+            else if (data.Edit_DraggingGroup())
             {
                 for (Node* node : data.selection)
                 {
                     node->SetPosition(node->GetPosition());
                 }
             }
-            else if (data.edit.selectionWIP)
+            else if (data.Edit_SelectionWIP())
             {
-                NodeWorld::Get().FindNodesInRect(data.selection, data.edit.selectionRec);
+                NodeWorld::Get().FindNodesInRect(data.selection, data.Edit_SelectionRec());
             }
         }
-        if (data.edit.draggingGroup)
-            data.selection.clear();
-        data.edit.nodeBeingDragged = nullptr;
-        data.edit.selectionWIP = false;
-        data.edit.draggingGroup = false;
-        data.edit.wireBeingDragged = nullptr;
+        if (data.Edit_DraggingGroup())
+            data.ClearSelection();
+        data.Edit_NodeBeingDragged() = nullptr;
+        data.Edit_SelectionWIP() = false;
+        data.Edit_DraggingGroup() = false;
+        data.Edit_WireBeingDragged() = nullptr;
     }
     // Right click
     else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!data.hoveredNode)
     {
         data.hoveredNode->SetGate(data.gatePick);
-        if (data.hoveredNode->GetGate() == Gate::RESISTOR)
-            data.hoveredNode->SetResistance(data.storedResistance);
-        else if (data.hoveredNode->GetGate() == Gate::LED)
-            data.hoveredNode->SetColorIndex(data.storedExtendedParam);
-        else if (data.hoveredNode->GetGate() == Gate::CAPACITOR)
-            data.hoveredNode->SetCapacity(data.storedCapacity);
+        switch (data.hoveredNode->GetGate())
+        {
+        case Gate::RESISTOR:  data.hoveredNode->SetResistance(data.storedExtraParam); break;
+        case Gate::LED:       data.hoveredNode->SetColorIndex(data.storedExtraParam); break;
+        case Gate::CAPACITOR: data.hoveredNode->SetCapacity(data.storedExtraParam);   break;
+        }
     }
 }
 void Update_Erase(ProgramData& data)
 {
-    if (b_cursorMoved)
+    if (data.b_cursorMoved)
     {
         data.hoveredWire = nullptr;
-        data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+        data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
         if (!data.hoveredNode)
-            data.hoveredWire = NodeWorld::Get().FindWireAtPos(cursorPos);
+            data.hoveredWire = NodeWorld::Get().FindWireAtPos(data.cursorPos);
     }
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -1096,7 +1124,7 @@ void Update_Erase(ProgramData& data)
 }
 void Update_Interact(ProgramData& data)
 {
-    data.hoveredNode = NodeWorld::Get().FindNodeAtPos(cursorPos);
+    data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
     if (!!data.hoveredNode && !data.hoveredNode->IsOutputOnly())
         data.hoveredNode = nullptr;
 
@@ -1105,21 +1133,21 @@ void Update_Interact(ProgramData& data)
 }
 void Update_Overlay_Gate(ProgramData& data)
 {
-    if (b_cursorMoved)
+    if (data.b_cursorMoved)
     {
-        if (cursorUIPos.x < data.gate.radialMenuCenter.x)
+        if (data.cursorUIPos.x < data.Gate_RadialMenuCenter().x)
         {
-            if (cursorUIPos.y < data.gate.radialMenuCenter.y)
-                data.gate.overlappedSection = 2;
-            else // cursorPos.y > data.gate.radialMenuCenter.y
-                data.gate.overlappedSection = 3;
+            if (data.cursorUIPos.y < data.Gate_RadialMenuCenter().y)
+                data.Gate_OverlappedSection() = 2;
+            else // cursorPos.y > data.Gate_RadialMenuCenter().y
+                data.Gate_OverlappedSection() = 3;
         }
-        else // cursorPos.x > data.gate.radialMenuCenter.x
+        else // cursorPos.x > data.Gate_RadialMenuCenter().x
         {
-            if (cursorUIPos.y < data.gate.radialMenuCenter.y)
-                data.gate.overlappedSection = 1;
-            else // cursorPos.y > data.gate.radialMenuCenter.y
-                data.gate.overlappedSection = 0;
+            if (data.cursorUIPos.y < data.Gate_RadialMenuCenter().y)
+                data.Gate_OverlappedSection() = 1;
+            else // cursorPos.y > data.Gate_RadialMenuCenter().y
+                data.Gate_OverlappedSection() = 0;
         }
     }
 
@@ -1127,34 +1155,34 @@ void Update_Overlay_Gate(ProgramData& data)
     if (leftMouse || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
         if (leftMouse)
-            SetGate(radialGateOrder[data.gate.overlappedSection]);
+            data.SetGate(ProgramData::radialGateOrder[data.Gate_OverlappedSection()]);
 
-        mode = baseMode;
-        SetMousePosition(data.gate.radialMenuCenter.x, data.gate.radialMenuCenter.y);
-        cursorUIPos = data.gate.radialMenuCenter;
+        data.ClearOverlayMode();
+        SetMousePosition(data.Gate_RadialMenuCenter().x, data.Gate_RadialMenuCenter().y);
+        cursorUIPos = data.Gate_RadialMenuCenter();
     }
 }
 void Update_Overlay_Button(ProgramData& data)
 {
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        IRect rec = dropdownBounds[data.button.dropdownActive];
-        if (InBoundingBox(rec, cursorUIPos))
+        IRect rec = ProgramData::dropdownBounds[data.Button_DropdownActive()];
+        if (data.CursorInUIBounds(rec))
         {
             rec.h = 16;
 
-            switch (data.button.dropdownActive)
+            switch (data.Button_DropdownActive())
             {
             case 0: // Mode
             {
-                for (Mode m : dropdownModeOrder)
+                for (Mode m : ProgramData::dropdownModeOrder)
                 {
-                    if (m == baseMode)
+                    if (m == data.baseMode)
                         continue;
 
-                    if (InBoundingBox(rec, cursorUIPos))
+                    if (data.CursorInUIBounds(rec))
                     {
-                        SetMode(m);
+                        data.SetMode(m);
                         break;
                     }
 
@@ -1165,21 +1193,21 @@ void Update_Overlay_Button(ProgramData& data)
 
             case 1: // Gate
             {
-                for (Gate g : dropdownGateOrder)
+                for (Gate g : ProgramData::dropdownGateOrder)
                 {
                     if (g == data.gatePick)
                         continue;
 
-                    if (InBoundingBox(rec, cursorUIPos))
+                    if (data.CursorInUIBounds(rec))
                     {
-                        SetGate(g);
+                        data.SetGate(g);
                         break;
                     }
 
                     rec.y += 16;
                 }
 
-                SetMode(baseMode);
+                data.ClearOverlayMode();
             }
             break;
 
@@ -1187,29 +1215,29 @@ void Update_Overlay_Button(ProgramData& data)
             {
                 for (uint8_t v = 0; v < 10; ++v)
                 {
-                    if (v == data.storedExtendedParam)
+                    if (v == data.storedExtraParam)
                         continue;
 
-                    if (InBoundingBox(rec, cursorUIPos))
+                    if (data.CursorInUIBounds(rec))
                     {
-                        data.storedExtendedParam = v;
+                        data.storedExtraParam = v;
                         break;
                     }
 
                     rec.y += 16;
                 }
 
-                SetMode(baseMode);
+                data.ClearOverlayMode();
             }
             break;
             }
         }
         else
-            SetMode(baseMode);
+            data.ClearOverlayMode();
     }
     else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
-        SetMode(baseMode);
+        data.ClearOverlayMode();
     }
 }
 void Update_Overlay_Paste(ProgramData& data)
@@ -1217,76 +1245,76 @@ void Update_Overlay_Paste(ProgramData& data)
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            NodeWorld::Get().SpawnBlueprint(data.clipboard, cursorPos);
-        data.selection.clear();
-        SetMode(baseMode);
+            NodeWorld::Get().SpawnBlueprint(data.clipboard, data.cursorPos);
+        data.ClearSelection();
+        data.ClearOverlayMode();
     }
 }
 void Update_Menu_Icon(ProgramData& data)
 {
-    if (b_cursorMoved && data.bp_icon.draggingIcon == -1)
+    if (data.b_cursorMoved && data.BPIcon_DraggingIcon() == -1)
     {
-        data.bp_icon.iconID = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.bp_icon.sheetRec.xy, cursorUIPos));
+        data.BPIcon_IconID() = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.BPIcon_SheetRec().xy, data.cursorUIPos));
     }
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
-        if (InBoundingBox(data.bp_icon.sheetRec, cursorUIPos) && data.bp_icon.iconCount < 4 && !!data.bp_icon.iconID)
+        if (data.CursorInUIBounds(data.BPIcon_SheetRec()) && data.BPIcon_IconCount() < 4 && !!data.BPIcon_IconID())
         {
-            cursorUIPos = data.bp_icon.pos;
-            SetMousePosition(cursorUIPos.x + BlueprintIcon::g_size / 2, cursorUIPos.y + BlueprintIcon::g_size / 2);
-            data.bp_icon.object->combo[data.bp_icon.iconCount] = { data.bp_icon.iconID, 0,0 };
-            data.bp_icon.draggingIcon = data.bp_icon.iconCount;
-            data.bp_icon.iconCount++;
+            data.cursorUIPos = data.BPIcon_Pos();
+            SetMousePosition(data.cursorUIPos.x + BlueprintIcon::g_size / 2, data.cursorUIPos.y + BlueprintIcon::g_size / 2);
+            data.BPIcon_Object()->combo[data.BPIcon_IconCount()] = { data.BPIcon_IconID(), 0,0 };
+            data.BPIcon_DraggingIcon() = data.BPIcon_IconCount();
+            data.BPIcon_IconCount()++;
         }
-        else if (InBoundingBox(IRect(data.bp_icon.pos.x, data.bp_icon.pos.y, BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2), cursorUIPos))
+        else if (data.CursorInUIBounds(IRect(data.BPIcon_Pos(), BlueprintIcon::g_size * 2)))
         {
-            data.bp_icon.draggingIcon = -1;
-            for (decltype(data.bp_icon.draggingIcon) i = 0; i < data.bp_icon.iconCount; ++i)
+            data.BPIcon_DraggingIcon() = -1;
+            for (int i = 0; i < data.BPIcon_IconCount(); ++i)
             {
-                if (data.bp_icon.object->combo[i].id == NULL)
+                if (data.BPIcon_Object()->combo[i].id == NULL)
                     continue;
 
                 IRect bounds(
-                    data.bp_icon.pos.x,
-                    data.bp_icon.pos.y,
+                    data.BPIcon_Pos().x,
+                    data.BPIcon_Pos().y,
                     BlueprintIcon::g_size,
                     BlueprintIcon::g_size
                 );
-                bounds.xy = bounds.xy + data.bp_icon.object->combo[i].Pos();
-                if (InBoundingBox(bounds, cursorUIPos))
+                bounds.xy = bounds.xy + data.BPIcon_Object()->combo[i].Pos();
+                if (data.CursorInUIBounds(bounds))
                 {
-                    data.bp_icon.draggingIcon = i;
-                    data.bp_icon.iconID = data.bp_icon.object->combo[i].id;
+                    data.BPIcon_DraggingIcon() = i;
+                    data.BPIcon_IconID() = data.BPIcon_Object()->combo[i].id;
                     break;
                 }
             }
         }
     }
-    if ((IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) && data.bp_icon.draggingIcon != -1)
+    if ((IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) && data.BPIcon_DraggingIcon() != -1)
     {
         if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
         {
-            if (data.bp_icon.draggingIcon < 3)
+            if (data.BPIcon_DraggingIcon() < 3)
             {
                 memcpy(
-                    data.bp_icon.object->combo + data.bp_icon.draggingIcon,
-                    data.bp_icon.object->combo + data.bp_icon.draggingIcon + 1,
-                    sizeof(IconPos) * (4ull - (size_t)data.bp_icon.draggingIcon));
+                    data.BPIcon_Object()->combo + data.BPIcon_DraggingIcon(),
+                    data.BPIcon_Object()->combo + data.BPIcon_DraggingIcon() + 1,
+                    sizeof(IconPos) * (4ull - (size_t)data.BPIcon_DraggingIcon()));
             }
-            data.bp_icon.object->combo[3] = { NULL, 0,0 };
-            data.bp_icon.iconCount--;
+            data.BPIcon_Object()->combo[3] = { NULL, 0,0 };
+            data.BPIcon_IconCount()--;
         }
-        data.bp_icon.draggingIcon = -1;
+        data.BPIcon_DraggingIcon() = -1;
     }
-    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.bp_icon.iconID)
+    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.BPIcon_IconID())
     {
         constexpr IVec2 centerOffset = IVec2(BlueprintIcon::g_size / 2);
-        IVec2 colRow = (cursorUIPos - data.bp_icon.pos - centerOffset) / centerOffset;
+        IVec2 colRow = (data.cursorUIPos - data.BPIcon_Pos() - centerOffset) / centerOffset;
         colRow.x = std::min(std::max(colRow.x, 0), 2);
         colRow.y = std::min(std::max(colRow.y, 0), 2);
-        data.bp_icon.object->combo[data.bp_icon.draggingIcon].x = colRow.x;
-        data.bp_icon.object->combo[data.bp_icon.draggingIcon].y = colRow.y;
+        data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].x = colRow.x;
+        data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].y = colRow.y;
     }
 }
 // todo
@@ -1300,12 +1328,12 @@ void Draw_Pen(ProgramData& data)
 {
     NodeWorld::Get().DrawWires();
 
-    if (!!data.pen.currentWireStart)
+    if (!!data.Pen_CurrentWireStart())
     {
-        IVec2 start = data.pen.currentWireStart->GetPosition();
+        IVec2 start = data.Pen_CurrentWireStart()->GetPosition();
         IVec2 elbow;
-        IVec2 end = cursorPos;
-        elbow = Wire::GetLegalElbowPosition(start, end, data.pen.currentWireElbowConfig);
+        IVec2 end = data.cursorPos;
+        elbow = Wire::GetLegalElbowPosition(start, end, data.Pen_CurrentWireElbowConfig());
         Wire::Draw(start, elbow, end, WIPBLUE);
         Node::Draw(end, data.gatePick, WIPBLUE);
     }
