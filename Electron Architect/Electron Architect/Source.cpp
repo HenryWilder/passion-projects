@@ -7,19 +7,101 @@
 #include "Group.h"
 #include "NodeWorld.h"
 
-template<class T>
-struct ValidatableIndex
+// Validatable Index
+// NOT IN USE YET
+struct VIndex
 {
-    T index;
+    constexpr VIndex() : index(SIZE_MAX) {}
+    constexpr VIndex(nullptr_t) : index(SIZE_MAX) {}
+    constexpr VIndex(size_t value) : index(value) {}
 
     bool operator!() const
     {
-        return index == -1;
+        return index == SIZE_MAX;
     }
     operator bool() const
     {
         return !!index;
     }
+    operator size_t&()
+    {
+        return index;
+    }
+    operator size_t() const
+    {
+        return index;
+    }
+    VIndex& operator=(nullptr_t)
+    {
+        index = SIZE_MAX;
+        return *this;
+    }
+    static VIndex& operator++(VIndex& it)
+    {
+        if (it.index + 1 == SIZE_MAX) // Overflow
+            it.index = 0;
+
+        else if (it.index != SIZE_MAX) // Do not apply math to invalid
+            ++it.index;
+
+        return it;
+    }
+    VIndex operator++()
+    {
+        size_t stored = index;
+        if (index + 1 == SIZE_MAX) // Overflow
+            index = 0;
+
+        else if (index != SIZE_MAX) // Do not apply math to invalid
+            ++index;
+
+        return VIndex(stored);
+    }
+    static VIndex& operator--(VIndex& it)
+    {
+        if (it.index - 1 == SIZE_MAX) // Underflow
+            it.index = SIZE_MAX - 1;
+
+        else if (it.index != SIZE_MAX) // Do not apply math to invalid
+            --it.index;
+
+        return it;
+    }
+    VIndex operator--()
+    {
+        size_t stored = index;
+        if (index - 1 == SIZE_MAX) // Overflow
+            index = 0;
+
+        else if (index != SIZE_MAX) // Do not apply math to invalid
+            --index;
+
+        return VIndex(stored);
+    }
+    VIndex& operator+(VIndex& it)
+    {
+        if (it.index + 1 == SIZE_MAX) // Overflow
+            it.index = 0;
+
+        else if (it.index != SIZE_MAX) // Do not apply math to invalid
+            ++it.index;
+
+        return it;
+    }
+    VIndex operator-()
+    {
+        size_t stored = index;
+        if (index + 1 == SIZE_MAX) // Overflow
+            index = 0;
+
+        else if (index != SIZE_MAX) // Do not apply math to invalid
+            ++index;
+
+        return VIndex(stored);
+    }
+
+private:
+    size_t index;
 };
 
 enum class Mode
@@ -208,49 +290,54 @@ private:
 
 public: // Accessors for unions
 
+
 #if _DEBUG
+
+#define ACCESSOR(name, assertion, bind) \
+    inline       decltype(bind)& name       { _ASSERT_EXPR(assertion, L"Tried to access member of different mode"); return bind; } \
+    inline const decltype(bind)& name const { _ASSERT_EXPR(assertion, L"Tried to access member of different mode"); return bind; }
 
     /**********
     * Basic
     **********/
 
     // Pen
-    Node*& Pen_CurrentWireStart()               { _ASSERT_EXPR(baseMode == Mode::PEN, "Tried to access member of different mode"); return base.pen.currentWireStart; }
-    ElbowConfig& Pen_CurrentWireElbowConfig()   { _ASSERT_EXPR(baseMode == Mode::PEN, "Tried to access member of different mode"); return base.pen.currentWireElbowConfig; }
+    ACCESSOR(Pen_CurrentWireStart(),        baseMode == Mode::PEN,      base.pen.currentWireStart)
+    ACCESSOR(Pen_CurrentWireElbowConfig(),  baseMode == Mode::PEN,      base.pen.currentWireElbowConfig)
 
     // Edit
-    IVec2& Edit_FallbackPos()                   { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.fallbackPos; }
-    bool& Edit_SelectionWIP()                   { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.selectionWIP; }
-    IVec2& Edit_SelectionStart()                { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.selectionStart; }
-    IRect& Edit_SelectionRec()                  { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.selectionRec; }
-    bool& Edit_DraggingGroup()                  { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.draggingGroup; }
-    Group*& Edit_HoveredGroup()                 { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.hoveredGroup; }
-    Node*& Edit_NodeBeingDragged()              { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.nodeBeingDragged; }
-    Wire*& Edit_WireBeingDragged()              { _ASSERT_EXPR(baseMode == Mode::EDIT, "Tried to access member of different mode"); return base.edit.wireBeingDragged; }
+    ACCESSOR(Edit_FallbackPos(),            baseMode == Mode::EDIT,     base.edit.fallbackPos)
+    ACCESSOR(Edit_SelectionWIP(),           baseMode == Mode::EDIT,     base.edit.selectionWIP)
+    ACCESSOR(Edit_SelectionStart(),         baseMode == Mode::EDIT,     base.edit.selectionStart)
+    ACCESSOR(Edit_SelectionRec(),           baseMode == Mode::EDIT,     base.edit.selectionRec)
+    ACCESSOR(Edit_DraggingGroup(),          baseMode == Mode::EDIT,     base.edit.draggingGroup)
+    ACCESSOR(Edit_HoveredGroup(),           baseMode == Mode::EDIT,     base.edit.hoveredGroup)
+    ACCESSOR(Edit_NodeBeingDragged(),       baseMode == Mode::EDIT,     base.edit.nodeBeingDragged)
+    ACCESSOR(Edit_WireBeingDragged(),       baseMode == Mode::EDIT,     base.edit.wireBeingDragged)
 
     /**********
     * Overlay
     **********/
 
     // Gate
-    IVec2& Gate_RadialMenuCenter()              { _ASSERT_EXPR(mode == Mode::GATE, "Tried to access member of different mode"); return overlay.gate.radialMenuCenter; }
-    uint8_t& Gate_OverlappedSection()           { _ASSERT_EXPR(mode == Mode::GATE, "Tried to access member of different mode"); return overlay.gate.overlappedSection; }
+    ACCESSOR(Gate_RadialMenuCenter(),       mode == Mode::GATE,         overlay.gate.radialMenuCenter)
+    ACCESSOR(Gate_OverlappedSection(),      mode == Mode::GATE,         overlay.gate.overlappedSection)
 
     // Button
-    int& Button_DropdownActive()                { _ASSERT_EXPR(mode == Mode::GATE, "Tried to access member of different mode"); return overlay.button.dropdownActive; }
+    ACCESSOR(Button_DropdownActive(),       mode == Mode::BUTTON,       overlay.button.dropdownActive)
 
     // BP_Icon
-    BlueprintIcon*& BPIcon_Object()             { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.object; }
-    // Width and height are fixed
-    IVec2& BPIcon_Pos()                         { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.pos; }
-    IRect& BPIcon_SheetRec()                    { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.sheetRec; }
-    BlueprintIconID_t& BPIcon_IconID()          { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.iconID; }
-    uint8_t& BPIcon_IconCount()                 { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.iconCount; }
-    // -1 for none/not dragging
-    int& BPIcon_DraggingIcon()                  { _ASSERT_EXPR(mode == Mode::BP_ICON, "Tried to access member of different mode"); return overlay.bp_icon.draggingIcon; }
+    ACCESSOR(BPIcon_Object(),               mode == Mode::BP_ICON,      overlay.bp_icon.object)
+    ACCESSOR(BPIcon_Pos(),                  mode == Mode::BP_ICON,      overlay.bp_icon.pos)
+    ACCESSOR(BPIcon_SheetRec(),             mode == Mode::BP_ICON,      overlay.bp_icon.sheetRec)
+    ACCESSOR(BPIcon_IconID(),               mode == Mode::BP_ICON,      overlay.bp_icon.iconID)
+    ACCESSOR(BPIcon_IconCount(),            mode == Mode::BP_ICON,      overlay.bp_icon.iconCount)
+    ACCESSOR(BPIcon_DraggingIcon(),         mode == Mode::BP_ICON,      overlay.bp_icon.draggingIcon)
 
     // Select
-    int& BPSelect_Hovering()                    { _ASSERT_EXPR(mode == Mode::BP_SELECT, "Tried to access member of different mode"); return overlay.bp_select.hovering; }
+    ACCESSOR(BPSelect_Hovering(),           mode == Mode::BP_SELECT,    overlay.bp_select.hovering)
+
+#undef ACCESSOR
 
 #else // Release
 
@@ -297,7 +384,6 @@ public: // Accessors for unions
 #define BPSelect_Hovering() overlay.bp_select.hovering
 
 #endif
-
 public:
 
     static Texture2D GetClipboardIcon()
@@ -380,8 +466,8 @@ public:
     {
         if (mode == Mode::BP_ICON)
         {
-            delete overlay.BPIcon_Object();
-            overlay.BPIcon_Object() = nullptr;
+            delete BPIcon_Object(); 
+            BPIcon_Object() = nullptr;
         }
 
         b_cursorMoved = true;
@@ -624,14 +710,14 @@ public:
 
     void MakeGroupFromSelection()
     {
-        NodeWorld::Get().CreateGroup(edit.selectionRec);
-        edit.selectionRec = IRect(0, 0, 0, 0);
+        NodeWorld::Get().CreateGroup(Edit_SelectionRec());
+        Edit_SelectionRec() = IRect(0);
         selection.clear();
     }
 
     bool IsSelectionRectValid() const
     {
-        return mode == Mode::EDIT && !edit.selectionWIP && !(edit.selectionRec.w == 0 || edit.selectionRec.h == 0);
+        return mode == Mode::EDIT && !Edit_SelectionWIP() && !(Edit_SelectionRec().w == 0 || Edit_SelectionRec().h == 0);
     }
 
     void SaveBlueprint()
@@ -660,7 +746,7 @@ public:
     {
         selection.clear();
         if (mode == Mode::EDIT)
-            edit.selectionRec = IRect(0);
+            Edit_SelectionRec() = IRect(0);
     }
     void DestroySelection()
     {
@@ -1159,7 +1245,7 @@ void Update_Overlay_Gate(ProgramData& data)
 
         data.ClearOverlayMode();
         SetMousePosition(data.Gate_RadialMenuCenter().x, data.Gate_RadialMenuCenter().y);
-        cursorUIPos = data.Gate_RadialMenuCenter();
+        data.cursorUIPos = data.Gate_RadialMenuCenter(); // Todo: This doesn't update the non-UI cursorPos?
     }
 }
 void Update_Overlay_Button(ProgramData& data)
