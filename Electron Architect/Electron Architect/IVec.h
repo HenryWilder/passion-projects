@@ -3,6 +3,18 @@
 #include <raylib.h>
 #endif
 
+struct Width
+{
+    Width(int x) : x(x) {}
+    int x;
+};
+
+struct Height
+{
+    Height(int y) : y(y) {}
+    int y;
+};
+
 struct IVec2
 {
     IVec2() = default;
@@ -68,6 +80,7 @@ bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2);
 void DrawLineIV(IVec2 start, IVec2 end, Color color);
 void DrawCircleIV(IVec2 origin, float radius, Color color);
 void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint);
+void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color);
 
 struct IRect
 {

@@ -173,9 +173,38 @@ struct ProgramData
         Gate::LED,
         Gate::DELAY,
     };
+    static constexpr IRect buttonBounds[] =
+    {
+        IRect( 0, 0, 16), // Mode
+        IRect(16, 0, 16), // Gate
+        IRect(32, 0, 16), // Parameter
+        IRect(48, 0, 16), // Blueprints
+        IRect(64, 0, 16), // Clipboard
+    };
+    static constexpr IRect ButtonBound_Mode()
+    {
+        return buttonBounds[0];
+    }
+    static constexpr IRect ButtonBound_Gate()
+    {
+        return buttonBounds[1];
+    }
+    static constexpr IRect ButtonBound_Parameter()
+    {
+        return buttonBounds[2];
+    }
+    static constexpr IRect ButtonBound_Blueprints()
+    {
+        return buttonBounds[3];
+    }
+    static constexpr IRect ButtonBound_Clipboard()
+    {
+        return buttonBounds[4];
+    }
+
     static constexpr IRect dropdownBounds[] =
     {
-        IRect(0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
+        IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
         IRect(16, 16, 16, 16 * (_countof(dropdownGateOrder) - 1)), // Gate
         IRect(32, 16, 16, 16 * (_countof(Node::g_resistanceBands) - 1)), // Parameter
     };
@@ -989,6 +1018,16 @@ public:
     IRect GetSelectionBounds() const
     {
         return GetSelectionBounds(selection);
+    }
+
+    inline static Color ResistanceBandColor(uint8_t index)
+    {
+        _ASSERT_EXPR(index < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
+        return Node::g_resistanceBands[index];
+    }
+    inline Color ExtraParamColor() const
+    {
+        return ResistanceBandColor(storedExtraParam);
     }
 };
 Texture2D ProgramData::clipboardIcon;
@@ -1862,65 +1901,63 @@ int main()
 
                 // UI
 
-                //DrawRectangleIRect(IRect(32, 16), SPACEGRAY);
-                DrawRectangleIRect(IRect(64, 16), SPACEGRAY);
-                if (!!data.clipboard)
+                DrawRectangleIRect(IRect(ProgramData::ButtonBound_Clipboard().x, 16), SPACEGRAY);
+                if (data.IsClipboardValid())
                 {
-                    constexpr IRect clipboardRec(16 * 4, 0, 16);
-                    DrawRectangleIRect(clipboardRec, SPACEGRAY);
-                    DrawTextureIV(data.GetClipboardIcon(), clipboardRec.xy, WHITE);
+                    DrawRectangleIRect(ProgramData::ButtonBound_Clipboard(), SPACEGRAY);
+                    DrawTextureIV(data.GetClipboardIcon(), ProgramData::ButtonBound_Clipboard().xy, WHITE);
                 }
 
-                _ASSERT_EXPR(data.storedExtraParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
-                DrawRectangleIRect(IRect(32, 0, 16), Node::g_resistanceBands[data.storedExtraParam]);
+                DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
 
                 // Buttons
-                if (data.cursorUIPos.y <= 16)
+                constexpr IVec2 tooltipNameOffset(20, 17);
+                constexpr IVec2 tooltipDescOffset = tooltipNameOffset + IVec2(0, 16);
+                constexpr IVec2 tooltipSeprOffset = IVec2(12);
+                // Mode
+                if (data.CursorInUIBounds(ProgramData::ButtonBound_Mode()))
                 {
-                    // Mode
-                    if (data.cursorUIPos.x <= 16)
-                    {
-                        constexpr IRect rec(0, 0, 16);
-                        DrawRectangleIRect(rec, WIPBLUE);
-                        const char* name = data.GetModeTooltipName(data.baseMode);
-                        DrawText(name, 20, 17, 8, WHITE);
-                        DrawLine(20, 17 + 12, 20 + MeasureText(name, 8), 17 + 12, WHITE);
-                        DrawText(data.GetModeTooltipDescription(data.baseMode), 20, 17 + 16, 8, WHITE);
-                    }
-                    // Gate
-                    else if (data.cursorUIPos.x <= 32)
-                    {
-                        constexpr IRect rec(16, 0, 16);
-                        DrawRectangleIRect(rec, WIPBLUE);
-                        const char* name = data.GetGateTooltipName(data.gatePick);
-                        DrawText(name, 36, 17, 8, WHITE);
-                        DrawLine(36, 17 + 12, 36 + MeasureText(name, 8), 17 + 12, WHITE);
-                        DrawText(data.GetGateTooltipDescription(data.gatePick), 36, 17 + 16, 8, WHITE);
-                    }
-                    // Extra param
-                    else if (data.cursorUIPos.x <= 48)
-                    {
-                        constexpr IRect rec(32, 0, 16);
-                        DrawRectangleIRect(rec, WIPBLUE);
-                        _ASSERT_EXPR(data.storedExtraParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
-                        DrawRectangleIRect(ShrinkIRect(rec, 2), Node::g_resistanceBands[data.storedExtraParam]);
-                        const char* text;
-                        if (data.gatePick == Gate::LED)
-                            text = TextFormat(data.deviceParameterTextFmt, Node::GetColorName(data.storedExtraParam));
-                        else
-                            text = TextFormat(data.deviceParameterTextFmt, data.storedExtraParam);
-                        DrawText(text, 52, 17, 8, WHITE);
-                    }
-                    // Blueprints
-                    else if (data.cursorUIPos.x <= 64)
-                    {
-                        constexpr IRect rec(48, 0, 16);
-                        DrawRectangleIRect(rec, WIPBLUE);
-                    }
+                    DrawRectangleIRect(ProgramData::ButtonBound_Mode(), WIPBLUE);
+                    // Tooltip
+                    const char* name = data.GetModeTooltipName(data.baseMode);
+                    DrawTextIV(name, ProgramData::ButtonBound_Mode().xy + tooltipNameOffset, 8, WHITE);
+                    IVec2 sepLength(MeasureText(name, 8), 0);
+                    DrawLineIV(20, 17 + 12, 20 + sepLength, 17 + 12, WHITE); // Separator
+                    DrawTextIV(data.GetModeTooltipDescription(data.baseMode), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, 8, WHITE);
+                }
+                // Gate
+                else if (data.CursorInUIBounds(ProgramData::ButtonBound_Gate()))
+                {
+                    DrawRectangleIRect(ProgramData::ButtonBound_Gate(), WIPBLUE);
+                    // Tooltip
+                    const char* name = data.GetGateTooltipName(data.gatePick);
+                    DrawTextIV(name, ProgramData::ButtonBound_Gate().xy + tooltipNameOffset, 8, WHITE);
+                    DrawLine(36, 17 + 12, 36 + MeasureText(name, 8), 17 + 12, WHITE);
+                    DrawTextIV(data.GetGateTooltipDescription(data.gatePick), ProgramData::ButtonBound_Gate().xy + tooltipDescOffset, 8, WHITE);
+                }
+                // Extra param
+                else if (data.CursorInUIBounds(ProgramData::ButtonBound_Parameter()))
+                {
+                    DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), WIPBLUE);
+                    DrawRectangleIRect(ShrinkIRect(ProgramData::ButtonBound_Parameter(), 2), data.ExtraParamColor());
+                    // Tooltip
+                    const char* text;
+                    if (data.gatePick == Gate::LED)
+                        text = TextFormat(data.deviceParameterTextFmt, Node::GetColorName(data.storedExtraParam));
+                    else
+                        text = TextFormat(data.deviceParameterTextFmt, data.storedExtraParam);
+                    DrawTextIV(text, ProgramData::ButtonBound_Parameter().xy + tooltipNameOffset, 8, WHITE);
+                }
+                // Blueprints
+                else if (data.CursorInUIBounds(ProgramData::ButtonBound_Blueprints()))
+                {
+                    DrawRectangleIRect(ProgramData::ButtonBound_Blueprints(), WIPBLUE);
+                    // Tooltip
+                    DrawTextIV("Blueprints", ProgramData::ButtonBound_Parameter().xy + tooltipNameOffset, 8, WHITE);
                 }
 
-                data.DrawModeIcon(data.baseMode, IVec2(0), WHITE);
-                data.DrawGateIcon16x(data.gatePick, IVec2(16,0), WHITE);
+                data.DrawModeIcon(data.baseMode, ProgramData::ButtonBound_Mode().xy, WHITE);
+                data.DrawGateIcon16x(data.gatePick, ProgramData::ButtonBound_Gate().xy, WHITE);
             }
 
         } EndDrawing();

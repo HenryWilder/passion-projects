@@ -132,6 +132,11 @@ void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint)
     DrawTexture(texture, pos.x, pos.y, tint);
 }
 
+void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color)
+{
+    DrawText(text, pos.x, pos.y, fontSize, color);
+}
+
 bool InBoundingBox(IRect bounds, IVec2 pt)
 {
     return
