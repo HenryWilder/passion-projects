@@ -288,15 +288,6 @@ public:
         DrawIcon<32>(gateIcons32x, offset, pos, tint);
     };
 
-    static bool ModeIsOverlay(Mode mode)
-    {
-        // Modes which can be active simultaneously with a non-overlay mode
-        return mode == Mode::GATE || mode == Mode::BUTTON || mode == Mode::PASTE;
-    }
-    inline bool ModeIsOverlay() const
-    {
-        return ModeIsOverlay(this->mode);
-    }
     static bool ModeIsMenu(Mode mode)
     {
         // Modes which disable use of basic UI and drawing of certain UI elements
@@ -305,6 +296,15 @@ public:
     inline bool ModeIsMenu() const
     {
         return ModeIsMenu(this->mode);
+    }
+    static bool ModeIsOverlay(Mode mode)
+    {
+        // Modes which can be active simultaneously with a non-overlay mode
+        return mode == Mode::GATE || mode == Mode::BUTTON || mode == Mode::PASTE || ModeIsMenu(mode);
+    }
+    inline bool ModeIsOverlay() const
+    {
+        return ModeIsOverlay(this->mode);
     }
     bool ModeIsBasic() const
     {
@@ -322,78 +322,57 @@ public:
         b_cursorMoved = true;
         mode = newMode;
 
-        memset();
+        if (!ModeIsOverlay(newMode))
+        {
+            baseMode = newMode;
+            memset(&base, 0, sizeof(overlay));
+        }
+        memset(&overlay, 0, sizeof(overlay));
 
+        // Initialize any non-zero values
         switch (newMode)
         {
-        case Mode::PEN:
-            baseMode = Mode::PEN;
-            pen.currentWireStart = nullptr;
-            pen.currentWireElbowConfig = (ElbowConfig)0;
-            break;
-
-        case Mode::EDIT:
-            baseMode = Mode::EDIT;
-            edit.fallbackPos = IVec2::Zero();
-            edit.selectionWIP = false;
-            edit.selectionStart = IVec2::Zero();
-            edit.selectionRec = IRect(0, 0, 0, 0);
-            edit.draggingGroup = false;
-            edit.hoveredGroup = nullptr;
-            edit.nodeBeingDragged = nullptr;
-            edit.wireBeingDragged = nullptr;
-            break;
-
-        case Mode::ERASE:
-            baseMode = Mode::ERASE;
-            break;
-
-        case Mode::INTERACT:
-            baseMode = Mode::INTERACT;
-            break;
-
         case Mode::GATE:
-            gate.radialMenuCenter = cursorUIPos;
-            gate.overlappedSection = 0;
-            break;
-
-        case Mode::BUTTON:
-            button.dropdownActive = 0;
-            break;
-
-        case Mode::PASTE:
+            Gate_RadialMenuCenter() = cursorUIPos;
             break;
 
         case Mode::BP_ICON:
-            bp_icon.object = nullptr;
-            bp_icon.pos = IVec2::Zero();
-            bp_icon.sheetRec = IRect(0, 0, 0, 0);
-            bp_icon.iconID = NULL;
-            bp_icon.iconCount = 0;
-            bp_icon.draggingIcon = -1;
+            BPIcon_DraggingIcon() = -1;
             break;
 
         case Mode::BP_SELECT:
-            bp_select.hovering = -1;
+            BPSelect_Hovering() = -1;
+            break;
+
+        case Mode::BUTTON:
+            Button_DropdownActive() = cursorUIPos.x / 16;
             break;
         }
     };
     void SetGate(Gate newGate)
     {
+        constexpr const char* parameterTextFmtOptions[] =
+        {
+            "Component parameter: %i",
+            "Resistance: %i inputs",
+            "Capacity: %i ticks",
+            "Color: %s"
+        };
         gatePick = newGate;
         switch (newGate)
         {
+        default:
+            deviceParameterTextFmt = parameterTextFmtOptions[0];
+            break;
+
         case Gate::RESISTOR:
-            deviceParameterTextFmt = "Resistance: %i inputs";
+            deviceParameterTextFmt = parameterTextFmtOptions[1];
             break;
         case Gate::CAPACITOR:
-            deviceParameterTextFmt = "Capacity: %i ticks";
+            deviceParameterTextFmt = parameterTextFmtOptions[2];
             break;
         case Gate::LED:
-            deviceParameterTextFmt = "Color: %s";
-            break;
-        default:
-            deviceParameterTextFmt = "Component parameter: %i";
+            deviceParameterTextFmt = parameterTextFmtOptions[3];
             break;
         }
     };
@@ -519,7 +498,7 @@ public:
         }
     };
 
-    void TickFrame()
+    void IncrementTick()
     {
         ++tickFrame;
         tickFrame %= framesPerTick;
@@ -1616,7 +1595,7 @@ int main()
         *   Simulate frame and update variables
         ******************************************/
 
-        data.TickFrame();
+        data.IncrementTick();
 
         data.UpdateCursorPos();
 
@@ -1626,11 +1605,9 @@ int main()
 
         // UI buttons
         {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data.ModeIsMenu() && (data.cursorUIPos.y <= 16 && data.cursorUIPos.x <= (16 * 3)) &&
-                (data.mode == Mode::BUTTON ? data.button.dropdownActive != (data.cursorUIPos.x / 16) : true))
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data.ModeIsMenu() && (data.cursorUIPos.y <= 16 && data.cursorUIPos.x <= (16 * 3)) && (data.mode == Mode::BUTTON ? data.Button_DropdownActive() != (data.cursorUIPos.x / 16) : true))
             {
-                SetMode(Mode::BUTTON);
-                data.button.dropdownActive = cursorUIPos.x / 16;
+                data.SetMode(Mode::BUTTON);
                 goto EVAL; // Skip button sim this frame
             }
             else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data.ModeIsMenu() && (data.cursorUIPos.y <= 16 && data.cursorUIPos.x >= (16 * 3) && data.cursorUIPos.x <= (16 * 4)))
@@ -1671,41 +1648,39 @@ int main()
 
             ClearBackground(BLACK);
 
-            if (data.ModeIsMenu())
-            {
-                switch (data.mode)
-                {
-                    ASSERT_SPECIALIZATION(L"Menu draw phase");
-
-                case Mode::BP_ICON:   Draw_Menu_Icon(data);   break;
-                case Mode::BP_SELECT: Draw_Menu_Select(data); break;
-                }
-            }
-            else
+            if (!data.ModeIsMenu())
             {
                 BeginMode2D(data.camera);
 
                 data.DrawGrid();
 
                 NodeWorld::Get().DrawGroups();
+            }
+                
 
-                // Draw
-                switch (data.mode)
-                {
-                    ASSERT_SPECIALIZATION(L"Basic draw phase");
+            // Draw
+            switch (data.mode)
+            {
+                ASSERT_SPECIALIZATION(L"Basic draw phase");
 
-                    // Basic
-                case Mode::PEN:         Draw_Pen(data);               break;
-                case Mode::EDIT:        Draw_Edit(data);              break;
-                case Mode::ERASE:       Draw_Erase(data);             break;
-                case Mode::INTERACT:    Draw_Interact(data);          break;
+                // Basic
+            case Mode::PEN:         Draw_Pen(data);             break;
+            case Mode::EDIT:        Draw_Edit(data);            break;
+            case Mode::ERASE:       Draw_Erase(data);           break;
+            case Mode::INTERACT:    Draw_Interact(data);        break;
 
-                    // Overlay
-                case Mode::GATE:        Draw_Overlay_Gate(data);      break;
-                case Mode::BUTTON:      Draw_Overlay_Button(data);    break;
-                case Mode::PASTE:       Draw_Overlay_Paste(data);     break;
-                }
+                // Overlay
+            case Mode::GATE:        Draw_Overlay_Gate(data);    break;
+            case Mode::BUTTON:      Draw_Overlay_Button(data);  break;
+            case Mode::PASTE:       Draw_Overlay_Paste(data);   break;
 
+                // Menu
+            case Mode::BP_ICON:     Draw_Menu_Icon(data);       break;
+            case Mode::BP_SELECT:   Draw_Menu_Select(data);     break;
+            }
+
+            if (!data.ModeIsMenu())
+            {
                 EndMode2D();
 
                 // UI
@@ -1716,51 +1691,51 @@ int main()
                 {
                     constexpr IRect clipboardRec(16 * 4, 0, 16);
                     DrawRectangleIRect(clipboardRec, SPACEGRAY);
-                    DrawTextureIV(data.clipboardIcon, clipboardRec.xy, WHITE);
+                    DrawTextureIV(data.GetClipboardIcon(), clipboardRec.xy, WHITE);
                 }
 
                 _ASSERT_EXPR(data.storedExtraParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
                 DrawRectangleIRect(IRect(32, 0, 16), Node::g_resistanceBands[data.storedExtraParam]);
 
                 // Buttons
-                if (cursorUIPos.y <= 16)
+                if (data.cursorUIPos.y <= 16)
                 {
                     // Mode
-                    if (cursorUIPos.x <= 16)
+                    if (data.cursorUIPos.x <= 16)
                     {
                         constexpr IRect rec(0, 0, 16);
                         DrawRectangleIRect(rec, WIPBLUE);
-                        const char* name = GetModeTooltipName(baseMode);
+                        const char* name = data.GetModeTooltipName(data.baseMode);
                         DrawText(name, 20, 17, 8, WHITE);
                         DrawLine(20, 17 + 12, 20 + MeasureText(name, 8), 17 + 12, WHITE);
-                        DrawText(GetModeTooltipDescription(baseMode), 20, 17 + 16, 8, WHITE);
+                        DrawText(data.GetModeTooltipDescription(data.baseMode), 20, 17 + 16, 8, WHITE);
                     }
                     // Gate
-                    else if (cursorUIPos.x <= 32)
+                    else if (data.cursorUIPos.x <= 32)
                     {
                         constexpr IRect rec(16, 0, 16);
                         DrawRectangleIRect(rec, WIPBLUE);
-                        const char* name = GetGateTooltipName(data.gatePick);
+                        const char* name = data.GetGateTooltipName(data.gatePick);
                         DrawText(name, 36, 17, 8, WHITE);
                         DrawLine(36, 17 + 12, 36 + MeasureText(name, 8), 17 + 12, WHITE);
-                        DrawText(GetGateTooltipDescription(data.gatePick), 36, 17 + 16, 8, WHITE);
+                        DrawText(data.GetGateTooltipDescription(data.gatePick), 36, 17 + 16, 8, WHITE);
                     }
                     // Extra param
-                    else if (cursorUIPos.x <= 48)
+                    else if (data.cursorUIPos.x <= 48)
                     {
                         constexpr IRect rec(32, 0, 16);
                         DrawRectangleIRect(rec, WIPBLUE);
-                        _ASSERT_EXPR(data.storedExtendedParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
-                        DrawRectangleIRect(ShrinkIRect(rec, 2), Node::g_resistanceBands[data.storedExtendedParam]);
+                        _ASSERT_EXPR(data.storedExtraParam < _countof(Node::g_resistanceBands), L"Stored parameter out of bounds");
+                        DrawRectangleIRect(ShrinkIRect(rec, 2), Node::g_resistanceBands[data.storedExtraParam]);
                         const char* text;
                         if (data.gatePick == Gate::LED)
-                            text = TextFormat(deviceParameterTextFmt, Node::GetColorName(data.storedExtendedParam));
+                            text = TextFormat(data.deviceParameterTextFmt, Node::GetColorName(data.storedExtraParam));
                         else
-                            text = TextFormat(deviceParameterTextFmt, data.storedExtendedParam);
+                            text = TextFormat(data.deviceParameterTextFmt, data.storedExtraParam);
                         DrawText(text, 52, 17, 8, WHITE);
                     }
                     // Blueprints
-                    else if (cursorUIPos.x <= 64)
+                    else if (data.cursorUIPos.x <= 64)
                     {
                         constexpr IRect rec(48, 0, 16);
                         DrawRectangleIRect(rec, WIPBLUE);
