@@ -20,6 +20,9 @@ private:
     ~NodeWorld();
 
 private: // Internal
+    void _Free();
+    // Already calls _Free!
+    void _Clear();
     Node* _CreateNode(Node&& base);
     void _ClearNodeReferences(Node* node);
     void _DestroyNode(Node* node);

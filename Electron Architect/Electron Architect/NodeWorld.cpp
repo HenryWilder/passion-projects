@@ -1,7 +1,3 @@
-#if _DEBUG
-#include <string>
-#include <format>
-#endif
 #include <thread>
 #include <fstream>
 #include "HUtility.h"
@@ -9,6 +5,11 @@
 
 NodeWorld::NodeWorld() = default;
 NodeWorld::~NodeWorld()
+{
+    _Free();
+}
+
+void NodeWorld::_Free()
 {
     for (Node* node : nodes)
     {
@@ -26,6 +27,12 @@ NodeWorld::~NodeWorld()
     {
         delete group;
     }
+}
+
+void NodeWorld::_Clear()
+{
+    _Free();
+
 }
 
 Node* NodeWorld::_CreateNode(Node&& base)

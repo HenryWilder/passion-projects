@@ -6,6 +6,16 @@
 #include <algorithm>
 #include <limits.h>
 
+// Safe assertions for cases where you need to know, but exiting the program without some cleaning can be dangerous
+#if _DEBUG
+// Assert that the expr must be true. If it is not, the scoped code will not be executed (in debug).
+#define ASSERT_CONDITION(expr, msg) _ASSERT_EXPR(expr, msg L"\nWARNING: Before working on the bug, please click ignore and close the program OR press retry, continue, and then close the program safely! Exiting the program at this moment without some cleanup has been deemed potentially dangerous!!"); if (expr)
+#define ASSERTION_FAILSAFE else
+#else
+#define ASSERT_CONDITION(expr, msg)
+#define ASSERTION_FAILSAFE if (false)
+#endif
+
 #pragma region Constants
 
 // Custom colors
