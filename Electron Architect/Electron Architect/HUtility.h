@@ -15,6 +15,7 @@
 #define ASSERT_CONDITION(expr, msg)
 #define ASSERTION_FAILSAFE if (false)
 #endif
+#define ASSERT_SPECIALIZATION(being_specialized) default: _ASSERT_EXPR(false, L"Missing " being_specialized L" specialization for encountered case"); break
 
 #pragma region Constants
 
