@@ -468,8 +468,11 @@ public:
     {
         if (mode == Mode::BP_ICON)
         {
-            delete BPIcon_Object(); 
-            BPIcon_Object() = nullptr;
+            ASSERT_CONDITION(!!BPIcon_Object(), L"Object must be initialized at the start of the mode")
+            {
+                delete BPIcon_Object();
+                BPIcon_Object() = nullptr;
+            }
         }
 
         b_cursorMoved = true;
@@ -478,7 +481,7 @@ public:
         if (!ModeIsOverlay(newMode))
         {
             baseMode = newMode;
-            memset(&base, 0, sizeof(overlay));
+            memset(&base, 0, sizeof(base));
         }
         memset(&overlay, 0, sizeof(overlay));
 
@@ -675,10 +678,10 @@ public:
         cursorPos *= g_gridSize;
         {
             constexpr int halfgrid = g_gridSize / 2;
-            if      (cursorPos.x < 0) cursorPos.x -= halfgrid;
-            else if (cursorPos.x > 0) cursorPos.x += halfgrid;
-            if      (cursorPos.y < 0) cursorPos.y -= halfgrid;
-            else if (cursorPos.y > 0) cursorPos.y += halfgrid;
+            if (cursorPos.x < 0) cursorPos.x -= halfgrid;
+            else                 cursorPos.x += halfgrid;
+            if (cursorPos.y < 0) cursorPos.y -= halfgrid;
+            else                 cursorPos.y += halfgrid;
         }
 
         b_cursorMoved = cursorPosPrev != cursorPos;
