@@ -8,7 +8,7 @@
 #include "NodeWorld.h"
 
 // Validatable Index
-// NOT IN USE YET
+#if 0
 struct VIndex
 {
     constexpr VIndex() : index(SIZE_MAX) {}
@@ -103,6 +103,7 @@ struct VIndex
 private:
     size_t index;
 };
+#endif
 
 enum class Mode
 {
@@ -133,6 +134,7 @@ struct ProgramData
         modeIcons = LoadTexture("icons_mode.png");
         gateIcons16x = LoadTexture("icons_gate16x.png");
         gateIcons32x = LoadTexture("icons_gate32x.png");
+
         SetMode(Mode::PEN);
         SetGate(Gate::OR);
     }
@@ -203,7 +205,7 @@ public:
     IVec2 cursorPosPrev = IVec2::Zero(); // For checking if there was movement
     bool b_cursorMoved = false;
 
-    uint8_t framesPerTick = 3; // Number of frames in a tick
+    uint8_t framesPerTick = 6; // Number of frames in a tick
     uint8_t tickFrame = framesPerTick - 1; // Evaluate on 0
     bool tickThisFrame;
 
@@ -663,9 +665,9 @@ public:
 
     void UpdateCursorPos()
     {
-        IVec2 cursorUIPos(GetMouseX(), GetMouseY());
+        cursorUIPos = IVec2(GetMouseX(), GetMouseY());
 
-        IVec2 cursorPos(
+        cursorPos = IVec2(
             (int)(GetMouseX() / camera.zoom) + (int)camera.target.x,
             (int)(GetMouseY() / camera.zoom) + (int)camera.target.y
         );
@@ -673,10 +675,10 @@ public:
         cursorPos *= g_gridSize;
         {
             constexpr int halfgrid = g_gridSize / 2;
-            if (cursorPos.x < 0) cursorPos.x -= halfgrid;
-            else                 cursorPos.x += halfgrid;
-            if (cursorPos.y < 0) cursorPos.y -= halfgrid;
-            else                 cursorPos.y += halfgrid;
+            if      (cursorPos.x < 0) cursorPos.x -= halfgrid;
+            else if (cursorPos.x > 0) cursorPos.x += halfgrid;
+            if      (cursorPos.y < 0) cursorPos.y -= halfgrid;
+            else if (cursorPos.y > 0) cursorPos.y += halfgrid;
         }
 
         b_cursorMoved = cursorPosPrev != cursorPos;
@@ -986,6 +988,10 @@ public:
         return GetSelectionBounds(selection);
     }
 };
+Texture2D ProgramData::clipboardIcon;
+Texture2D ProgramData::modeIcons;
+Texture2D ProgramData::gateIcons16x;
+Texture2D ProgramData::gateIcons32x;
 
 void Update_Pen(ProgramData& data)
 {
@@ -1030,6 +1036,47 @@ void Update_Pen(ProgramData& data)
         data.Pen_CurrentWireStart() = nullptr;
     }
 }
+void Draw_Pen(ProgramData& data)
+{
+    NodeWorld::Get().DrawWires();
+
+    if (!!data.Pen_CurrentWireStart())
+    {
+        IVec2 start = data.Pen_CurrentWireStart()->GetPosition();
+        IVec2 elbow;
+        IVec2 end = data.cursorPos;
+        elbow = Wire::GetLegalElbowPosition(start, end, data.Pen_CurrentWireElbowConfig());
+        Wire::Draw(start, elbow, end, WIPBLUE);
+        Node::Draw(end, data.gatePick, WIPBLUE);
+    }
+
+    if (!!data.hoveredWire)
+    {
+        data.hoveredWire->Draw(GOLD);
+    }
+
+    if (!!data.hoveredNode)
+    {
+        for (const Wire* wire : data.hoveredNode->GetWires())
+        {
+            Color color;
+            if (wire->start == data.hoveredNode)
+                color = OUTPUTAPRICOT; // Output
+            else
+                color = INPUTLAVENDER; // Input
+
+            wire->Draw(color);
+        }
+    }
+
+    NodeWorld::Get().DrawNodes();
+
+    if (!!data.hoveredNode)
+    {
+        data.hoveredNode->Draw(WIPBLUE);
+    }
+}
+
 void Update_Edit(ProgramData& data)
 {
     if (data.b_cursorMoved)
@@ -1187,6 +1234,53 @@ void Update_Edit(ProgramData& data)
         }
     }
 }
+void Draw_Edit(ProgramData& data)
+{
+    if (!!data.Edit_HoveredGroup())
+        data.Edit_HoveredGroup()->Highlight(INTERFERENCEGRAY);
+
+    DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(SPACEGRAY, 0.5));
+    DrawRectangleLines(data.Edit_SelectionRec().x, data.Edit_SelectionRec().y, data.Edit_SelectionRec().w, data.Edit_SelectionRec().h, LIFELESSNEBULA);
+
+    NodeWorld::Get().DrawWires();
+
+    for (Node* node : data.selection)
+    {
+        DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, WIPBLUE);
+    }
+
+    if (!!data.hoveredWire)
+    {
+        IVec2 pts[4];
+        data.hoveredWire->GetLegalElbowPositions(pts);
+        for (const IVec2& p : pts)
+        {
+            Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(WIPBLUE, 0.25f));
+            DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(WIPBLUE, 0.5f));
+        }
+
+        data.hoveredWire->Draw(WIPBLUE);
+        Color elbowColor;
+        if (!!data.Edit_WireBeingDragged())
+            elbowColor = WIPBLUE;
+        else
+            elbowColor = CAUTIONYELLOW;
+        data.hoveredWire->DrawElbow(elbowColor);
+    }
+
+    NodeWorld::Get().DrawNodes();
+
+    if (!!data.hoveredNode)
+    {
+        data.hoveredNode->Draw(CAUTIONYELLOW);
+    }
+    if (!!data.hoveredWire)
+    {
+        data.hoveredWire->start->Draw(INPUTLAVENDER);
+        data.hoveredWire->end->Draw(OUTPUTAPRICOT);
+    }
+}
+
 void Update_Erase(ProgramData& data)
 {
     if (data.b_cursorMoved)
@@ -1208,6 +1302,45 @@ void Update_Erase(ProgramData& data)
         data.hoveredWire = nullptr;
     }
 }
+void Draw_Erase(ProgramData& data)
+{
+    auto DrawCross = [](IVec2 center, Color color)
+    {
+        int radius = 3;
+        int expandedRad = radius + 1;
+        DrawRectangle(center.x - expandedRad, center.y - expandedRad, expandedRad * 2, expandedRad * 2, BLACK);
+        DrawLine(center.x - radius, center.y - radius,
+                 center.x + radius, center.y + radius,
+                 color);
+        DrawLine(center.x - radius, center.y + radius,
+                 center.x + radius, center.y - radius,
+                 color);
+    };
+
+    NodeWorld::Get().DrawWires();
+
+    if (!!data.hoveredWire)
+    {
+        data.hoveredWire->Draw(MAGENTA);
+        DrawCross(data.cursorPos, DESTRUCTIVERED);
+    }
+    else if (!!data.hoveredNode)
+    {
+        for (Wire* wire : data.hoveredNode->GetWires())
+        {
+            wire->Draw(MAGENTA);
+        }
+    }
+
+    NodeWorld::Get().DrawNodes();
+
+    if (!!data.hoveredNode)
+    {
+        data.hoveredNode->Draw(BLACK);
+        DrawCross(data.hoveredNode->GetPosition(), DESTRUCTIVERED);
+    }
+}
+
 void Update_Interact(ProgramData& data)
 {
     data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
@@ -1217,6 +1350,22 @@ void Update_Interact(ProgramData& data)
     if (!!data.hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         data.hoveredNode->SetGate(data.hoveredNode->GetGate() == Gate::NOR ? Gate::OR : Gate::NOR);
 }
+void Draw_Interact(ProgramData& data)
+{
+    NodeWorld::Get().DrawWires();
+    NodeWorld::Get().DrawNodes();
+
+    for (const Node* node : NodeWorld::Get().GetStartNodes())
+    {
+        node->Draw(WIPBLUE);
+    }
+
+    if (!!data.hoveredNode)
+    {
+        data.hoveredNode->Draw(CAUTIONYELLOW);
+    }
+}
+
 void Update_Overlay_Gate(ProgramData& data)
 {
     if (data.b_cursorMoved)
@@ -1248,6 +1397,82 @@ void Update_Overlay_Gate(ProgramData& data)
         data.cursorUIPos = data.Gate_RadialMenuCenter(); // Todo: This doesn't update the non-UI cursorPos?
     }
 }
+void Draw_Overlay_Gate(ProgramData& data)
+{
+    if (data.baseMode == Mode::PEN)
+    {
+        NodeWorld::Get().DrawWires();
+
+        if (!!data.Pen_CurrentWireStart())
+        {
+            IVec2 start = data.Pen_CurrentWireStart()->GetPosition();
+            IVec2 elbow;
+            IVec2 end = data.Gate_RadialMenuCenter();
+            elbow = Wire::GetLegalElbowPosition(start, end, data.Pen_CurrentWireElbowConfig());
+            Wire::Draw(start, elbow, end, WIPBLUE);
+            Node::Draw(end, data.gatePick, WIPBLUE);
+        }
+
+        NodeWorld::Get().DrawNodes();
+    }
+    else
+    {
+        NodeWorld::Get().DrawWires();
+        NodeWorld::Get().DrawNodes();
+    }
+
+    EndMode2D();
+
+    constexpr int menuRadius = 64;
+    constexpr int menuIconOffset = 12;
+    constexpr IVec2 menuOff[4] = {
+        IVec2(0, 0),
+        IVec2(0,-1),
+        IVec2(-1,-1),
+        IVec2(-1, 0),
+    };
+    constexpr IRect iconDest[4] = {
+        IRect(+menuIconOffset,      +menuIconOffset,      32, 32),
+        IRect(+menuIconOffset,      -menuIconOffset - 32, 32, 32),
+        IRect(-menuIconOffset - 32, -menuIconOffset - 32, 32, 32),
+        IRect(-menuIconOffset - 32, +menuIconOffset,      32, 32),
+    };
+    int x = data.Gate_RadialMenuCenter().x;
+    int y = data.Gate_RadialMenuCenter().y;
+    constexpr Color menuBackground = SPACEGRAY;
+    DrawCircleIV(data.Gate_RadialMenuCenter(), static_cast<float>(menuRadius + 4), menuBackground);
+
+    for (int i = 0; i < 4; ++i)
+    {
+        Color colorA;
+        Color colorB;
+        int radius;
+
+        if (i == data.Gate_OverlappedSection()) // Active
+        {
+            colorA = GLEEFULDUST;
+            colorB = INTERFERENCEGRAY;
+            radius = menuRadius + 8;
+        }
+        else // Inactive
+        {
+            colorA = LIFELESSNEBULA;
+            colorB = HAUNTINGWHITE;
+            radius = menuRadius;
+        }
+        BeginScissorMode(x + (menuOff[i].x * 8 + 4) + menuOff[i].x * radius, y + (menuOff[i].y * 8 + 4) + menuOff[i].y * radius, radius, radius);
+
+        float startAngle = static_cast<float>(i * 90);
+        DrawCircleSector({ static_cast<float>(x), static_cast<float>(y) }, static_cast<float>(radius), startAngle, startAngle + 90.0f, 8, colorA);
+        IVec2 rec = iconDest[i].xy;
+        rec.x += x;
+        rec.y += y;
+        ProgramData::DrawGateIcon32x(ProgramData::radialGateOrder[i], rec, colorB);
+
+        EndScissorMode();
+    }
+}
+
 void Update_Overlay_Button(ProgramData& data)
 {
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -1324,304 +1549,6 @@ void Update_Overlay_Button(ProgramData& data)
     else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
         data.ClearOverlayMode();
-    }
-}
-void Update_Overlay_Paste(ProgramData& data)
-{
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-    {
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            NodeWorld::Get().SpawnBlueprint(data.clipboard, data.cursorPos);
-        data.ClearSelection();
-        data.ClearOverlayMode();
-    }
-}
-void Update_Menu_Icon(ProgramData& data)
-{
-    if (data.b_cursorMoved && data.BPIcon_DraggingIcon() == -1)
-    {
-        data.BPIcon_IconID() = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.BPIcon_SheetRec().xy, data.cursorUIPos));
-    }
-
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-    {
-        if (data.CursorInUIBounds(data.BPIcon_SheetRec()) && data.BPIcon_IconCount() < 4 && !!data.BPIcon_IconID())
-        {
-            data.cursorUIPos = data.BPIcon_Pos();
-            SetMousePosition(data.cursorUIPos.x + BlueprintIcon::g_size / 2, data.cursorUIPos.y + BlueprintIcon::g_size / 2);
-            data.BPIcon_Object()->combo[data.BPIcon_IconCount()] = { data.BPIcon_IconID(), 0,0 };
-            data.BPIcon_DraggingIcon() = data.BPIcon_IconCount();
-            data.BPIcon_IconCount()++;
-        }
-        else if (data.CursorInUIBounds(IRect(data.BPIcon_Pos(), BlueprintIcon::g_size * 2)))
-        {
-            data.BPIcon_DraggingIcon() = -1;
-            for (int i = 0; i < data.BPIcon_IconCount(); ++i)
-            {
-                if (data.BPIcon_Object()->combo[i].id == NULL)
-                    continue;
-
-                IRect bounds(
-                    data.BPIcon_Pos().x,
-                    data.BPIcon_Pos().y,
-                    BlueprintIcon::g_size,
-                    BlueprintIcon::g_size
-                );
-                bounds.xy = bounds.xy + data.BPIcon_Object()->combo[i].Pos();
-                if (data.CursorInUIBounds(bounds))
-                {
-                    data.BPIcon_DraggingIcon() = i;
-                    data.BPIcon_IconID() = data.BPIcon_Object()->combo[i].id;
-                    break;
-                }
-            }
-        }
-    }
-    if ((IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) && data.BPIcon_DraggingIcon() != -1)
-    {
-        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
-        {
-            if (data.BPIcon_DraggingIcon() < 3)
-            {
-                memcpy(
-                    data.BPIcon_Object()->combo + data.BPIcon_DraggingIcon(),
-                    data.BPIcon_Object()->combo + data.BPIcon_DraggingIcon() + 1,
-                    sizeof(IconPos) * (4ull - (size_t)data.BPIcon_DraggingIcon()));
-            }
-            data.BPIcon_Object()->combo[3] = { NULL, 0,0 };
-            data.BPIcon_IconCount()--;
-        }
-        data.BPIcon_DraggingIcon() = -1;
-    }
-    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.BPIcon_IconID())
-    {
-        constexpr IVec2 centerOffset = IVec2(BlueprintIcon::g_size / 2);
-        IVec2 colRow = (data.cursorUIPos - data.BPIcon_Pos() - centerOffset) / centerOffset;
-        colRow.x = std::min(std::max(colRow.x, 0), 2);
-        colRow.y = std::min(std::max(colRow.y, 0), 2);
-        data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].x = colRow.x;
-        data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].y = colRow.y;
-    }
-}
-// todo
-void Update_Menu_Select(ProgramData& data)
-{
-    
-}
-
-
-void Draw_Pen(ProgramData& data)
-{
-    NodeWorld::Get().DrawWires();
-
-    if (!!data.Pen_CurrentWireStart())
-    {
-        IVec2 start = data.Pen_CurrentWireStart()->GetPosition();
-        IVec2 elbow;
-        IVec2 end = data.cursorPos;
-        elbow = Wire::GetLegalElbowPosition(start, end, data.Pen_CurrentWireElbowConfig());
-        Wire::Draw(start, elbow, end, WIPBLUE);
-        Node::Draw(end, data.gatePick, WIPBLUE);
-    }
-
-    if (!!data.hoveredWire)
-    {
-        data.hoveredWire->Draw(GOLD);
-    }
-
-    if (!!data.hoveredNode)
-    {
-        for (const Wire* wire : data.hoveredNode->GetWires())
-        {
-            Color color;
-            if (wire->start == data.hoveredNode)
-                color = OUTPUTAPRICOT; // Output
-            else
-                color = INPUTLAVENDER; // Input
-
-            wire->Draw(color);
-        }
-    }
-
-    NodeWorld::Get().DrawNodes();
-
-    if (!!data.hoveredNode)
-    {
-        data.hoveredNode->Draw(WIPBLUE);
-    }
-}
-void Draw_Edit(ProgramData& data)
-{
-    if (!!data.Edit_HoveredGroup())
-        data.Edit_HoveredGroup()->Highlight(INTERFERENCEGRAY);
-
-    DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(SPACEGRAY, 0.5));
-    DrawRectangleLines(data.Edit_SelectionRec().x, data.Edit_SelectionRec().y, data.Edit_SelectionRec().w, data.Edit_SelectionRec().h, LIFELESSNEBULA);
-
-    NodeWorld::Get().DrawWires();
-
-    for (Node* node : data.selection)
-    {
-        DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, WIPBLUE);
-    }
-
-    if (!!data.hoveredWire)
-    {
-        IVec2 pts[4];
-        data.hoveredWire->GetLegalElbowPositions(pts);
-        for (const IVec2& p : pts)
-        {
-            Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(WIPBLUE, 0.25f));
-            DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(WIPBLUE, 0.5f));
-        }
-
-        data.hoveredWire->Draw(WIPBLUE);
-        Color elbowColor;
-        if (!!data.Edit_WireBeingDragged())
-            elbowColor = WIPBLUE;
-        else
-            elbowColor = CAUTIONYELLOW;
-        data.hoveredWire->DrawElbow(elbowColor);
-    }
-
-    NodeWorld::Get().DrawNodes();
-
-    if (!!data.hoveredNode)
-    {
-        data.hoveredNode->Draw(CAUTIONYELLOW);
-    }
-    if (!!data.hoveredWire)
-    {
-        data.hoveredWire->start->Draw(INPUTLAVENDER);
-        data.hoveredWire->end->Draw(OUTPUTAPRICOT);
-    }
-}
-void Draw_Erase(ProgramData& data)
-{
-    auto DrawCross = [](IVec2 center, Color color)
-    {
-        int radius = 3;
-        int expandedRad = radius + 1;
-        DrawRectangle(center.x - expandedRad, center.y - expandedRad, expandedRad * 2, expandedRad * 2, BLACK);
-        DrawLine(center.x - radius, center.y - radius,
-                 center.x + radius, center.y + radius,
-                 color);
-        DrawLine(center.x - radius, center.y + radius,
-                 center.x + radius, center.y - radius,
-                 color);
-    };
-
-    NodeWorld::Get().DrawWires();
-
-    if (!!data.hoveredWire)
-    {
-        data.hoveredWire->Draw(MAGENTA);
-        DrawCross(data.cursorPos, DESTRUCTIVERED);
-    }
-    else if (!!data.hoveredNode)
-    {
-        for (Wire* wire : data.hoveredNode->GetWires())
-        {
-            wire->Draw(MAGENTA);
-        }
-    }
-
-    NodeWorld::Get().DrawNodes();
-
-    if (!!data.hoveredNode)
-    {
-        data.hoveredNode->Draw(BLACK);
-        DrawCross(data.hoveredNode->GetPosition(), DESTRUCTIVERED);
-    }
-}
-void Draw_Interact(ProgramData& data)
-{
-    NodeWorld::Get().DrawWires();
-    NodeWorld::Get().DrawNodes();
-
-    for (const Node* node : NodeWorld::Get().GetStartNodes())
-    {
-        node->Draw(WIPBLUE);
-    }
-
-    if (!!data.hoveredNode)
-    {
-        data.hoveredNode->Draw(CAUTIONYELLOW);
-    }
-}
-void Draw_Overlay_Gate(ProgramData& data)
-{
-    if (data.baseMode == Mode::PEN)
-    {
-        NodeWorld::Get().DrawWires();
-
-        if (!!data.Pen_CurrentWireStart())
-        {
-            IVec2 start = data.Pen_CurrentWireStart()->GetPosition();
-            IVec2 elbow;
-            IVec2 end = data.Gate_RadialMenuCenter();
-            elbow = Wire::GetLegalElbowPosition(start, end, data.Pen_CurrentWireElbowConfig());
-            Wire::Draw(start, elbow, end, WIPBLUE);
-            Node::Draw(end, data.gatePick, WIPBLUE);
-        }
-
-        NodeWorld::Get().DrawNodes();
-    }
-    else
-    {
-        NodeWorld::Get().DrawWires();
-        NodeWorld::Get().DrawNodes();
-    }
-
-    EndMode2D();
-
-    constexpr int menuRadius = 64;
-    constexpr int menuIconOffset = 12;
-    constexpr IVec2 menuOff[4] = {
-        IVec2(0, 0),
-        IVec2(0,-1),
-        IVec2(-1,-1),
-        IVec2(-1, 0),
-    };
-    constexpr IRect iconDest[4] = {
-        IRect(+menuIconOffset,      +menuIconOffset,      32, 32),
-        IRect(+menuIconOffset,      -menuIconOffset - 32, 32, 32),
-        IRect(-menuIconOffset - 32, -menuIconOffset - 32, 32, 32),
-        IRect(-menuIconOffset - 32, +menuIconOffset,      32, 32),
-    };
-    int x = data.Gate_RadialMenuCenter().x;
-    int y = data.Gate_RadialMenuCenter().y;
-    constexpr Color menuBackground = SPACEGRAY;
-    DrawCircleIV(data.Gate_RadialMenuCenter(), static_cast<float>(menuRadius + 4), menuBackground);
-
-    for (int i = 0; i < 4; ++i)
-    {
-        Color colorA;
-        Color colorB;
-        int radius;
-
-        if (i == data.Gate_OverlappedSection()) // Active
-        {
-            colorA = GLEEFULDUST;
-            colorB = INTERFERENCEGRAY;
-            radius = menuRadius + 8;
-        }
-        else // Inactive
-        {
-            colorA = LIFELESSNEBULA;
-            colorB = HAUNTINGWHITE;
-            radius = menuRadius;
-        }
-        BeginScissorMode(x + (menuOff[i].x * 8 + 4) + menuOff[i].x * radius, y + (menuOff[i].y * 8 + 4) + menuOff[i].y * radius, radius, radius);
-
-        float startAngle = static_cast<float>(i * 90);
-        DrawCircleSector({ static_cast<float>(x), static_cast<float>(y) }, static_cast<float>(radius), startAngle, startAngle + 90.0f, 8, colorA);
-        IVec2 rec = iconDest[i].xy;
-        rec.x += x;
-        rec.y += y;
-        ProgramData::DrawGateIcon32x(ProgramData::radialGateOrder[i], rec, colorB);
-
-        EndScissorMode();
     }
 }
 void Draw_Overlay_Button(ProgramData& data)
@@ -1703,12 +1630,91 @@ void Draw_Overlay_Button(ProgramData& data)
     break;
     }
 }
+
+void Update_Overlay_Paste(ProgramData& data)
+{
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+    {
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            NodeWorld::Get().SpawnBlueprint(data.clipboard, data.cursorPos);
+        data.ClearSelection();
+        data.ClearOverlayMode();
+    }
+}
 void Draw_Overlay_Paste(ProgramData& data)
 {
     NodeWorld::Get().DrawWires();
     NodeWorld::Get().DrawNodes();
 
     data.clipboard->DrawPreview(data.cursorPos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
+}
+
+void Update_Menu_Icon(ProgramData& data)
+{
+    if (data.b_cursorMoved && data.BPIcon_DraggingIcon() == -1)
+    {
+        data.BPIcon_IconID() = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.BPIcon_SheetRec().xy, data.cursorUIPos));
+    }
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    {
+        if (data.CursorInUIBounds(data.BPIcon_SheetRec()) && data.BPIcon_IconCount() < 4 && !!data.BPIcon_IconID())
+        {
+            data.cursorUIPos = data.BPIcon_Pos();
+            SetMousePosition(data.cursorUIPos.x + BlueprintIcon::g_size / 2, data.cursorUIPos.y + BlueprintIcon::g_size / 2);
+            data.BPIcon_Object()->combo[data.BPIcon_IconCount()] = { data.BPIcon_IconID(), 0,0 };
+            data.BPIcon_DraggingIcon() = data.BPIcon_IconCount();
+            data.BPIcon_IconCount()++;
+        }
+        else if (data.CursorInUIBounds(IRect(data.BPIcon_Pos(), BlueprintIcon::g_size * 2)))
+        {
+            data.BPIcon_DraggingIcon() = -1;
+            for (int i = 0; i < data.BPIcon_IconCount(); ++i)
+            {
+                if (data.BPIcon_Object()->combo[i].id == NULL)
+                    continue;
+
+                IRect bounds(
+                    data.BPIcon_Pos().x,
+                    data.BPIcon_Pos().y,
+                    BlueprintIcon::g_size,
+                    BlueprintIcon::g_size
+                );
+                bounds.xy = bounds.xy + data.BPIcon_Object()->combo[i].Pos();
+                if (data.CursorInUIBounds(bounds))
+                {
+                    data.BPIcon_DraggingIcon() = i;
+                    data.BPIcon_IconID() = data.BPIcon_Object()->combo[i].id;
+                    break;
+                }
+            }
+        }
+    }
+    if ((IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) && data.BPIcon_DraggingIcon() != -1)
+    {
+        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+        {
+            if (data.BPIcon_DraggingIcon() < 3)
+            {
+                memcpy(
+                    data.BPIcon_Object()->combo + data.BPIcon_DraggingIcon(),
+                    data.BPIcon_Object()->combo + data.BPIcon_DraggingIcon() + 1,
+                    sizeof(IconPos) * (4ull - (size_t)data.BPIcon_DraggingIcon()));
+            }
+            data.BPIcon_Object()->combo[3] = { NULL, 0,0 };
+            data.BPIcon_IconCount()--;
+        }
+        data.BPIcon_DraggingIcon() = -1;
+    }
+    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.BPIcon_IconID())
+    {
+        constexpr IVec2 centerOffset = IVec2(BlueprintIcon::g_size / 2);
+        IVec2 colRow = (data.cursorUIPos - data.BPIcon_Pos() - centerOffset) / centerOffset;
+        colRow.x = std::min(std::max(colRow.x, 0), 2);
+        colRow.y = std::min(std::max(colRow.y, 0), 2);
+        data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].x = colRow.x;
+        data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].y = colRow.y;
+    }
 }
 void Draw_Menu_Icon(ProgramData& data)
 {
@@ -1736,7 +1742,12 @@ void Draw_Menu_Icon(ProgramData& data)
 
     BlueprintIcon::DrawSheet(data.BPIcon_SheetRec().xy, SPACEGRAY, WHITE);
 }
+
 // todo
+void Update_Menu_Select(ProgramData& data)
+{
+    
+}
 void Draw_Menu_Select(ProgramData& data)
 {
     DrawText("[ @TODO make blueprint selection screen ]\nPress Esc to return to circuit graph.", 4, 4, 8, WHITE);
@@ -1848,7 +1859,7 @@ int main()
 
                 // UI
 
-                DrawRectangleIRect(IRect(32, 16), SPACEGRAY);
+                //DrawRectangleIRect(IRect(32, 16), SPACEGRAY);
                 DrawRectangleIRect(IRect(64, 16), SPACEGRAY);
                 if (!!data.clipboard)
                 {
