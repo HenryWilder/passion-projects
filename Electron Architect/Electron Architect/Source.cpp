@@ -2008,6 +2008,7 @@ int main()
 * Beyond v1.0.0
 * -Parallel node drawing with pen (multiple nodes created with parallel wires)
 * -Special erase (keep wires, erase node)
+* -Shift-click to draw line from previous node instead of continuing from current node
 * -Multiple wire stacking on single node
 * -Hotkeys for output-only gate state toggles (Like the Reason on-screen piano (Yes, this is different from interact mode))
 *
