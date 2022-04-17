@@ -4,31 +4,15 @@
 
 ElbowConfig& operator++(ElbowConfig& ec)
 {
-    uint8_t newValue = (uint8_t)ec + 1;
-    if (newValue > 3)
-        ec = (ElbowConfig)0;
-    else
-        ec = (ElbowConfig)newValue;
-    return ec;
+    if ((uint8_t)ec == 3)
+        return ec = (ElbowConfig)0;
+    return ec = (ElbowConfig)((uint8_t)ec + 1);
 }
 ElbowConfig& operator--(ElbowConfig& ec)
 {
-    uint8_t newValue = (uint8_t)ec - 1;
-    if constexpr (decltype(newValue)(-1) > 0)
-    {
-        if (newValue > 3)
-            ec = (ElbowConfig)0;
-        else
-            ec = (ElbowConfig)newValue;
-    }
-    else
-    {
-        if (newValue < 0)
-            ec = (ElbowConfig)0;
-        else
-            ec = (ElbowConfig)newValue;
-    }
-    return ec;
+    if ((uint8_t)ec == 0)
+        return ec = (ElbowConfig)3;
+    return ec = (ElbowConfig)((uint8_t)ec - 1);
 }
 
 Wire::Wire(Node * start, Node * end) : elbow(), elbowConfig((ElbowConfig)0), start(start), end(end) {}

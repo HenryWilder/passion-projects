@@ -331,7 +331,7 @@ public: // Accessors for unions
     **********/
 
     // Pen
-    ACCESSOR(Pen_PreviousWireStart(),        baseMode == Mode::PEN,      base.pen.previousWireStart)
+    ACCESSOR(Pen_PreviousWireStart(),       baseMode == Mode::PEN,      base.pen.previousWireStart)
     ACCESSOR(Pen_CurrentWireStart(),        baseMode == Mode::PEN,      base.pen.currentWireStart)
     ACCESSOR(Pen_CurrentWireElbowConfig(),  baseMode == Mode::PEN,      base.pen.currentWireElbowConfig)
 

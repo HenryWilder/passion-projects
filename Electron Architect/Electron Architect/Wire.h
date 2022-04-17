@@ -9,8 +9,8 @@ class Node;
 enum class ElbowConfig : uint8_t
 {
     horizontal,
-    vertical,
     diagonalA,
+    vertical,
     diagonalB,
 };
 ElbowConfig& operator++(ElbowConfig& ec);
