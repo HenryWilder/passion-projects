@@ -1027,8 +1027,8 @@ void Update_Pen(ProgramData& data)
             Wire* wire = NodeWorld::Get().CreateWire(oldNode, newNode);
             wire->elbowConfig = data.Pen_CurrentWireElbowConfig();
             wire->UpdateElbowToLegal();
+            data.Pen_PreviousWireStart() = oldNode;
         }
-        data.Pen_PreviousWireStart() = data.Pen_CurrentWireStart();
         data.Pen_CurrentWireStart() = newNode;
     }
     else if (IsKeyPressed(KEY_R))
