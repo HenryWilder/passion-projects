@@ -1040,7 +1040,7 @@ void Update_Pen(ProgramData& data)
     }
     else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
-        data.Pen_CurrentWireStart() = nullptr;
+        data.Pen_PreviousWireStart() = data.Pen_CurrentWireStart() = nullptr;
     }
 }
 void Draw_Pen(ProgramData& data)
