@@ -260,6 +260,7 @@ private:
     {
         struct PenModeData
         {
+            Node* previousWireStart;
             Node* currentWireStart;
             ElbowConfig currentWireElbowConfig;
         } pen;
@@ -321,9 +322,6 @@ private:
 
 public: // Accessors for unions
 
-
-#if _DEBUG
-
 #define ACCESSOR(name, assertion, bind) \
     inline       decltype(bind)& name       { _ASSERT_EXPR(assertion, L"Tried to access member of different mode"); return bind; } \
     inline const decltype(bind)& name const { _ASSERT_EXPR(assertion, L"Tried to access member of different mode"); return bind; }
@@ -333,6 +331,7 @@ public: // Accessors for unions
     **********/
 
     // Pen
+    ACCESSOR(Pen_PreviousWireStart(),        baseMode == Mode::PEN,      base.pen.previousWireStart)
     ACCESSOR(Pen_CurrentWireStart(),        baseMode == Mode::PEN,      base.pen.currentWireStart)
     ACCESSOR(Pen_CurrentWireElbowConfig(),  baseMode == Mode::PEN,      base.pen.currentWireElbowConfig)
 
@@ -370,51 +369,7 @@ public: // Accessors for unions
 
 #undef ACCESSOR
 
-#else // Release
 
-    /**********
-    * Basic
-    **********/
-
-    // Pen
-#define Pen_CurrentWireStart() base.pen.currentWireStart
-#define Pen_CurrentWireElbowConfig() base.pen.currentWireElbowConfig
-
-    // Edit
-#define Edit_FallbackPos() base.edit.fallbackPos
-#define Edit_SelectionWIP() base.edit.selectionWIP
-#define Edit_SelectionStart() base.edit.selectionStart
-#define Edit_SelectionRec() base.edit.selectionRec
-#define Edit_DraggingGroup() base.edit.draggingGroup
-#define Edit_HoveredGroup() base.edit.hoveredGroup
-#define Edit_NodeBeingDragged() base.edit.nodeBeingDragged
-#define Edit_WireBeingDragged() base.edit.wireBeingDragged
-
-    /**********
-    * Overlay
-    **********/
-
-    // Gate
-#define Gate_RadialMenuCenter() overlay.gate.radialMenuCenter
-#define Gate_OverlappedSection() overlay.gate.overlappedSection
-
-    // Button
-#define Button_DropdownActive() overlay.button.dropdownActive
-
-    // BP_Icon
-#define BPIcon_Object() overlay.bp_icon.object
-    // Width and height are fixed
-#define BPIcon_Pos() overlay.bp_icon.pos
-#define BPIcon_SheetRec() overlay.bp_icon.sheetRec
-#define BPIcon_IconID() overlay.bp_icon.iconID
-#define BPIcon_IconCount() overlay.bp_icon.iconCount
-    // -1 for none/not dragging
-#define BPIcon_DraggingIcon() overlay.bp_icon.draggingIcon
-
-    // Select
-#define BPSelect_Hovering() overlay.bp_select.hovering
-
-#endif
 public:
 
     static Texture2D GetClipboardIcon()
@@ -1068,6 +1023,7 @@ void Update_Pen(ProgramData& data)
             wire->elbowConfig = data.Pen_CurrentWireElbowConfig();
             wire->UpdateElbowToLegal();
         }
+        data.Pen_PreviousWireStart() = data.Pen_CurrentWireStart();
         data.Pen_CurrentWireStart() = newNode;
     }
     else if (IsKeyPressed(KEY_R))
@@ -1088,7 +1044,11 @@ void Draw_Pen(ProgramData& data)
 
     if (!!data.Pen_CurrentWireStart())
     {
-        IVec2 start = data.Pen_CurrentWireStart()->GetPosition();
+        IVec2 start;
+        if (!!data.Pen_PreviousWireStart() && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
+            start = data.Pen_PreviousWireStart()->GetPosition();
+        else
+            start = data.Pen_CurrentWireStart()->GetPosition();
         IVec2 elbow;
         IVec2 end = data.cursorPos;
         elbow = Wire::GetLegalElbowPosition(start, end, data.Pen_CurrentWireElbowConfig());
