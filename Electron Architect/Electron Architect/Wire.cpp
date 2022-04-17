@@ -87,28 +87,19 @@ int Wire::GetEndY() const
 IVec2 Wire::GetLegalElbowPosition(IVec2 start, IVec2 end, ElbowConfig config)
 {
     _ASSERT_EXPR((uint8_t)config < 4, L"Elbow index out of bounds");
-    if (config == ElbowConfig::horizontal)
-        return IVec2(start.x, end.y);
 
-    else if (config == ElbowConfig::vertical)
-        return IVec2(end.x, start.y);
+    bool startFirst(config == ElbowConfig::diagonalA || config == ElbowConfig::horizontal);
+    auto [first, second] = (startFirst ? std::pair{ start, end } : std::pair{ end, start });
 
-    auto [first, second] = (config == ElbowConfig::diagonalA ?
-        std::pair<const IVec2&,const IVec2&>{ start, end } :
-        std::pair<const IVec2&,const IVec2&>{ end, start });
+    bool cardinal(config == ElbowConfig::horizontal || config == ElbowConfig::vertical);
+    if (cardinal) return IVec2(first.x, second.y);
 
-    int shortLength = std::min(
-        abs(end.x - start.x),
-        abs(end.y - start.y)
-    );
-
+    IVec2 diff(end - start);
+    int shortLength = std::min(abs(diff.x), abs(diff.y));
     IVec2 diagonal(shortLength);
 
-    if (second.x < first.x)
-        diagonal.x *= -1;
-
-    if (second.y < first.y)
-        diagonal.y *= -1;
+    if (second.x < first.x) diagonal.x *= -1;
+    if (second.y < first.y) diagonal.y *= -1;
 
     return first + diagonal;
 }
