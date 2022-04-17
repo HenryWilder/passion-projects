@@ -1337,10 +1337,23 @@ void Draw_Erase(ProgramData& data)
     }
     else if (!!data.hoveredNode)
     {
-        for (Wire* wire : data.hoveredNode->GetWires())
-        {
-            wire->Draw(MAGENTA);
-        }
+        do {
+            Color color;
+            if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
+            {
+                if (!!(data.hoveredNode->GetInputCount() * data.hoveredNode->GetOutputCount()))
+                    break;
+                else
+                    color = DESTRUCTIVERED;
+            }
+            else
+                color = MAGENTA;
+
+            for (Wire* wire : data.hoveredNode->GetWires())
+            {
+                wire->Draw(color);
+            }
+        } while (false);
     }
 
     NodeWorld::Get().DrawNodes();
@@ -1973,7 +1986,6 @@ int main()
 * Beyond v1.0.0
 * -Parallel node drawing with pen (multiple nodes created with parallel wires)
 * -Special erase (keep wires, erase node)
-* -Shift-click to draw line from previous node instead of continuing from current node
 * -Multiple wire stacking on single node
 * -Hotkeys for output-only gate state toggles (Like the Reason on-screen piano (Yes, this is different from interact mode))
 *
