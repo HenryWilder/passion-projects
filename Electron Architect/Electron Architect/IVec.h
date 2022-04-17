@@ -5,14 +5,14 @@
 
 struct Width
 {
-    Width(int x) : x(x) {}
-    int x;
+    constexpr Width(int x) : x(x) {}
+    const int x;
 };
 
 struct Height
 {
-    Height(int y) : y(y) {}
-    int y;
+    constexpr Height(int y) : y(y) {}
+    const int y;
 };
 
 struct IVec2
@@ -37,6 +37,16 @@ struct IVec2
 
     constexpr IVec2& operator*=(int b) { x *= b; y *= b; return *this; }
     constexpr IVec2& operator/=(int b) { x /= b; y /= b; return *this; }
+
+    constexpr IVec2& operator+=(Width b) { x += b.x; return *this; }
+    constexpr IVec2& operator-=(Width b) { x -= b.x; return *this; }
+    constexpr IVec2& operator*=(Width b) { x *= b.x; return *this; }
+    constexpr IVec2& operator/=(Width b) { x /= b.x; return *this; }
+
+    constexpr IVec2& operator+=(Height b) { y += b.y; return *this; }
+    constexpr IVec2& operator-=(Height b) { y -= b.y; return *this; }
+    constexpr IVec2& operator*=(Height b) { y *= b.y; return *this; }
+    constexpr IVec2& operator/=(Height b) { y /= b.y; return *this; }
 
     static constexpr IVec2 One()   { return IVec2(1);   }
     static constexpr IVec2 Zero()  { return IVec2(0);   }
@@ -72,6 +82,16 @@ constexpr IVec2 operator*(IVec2 a, int b) { return IVec2(a.x * b, a.y * b); }
 constexpr IVec2 operator/(IVec2 a, int b) { return IVec2(a.x / b, a.y / b); }
 constexpr IVec2 operator*(int a, IVec2 b) { return IVec2(a * b.x, a * b.y); }
 constexpr IVec2 operator/(int a, IVec2 b) { return IVec2(a / b.x, a / b.y); }
+
+constexpr IVec2 operator+(IVec2 a, Width b) { return IVec2(a.x + b.x, a.y); }
+constexpr IVec2 operator-(IVec2 a, Width b) { return IVec2(a.x - b.x, a.y); }
+constexpr IVec2 operator*(IVec2 a, Width b) { return IVec2(a.x * b.x, a.y); }
+constexpr IVec2 operator/(IVec2 a, Width b) { return IVec2(a.x / b.x, a.y); }
+
+constexpr IVec2 operator+(IVec2 a, Height b) { return IVec2(a.x, a.y + b.y); }
+constexpr IVec2 operator-(IVec2 a, Height b) { return IVec2(a.x, a.y - b.y); }
+constexpr IVec2 operator*(IVec2 a, Height b) { return IVec2(a.x, a.y * b.y); }
+constexpr IVec2 operator/(IVec2 a, Height b) { return IVec2(a.x, a.y / b.y); }
 
 IVec2 IVec2Scale_f(IVec2 a, float b);
 

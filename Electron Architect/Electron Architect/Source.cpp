@@ -1912,8 +1912,8 @@ int main()
 
                 // Buttons
                 constexpr IVec2 tooltipNameOffset(20, 17);
-                constexpr IVec2 tooltipDescOffset = tooltipNameOffset + IVec2(0, 16);
-                constexpr IVec2 tooltipSeprOffset = IVec2(12);
+                constexpr IVec2 tooltipDescOffset = tooltipNameOffset + Height(16);
+                constexpr IVec2 tooltipSeprOffset = tooltipNameOffset + Height(12);
                 // Mode
                 if (data.CursorInUIBounds(ProgramData::ButtonBound_Mode()))
                 {
@@ -1921,8 +1921,8 @@ int main()
                     // Tooltip
                     const char* name = data.GetModeTooltipName(data.baseMode);
                     DrawTextIV(name, ProgramData::ButtonBound_Mode().xy + tooltipNameOffset, 8, WHITE);
-                    IVec2 sepLength(MeasureText(name, 8), 0);
-                    DrawLineIV(20, 17 + 12, 20 + sepLength, 17 + 12, WHITE); // Separator
+                    Width sepLength(MeasureText(name, 8));
+                    DrawLineIV(tooltipSeprOffset, tooltipSeprOffset + sepLength, WHITE); // Separator
                     DrawTextIV(data.GetModeTooltipDescription(data.baseMode), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, 8, WHITE);
                 }
                 // Gate
