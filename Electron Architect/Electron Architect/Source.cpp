@@ -2027,7 +2027,11 @@ int main()
 * -Refactor buttons to be classes/structs instead of freeform
 * 
 * Beyond v1.0.0
-* -Parallel node drawing with pen (multiple nodes created with parallel wires)
+* -Parallel node drawing with pen when dragging - up to 8 at a time
+* -Parallel node connection of selected nodes being shift-clicked (simmilar to "bridge" in 3D programs)
+* -Option to make complex bypass by holding alt while shift clicking in eraser
+* -Shift-click pen should create intermediate nodes at wire elbow and connect with those instead of the parent node
+* (Maybe? It might be more computationally expensive. Perhaps there could be an "intermediate/repeater node" which takes only one input and gives one output and has no eval?)
 * -Multiple wire stacking on single node
 * -Hotkeys for output-only gate state toggles (Like the Reason on-screen piano (Yes, this is different from interact mode))
 *
