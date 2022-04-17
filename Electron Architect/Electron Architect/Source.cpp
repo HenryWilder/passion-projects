@@ -1024,10 +1024,14 @@ void Update_Pen(ProgramData& data)
                 oldNode = data.Pen_PreviousWireStart();
             else
                 oldNode = data.Pen_CurrentWireStart();
-            Wire* wire = NodeWorld::Get().CreateWire(oldNode, newNode);
-            wire->elbowConfig = data.Pen_CurrentWireElbowConfig();
-            wire->UpdateElbowToLegal();
-            data.Pen_PreviousWireStart() = oldNode;
+
+            if (oldNode != newNode)
+            {
+                Wire* wire = NodeWorld::Get().CreateWire(oldNode, newNode);
+                wire->elbowConfig = data.Pen_CurrentWireElbowConfig();
+                wire->UpdateElbowToLegal();
+                data.Pen_PreviousWireStart() = oldNode;
+            }
         }
         data.Pen_CurrentWireStart() = newNode;
     }
