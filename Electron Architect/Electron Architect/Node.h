@@ -54,6 +54,7 @@ public:
     size_t GetOutputCount() const;
     bool IsInputOnly() const;
     bool IsOutputOnly() const;
+    bool IsSpecialErasable() const;
 
     static void Draw(IVec2 position, Gate gate, Color color);
     void Draw(Color color) const;

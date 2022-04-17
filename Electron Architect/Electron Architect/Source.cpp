@@ -1337,23 +1337,21 @@ void Draw_Erase(ProgramData& data)
     }
     else if (!!data.hoveredNode)
     {
-        do {
-            Color color;
-            if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
-            {
-                if (!!(data.hoveredNode->GetInputCount() * data.hoveredNode->GetOutputCount()))
-                    break;
-                else
-                    color = DESTRUCTIVERED;
-            }
+        Color color;
+        if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
+        {
+            if (data.hoveredNode->IsSpecialErasable())
+                color = WIPBLUE;
             else
-                color = MAGENTA;
+                color = DESTRUCTIVERED;
+        }
+        else
+            color = MAGENTA;
 
-            for (Wire* wire : data.hoveredNode->GetWires())
-            {
-                wire->Draw(color);
-            }
-        } while (false);
+        for (Wire* wire : data.hoveredNode->GetWires())
+        {
+            wire->Draw(color);
+        }
     }
 
     NodeWorld::Get().DrawNodes();
