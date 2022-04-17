@@ -1366,6 +1366,41 @@ void Draw_Erase(ProgramData& data)
     {
         data.hoveredNode->Draw(BLACK);
         DrawCross(data.hoveredNode->GetPosition(), DESTRUCTIVERED);
+
+        if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && !data.hoveredNode->IsSpecialErasable())
+        {
+            const char* text;
+            size_t iCount = data.hoveredNode->GetInputCount();
+            size_t oCount = data.hoveredNode->GetOutputCount();
+
+            if (iCount == 0 && oCount == 0)
+                text =
+                    "All wires connected to this node will be destroyed in this action!\n"
+                    "Cannot bypass a node with no connections.";
+
+            if (iCount == 0)
+                text =
+                    "All wires connected to this node will be destroyed in this action!\n"
+                    "Cannot bypass a node with no inputs.";
+
+            else if (oCount == 0)
+                text =
+                    "All wires connected to this node will be destroyed in this action!\n"
+                    "Cannot bypass a node with no outputs.";
+
+            else if (iCount > 1 && oCount > 1)
+                text =
+                    "All wires connected to this node will be destroyed in this action!\n"
+                    "Cannot bypass a node with complex throughput (multiple inputs AND outputs).";
+
+            else
+                text = TextFormat(
+                    "All wires connected to this node will be destroyed in this action!\n"
+                    "Cannot bypass this node -- the reason is unknown.\n"
+                    "\"Special erase error: i=%i, o=%i\"", iCount, oCount);
+
+            DrawTextIV(text, data.cursorPos + IVec2(20), 8, DESTRUCTIVERED);
+        }
     }
 }
 
