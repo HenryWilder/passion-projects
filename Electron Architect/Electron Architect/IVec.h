@@ -9,11 +9,21 @@ struct Width
     int x;
 };
 
+constexpr Width operator+(Width a, int b) { return Width(a.x + b); }
+constexpr Width operator-(Width a, int b) { return Width(a.x - b); }
+constexpr Width operator*(Width a, int b) { return Width(a.x * b); }
+constexpr Width operator/(Width a, int b) { return Width(a.x / b); }
+
 struct Height
 {
     constexpr Height(int y) : y(y) {}
     int y;
 };
+
+constexpr Height operator+(Height a, int b) { return Height(a.y + b); }
+constexpr Height operator-(Height a, int b) { return Height(a.y - b); }
+constexpr Height operator*(Height a, int b) { return Height(a.y * b); }
+constexpr Height operator/(Height a, int b) { return Height(a.y / b); }
 
 struct IVec2
 {
@@ -145,6 +155,9 @@ struct IRect
 
     constexpr operator Rectangle() { return Rectangle{ (float)x, (float)y, (float)w, (float)h }; }
 
+    constexpr operator Width() { return Width(w); }
+    constexpr operator Height() { return Height(h); }
+
     IRect& Expand(int outline = 1);
     IRect& Shrink(int outline = 1);
 
@@ -161,6 +174,16 @@ struct IRect
         h = maxy - miny;
     }
 };
+
+constexpr IRect operator+(IRect a, Width b) { return IRect(a.x, a.y, a.w + b.x, a.h); }
+constexpr IRect operator-(IRect a, Width b) { return IRect(a.x, a.y, a.w - b.x, a.h); }
+constexpr IRect operator*(IRect a, Width b) { return IRect(a.x, a.y, a.w * b.x, a.h); }
+constexpr IRect operator/(IRect a, Width b) { return IRect(a.x, a.y, a.w / b.x, a.h); }
+
+constexpr IRect operator+(IRect a, Height b) { return IRect(a.x, a.y, a.w, a.h + b.y); }
+constexpr IRect operator-(IRect a, Height b) { return IRect(a.x, a.y, a.w, a.h - b.y); }
+constexpr IRect operator*(IRect a, Height b) { return IRect(a.x, a.y, a.w, a.h * b.y); }
+constexpr IRect operator/(IRect a, Height b) { return IRect(a.x, a.y, a.w, a.h / b.y); }
 
 constexpr IRect ExpandIRect(IRect rec, int outline = 1)
 {

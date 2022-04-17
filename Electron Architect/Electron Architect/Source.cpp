@@ -1820,15 +1820,23 @@ int main()
         data.CheckHotkeys();
 
         // UI buttons
+        if (!data.ModeIsMenu() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data.ModeIsMenu() && (data.cursorUIPos.y <= 16 && data.cursorUIPos.x <= (16 * 3)) && (data.mode == Mode::BUTTON ? data.Button_DropdownActive() != (data.cursorUIPos.x / 16) : true))
+            if (data.CursorInUIBounds(ProgramData::ButtonBound_Mode() + Width(16 * 2)) &&
+                (data.mode == Mode::BUTTON ? data.Button_DropdownActive() != (data.cursorUIPos.x / 16) : true))
             {
                 data.SetMode(Mode::BUTTON);
                 goto EVAL; // Skip button sim this frame
             }
-            else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data.ModeIsMenu() && (data.cursorUIPos.y <= 16 && data.cursorUIPos.x >= (16 * 3) && data.cursorUIPos.x <= (16 * 4)))
+            else if (data.CursorInUIBounds(ProgramData::ButtonBound_Blueprints()))
             {
                 data.SetMode(Mode::BP_SELECT);
+            }
+            else if (data.CursorInUIBounds(ProgramData::ButtonBound_Clipboard()))
+            {
+                if (data.IsClipboardValid())
+                    data.SetMode(Mode::PASTE);
+                goto EVAL; // Skip button sim this frame
             }
         }
 
@@ -1900,15 +1908,12 @@ int main()
                 EndMode2D();
 
                 // UI
-
-                DrawRectangleIRect(IRect(ProgramData::ButtonBound_Clipboard().x, 16), SPACEGRAY);
-                if (data.IsClipboardValid())
                 {
-                    DrawRectangleIRect(ProgramData::ButtonBound_Clipboard(), SPACEGRAY);
-                    DrawTextureIV(data.GetClipboardIcon(), ProgramData::ButtonBound_Clipboard().xy, WHITE);
+                    constexpr IRect WithClipboard = ProgramData::buttonBounds[0] + Width(16) * (_countof(ProgramData::buttonBounds) - 1);
+                    constexpr IRect WithoutClipboard = WithClipboard - Width(ProgramData::ButtonBound_Clipboard());
+                    DrawRectangleIRect(data.IsClipboardValid() ? WithClipboard : WithoutClipboard, SPACEGRAY);
+                    DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
                 }
-
-                DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
 
                 // Buttons
                 constexpr IVec2 tooltipNameOffset(16 + 4, 16 + 1);
@@ -1922,7 +1927,7 @@ int main()
                     const char* name = data.GetModeTooltipName(data.baseMode);
                     DrawTextIV(name, ProgramData::ButtonBound_Mode().xy + tooltipNameOffset, 8, WHITE);
                     Width separatorWidth(MeasureText(name, 8));
-                    DrawLineIV(tooltipSeprOffset, separatorWidth, WHITE); // Separator
+                    DrawLineIV(ProgramData::ButtonBound_Mode().xy + tooltipSeprOffset, separatorWidth, WHITE); // Separator
                     DrawTextIV(data.GetModeTooltipDescription(data.baseMode), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, 8, WHITE);
                 }
                 // Gate
@@ -1933,7 +1938,7 @@ int main()
                     const char* name = data.GetGateTooltipName(data.gatePick);
                     DrawTextIV(name, ProgramData::ButtonBound_Gate().xy + tooltipNameOffset, 8, WHITE);
                     Width separatorWidth(MeasureText(name, 8));
-                    DrawLineIV(tooltipSeprOffset, separatorWidth, WHITE);
+                    DrawLineIV(ProgramData::ButtonBound_Gate().xy + tooltipSeprOffset, separatorWidth, WHITE);
                     DrawTextIV(data.GetGateTooltipDescription(data.gatePick), ProgramData::ButtonBound_Gate().xy + tooltipDescOffset, 8, WHITE);
                 }
                 // Extra param
@@ -1954,11 +1959,19 @@ int main()
                 {
                     DrawRectangleIRect(ProgramData::ButtonBound_Blueprints(), WIPBLUE);
                     // Tooltip
-                    DrawTextIV("Blueprints", ProgramData::ButtonBound_Parameter().xy + tooltipNameOffset, 8, WHITE);
+                    DrawTextIV("Blueprints (WIP)", ProgramData::ButtonBound_Blueprints().xy + tooltipNameOffset, 8, WHITE);
+                }
+                // Clipboard
+                else if (data.CursorInUIBounds(ProgramData::ButtonBound_Clipboard()))
+                {
+                    DrawRectangleIRect(ProgramData::ButtonBound_Clipboard(), WIPBLUE);
+                    // Tooltip
+                    DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, 8, WHITE);
                 }
 
                 data.DrawModeIcon(data.baseMode, ProgramData::ButtonBound_Mode().xy, WHITE);
                 data.DrawGateIcon16x(data.gatePick, ProgramData::ButtonBound_Gate().xy, WHITE);
+                DrawTextureIV(data.GetClipboardIcon(), ProgramData::ButtonBound_Clipboard().xy, data.IsClipboardValid() ? WHITE : ColorAlpha(WHITE, 0.25f));
             }
 
         } EndDrawing();
