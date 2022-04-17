@@ -1019,7 +1019,12 @@ void Update_Pen(ProgramData& data)
         // Do not create a new node/wire if already hovering the start node
         if (!!data.Pen_CurrentWireStart() && newNode != data.Pen_CurrentWireStart())
         {
-            Wire* wire = NodeWorld::Get().CreateWire(data.Pen_CurrentWireStart(), newNode);
+            Node* oldNode;
+            if (!!data.Pen_PreviousWireStart() && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
+                oldNode = data.Pen_PreviousWireStart();
+            else
+                oldNode = data.Pen_CurrentWireStart();
+            Wire* wire = NodeWorld::Get().CreateWire(oldNode, newNode);
             wire->elbowConfig = data.Pen_CurrentWireElbowConfig();
             wire->UpdateElbowToLegal();
         }
