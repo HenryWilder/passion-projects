@@ -1911,9 +1911,9 @@ int main()
                 DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
 
                 // Buttons
-                constexpr IVec2 tooltipNameOffset(20, 17);
-                constexpr IVec2 tooltipDescOffset = tooltipNameOffset + Height(16);
-                constexpr IVec2 tooltipSeprOffset = tooltipNameOffset + Height(12);
+                constexpr IVec2 tooltipNameOffset(16 + 4, 16 + 1);
+                constexpr IVec2 tooltipSeprOffset = tooltipNameOffset + Height(8 + 8 / 2);
+                constexpr IVec2 tooltipDescOffset = tooltipNameOffset + Height(8 + 8);
                 // Mode
                 if (data.CursorInUIBounds(ProgramData::ButtonBound_Mode()))
                 {
@@ -1921,8 +1921,8 @@ int main()
                     // Tooltip
                     const char* name = data.GetModeTooltipName(data.baseMode);
                     DrawTextIV(name, ProgramData::ButtonBound_Mode().xy + tooltipNameOffset, 8, WHITE);
-                    Width sepLength(MeasureText(name, 8));
-                    DrawLineIV(tooltipSeprOffset, tooltipSeprOffset + sepLength, WHITE); // Separator
+                    Width separatorWidth(MeasureText(name, 8));
+                    DrawLineIV(tooltipSeprOffset, separatorWidth, WHITE); // Separator
                     DrawTextIV(data.GetModeTooltipDescription(data.baseMode), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, 8, WHITE);
                 }
                 // Gate
@@ -1932,7 +1932,8 @@ int main()
                     // Tooltip
                     const char* name = data.GetGateTooltipName(data.gatePick);
                     DrawTextIV(name, ProgramData::ButtonBound_Gate().xy + tooltipNameOffset, 8, WHITE);
-                    DrawLine(36, 17 + 12, 36 + MeasureText(name, 8), 17 + 12, WHITE);
+                    Width separatorWidth(MeasureText(name, 8));
+                    DrawLineIV(tooltipSeprOffset, separatorWidth, WHITE);
                     DrawTextIV(data.GetGateTooltipDescription(data.gatePick), ProgramData::ButtonBound_Gate().xy + tooltipDescOffset, 8, WHITE);
                 }
                 // Extra param

@@ -118,21 +118,29 @@ bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2)
     }
 }
 
-void DrawLineIV(IVec2 start, IVec2 end, Color color)
+inline void DrawLineIV(IVec2 start, IVec2 end, Color color)
 {
     DrawLine(start.x, start.y, end.x, end.y, color);
 }
-void DrawCircleIV(IVec2 origin, float radius, Color color)
+inline void DrawLineIV(IVec2 start, Width width, Color color)
+{
+    DrawLine(start.x, start.y, start.x + width.x, start.y, color);
+}
+inline void DrawLineIV(IVec2 start, Height height, Color color)
+{
+    DrawLine(start.x, start.y, start.x, start.y + height.y, color);
+}
+inline void DrawCircleIV(IVec2 origin, float radius, Color color)
 {
     DrawCircle(origin.x, origin.y, radius, color);
 }
 
-void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint)
+inline void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint)
 {
     DrawTexture(texture, pos.x, pos.y, tint);
 }
 
-void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color)
+inline void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color)
 {
     DrawText(text, pos.x, pos.y, fontSize, color);
 }

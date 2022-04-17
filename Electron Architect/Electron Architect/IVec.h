@@ -6,13 +6,13 @@
 struct Width
 {
     constexpr Width(int x) : x(x) {}
-    const int x;
+    int x;
 };
 
 struct Height
 {
     constexpr Height(int y) : y(y) {}
-    const int y;
+    int y;
 };
 
 struct IVec2
@@ -93,11 +93,23 @@ constexpr IVec2 operator-(IVec2 a, Height b) { return IVec2(a.x, a.y - b.y); }
 constexpr IVec2 operator*(IVec2 a, Height b) { return IVec2(a.x, a.y * b.y); }
 constexpr IVec2 operator/(IVec2 a, Height b) { return IVec2(a.x, a.y / b.y); }
 
+constexpr IVec2 operator+(Width a, Height b) { return IVec2(a.x, b.y); }
+constexpr IVec2 operator-(Width a, Height b) { return IVec2(a.x, b.y); }
+constexpr IVec2 operator*(Width a, Height b) { return IVec2(a.x, b.y); }
+constexpr IVec2 operator/(Width a, Height b) { return IVec2(a.x, b.y); }
+
+constexpr IVec2 operator+(Height a, Width b) { return IVec2(b.x, a.y); }
+constexpr IVec2 operator-(Height a, Width b) { return IVec2(b.x, a.y); }
+constexpr IVec2 operator*(Height a, Width b) { return IVec2(b.x, a.y); }
+constexpr IVec2 operator/(Height a, Width b) { return IVec2(b.x, a.y); }
+
 IVec2 IVec2Scale_f(IVec2 a, float b);
 
 bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2);
 
 void DrawLineIV(IVec2 start, IVec2 end, Color color);
+void DrawLineIV(IVec2 start, Width width, Color color);
+void DrawLineIV(IVec2 start, Height height, Color color);
 void DrawCircleIV(IVec2 origin, float radius, Color color);
 void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint);
 void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color);
