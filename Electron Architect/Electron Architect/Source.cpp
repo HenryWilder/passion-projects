@@ -722,9 +722,13 @@ public:
         if (!ModeIsMenu())
         {
             if (GetMouseWheelMove() > 0 && camera.zoom < 2.0f)
+            {
                 camera.zoom *= 2;
+            }
             else if (GetMouseWheelMove() < 0 && camera.zoom > 0.125f)
+            {
                 camera.zoom /= 2;
+            }
 
             camera.target.x += (float)(IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT)) * g_gridSize;
             camera.target.y += (float)(IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP)) * g_gridSize;
