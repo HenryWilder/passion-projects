@@ -86,49 +86,31 @@ int Wire::GetEndY() const
 
 IVec2 Wire::GetLegalElbowPosition(IVec2 start, IVec2 end, ElbowConfig config)
 {
-    uint8_t index = (uint8_t)config;
-    _ASSERT_EXPR(index < 4, L"Elbow index out of bounds");
-    if (index == 0)
+    _ASSERT_EXPR((uint8_t)config < 4, L"Elbow index out of bounds");
+    if (config == ElbowConfig::horizontal)
         return IVec2(start.x, end.y);
-    else if (index == 1)
+
+    else if (config == ElbowConfig::vertical)
         return IVec2(end.x, start.y);
-    else
-    {
-        int shortLength = std::min(
-            abs(end.x - start.x),
-            abs(end.y - start.y)
-        );
-        IVec2 pos;
-        if (index == 2)
-        {
-            pos = start;
 
-            if (end.x < start.x)
-                pos.x -= shortLength;
-            else
-                pos.x += shortLength;
+    auto [first, second] = (config == ElbowConfig::diagonalA ?
+        std::pair<const IVec2&,const IVec2&>{ start, end } :
+        std::pair<const IVec2&,const IVec2&>{ end, start });
 
-            if (end.y < start.y)
-                pos.y -= shortLength;
-            else
-                pos.y += shortLength;
-        }
-        else // index == 3
-        {
-            pos = end;
+    int shortLength = std::min(
+        abs(end.x - start.x),
+        abs(end.y - start.y)
+    );
 
-            if (start.x < end.x)
-                pos.x -= shortLength;
-            else
-                pos.x += shortLength;
+    IVec2 diagonal(shortLength);
 
-            if (start.y < end.y)
-                pos.y -= shortLength;
-            else
-                pos.y += shortLength;
-        }
-        return pos;
-    }
+    if (second.x < first.x)
+        diagonal.x *= -1;
+
+    if (second.y < first.y)
+        diagonal.y *= -1;
+
+    return first + diagonal;
 }
 IVec2 Wire::GetLegalElbowPosition(ElbowConfig config) const
 {
