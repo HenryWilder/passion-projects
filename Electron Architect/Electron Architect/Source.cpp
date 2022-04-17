@@ -1305,7 +1305,13 @@ void Update_Erase(ProgramData& data)
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
         if (!!data.hoveredNode)
-            NodeWorld::Get().DestroyNode(data.hoveredNode);
+        {
+            // Special erase
+            if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && data.hoveredNode->IsSpecialErasable())
+                NodeWorld::Get().BypassNode(data.hoveredNode);
+            else
+                NodeWorld::Get().DestroyNode(data.hoveredNode);
+        }
         else if (!!data.hoveredWire)
             NodeWorld::Get().DestroyWire(data.hoveredWire);
 
@@ -1983,7 +1989,6 @@ int main()
 * 
 * Beyond v1.0.0
 * -Parallel node drawing with pen (multiple nodes created with parallel wires)
-* -Special erase (keep wires, erase node)
 * -Multiple wire stacking on single node
 * -Hotkeys for output-only gate state toggles (Like the Reason on-screen piano (Yes, this is different from interact mode))
 *

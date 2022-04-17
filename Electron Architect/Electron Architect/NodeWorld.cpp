@@ -113,6 +113,30 @@ void NodeWorld::DestroyNode(Node* node)
     orderDirty = true;
 }
 
+void NodeWorld::BypassNode(Node* node)
+{
+    _ASSERT_EXPR(node->IsSpecialErasable(), L"Must be bypassable");
+    // Multiple outputs, one input
+    if (node->GetInputCount() == 1)
+    {
+        Wire* input = *(node->GetInputs().begin()); // Get the first (only) input
+        for (Wire* wire : node->GetOutputs())
+        {
+            CreateWire(input->start, wire->end, input->elbowConfig);
+        }
+    }
+    // Multiple inputs, one output
+    else // OutputCount() == 1
+    {
+        Wire* output = *(node->GetOutputs().begin()); // Get the first (only) input
+        for (Wire* wire : node->GetInputs())
+        {
+            CreateWire(wire->start, output->end, wire->elbowConfig);
+        }
+    }
+    DestroyNode(node);
+}
+
 // Wire functions
 
 // CreateWire can affect the positions of parameter `end` in `nodes`

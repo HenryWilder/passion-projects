@@ -41,6 +41,8 @@ public:
     /// <summary>CreateNode does not insert at the end of the <see cref="nodes"/>.</summary>
     Node* CreateNode(IVec2 position, Gate gate, uint8_t extendedParam = 0);
     void DestroyNode(Node* node);
+    // Invalidates input node and all its wires!
+    void BypassNode(Node* node);
 
     // Wire functions
 
