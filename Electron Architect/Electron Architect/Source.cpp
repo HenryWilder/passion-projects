@@ -1422,8 +1422,13 @@ void Draw_Erase(ProgramData& data)
                         "\"Special erase error: i=%i, o=%i\"", iCount, oCount);
 
             }
-            DrawTextIV(text, data.cursorPos + IVec2(15, 17), 8, BLACK);
-            DrawTextIV(text, data.cursorPos + IVec2(16), 8, color);
+            EndMode2D();
+            DrawTextIV(text, data.cursorUIPos + IVec2(15, 17), 8, BLACK);
+            DrawTextIV(text, data.cursorUIPos + IVec2(17, 17), 8, BLACK);
+            DrawTextIV(text, data.cursorUIPos + IVec2(15, 15), 8, BLACK);
+            DrawTextIV(text, data.cursorUIPos + IVec2(17, 15), 8, BLACK);
+            DrawTextIV(text, data.cursorUIPos + IVec2(16), 8, color);
+            BeginMode2D(data.camera);
         }
     }
 }
