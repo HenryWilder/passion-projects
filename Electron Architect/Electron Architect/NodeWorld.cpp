@@ -158,18 +158,22 @@ Node* NodeWorld::MergeNodes(Node* depricating, Node* overriding)
 
     for (Wire* wire : depricating->GetInputs())
     {
+        if (wire->start == overriding) continue;
         CreateWire(wire->start, c, wire->elbowConfig);
     }
     for (Wire* wire : overriding->GetInputs())
     {
+        if (wire->start == depricating) continue;
         CreateWire(wire->start, c, wire->elbowConfig);
     }
-    for (Wire* wire : depricating->GetOutputs())
+    for (Wire* wire : overriding->GetOutputs())
     {
+        if (wire->end == depricating) continue;
         CreateWire(c, wire->end, wire->elbowConfig);
     }
     for (Wire* wire : overriding->GetOutputs())
     {
+        if (wire->end == depricating) continue;
         CreateWire(c, wire->end, wire->elbowConfig);
     }
 
