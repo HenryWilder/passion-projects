@@ -22,10 +22,14 @@ namespace std
 
 int IntGridDistance(IVec2 a, IVec2 b)
 {
+    if ((a.x == b.x) && (a.y == b.y))
+        return 0;
     if (a.x == b.x)
-        return abs(b.y - a.y);
+        return abs(a.y - b.y);
+    else if (a.y == b.y)
+        return abs(a.x - b.x);
     else
-        return abs(b.x - a.x);
+        return std::min(abs(b.y - a.y), abs(b.x - a.x));
 }
 long DistanceSqr(IVec2 a, IVec2 b)
 {
@@ -39,8 +43,8 @@ IVec2 Normal(IVec2 vec)
     int ySqr = vec.y * vec.y;
     int lenSqr = xSqr + ySqr;
     return {
-        xSqr / lenSqr,
-        ySqr / lenSqr
+        (int)sqrtf(xSqr / lenSqr),
+        (int)sqrtf(ySqr / lenSqr)
     };
 }
 
