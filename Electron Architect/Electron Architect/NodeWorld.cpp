@@ -1,4 +1,5 @@
 #include <thread>
+#include <unordered_set>
 #include <fstream>
 #include "HUtility.h"
 #include "NodeWorld.h"
@@ -110,6 +111,64 @@ void NodeWorld::DestroyNode(Node* node)
 {
     _ClearNodeReferences(node);
     _DestroyNode(node);
+    orderDirty = true;
+}
+
+void NodeWorld::DestroyNodes(std::vector<Node*>& removeList)
+{
+    std::unordered_set<Node*> internals(removeList.begin(), removeList.end());
+    std::unordered_set<Wire*> uniqueWires;
+
+    for (Node* node : removeList)
+    {
+        for (Wire* wire : node->GetInputs())
+        {
+            if (internals.find(wire->start) == internals.end())
+                wire->start->RemoveWire_Expected(wire);
+            uniqueWires.insert(wire);
+        }
+        for (Wire* wire : node->GetOutputs())
+        {
+            if (internals.find(wire->end) == internals.end())
+                wire->end->RemoveWire_Expected(wire);
+            uniqueWires.insert(wire);
+        }
+    }
+
+    auto thread1Lambda = [](const std::unordered_set<Node*>& removal, std::vector<Node*>& data)
+    {
+        std::stable_partition(data.begin(), data.end(), [&removal](Node* node) { return removal.find(node) != removal.end(); });
+        while (removal.find(data.back()) != removal.end())
+        {
+            delete data.back();
+            data.pop_back();
+        }
+    };
+    auto thread2Lambda = [](const std::unordered_set<Node*>& removal, std::vector<Node*>& data)
+    {
+        std::stable_partition(data.begin(), data.end(), [&removal](Node* node) { return removal.find(node) != removal.end(); });
+        while (removal.find(data.back()) != removal.end())
+        {
+            delete data.back();
+            data.pop_back();
+        }
+    };
+    auto thread3Lambda = [](const std::unordered_set<Wire*>& removal, std::vector<Wire*>& data)
+    {
+        std::stable_partition(data.begin(), data.end(), [&removal](Wire* wire) { return removal.find(wire) != removal.end(); });
+        while (removal.find(data.back()) != removal.end())
+        {
+            delete data.back();
+            data.pop_back();
+        }
+    };
+    std::thread thread1(thread1Lambda, std::cref(internals), std::ref(nodes));
+    std::thread thread2(thread2Lambda, std::cref(internals), std::ref(startNodes));
+    std::thread thread3(thread3Lambda, std::cref(uniqueWires), std::ref(wires));
+    thread1.join();
+    thread2.join();
+    thread3.join();
+
     orderDirty = true;
 }
 
