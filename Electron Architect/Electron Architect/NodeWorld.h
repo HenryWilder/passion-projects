@@ -43,6 +43,7 @@ public:
     void DestroyNode(Node* node);
     // Invalidates input node and all its wires!
     void BypassNode(Node* node);
+    void BypassNode_Complex(Node* node);
 
     // Wire functions
 

@@ -137,6 +137,19 @@ void NodeWorld::BypassNode(Node* node)
     DestroyNode(node);
 }
 
+void NodeWorld::BypassNode_Complex(Node* node)
+{
+    _ASSERT_EXPR(node->GetInputCount() > 1 && node->GetOutputCount() > 1, L"Must be complex bypassable");
+    for (Wire* input : node->GetInputs())
+    {
+        for (Wire* output : node->GetOutputs())
+        {
+            CreateWire(input->start, output->end, input->elbowConfig);
+        }
+    }
+    DestroyNode(node);
+}
+
 // Wire functions
 
 // CreateWire can affect the positions of parameter `end` in `nodes`
