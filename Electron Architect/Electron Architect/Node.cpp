@@ -1,6 +1,7 @@
 #include "HUtility.h"
 #include "Wire.h"
 #include "Node.h"
+#include "Actions.h"
 
 IVec2 Node::GetPosition() const
 {
@@ -19,6 +20,7 @@ void Node::SetPosition_Temporary(IVec2 position)
 // NOTE: NodeWorld collision is currently a saved-for-later feature
 void Node::SetPosition(IVec2 position)
 {
+    g_actionHandler.Push(Action_MoveNode());
     SetPosition_Temporary(position);
 }
 int Node::GetX() const
