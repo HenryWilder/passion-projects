@@ -836,7 +836,7 @@ public:
         // Mode hotkeys
         if      (IsKeyPressed(KEY_B)) SetMode(Mode::PEN);
         else if (IsKeyPressed(KEY_V)) SetMode(Mode::EDIT);
-        else if (IsKeyPressed(KEY_G)) SetMode(Mode::GATE);
+        //else if (IsKeyPressed(KEY_G)) SetMode(Mode::GATE); // TODO: Gate mode being depricated
         else if (IsKeyPressed(KEY_X)) SetMode(Mode::ERASE);
         else if (IsKeyPressed(KEY_F)) SetMode(Mode::INTERACT);
 
