@@ -55,6 +55,7 @@ public:
     bool IsInputOnly() const;
     bool IsOutputOnly() const;
     bool IsSpecialErasable() const;
+    bool IsComplexBipassable() const;
 
     static void Draw(IVec2 position, Gate gate, Color color);
     void Draw(Color color) const;

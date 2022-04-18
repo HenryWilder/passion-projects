@@ -166,6 +166,11 @@ bool Node::IsSpecialErasable() const
         (GetInputCount() >= 1 && GetOutputCount() == 1);
 }
 
+bool Node::IsComplexBipassable() const
+{
+    return (GetInputCount() > 1 && GetOutputCount() > 1);
+}
+
 void Node::Draw(IVec2 position, Gate gate, Color color)
 {
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);

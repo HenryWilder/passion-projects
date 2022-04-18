@@ -1352,6 +1352,8 @@ void Draw_Erase(ProgramData& data)
         {
             if (data.hoveredNode->IsSpecialErasable())
                 color = WIPBLUE;
+            else if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
+                color = VIOLET;
             else
                 color = DESTRUCTIVERED;
         }
@@ -1374,36 +1376,49 @@ void Draw_Erase(ProgramData& data)
         if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && !data.hoveredNode->IsSpecialErasable())
         {
             const char* text;
-            size_t iCount = data.hoveredNode->GetInputCount();
-            size_t oCount = data.hoveredNode->GetOutputCount();
+            Color color;
+            if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
+            {
+                color = VIOLET;
+                text = "Complex bipass";
+            }
+            else
+            {
+                color = DESTRUCTIVERED;
+                size_t iCount = data.hoveredNode->GetInputCount();
+                size_t oCount = data.hoveredNode->GetOutputCount();
 
-            if (iCount == 0 && oCount == 0)
-                text =
+                if (iCount == 0 && oCount == 0)
+                    text =
                     "All wires connected to this node will be destroyed in this action!\n"
                     "Cannot bypass a node with no connections.";
 
-            if (iCount == 0)
-                text =
+                if (iCount == 0)
+                    text =
                     "All wires connected to this node will be destroyed in this action!\n"
                     "Cannot bypass a node with no inputs.";
 
-            else if (oCount == 0)
-                text =
+                else if (oCount == 0)
+                    text =
                     "All wires connected to this node will be destroyed in this action!\n"
                     "Cannot bypass a node with no outputs.";
 
-            else if (iCount > 1 && oCount > 1)
-                text =
+                else if (iCount > 1 && oCount > 1)
+                    text =
                     "All wires connected to this node will be destroyed in this action!\n"
-                    "Cannot bypass a node with complex throughput (multiple inputs AND outputs).";
+                    "Cannot implicitly bypass a node with complex throughput (multiple inputs AND outputs).\n"
+                    "Hold [alt] while shift-clicking this node to allow complex bipass.\n"
+                    "! Otherwise the node will be deleted as normal !";
 
-            else
-                text = TextFormat(
-                    "All wires connected to this node will be destroyed in this action!\n"
-                    "Cannot bypass this node -- the reason is unknown.\n"
-                    "\"Special erase error: i=%i, o=%i\"", iCount, oCount);
+                else
+                    text = TextFormat(
+                        "All wires connected to this node will be destroyed in this action!\n"
+                        "Cannot bypass this node -- the reason is unknown.\n"
+                        "\"Special erase error: i=%i, o=%i\"", iCount, oCount);
 
-            DrawTextIV(text, data.cursorPos + IVec2(20), 8, DESTRUCTIVERED);
+            }
+            DrawTextIV(text, data.cursorPos + IVec2(15, 17), 8, BLACK);
+            DrawTextIV(text, data.cursorPos + IVec2(16), 8, color);
         }
     }
 }

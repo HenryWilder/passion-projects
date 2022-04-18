@@ -139,7 +139,7 @@ void NodeWorld::BypassNode(Node* node)
 
 void NodeWorld::BypassNode_Complex(Node* node)
 {
-    _ASSERT_EXPR(node->GetInputCount() > 1 && node->GetOutputCount() > 1, L"Must be complex bypassable");
+    _ASSERT_EXPR(node->IsComplexBipassable() > 1, L"Must be complex bypassable");
     for (Wire* input : node->GetInputs())
     {
         for (Wire* output : node->GetOutputs())
