@@ -251,9 +251,9 @@ Node* NodeWorld::MergeNodes(Node* depricating, Node* overriding)
         if (wire->start == depricating) continue;
         CreateWire(wire->start, c, wire->elbowConfig);
     }
-    for (Wire* wire : overriding->GetOutputs())
+    for (Wire* wire : depricating->GetOutputs())
     {
-        if (wire->end == depricating) continue;
+        if (wire->end == overriding) continue;
         CreateWire(c, wire->end, wire->elbowConfig);
     }
     for (Wire* wire : overriding->GetOutputs())
