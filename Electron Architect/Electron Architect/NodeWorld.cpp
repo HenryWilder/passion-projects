@@ -116,59 +116,85 @@ void NodeWorld::DestroyNode(Node* node)
 
 void NodeWorld::DestroyNodes(std::vector<Node*>& removeList)
 {
+    // Todo...
+#if 0
     std::unordered_set<Node*> internals(removeList.begin(), removeList.end());
     std::unordered_set<Wire*> uniqueWires;
 
-    for (Node* node : removeList)
+    auto aLambda = [&]()
     {
-        for (Wire* wire : node->GetInputs())
+        for (Node* node : removeList)
         {
-            if (internals.find(wire->start) == internals.end())
-                wire->start->RemoveWire_Expected(wire);
-            uniqueWires.insert(wire);
+            for (Wire* wire : node->GetWires())
+            {
+                uniqueWires.insert(wire);
+            }
         }
-        for (Wire* wire : node->GetOutputs())
+    };
+    auto bLambda = [&]()
+    {
+        for (Node* node : removeList)
         {
-            if (internals.find(wire->end) == internals.end())
-                wire->end->RemoveWire_Expected(wire);
-            uniqueWires.insert(wire);
+            for (Wire* wire : node->GetWires())
+            {
+                uniqueWires.insert(wire);
+            }
+            for (Wire* wire : node->GetInputs())
+            {
+                if (internals.find(wire->start) == internals.end())
+                    wire->start->RemoveWire_Expected(wire);
+            }
+            for (Wire* wire : node->GetOutputs())
+            {
+                if (internals.find(wire->end) == internals.end())
+                    wire->end->RemoveWire_Expected(wire);
+            }
         }
-    }
+    };
+    auto thread1Lambda = [&]()
+    {
+        std::stable_partition(nodes.begin(), nodes.end(), [&internals](Node* node) { return internals.find(node) != internals.end(); });
+        while (internals.find(nodes.back()) != internals.end())
+        {
+            delete nodes.back();
+            nodes.pop_back();
+        }
+    };
+    auto thread2Lambda = [&]()
+    {
+        std::stable_partition(startNodes.begin(), startNodes.end(), [&internals](Node* node) { return internals.find(node) != internals.end(); });
+        while (internals.find(startNodes.back()) != internals.end())
+        {
+            delete startNodes.back();
+            startNodes.pop_back();
+        }
+    };
+    auto thread3Lambda = [&]()
+    {
+        std::stable_partition(wires.begin(), wires.end(), [&uniqueWires](Wire* wire) { return uniqueWires.find(wire) != uniqueWires.end(); });
+        while (uniqueWires.find(wires.back()) != uniqueWires.end())
+        {
+            delete wires.back();
+            wires.pop_back();
+        }
+    };
 
-    auto thread1Lambda = [](const std::unordered_set<Node*>& removal, std::vector<Node*>& data)
-    {
-        std::stable_partition(data.begin(), data.end(), [&removal](Node* node) { return removal.find(node) != removal.end(); });
-        while (removal.find(data.back()) != removal.end())
-        {
-            delete data.back();
-            data.pop_back();
-        }
-    };
-    auto thread2Lambda = [](const std::unordered_set<Node*>& removal, std::vector<Node*>& data)
-    {
-        std::stable_partition(data.begin(), data.end(), [&removal](Node* node) { return removal.find(node) != removal.end(); });
-        while (removal.find(data.back()) != removal.end())
-        {
-            delete data.back();
-            data.pop_back();
-        }
-    };
-    auto thread3Lambda = [](const std::unordered_set<Wire*>& removal, std::vector<Wire*>& data)
-    {
-        std::stable_partition(data.begin(), data.end(), [&removal](Wire* wire) { return removal.find(wire) != removal.end(); });
-        while (removal.find(data.back()) != removal.end())
-        {
-            delete data.back();
-            data.pop_back();
-        }
-    };
+    std::thread a(aLambda);
+    std::thread b(bLambda);
+    a.join();
+    b.join();
     std::thread thread1(thread1Lambda, std::cref(internals), std::ref(nodes));
     std::thread thread2(thread2Lambda, std::cref(internals), std::ref(startNodes));
     std::thread thread3(thread3Lambda, std::cref(uniqueWires), std::ref(wires));
     thread1.join();
     thread2.join();
     thread3.join();
-
+#else
+    for (Node* node : removeList)
+    {
+        DestroyNode(node);
+    }
+#endif
     orderDirty = true;
 }
 

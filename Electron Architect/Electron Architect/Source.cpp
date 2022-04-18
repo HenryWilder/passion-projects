@@ -743,11 +743,7 @@ public:
     }
     void DestroySelection()
     {
-        // TODO: Refactor NodeWorld to have a bulk destroy function to make this process more efficient
-        for (Node* node : selection)
-        {
-            NodeWorld::Get().DestroyNode(node);
-        }
+        NodeWorld::Get().DestroyNodes(selection);
         ClearSelection();
     }
 
