@@ -150,6 +150,18 @@ void NodeWorld::BypassNode_Complex(Node* node)
     DestroyNode(node);
 }
 
+Node* NodeWorld::MergeNodes(Node* depricating, Node* overriding)
+{
+    Node* c = CreateNode(depricating->GetPosition(), overriding->GetGate(), overriding->m_ntd.r.resistance); // Generic ntd data
+
+    for (Wire* wire : depricating->GetWires())
+    {
+
+    }
+
+    return c;
+}
+
 // Wire functions
 
 // CreateWire can affect the positions of parameter `end` in `nodes`

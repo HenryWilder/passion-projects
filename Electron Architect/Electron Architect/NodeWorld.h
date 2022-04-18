@@ -44,6 +44,8 @@ public:
     // Invalidates input node and all its wires!
     void BypassNode(Node* node);
     void BypassNode_Complex(Node* node);
+    // Invalidates both nodes and creates a new, composit node!
+    Node* MergeNodes(Node* a, Node* b);
 
     // Wire functions
 
