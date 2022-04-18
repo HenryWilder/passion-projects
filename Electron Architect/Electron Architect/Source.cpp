@@ -272,8 +272,8 @@ private:
             IVec2 selectionStart;
             IRect selectionRec;
             bool draggingGroup;
-            bool hoveringMergable;
             Group* hoveredGroup;
+            Node* hoveringMergable;
             Node* nodeBeingDragged;
             Wire* wireBeingDragged;
         } edit;
@@ -986,6 +986,13 @@ public:
     {
         return ResistanceBandColor(storedExtraParam);
     }
+
+    void DrawTooltipAtCursor(const char* text, Color color)
+    {
+        EndMode2D();
+        DrawTextIV(text, cursorUIPos + IVec2(16), 8, color);
+        BeginMode2D(camera);
+    }
 };
 Texture2D ProgramData::clipboardIcon;
 Texture2D ProgramData::modeIcons;
@@ -1112,7 +1119,7 @@ void Update_Edit(ProgramData& data)
         }
         else if (data.Edit_NodeBeingDragged())
         {
-            data.Edit_HoveringMergable() = !!NodeWorld::Get().FindNodeAtPos(data.cursorPos);
+            data.Edit_HoveringMergable() = NodeWorld::Get().FindNodeAtPos(data.cursorPos); // This will come before updating the position of the dragged node
         }
     }
 
@@ -1213,10 +1220,20 @@ void Update_Edit(ProgramData& data)
         {
             if (!!data.Edit_NodeBeingDragged())
             {
-                data.Edit_NodeBeingDragged()->SetPosition(data.Edit_FallbackPos());
-                data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
-                if (!!data.hoveredNode && data.Edit_NodeBeingDragged() != data.hoveredNode)
-                    NodeWorld::Get().SwapNodes(data.Edit_NodeBeingDragged(), data.hoveredNode);
+                _ASSERT_EXPR(data.Edit_HoveringMergable() != data.Edit_NodeBeingDragged(), L"Node being dragged is trying to merge with itself");
+                if (!!data.Edit_HoveringMergable())
+                {
+                    if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+                    {
+                        data.hoveredNode = NodeWorld::Get().MergeNodes(data.Edit_HoveringMergable(), data.Edit_NodeBeingDragged());
+                        data.Edit_HoveringMergable() = data.Edit_NodeBeingDragged() = nullptr;
+                    }
+                    else
+                    {
+                        NodeWorld::Get().SwapNodes(data.Edit_HoveringMergable(), data.Edit_NodeBeingDragged());
+                        data.Edit_NodeBeingDragged()->SetPosition(data.Edit_FallbackPos());
+                    }
+                }
                 else
                     data.Edit_NodeBeingDragged()->SetPosition(data.cursorPos);
             }
@@ -1298,7 +1315,12 @@ void Draw_Edit(ProgramData& data)
     }
 
     if (!!data.Edit_NodeBeingDragged() && data.Edit_HoveringMergable())
+    {
         DrawCircleIV(data.Edit_NodeBeingDragged()->GetPosition(), Node::g_nodeRadius * 2.0f, VIOLET);
+        data.DrawTooltipAtCursor(
+            "Hold [shift] to merge on release.\n"
+            "Otherwise, nodes will only be swapped.", VIOLET);
+    }
 }
 
 void Update_Erase(ProgramData& data)
@@ -1429,13 +1451,7 @@ void Draw_Erase(ProgramData& data)
                         "\"Special erase error: i=%i, o=%i\"", iCount, oCount);
 
             }
-            EndMode2D();
-            DrawTextIV(text, data.cursorUIPos + IVec2(15, 17), 8, BLACK);
-            DrawTextIV(text, data.cursorUIPos + IVec2(17, 17), 8, BLACK);
-            DrawTextIV(text, data.cursorUIPos + IVec2(15, 15), 8, BLACK);
-            DrawTextIV(text, data.cursorUIPos + IVec2(17, 15), 8, BLACK);
-            DrawTextIV(text, data.cursorUIPos + IVec2(16), 8, color);
-            BeginMode2D(data.camera);
+            data.DrawTooltipAtCursor(text, color);
         }
     }
 }
