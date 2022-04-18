@@ -1311,8 +1311,13 @@ void Update_Erase(ProgramData& data)
         if (!!data.hoveredNode)
         {
             // Special erase
-            if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && data.hoveredNode->IsSpecialErasable())
-                NodeWorld::Get().BypassNode(data.hoveredNode);
+            if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+            {
+                if (data.hoveredNode->IsSpecialErasable())
+                    NodeWorld::Get().BypassNode(data.hoveredNode);
+                else if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
+                    NodeWorld::Get().BypassNode_Complex(data.hoveredNode);
+            }
             else
                 NodeWorld::Get().DestroyNode(data.hoveredNode);
         }
