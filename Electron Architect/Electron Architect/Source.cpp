@@ -963,17 +963,28 @@ void Update_Pen(ProgramData& data)
                 }
             }
         }
+        else if (data.Pen_NodesMadeByDragging().size() != 0)
+        {
+            for (uint8_t i = 0; i < data.Pen_NodesMadeByDragging().size(); ++i)
+            {
+                data.Pen_NodesMadeByDragging()[i]->SetPosition_Temporary(data.cursorPos + Width(g_gridSize) * i);
+            }
+        }
     }
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (!data.hoveredWire && !data.hoveredNode)
+        if (!data.hoveredWire && !data.hoveredNode && data.Pen_NodesMadeByDragging().size() == 0)
         {
             data.Pen_DragStart() = data.cursorPos;
             for (size_t i = 0; i < data.Pen_NodesMadeByDragging().capacity(); ++i)
             {
                 data.Pen_NodesMadeByDragging().push(NodeWorld::Get().CreateNode(data.cursorPos, data.gatePick, data.storedExtraParam));
             }
+        }
+        else
+        {
+            data.Pen_NodesMadeByDragging().clear();
         }
 
         Node* newNode = data.hoveredNode;
@@ -1018,12 +1029,22 @@ void Update_Pen(ProgramData& data)
     }
     else if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
     {
-        int start = std::min(IntGridDistance(data.Pen_DragStart(), data.cursorPos), 8);
-        for (int i = start; i < data.Pen_NodesMadeByDragging().size(); ++i)
+        if (data.cursorPos != data.Pen_DragStart())
         {
-            NodeWorld::Get().DestroyNode(data.Pen_NodesMadeByDragging()[i]);
+            data.Pen_NodesMadeByDragging().clear();
+            for (size_t i = 0; i < data.Pen_NodesMadeByDragging().capacity(); ++i)
+            {
+                data.Pen_NodesMadeByDragging().push(NodeWorld::Get().CreateNode(data.cursorPos, data.gatePick, data.storedExtraParam));
+            }
         }
-        data.Pen_NodesMadeByDragging().clear();
+        else
+        {
+            for (uint8_t i = 0; i < data.Pen_NodesMadeByDragging().size(); ++i)
+            {
+                NodeWorld::Get().DestroyNode(data.Pen_NodesMadeByDragging()[i]);
+            }
+            data.Pen_NodesMadeByDragging().clear();
+        }
     }
 }
 void Draw_Pen(ProgramData& data)
