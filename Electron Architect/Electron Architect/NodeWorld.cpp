@@ -156,7 +156,7 @@ Node* NodeWorld::MergeNodes(Node* depricating, Node* overriding)
 
     for (Wire* wire : depricating->GetWires())
     {
-
+        // TODO: bypass?
     }
 
     return c;
