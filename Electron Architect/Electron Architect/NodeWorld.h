@@ -45,7 +45,7 @@ public:
     void BypassNode(Node* node);
     void BypassNode_Complex(Node* node);
     // Invalidates both nodes and creates a new, composit node!
-    Node* MergeNodes(Node* a, Node* b);
+    Node* MergeNodes(Node* depricating, Node* overriding);
 
     // Wire functions
 
@@ -54,7 +54,6 @@ public:
     // CreateWire can affect the positions of parameter `end` in `nodes`
     Wire* CreateWire(Node* start, Node* end, ElbowConfig elbowConfig);
     void DestroyWire(Wire* wire);
-    Node* MergeNodes(Node* composite, Node* tbRemoved);
     // Looks like it swaps the two nodes, but really only swaps the gate!
     void SwapNodes(Node* a, Node* b);
     // Invalidates input wire!

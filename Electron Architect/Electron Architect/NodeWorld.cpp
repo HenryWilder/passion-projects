@@ -152,12 +152,29 @@ void NodeWorld::BypassNode_Complex(Node* node)
 
 Node* NodeWorld::MergeNodes(Node* depricating, Node* overriding)
 {
+    _ASSERT_EXPR(!!depricating && !!overriding, L"Tried to merge a nullptr");
+    _ASSERT_EXPR(depricating != overriding, L"Tried to merge a node with itself");
     Node* c = CreateNode(depricating->GetPosition(), overriding->GetGate(), overriding->m_ntd.r.resistance); // Generic ntd data
 
-    for (Wire* wire : depricating->GetWires())
+    for (Wire* wire : depricating->GetInputs())
     {
-        // TODO: bypass?
+        CreateWire(wire->start, c, wire->elbowConfig);
     }
+    for (Wire* wire : overriding->GetInputs())
+    {
+        CreateWire(wire->start, c, wire->elbowConfig);
+    }
+    for (Wire* wire : depricating->GetOutputs())
+    {
+        CreateWire(c, wire->end, wire->elbowConfig);
+    }
+    for (Wire* wire : overriding->GetOutputs())
+    {
+        CreateWire(c, wire->end, wire->elbowConfig);
+    }
+
+    DestroyNode(depricating);
+    DestroyNode(overriding);
 
     return c;
 }
@@ -230,26 +247,6 @@ void NodeWorld::DestroyWire(Wire* wire)
     _DestroyWire(wire);
 
     orderDirty = true;
-}
-Node* NodeWorld::MergeNodes(Node* composite, Node* tbRemoved)
-{
-    _ASSERT_EXPR(!!composite && !!tbRemoved, L"Tried to merge a node with nullptr");
-    _ASSERT_EXPR(composite != tbRemoved, L"Tried to merge a node with itself");
-
-    for (Wire* wire : tbRemoved->m_wires)
-    {
-        if (wire->start == composite || wire->end == composite)
-            continue;
-
-        if (wire->start == tbRemoved)
-            CreateWire(composite, wire->end);
-        else // wire->end == tbRemoved
-            CreateWire(wire->start, composite);
-    }
-    IVec2 newPos = tbRemoved->m_position;
-    DestroyNode(tbRemoved);
-    orderDirty = true;
-    return composite;
 }
 void NodeWorld::SwapNodes(Node* a, Node* b)
 {
