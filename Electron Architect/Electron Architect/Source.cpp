@@ -272,6 +272,7 @@ private:
             IVec2 selectionStart;
             IRect selectionRec;
             bool draggingGroup;
+            bool hoveringMergable;
             Group* hoveredGroup;
             Node* nodeBeingDragged;
             Wire* wireBeingDragged;
@@ -341,6 +342,7 @@ public: // Accessors for unions
     ACCESSOR(Edit_SelectionStart(),         baseMode == Mode::EDIT,     base.edit.selectionStart)
     ACCESSOR(Edit_SelectionRec(),           baseMode == Mode::EDIT,     base.edit.selectionRec)
     ACCESSOR(Edit_DraggingGroup(),          baseMode == Mode::EDIT,     base.edit.draggingGroup)
+    ACCESSOR(Edit_HoveringMergable(),       baseMode == Mode::EDIT,     base.edit.hoveringMergable)
     ACCESSOR(Edit_HoveredGroup(),           baseMode == Mode::EDIT,     base.edit.hoveredGroup)
     ACCESSOR(Edit_NodeBeingDragged(),       baseMode == Mode::EDIT,     base.edit.nodeBeingDragged)
     ACCESSOR(Edit_WireBeingDragged(),       baseMode == Mode::EDIT,     base.edit.wireBeingDragged)
@@ -1108,6 +1110,10 @@ void Update_Edit(ProgramData& data)
                 }
             }
         }
+        else if (data.Edit_NodeBeingDragged())
+        {
+            data.Edit_HoveringMergable() = !!NodeWorld::Get().FindNodeAtPos(data.cursorPos);
+        }
     }
 
     // Press
@@ -1290,6 +1296,9 @@ void Draw_Edit(ProgramData& data)
         data.hoveredWire->start->Draw(INPUTLAVENDER);
         data.hoveredWire->end->Draw(OUTPUTAPRICOT);
     }
+
+    if (!!data.Edit_NodeBeingDragged() && data.Edit_HoveringMergable())
+        DrawCircleIV(data.Edit_NodeBeingDragged()->GetPosition(), Node::g_nodeRadius * 2.0f, VIOLET);
 }
 
 void Update_Erase(ProgramData& data)
