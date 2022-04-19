@@ -200,9 +200,19 @@ copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     <ClCompile Include="Group.cpp" />
     <ClCompile Include="HUtility.cpp" />
     <ClCompile Include="IVec.cpp" />
+    <ClCompile Include="Menu_Select.cpp" />
+    <ClCompile Include="Menu_Icon.cpp" />
     <ClCompile Include="NodeWorld.cpp" />
     <ClCompile Include="Node.cpp" />
+    <ClCompile Include="Overlay_Button.cpp" />
+    <ClCompile Include="Overlay_Paste.cpp" />
+    <ClCompile Include="ProgramData.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="ToolModes.cpp" />
+    <ClCompile Include="Tool_Edit.cpp" />
+    <ClCompile Include="Tool_Erase.cpp" />
+    <ClCompile Include="Tool_Interact.cpp" />
+    <ClCompile Include="Tool_Pen.cpp" />
     <ClCompile Include="Wire.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -220,7 +230,9 @@ copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     <ClInclude Include="IVec.h" />
     <ClInclude Include="NodeWorld.h" />
     <ClInclude Include="Node.h" />
+    <ClInclude Include="ProgramData.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="ToolModes.h" />
     <ClInclude Include="Wire.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
