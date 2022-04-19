@@ -11,11 +11,11 @@
 
 Menu_Icon::Menu_Icon()
 {
-    // Start of mode
+    object = new BlueprintIcon;
 }
 Menu_Icon::~Menu_Icon()
 {
-    // End of mode
+    delete object;
 }
 
 void Menu_Icon::Update()

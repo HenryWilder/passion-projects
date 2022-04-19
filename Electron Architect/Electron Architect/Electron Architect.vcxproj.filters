@@ -60,9 +60,6 @@
     <ClCompile Include="Tool_Interact.cpp">
       <Filter>Source Files\Tools</Filter>
     </ClCompile>
-    <ClCompile Include="ToolModes.cpp">
-      <Filter>Source Files\Tools</Filter>
-    </ClCompile>
     <ClCompile Include="Overlay_Button.cpp">
       <Filter>Source Files\Tools</Filter>
     </ClCompile>

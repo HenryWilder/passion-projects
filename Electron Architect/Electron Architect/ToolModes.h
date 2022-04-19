@@ -40,24 +40,51 @@ struct ModeHandler
     static ProgramData& data;
     virtual void Update() = 0;
     virtual void Draw() = 0;
+    constexpr virtual Mode GetMode() = 0;
 };
 
-struct Tool_Pen : ModeHandler
+// A mode specific mode
+struct Tool : ModeHandler {};
+
+struct Tool_Pen : public Tool
 {
-    IVec2 dragStart;
-    ElbowConfig currentWireElbowConfig;
-    Node* previousWireStart;
-    Node* currentWireStart;
+    IVec2 dragStart{};
+    ElbowConfig currentWireElbowConfig{};
+    Node* previousWireStart = nullptr;
+    Node* currentWireStart = nullptr;
     static constexpr size_t bulkNodeCount = 8;
-    Node* nodesMadeByDragging[bulkNodeCount];
+    Node* nodesMadeByDragging[bulkNodeCount]{};
+    bool bulkNodesBeingMade = false;
 
     Tool_Pen();
     ~Tool_Pen();
+
+    void CreateBulkNodes();
+    void UpdateBulkNodes();
+    void DestroyBulkNodes();
+
+    Node* CreateNode();
+    void FinishWire(Node* wireEnd);
+
+    void OnMouseMove();
+    void OnLeftClick();
+    void CycleElbow();
+    void CancelWire();
+    void OnLeftRelease();
+
     void Update() override;
+
+    void DrawCurrentWire();
+    void DrawHoveredWire();
+    void DrawHoveredNodeWires();
+    void DrawHoveredNode();
+
     void Draw() override;
+
+    constexpr Mode GetMode() override { return Mode::PEN; }
 };
 
-struct Tool_Edit : ModeHandler
+struct Tool_Edit : public Tool
 {
     IVec2 fallbackPos;
     bool selectionWIP;
@@ -71,29 +98,34 @@ struct Tool_Edit : ModeHandler
 
     Tool_Edit();
     ~Tool_Edit();
+
     void Update() override;
     void Draw() override;
+    constexpr Mode GetMode() override { return Mode::EDIT; }
 };
 
-struct Tool_Erase : ModeHandler
+struct Tool_Erase : public Tool
 {
     Tool_Erase();
     ~Tool_Erase();
 
     void Update() override;
     void Draw() override;
+    constexpr Mode GetMode() override { return Mode::ERASE; }
 };
 
-struct Tool_Interact : ModeHandler
+struct Tool_Interact : public Tool
 {
     Tool_Interact();
     ~Tool_Interact();
 
     void Update() override;
     void Draw() override;
+    constexpr Mode GetMode() override { return Mode::INTERACT; }
 };
 
-struct Overlay_Button : ModeHandler
+
+struct Overlay_Button : public ModeHandler
 {
     static constexpr Mode dropdownModeOrder[] = {
         Mode::PEN,
@@ -125,35 +157,38 @@ struct Overlay_Button : ModeHandler
 
     void Update() override;
     void Draw() override;
+    constexpr Mode GetMode() override { return Mode::BUTTON; }
 };
 
-struct Overlay_Paste : ModeHandler
+struct Overlay_Paste : public ModeHandler
 {
     Overlay_Paste();
     ~Overlay_Paste();
 
     void Update() override;
     void Draw() override;
+    constexpr Mode GetMode() override { return Mode::PASTE; }
 };
 
-struct Menu_Icon : ModeHandler
+struct Menu_Icon : public ModeHandler
 {
-    BlueprintIcon* object;
     IVec2 pos; // Width and height are fixed
     IRect sheetRec;
     BlueprintIconID_t iconID;
     uint8_t iconCount;
     int draggingIcon; // -1 for none/not dragging
+    BlueprintIcon* object;
 
     Menu_Icon();
     ~Menu_Icon();
 
     void Update() override;
     void Draw() override;
+    constexpr Mode GetMode() override { return Mode::BP_ICON; }
 };
 
 // todo
-struct Menu_Select : ModeHandler
+struct Menu_Select : public ModeHandler
 {
     int hovering; // -1 for none
 
@@ -162,4 +197,5 @@ struct Menu_Select : ModeHandler
 
     void Update() override;
     void Draw() override;
+    constexpr Mode GetMode() override { return Mode::BP_SELECT; }
 };

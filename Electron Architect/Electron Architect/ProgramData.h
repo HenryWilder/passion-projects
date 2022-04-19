@@ -11,6 +11,7 @@ class Blueprint;
 
 enum class Mode;
 struct ModeHandler;
+struct Tool : ModeHandler {};
 
 struct ProgramData
 {
@@ -40,8 +41,8 @@ public:
     int windowWidth;
     int windowHeight;
 
-    Mode mode = Mode::PEN;
-    Mode baseMode = Mode::PEN;
+    ModeHandler* mode;
+    Tool* baseMode;
 
     IVec2 cursorUIPos = IVec2::Zero();
     IVec2 cursorPos = IVec2::Zero();
