@@ -145,6 +145,7 @@ public:
     uint8_t storedExtraParam = 0;
 
     Camera2D camera{ .offset{ 0,0 }, .target{ 0,0 }, .rotation{ 0 }, .zoom{ 1 } };
+    bool b_twoDee = false;
 
     const char* deviceParameterTextFmt = "";
 
@@ -928,11 +929,29 @@ public:
         return ResistanceBandColor(storedExtraParam);
     }
 
+    void SetMode2D(bool value)
+    {
+        if (b_twoDee == value)
+            return;
+
+        if (b_twoDee = value) // 2D mode
+            BeginMode2D(camera);
+        else // UI mode
+            EndMode2D();
+    }
+
     void DrawTooltipAtCursor(const char* text, Color color)
     {
-        EndMode2D();
-        DrawTextIV(text, cursorUIPos + IVec2(16), 8, color);
-        BeginMode2D(camera);
+        auto wat_do = [&]() { DrawTextIV(text, cursorUIPos + IVec2(16), 8, color); };
+        // Force UI mode
+        if (b_twoDee)
+        {
+            EndMode2D();
+            wat_do();
+            BeginMode2D(camera);
+        }
+        else
+            wat_do();
     }
 };
 Texture2D ProgramData::clipboardIcon;
@@ -1510,7 +1529,7 @@ void Draw_Overlay_Gate(ProgramData& data)
         NodeWorld::Get().DrawNodes();
     }
 
-    EndMode2D();
+    data.SetMode2D(false);
 
     constexpr int menuRadius = 64;
     constexpr int menuIconOffset = 12;
@@ -1645,7 +1664,7 @@ void Draw_Overlay_Button(ProgramData& data)
     NodeWorld::Get().DrawWires();
     NodeWorld::Get().DrawNodes();
 
-    EndMode2D();
+    data.SetMode2D(false);
 
     IRect rec = data.dropdownBounds[data.Button_DropdownActive()];
     DrawRectangleIRect(rec, SPACEGRAY);
@@ -1921,7 +1940,7 @@ int main()
 
             if (!data.ModeIsMenu())
             {
-                BeginMode2D(data.camera);
+                data.SetMode2D(true);
 
                 data.DrawGrid();
 
@@ -1952,7 +1971,7 @@ int main()
 
             if (!data.ModeIsMenu())
             {
-                EndMode2D();
+                data.SetMode2D(false);
 
                 // UI
                 {
