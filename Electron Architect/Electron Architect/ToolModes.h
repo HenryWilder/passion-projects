@@ -45,6 +45,8 @@ struct ModeHandler
 
 // A mode specific mode
 struct Tool : ModeHandler {};
+struct Overlay : ModeHandler {};
+struct Menu : Overlay {};
 
 struct Tool_Pen : public Tool
 {
@@ -58,27 +60,28 @@ struct Tool_Pen : public Tool
 
     Tool_Pen();
     ~Tool_Pen();
-
+private:
     void CreateBulkNodes();
     void UpdateBulkNodes();
-    void DestroyBulkNodes();
+    void CancelBulkNodes();
 
     Node* CreateNode();
+    void BisectWireWithNode(Node* node);
     void FinishWire(Node* wireEnd);
 
-    void OnMouseMove();
-    void OnLeftClick();
+    void UpdateHover();
+
     void CycleElbow();
     void CancelWire();
-    void OnLeftRelease();
-
+public:
     void Update() override;
 
+private:
     void DrawCurrentWire();
     void DrawHoveredWire();
     void DrawHoveredNodeWires();
     void DrawHoveredNode();
-
+public:
     void Draw() override;
 
     constexpr Mode GetMode() override { return Mode::PEN; }

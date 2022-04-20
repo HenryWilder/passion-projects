@@ -335,12 +335,10 @@ void ProgramData::UpdateCursorPos()
 {
     cursorUIPos = IVec2(GetMouseX(), GetMouseY());
 
-    cursorPos = IVec2(
+    cursorPos = Snap(IVec2(
         (int)(GetMouseX() / camera.zoom) + (int)camera.target.x,
         (int)(GetMouseY() / camera.zoom) + (int)camera.target.y
-    );
-    cursorPos /= g_gridSize;
-    cursorPos *= g_gridSize;
+    ), g_gridSize);
     {
         constexpr int halfgrid = g_gridSize / 2;
         if (cursorPos.x < 0) cursorPos.x -= halfgrid;

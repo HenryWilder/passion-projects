@@ -93,3 +93,7 @@ void FindAndErase_ExpectExisting(Container& container, const typename Container:
 
 bool Between_Inclusive(int x, int a, int b);
 bool Between_Exclusive(int x, int a, int b);
+
+inline bool IsKeyDown_Shift();
+inline bool IsKeyDown_Ctrl();
+inline bool IsKeyDown_Alt();

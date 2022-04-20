@@ -81,6 +81,11 @@ int IntGridDistance(IVec2 a, IVec2 b);
 long DistanceSqr(IVec2 a, IVec2 b);
 IVec2 Normal(IVec2 vec);
 
+constexpr IVec2 Snap(IVec2 pt, IVec2 grid)  { return IVec2((int)(pt.x / grid.x) * grid.x, (int)(pt.y / grid.y) * grid.y); }
+constexpr IVec2 Snap(IVec2 pt, int grid)    { return IVec2((int)(pt.x / grid) * grid, (int)(pt.y / grid) * grid); }
+constexpr IVec2 Snap(IVec2 pt, Width grid)  { return IVec2((int)(pt.x / grid.x) * grid.x, pt.y); }
+constexpr IVec2 Snap(IVec2 pt, Height grid) { return IVec2(pt.x, (int)(pt.y / grid.y) * grid.y); }
+
 bool InBoundingBox(IVec2 p, IVec2 a, IVec2 b);
 
 constexpr IVec2 operator+(IVec2 a, IVec2 b) { return IVec2(a.x + b.x, a.y + b.y); }
