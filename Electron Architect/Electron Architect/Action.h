@@ -1,6 +1,65 @@
 #pragma once
 #include <stack>
+#include <list>
+#include <any>
 #include <type_traits>
+
+namespace
+{
+	extern std::list<void*> g_RedoableMemory;
+}
+template<class T>
+class RedoReservation
+{
+	decltype(g_RedoableMemory)::iterator position;
+	decltype(g_RedoableMemory)::iterator& Iterator()
+	{
+		_ASSERT_EXPR(position != g_RedoableMemory.end(), L"Tried to access invalid reservation");
+		return position;
+	}
+	const decltype(g_RedoableMemory)::iterator& Iterator() const
+	{
+		_ASSERT_EXPR(position != g_RedoableMemory.end(), L"Tried to access invalid reservation");
+		return position;
+	}
+	T& Pointer() const
+	{
+		_ASSERT_EXPR(IsValid(), L"Tried to access invalid reservation");
+		return *Iterator();
+	}
+public:
+	RedoReservation(T object)
+	{
+		static_assert(std::is_pointer_v<T>, "RedoReceipt can only accept pointers. Non-referencial data can be stored as POD and doesn't need a receipt.");
+		g_RedoableMemory.push_back(object);
+		position = g_RedoableMemory.back();
+	}
+	~RedoReservation()
+	{
+		g_RedoableMemory.erase(Iterator());
+	}
+	bool IsValid() const
+	{
+		// Doesn't need the assertion
+		return !!*Iterator();
+	}
+	void Set(T pointer)
+	{
+		Pointer() = pointer;
+	}
+	T Get() const
+	{
+		return (T)Pointer();
+	}
+	T operator*() const
+	{
+		return Get();
+	}
+	T operator->() const
+	{
+		return Get();
+	}
+};
 
 class Action
 {
@@ -19,8 +78,11 @@ class Action
 	// Constructor must be public and can have any parameters needed
 };
 
-extern std::stack<Action*> g_backStack; // Backward (undo)
-extern std::stack<Action*> g_foreStack; // Forward (redo)
+namespace
+{
+	extern std::stack<Action*> g_backStack; // Backward (undo)
+	extern std::stack<Action*> g_foreStack; // Forward (redo)
+}
 
 template<class T>
 void PushAction(T&& action)

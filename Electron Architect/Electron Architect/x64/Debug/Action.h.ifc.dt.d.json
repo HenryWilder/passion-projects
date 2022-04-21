@@ -4,13 +4,14 @@
         "Source": "d:\\repo\\passion-projects\\electron architect\\electron architect\\action.h",
         "ProvidedModule": "",
         "Includes": [
-            "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\vector",
+            "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\stack",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\yvals_core.h",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\vcruntime.h",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\sal.h",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\concurrencysal.h",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\vadefs.h",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\xkeycheck.h",
+            "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\deque",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\xmemory",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\cstdint",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\stdint.h",
@@ -77,7 +78,11 @@
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\compare",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\bit",
             "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\tuple",
-            "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\xpolymorphic_allocator.h"
+            "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\xpolymorphic_allocator.h",
+            "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\vector",
+            "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\any",
+            "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\typeinfo",
+            "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\vcruntime_typeinfo.h"
         ],
         "ImportedModules": [],
         "ImportedHeaderUnits": []

@@ -8,6 +8,7 @@
 #include "NodeWorld.h"
 #include "ProgramData.h"
 #include "ToolModes.h"
+#include "Action.h"
 
 Tool_Pen::Tool_Pen()
 {
@@ -96,6 +97,42 @@ void Tool_Pen::CancelWire()
     currentWireStart = nullptr;
 }
 
+class Act_BisectWire : public Action
+{
+    RedoReservation<Wire*> m_prev;
+    RedoReservation<Node*> m_bisector;
+    std::pair<RedoReservation<Wire*>, RedoReservation<Wire*>> m_post;
+
+    void Undo() override
+    {
+        _ASSERT_EXPR(false, L"Incomplete feature");
+    }
+    void Redo() override
+    {
+        _ASSERT_EXPR(m_prev.IsValid(), L"Wire being bisected is invalid");
+        _ASSERT_EXPR(m_bisector.IsValid(), L"Node bisecting wire is invalid");
+        m_post = NodeWorld::Get().BisectWire(*m_prev, *m_bisector);
+    }
+public:
+    Act_BisectWire(Wire* wire, Node* bisector) : m_prev(wire), m_bisector(bisector), m_post({ nullptr, nullptr }) {}
+};
+
+class Act_DrawNode : public Action
+{
+    RedoReservation<Node*> m_target;
+
+    void Undo() override
+    {
+        _ASSERT_EXPR(false, L"Incomplete feature");
+    }
+    void Redo() override
+    {
+        _ASSERT_EXPR(false, L"Incomplete feature");
+    }
+public:
+    Act_DrawNode() : m_target(nullptr) {}
+};
+
 void Tool_Pen::Update()
 {
     // Mouse move
@@ -108,6 +145,19 @@ void Tool_Pen::Update()
     }
 
     // Press m1
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data.hoveredWire && !data.hoveredNode)
+        CreateBulkNodes();
+
+    // todo
+    if      (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !!data.hoveredNode) // Click an existing node (wire can't be hovered in this case)
+        PushAction(Act_DrawNode());
+
+    else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data.hoveredNode && !data.hoveredWire) // Click nothing (create a new node)
+        PushAction(Act_DrawNode());
+
+    if      (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data.hoveredNode && !!data.hoveredWire) // Click a wire (bisect it)
+        PushAction(Act_DrawNode());
+
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
         if (!data.hoveredWire && !data.hoveredNode)

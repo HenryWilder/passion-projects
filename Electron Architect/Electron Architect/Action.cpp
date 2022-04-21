@@ -1,7 +1,11 @@
 #include "Action.h"
 
-std::stack<Action*> g_backStack; // Backward (undo)
-std::stack<Action*> g_foreStack; // Forward (redo)
+namespace
+{
+	std::list<void*> g_RedoableMemory;
+	std::stack<Action*> g_backStack; // Backward (undo)
+	std::stack<Action*> g_foreStack; // Forward (redo)
+}
 
 void Undo()
 {
