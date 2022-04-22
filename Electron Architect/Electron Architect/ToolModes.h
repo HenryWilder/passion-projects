@@ -27,7 +27,6 @@ enum class Mode
     ERASE,
     INTERACT,
 
-    GATE,
     BUTTON,
     PASTE,
 

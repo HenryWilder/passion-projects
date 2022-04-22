@@ -71,9 +71,9 @@ public:
 public:
 
     static Texture2D GetClipboardIcon();
-    static void DrawModeIcon(Mode mode, IVec2 pos, Color tint);;
-    static void DrawGateIcon16x(Gate gate, IVec2 pos, Color tint);;
-    static void DrawGateIcon32x(Gate gate, IVec2 pos, Color tint);;
+    static void DrawModeIcon(Mode mode, IVec2 pos, Color tint);
+    static void DrawGateIcon16x(Gate gate, IVec2 pos, Color tint);
+    static void DrawGateIcon32x(Gate gate, IVec2 pos, Color tint);
 
     static bool ModeIsMenu(Mode mode);
     inline bool ModeIsMenu() const;
@@ -81,15 +81,15 @@ public:
     inline bool ModeIsOverlay() const;
     bool ModeIsBasic() const;
 
-    void SetMode(Mode newMode);;
-    void SetGate(Gate newGate);;
+    void SetMode(Mode newMode);
+    void SetGate(Gate newGate);
 
     inline void ClearOverlayMode();
 
-    static const char* GetModeTooltipName(Mode mode);;
-    static const char* GetModeTooltipDescription(Mode mode);;
-    static const char* GetGateTooltipName(Gate gate);;
-    static const char* GetGateTooltipDescription(Gate gate);;
+    static const char* GetModeTooltipName(Mode mode);
+    static const char* GetModeTooltipDescription(Mode mode);
+    static const char* GetGateTooltipName(Gate gate);
+    static const char* GetGateTooltipDescription(Gate gate);
 
     void IncrementTick();
 

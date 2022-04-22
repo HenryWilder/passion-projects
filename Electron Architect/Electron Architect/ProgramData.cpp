@@ -112,12 +112,12 @@ bool ProgramData::ModeIsMenu() const
 bool ProgramData::ModeIsOverlay(Mode mode)
 {
     // Modes which can be active simultaneously with a non-overlay mode
-    return mode == Mode::GATE || mode == Mode::BUTTON || mode == Mode::PASTE || ModeIsMenu(mode);
+    return mode == Mode::BUTTON || mode == Mode::PASTE || ModeIsMenu(mode);
 }
 
 bool ProgramData::ModeIsOverlay() const
 {
-    return ModeIsOverlay(this->mode);
+    return ModeIsOverlay(mode->GetMode());
 }
 
 bool ProgramData::ModeIsBasic() const
@@ -127,24 +127,29 @@ bool ProgramData::ModeIsBasic() const
 
 void ProgramData::SetMode(Mode newMode)
 {
-    if (mode == Mode::BP_ICON)
-    {
-        ASSERT_CONDITION(!!BPIcon_Object(), L"Object must be initialized at the start of the mode")
-        {
-            delete BPIcon_Object();
-            BPIcon_Object() = nullptr;
-        }
-    }
-
     b_cursorMoved = true;
-    mode = newMode;
+    if (!!mode)
+        delete mode;
+
+    switch (newMode)
+    {
+        ASSERT_SPECIALIZATION(L"Mode class init");
+    case Mode::PEN:         mode = new Tool_Pen;        break;
+    case Mode::EDIT:        mode = new Tool_Edit;       break;
+    case Mode::ERASE:       mode = new Tool_Erase;      break;
+    case Mode::INTERACT:    mode = new Tool_Interact;   break;
+    case Mode::BUTTON:      mode = new Overlay_Button;  break;
+    case Mode::PASTE:       mode = new Overlay_Paste;   break;
+    case Mode::BP_ICON:     mode = new Menu_Icon;       break;
+    case Mode::BP_SELECT:   mode = new Menu_Select;     break;
+    }
 
     if (!ModeIsOverlay(newMode))
     {
         baseMode = newMode;
-        memset(&base, 0, sizeof(base));
+        memset(base, 0, sizeof(base));
     }
-    memset(&overlay, 0, sizeof(overlay));
+    memset(overlay, 0, sizeof(overlay));
 
     // Initialize any non-zero values
     switch (newMode)
