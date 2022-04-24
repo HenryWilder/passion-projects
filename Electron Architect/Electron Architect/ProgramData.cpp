@@ -106,7 +106,7 @@ bool ProgramData::ModeIsMenu(Mode mode)
 
 bool ProgramData::ModeIsMenu() const
 {
-    return ModeIsMenu(this->mode);
+    return ModeIsMenu(this->mode->GetMode());
 }
 
 bool ProgramData::ModeIsOverlay(Mode mode)
@@ -122,54 +122,41 @@ bool ProgramData::ModeIsOverlay() const
 
 bool ProgramData::ModeIsBasic() const
 {
-    return this->mode == this->baseMode;
+    bool modeIsBaseMode = mode->GetMode() == baseMode->GetMode();
+#if _DEBUG
+    if (modeIsBaseMode)
+        _ASSERT_EXPR(mode == static_cast<ModeHandler*>(baseMode),
+            L"Mode and base mode tool objects aren't the same object, yet share the same mode enum");
+    else
+        _ASSERT_EXPR(mode != static_cast<ModeHandler*>(baseMode),
+            L"Mode and base mode tool objects are the same object, but return different mode enums (how??)");
+#endif
+    return modeIsBaseMode;
 }
 
 void ProgramData::SetMode(Mode newMode)
 {
-    b_cursorMoved = true;
-    if (!!mode)
-        delete mode;
+    b_cursorMoved = true; // Make sure the first frame of the new mode performs all its initial checks
+
+    _ASSERT_EXPR(!!mode, L"Mode should be set during init phase");
+
+    delete mode;
 
     switch (newMode)
     {
-        ASSERT_SPECIALIZATION(L"Mode class init");
-    case Mode::PEN:         mode = new Tool_Pen;        break;
-    case Mode::EDIT:        mode = new Tool_Edit;       break;
-    case Mode::ERASE:       mode = new Tool_Erase;      break;
-    case Mode::INTERACT:    mode = new Tool_Interact;   break;
-    case Mode::BUTTON:      mode = new Overlay_Button;  break;
-    case Mode::PASTE:       mode = new Overlay_Paste;   break;
-    case Mode::BP_ICON:     mode = new Menu_Icon;       break;
-    case Mode::BP_SELECT:   mode = new Menu_Select;     break;
+        ASSERT_SPECIALIZATION;
+    case Mode::PEN:         baseMode = new Tool_Pen;        break;
+    case Mode::EDIT:        baseMode = new Tool_Edit;       break;
+    case Mode::ERASE:       baseMode = new Tool_Erase;      break;
+    case Mode::INTERACT:    baseMode = new Tool_Interact;   break;
+    case Mode::BUTTON:          mode = new Overlay_Button;  break;
+    case Mode::PASTE:           mode = new Overlay_Paste;   break;
+    case Mode::BP_ICON:         mode = new Menu_Icon;       break;
+    case Mode::BP_SELECT:       mode = new Menu_Select;     break;
     }
 
     if (!ModeIsOverlay(newMode))
-    {
-        baseMode = newMode;
-        memset(base, 0, sizeof(base));
-    }
-    memset(overlay, 0, sizeof(overlay));
-
-    // Initialize any non-zero values
-    switch (newMode)
-    {
-    case Mode::GATE:
-        Gate_RadialMenuCenter() = cursorUIPos;
-        break;
-
-    case Mode::BP_ICON:
-        BPIcon_DraggingIcon() = -1;
-        break;
-
-    case Mode::BP_SELECT:
-        BPSelect_Hovering() = -1;
-        break;
-
-    case Mode::BUTTON:
-        Button_DropdownActive() = cursorUIPos.x / 16;
-        break;
-    }
+        mode = baseMode;
 }
 
 void ProgramData::SetGate(Gate newGate)

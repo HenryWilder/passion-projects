@@ -11,7 +11,7 @@ class Blueprint;
 
 enum class Mode;
 struct ModeHandler;
-struct Tool : ModeHandler {};
+struct Tool;
 
 struct ProgramData
 {

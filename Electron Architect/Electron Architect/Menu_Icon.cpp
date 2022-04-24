@@ -12,6 +12,7 @@
 Menu_Icon::Menu_Icon()
 {
     object = new BlueprintIcon;
+    draggingIcon = -1;
 }
 Menu_Icon::~Menu_Icon()
 {

@@ -11,7 +11,7 @@
 
 Overlay_Button::Overlay_Button()
 {
-    // Start of mode
+    dropdownActive = data.cursorUIPos.x / 16;
 }
 Overlay_Button::~Overlay_Button()
 {

@@ -43,9 +43,24 @@ struct ModeHandler
 };
 
 // A mode specific mode
-struct Tool : ModeHandler {};
-struct Overlay : ModeHandler {};
-struct Menu : Overlay {};
+struct Tool : ModeHandler
+{
+    virtual void Update() = 0;
+    virtual void Draw() = 0;
+    constexpr virtual Mode GetMode() = 0;
+};
+struct Overlay : ModeHandler
+{
+    virtual void Update() = 0;
+    virtual void Draw() = 0;
+    constexpr virtual Mode GetMode() = 0;
+};
+struct Menu : Overlay
+{
+    virtual void Update() = 0;
+    virtual void Draw() = 0;
+    constexpr virtual Mode GetMode() = 0;
+};
 
 struct Tool_Pen : public Tool
 {
