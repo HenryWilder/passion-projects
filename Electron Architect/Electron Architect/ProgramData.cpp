@@ -47,16 +47,17 @@ Texture2D ProgramData::GetClipboardIcon()
     return clipboardIcon;
 }
 
-void ProgramData::DrawModeIcon(Mode currentMode_object, IVec2 pos, Color tint)
+void ProgramData::DrawModeIcon(Mode mode, IVec2 pos, Color tint)
 {
     IVec2 offset;
-    switch (currentMode_object)
+    switch (mode)
     {
+        ASSERT_SPECIALIZATION;
+
     case Mode::PEN:      offset = IVec2(0, 0); break;
     case Mode::EDIT:     offset = IVec2(1, 0); break;
     case Mode::ERASE:    offset = IVec2(0, 1); break;
     case Mode::INTERACT: offset = IVec2(1, 1); break;
-    default: return;
     }
     DrawIcon<16>(modeIcons, offset, pos, tint);
 }
@@ -66,6 +67,8 @@ void ProgramData::DrawGateIcon16x(Gate gate, IVec2 pos, Color tint)
     IVec2 offset;
     switch (gate)
     {
+        ASSERT_SPECIALIZATION;
+
     case Gate::OR:  offset = IVec2(0, 0); break;
     case Gate::AND: offset = IVec2(1, 0); break;
     case Gate::NOR: offset = IVec2(0, 1); break;
@@ -75,7 +78,6 @@ void ProgramData::DrawGateIcon16x(Gate gate, IVec2 pos, Color tint)
     case Gate::CAPACITOR: offset = IVec2(1, 2); break;
     case Gate::LED:       offset = IVec2(0, 3); break;
     case Gate::DELAY:     offset = IVec2(1, 3); break;
-    default: return;
     }
     DrawIcon<16>(gateIcons16x, offset, pos, tint);
 }
@@ -85,6 +87,8 @@ void ProgramData::DrawGateIcon32x(Gate gate, IVec2 pos, Color tint)
     IVec2 offset;
     switch (gate)
     {
+        ASSERT_SPECIALIZATION;
+
     case Gate::OR:  offset = IVec2(0, 0); break;
     case Gate::AND: offset = IVec2(1, 0); break;
     case Gate::NOR: offset = IVec2(0, 1); break;
@@ -93,15 +97,14 @@ void ProgramData::DrawGateIcon32x(Gate gate, IVec2 pos, Color tint)
     case Gate::RESISTOR:  offset = IVec2(0, 2); break;
     case Gate::CAPACITOR: offset = IVec2(1, 2); break;
     case Gate::LED:       offset = IVec2(0, 3); break;
-    default: return;
     }
     DrawIcon<32>(gateIcons32x, offset, pos, tint);
 }
 
-bool ProgramData::ModeIsMenu(Mode currentMode_object)
+bool ProgramData::ModeIsMenu(Mode mode)
 {
     // Modes which disable use of basic UI and drawing of certain UI elements
-    return currentMode_object == Mode::BP_ICON || currentMode_object == Mode::BP_SELECT;
+    return mode == Mode::BP_ICON || mode == Mode::BP_SELECT;
 }
 
 bool ProgramData::ModeIsMenu() const
@@ -109,10 +112,10 @@ bool ProgramData::ModeIsMenu() const
     return ModeIsMenu(this->currentMode_object->GetMode());
 }
 
-bool ProgramData::ModeIsOverlay(Mode currentMode_object)
+bool ProgramData::ModeIsOverlay(Mode mode)
 {
     // Modes which can be active simultaneously with a non-overlay mode
-    return currentMode_object == Mode::BUTTON || currentMode_object == Mode::PASTE || ModeIsMenu(currentMode_object);
+    return mode == Mode::BUTTON || mode == Mode::PASTE || ModeIsMenu(mode);
 }
 
 bool ProgramData::ModeIsOverlay() const
@@ -214,14 +217,19 @@ void ProgramData::SetGate(Gate newGate)
     }
 }
 
+ModeHandler* ProgramData::BaseModeAsPolymorphic()
+{
+    return static_cast<ModeHandler*>(basicMode_object);
+}
+
 void ProgramData::ClearOverlayMode()
 {
     SetMode(basicMode_object->GetMode());
 }
 
-const char* ProgramData::GetModeTooltipName(Mode currentMode_object)
+const char* ProgramData::GetModeTooltipName(Mode mode)
 {
-    switch (currentMode_object)
+    switch (mode)
     {
     case Mode::PEN:
         return "Mode: Draw [b]";
@@ -237,9 +245,9 @@ const char* ProgramData::GetModeTooltipName(Mode currentMode_object)
     }
 }
 
-const char* ProgramData::GetModeTooltipDescription(Mode currentMode_object)
+const char* ProgramData::GetModeTooltipDescription(Mode mode)
 {
-    switch (currentMode_object)
+    switch (mode)
     {
     case Mode::PEN:
         return
@@ -400,6 +408,7 @@ void ProgramData::CopySelectionToClipboard()
         clipboard = new Blueprint(selection);
 }
 
+// todo: move to Edit mode definition
 void ProgramData::MakeGroupFromSelection()
 {
     NodeWorld::Get().CreateGroup(Edit_SelectionRec());
@@ -407,11 +416,14 @@ void ProgramData::MakeGroupFromSelection()
     selection.clear();
 }
 
+// todo: move to Edit mode definition
 bool ProgramData::IsSelectionRectValid() const
 {
-    return currentMode_object == Mode::EDIT && !Edit_SelectionWIP() && !(Edit_SelectionRec().w == 0 || Edit_SelectionRec().h == 0);
+    _ASSERT_EXPR(GetCurrentMode() == Mode::EDIT, L"Cannot access selection rect when not in edit mode");
+    return !Edit_SelectionWIP() && !(Edit_SelectionRec().w == 0 || Edit_SelectionRec().h == 0);
 }
 
+// todo: move to Menu_Icon mode definition
 void ProgramData::SaveBlueprint()
 {
     SetMode(Mode::BP_ICON);
@@ -437,6 +449,7 @@ bool ProgramData::SelectionExists() const
     return !selection.empty();
 }
 
+// todo: move to Edit mode definition
 void ProgramData::ClearSelection()
 {
     selection.clear();
@@ -477,7 +490,7 @@ void ProgramData::CheckHotkeys()
 
 
         // Copy
-        if (IsKeyPressed(KEY_C) && currentMode_object == Mode::EDIT)
+        if (IsKeyPressed(KEY_C) && GetCurrentMode() == Mode::EDIT)
             CopySelectionToClipboard();
 
         // Paste
@@ -492,7 +505,7 @@ void ProgramData::CheckHotkeys()
         if (IsKeyPressed(KEY_S))
         {
             // Save blueprint
-            if (currentMode_object == Mode::PASTE)
+            if (GetCurrentMode() == Mode::PASTE)
                 SaveBlueprint();
 
             // Save file
@@ -520,9 +533,9 @@ void ProgramData::CheckHotkeys()
     }
 
     // Gate hotkeys
-    if (ModeIsBasic() || currentMode_object == Mode::GATE)
+    if (ModeIsBasic() || GetCurrentMode() == Mode::GATE)
     {
-        if (IsKeyPressed(KEY_ONE))   SetGate(Gate::OR);
+        if      (IsKeyPressed(KEY_ONE))   SetGate(Gate::OR);
         else if (IsKeyPressed(KEY_TWO))   SetGate(Gate::AND);
         else if (IsKeyPressed(KEY_THREE)) SetGate(Gate::NOR);
         else if (IsKeyPressed(KEY_FOUR))  SetGate(Gate::XOR);
@@ -546,7 +559,7 @@ void ProgramData::CheckHotkeys()
 
         // Exit overlay mode
         if (!ModeIsBasic())
-            SetMode(basicMode_object);
+            ClearOverlayMode();
 
         // Clear selection
         else if (SelectionExists())

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <raylib.h>
+#include <type_traits>
 
 constexpr int g_gridSize = 8;
 
@@ -71,25 +72,42 @@ public:
 public:
 
     static Texture2D GetClipboardIcon();
-    static void DrawModeIcon(Mode currentMode_object, IVec2 pos, Color tint);
+    static void DrawModeIcon(Mode mode, IVec2 pos, Color tint);
     static void DrawGateIcon16x(Gate gate, IVec2 pos, Color tint);
     static void DrawGateIcon32x(Gate gate, IVec2 pos, Color tint);
 
-    static bool ModeIsMenu(Mode currentMode_object);
-    inline bool ModeIsMenu() const;
-    static bool ModeIsOverlay(Mode currentMode_object);
-    inline bool ModeIsOverlay() const;
+    static bool ModeIsMenu(Mode mode);
+    bool ModeIsMenu() const;
+    static bool ModeIsOverlay(Mode mode);
+    bool ModeIsOverlay() const;
     bool ModeIsBasic() const;
 
     Mode GetCurrentMode(); // Mode enum of currentMode_object
     Mode GetBaseMode(); // Mode enum of basicMode_object
+
+    template<class T> requires std::is_base_of_v<ModeHandler, T>
+    T* CurrentModeAs()
+    {
+        T* modeObj = dynamic_cast<T*>(currentMode_object);
+        _ASSERT_EXPR(!!modeObj, L"Type does not cast to specified mode");
+        return modeObj;
+    }
+    template<class T> requires std::is_base_of_v<Tool, T>
+    T* BaseModeAs()
+    {
+        T* modeObj = dynamic_cast<T*>(basicMode_object);
+        _ASSERT_EXPR(!!modeObj, L"Type does not cast to specified mode");
+        return modeObj;
+    }
+    ModeHandler* BaseModeAsPolymorphic();
+
     void SetMode(Mode newMode);
     void SetGate(Gate newGate);
 
-    inline void ClearOverlayMode();
+    void ClearOverlayMode();
 
-    static const char* GetModeTooltipName(Mode currentMode_object);
-    static const char* GetModeTooltipDescription(Mode currentMode_object);
+    static const char* GetModeTooltipName(Mode mode);
+    static const char* GetModeTooltipDescription(Mode mode);
     static const char* GetGateTooltipName(Gate gate);
     static const char* GetGateTooltipDescription(Gate gate);
 
@@ -116,23 +134,22 @@ public:
 
     void CheckHotkeys();
 
-    inline IVec2 GetCursorDelta() const;
+    IVec2 GetCursorDelta() const;
 
     // Inclusive
-    inline bool CursorInRangeX(int xMin, int xMax) const;
+    bool CursorInRangeX(int xMin, int xMax) const;
     // Inclusive
-    inline bool CursorInUIRangeX(int xMin, int xMax) const;
+    bool CursorInUIRangeX(int xMin, int xMax) const;
 
     // Inclusive
-    inline bool CursorInRangeY(int yMin, int yMax) const;
+    bool CursorInRangeY(int yMin, int yMax) const;
     // Inclusive
-    inline bool CursorInUIRangeY(int yMin, int yMax) const;
+    bool CursorInUIRangeY(int yMin, int yMax) const;
 
-    inline bool CursorInBounds(IRect bounds) const;
-    inline bool CursorInUIBounds(IRect uiBounds) const;
+    bool CursorInBounds(IRect bounds) const;
+    bool CursorInUIBounds(IRect uiBounds) const;
 
-    template<int gridSize = g_gridSize>
-    void DrawGrid() const
+    template<int gridSize = g_gridSize> void DrawGrid() const
     {
         // Grid
         {
@@ -166,8 +183,8 @@ public:
     IRect GetSelectionBounds(const std::vector<Node*>& vec) const;
     IRect GetSelectionBounds() const;
 
-    inline static Color ResistanceBandColor(uint8_t index);
-    inline Color ExtraParamColor() const;
+    static Color ResistanceBandColor(uint8_t index);
+    Color ExtraParamColor() const;
 
     void SetMode2D(bool value);
 

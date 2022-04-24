@@ -1,18 +1,7 @@
 #pragma once
 #include "IVec.h"
 
-enum class Gate : char
-{
-    OR = '|',
-    AND = '&',
-    NOR = '!',
-    XOR = '^',
-
-    RESISTOR = '~',
-    CAPACITOR = '=',
-    LED = '@',
-    DELAY = ';',
-};
+enum class Gate : char;
 class Node;
 
 enum class ElbowConfig : uint8_t;
@@ -154,15 +143,15 @@ struct Overlay_Button : public ModeHandler
         Mode::INTERACT,
     };
     static constexpr Gate dropdownGateOrder[] = {
-        Gate::OR,
-        Gate::AND,
-        Gate::NOR,
-        Gate::XOR,
+        (Gate)'|',
+        (Gate)'&',
+        (Gate)'!',
+        (Gate)'^',
 
-        Gate::RESISTOR,
-        Gate::CAPACITOR,
-        Gate::LED,
-        Gate::DELAY,
+        (Gate)'~',
+        (Gate)'=',
+        (Gate)'@',
+        (Gate)';',
     };
     static constexpr IRect dropdownBounds[] = {
         IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode

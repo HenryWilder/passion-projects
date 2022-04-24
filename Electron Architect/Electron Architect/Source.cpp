@@ -39,7 +39,7 @@ int main()
         if (!data.ModeIsMenu() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             if (data.CursorInUIBounds(ProgramData::ButtonBound_Mode() + Width(16 * 2)) &&
-                (data.currentMode_object == Mode::BUTTON ? data.Button_DropdownActive() != (data.cursorUIPos.x / 16) : true))
+                (data.GetCurrentMode() == Mode::BUTTON ? data.CurrentModeAs<Overlay_Button>()->dropdownActive != (data.cursorUIPos.x / 16) : true))
             {
                 data.SetMode(Mode::BUTTON);
                 goto EVAL; // Skip button sim this frame
@@ -56,24 +56,7 @@ int main()
             }
         }
 
-        // Input
-        switch (data.currentMode_object)
-        {
-            ASSERT_SPECIALIZATION(L"Simulation phase");
-            
-        // Basic
-        case Mode::PEN:         Update_Pen(data);               break;
-        case Mode::EDIT:        Update_Edit(data);              break;
-        case Mode::ERASE:       Update_Erase(data);             break;
-        case Mode::INTERACT:    Update_Interact(data);          break;
-
-        // Overlay
-        case Mode::GATE:        Update_Overlay_Gate(data);      break;
-        case Mode::BUTTON:      Update_Overlay_Button(data);    break;
-        case Mode::PASTE:       Update_Overlay_Paste(data);     break;
-        case Mode::BP_ICON:     Update_Menu_Icon(data);         break;
-        case Mode::BP_SELECT:   Update_Menu_Select(data);       break;
-        }
+        data.currentMode_object->Update();
 
     EVAL:
         data.cursorPosPrev = data.cursorPos;
@@ -99,25 +82,7 @@ int main()
                 
 
             // Draw
-            switch (data.currentMode_object)
-            {
-                ASSERT_SPECIALIZATION(L"Basic draw phase");
-
-                // Basic
-            case Mode::PEN:         Draw_Pen(data);             break;
-            case Mode::EDIT:        Draw_Edit(data);            break;
-            case Mode::ERASE:       Draw_Erase(data);           break;
-            case Mode::INTERACT:    Draw_Interact(data);        break;
-
-                // Overlay
-            case Mode::GATE:        Draw_Overlay_Gate(data);    break;
-            case Mode::BUTTON:      Draw_Overlay_Button(data);  break;
-            case Mode::PASTE:       Draw_Overlay_Paste(data);   break;
-
-                // Menu
-            case Mode::BP_ICON:     Draw_Menu_Icon(data);       break;
-            case Mode::BP_SELECT:   Draw_Menu_Select(data);     break;
-            }
+            data.currentMode_object->Draw();
 
             if (!data.ModeIsMenu())
             {
@@ -140,11 +105,11 @@ int main()
                 {
                     DrawRectangleIRect(ProgramData::ButtonBound_Mode(), WIPBLUE);
                     // Tooltip
-                    const char* name = data.GetModeTooltipName(data.basicMode_object);
+                    const char* name = data.GetModeTooltipName(data.GetBaseMode());
                     DrawTextIV(name, ProgramData::ButtonBound_Mode().xy + tooltipNameOffset, 8, WHITE);
                     Width separatorWidth(MeasureText(name, 8));
                     DrawLineIV(ProgramData::ButtonBound_Mode().xy + tooltipSeprOffset, separatorWidth, WHITE); // Separator
-                    DrawTextIV(data.GetModeTooltipDescription(data.basicMode_object), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, 8, WHITE);
+                    DrawTextIV(data.GetModeTooltipDescription(data.GetBaseMode()), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, 8, WHITE);
                 }
                 // Gate
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Gate()))
@@ -185,7 +150,7 @@ int main()
                     DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, 8, WHITE);
                 }
 
-                data.DrawModeIcon(data.basicMode_object, ProgramData::ButtonBound_Mode().xy, WHITE);
+                data.DrawModeIcon(data.GetBaseMode(), ProgramData::ButtonBound_Mode().xy, WHITE);
                 data.DrawGateIcon16x(data.gatePick, ProgramData::ButtonBound_Gate().xy, WHITE);
                 DrawTextureIV(data.GetClipboardIcon(), ProgramData::ButtonBound_Clipboard().xy, data.IsClipboardValid() ? WHITE : ColorAlpha(WHITE, 0.25f));
             }
