@@ -34,6 +34,7 @@ enum class Mode
     BP_SELECT,
 };
 
+// Polymorphic
 struct ModeHandler
 {
     static ProgramData& data;
@@ -42,19 +43,21 @@ struct ModeHandler
     constexpr virtual Mode GetMode() = 0;
 };
 
-// A mode specific mode
+// Basic mode/tool
 struct Tool : ModeHandler
 {
     virtual void Update() = 0;
     virtual void Draw() = 0;
     constexpr virtual Mode GetMode() = 0;
 };
+// Overlay mode (independent of tool)
 struct Overlay : ModeHandler
 {
     virtual void Update() = 0;
     virtual void Draw() = 0;
     constexpr virtual Mode GetMode() = 0;
 };
+// Menu mode (independent of tool (but replaces overlay) + overrides normal rendering)
 struct Menu : Overlay
 {
     virtual void Update() = 0;

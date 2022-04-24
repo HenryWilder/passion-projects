@@ -33,7 +33,7 @@ void Overlay_Button::Update()
             {
                 for (Mode m : ProgramData::dropdownModeOrder)
                 {
-                    if (m == data.baseMode)
+                    if (m == data.basicMode_object)
                         continue;
 
                     if (data.CursorInUIBounds(rec))
@@ -113,7 +113,7 @@ void Overlay_Button::Draw()
     {
         for (Mode m : ProgramData::dropdownModeOrder)
         {
-            if (m == data.baseMode)
+            if (m == data.basicMode_object)
                 continue;
             Color color;
             if (InBoundingBox(rec, data.cursorUIPos))

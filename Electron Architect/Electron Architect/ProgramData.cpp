@@ -47,10 +47,10 @@ Texture2D ProgramData::GetClipboardIcon()
     return clipboardIcon;
 }
 
-void ProgramData::DrawModeIcon(Mode mode, IVec2 pos, Color tint)
+void ProgramData::DrawModeIcon(Mode currentMode_object, IVec2 pos, Color tint)
 {
     IVec2 offset;
-    switch (mode)
+    switch (currentMode_object)
     {
     case Mode::PEN:      offset = IVec2(0, 0); break;
     case Mode::EDIT:     offset = IVec2(1, 0); break;
@@ -98,65 +98,92 @@ void ProgramData::DrawGateIcon32x(Gate gate, IVec2 pos, Color tint)
     DrawIcon<32>(gateIcons32x, offset, pos, tint);
 }
 
-bool ProgramData::ModeIsMenu(Mode mode)
+bool ProgramData::ModeIsMenu(Mode currentMode_object)
 {
     // Modes which disable use of basic UI and drawing of certain UI elements
-    return mode == Mode::BP_ICON || mode == Mode::BP_SELECT;
+    return currentMode_object == Mode::BP_ICON || currentMode_object == Mode::BP_SELECT;
 }
 
 bool ProgramData::ModeIsMenu() const
 {
-    return ModeIsMenu(this->mode->GetMode());
+    return ModeIsMenu(this->currentMode_object->GetMode());
 }
 
-bool ProgramData::ModeIsOverlay(Mode mode)
+bool ProgramData::ModeIsOverlay(Mode currentMode_object)
 {
     // Modes which can be active simultaneously with a non-overlay mode
-    return mode == Mode::BUTTON || mode == Mode::PASTE || ModeIsMenu(mode);
+    return currentMode_object == Mode::BUTTON || currentMode_object == Mode::PASTE || ModeIsMenu(currentMode_object);
 }
 
 bool ProgramData::ModeIsOverlay() const
 {
-    return ModeIsOverlay(mode->GetMode());
+    return ModeIsOverlay(currentMode_object->GetMode());
 }
 
 bool ProgramData::ModeIsBasic() const
 {
-    bool modeIsBaseMode = mode->GetMode() == baseMode->GetMode();
+    bool modeIsBaseMode = currentMode_object->GetMode() == basicMode_object->GetMode();
 #if _DEBUG
     if (modeIsBaseMode)
-        _ASSERT_EXPR(mode == static_cast<ModeHandler*>(baseMode),
+        _ASSERT_EXPR(currentMode_object == static_cast<ModeHandler*>(basicMode_object),
             L"Mode and base mode tool objects aren't the same object, yet share the same mode enum");
     else
-        _ASSERT_EXPR(mode != static_cast<ModeHandler*>(baseMode),
+        _ASSERT_EXPR(currentMode_object != static_cast<ModeHandler*>(basicMode_object),
             L"Mode and base mode tool objects are the same object, but return different mode enums (how??)");
 #endif
     return modeIsBaseMode;
+}
+
+Mode ProgramData::GetCurrentMode()
+{
+    return currentMode_object->GetMode();
+}
+
+Mode ProgramData::GetBaseMode()
+{
+    return basicMode_object->GetMode();
 }
 
 void ProgramData::SetMode(Mode newMode)
 {
     b_cursorMoved = true; // Make sure the first frame of the new mode performs all its initial checks
 
-    _ASSERT_EXPR(!!mode, L"Mode should be set during init phase");
+    // No change
+    if (newMode == GetCurrentMode())
+        return;
 
-    delete mode;
+    // Clear overlay
+    else if (newMode == GetBaseMode())
+    {
+        _ASSERT_EXPR(currentMode_object != basicMode_object, L"Tried to clear overlay mode, but base mode and overlay mode are the same object");
+        delete currentMode_object;
+        currentMode_object = basicMode_object;
+        return;
+    }
+
+    _ASSERT_EXPR(!!currentMode_object, L"Mode should be set during init phase");
+    delete currentMode_object;
 
     switch (newMode)
     {
         ASSERT_SPECIALIZATION;
-    case Mode::PEN:         baseMode = new Tool_Pen;        break;
-    case Mode::EDIT:        baseMode = new Tool_Edit;       break;
-    case Mode::ERASE:       baseMode = new Tool_Erase;      break;
-    case Mode::INTERACT:    baseMode = new Tool_Interact;   break;
-    case Mode::BUTTON:          mode = new Overlay_Button;  break;
-    case Mode::PASTE:           mode = new Overlay_Paste;   break;
-    case Mode::BP_ICON:         mode = new Menu_Icon;       break;
-    case Mode::BP_SELECT:       mode = new Menu_Select;     break;
+
+    case Mode::PEN:           basicMode_object = new Tool_Pen;        break;
+    case Mode::EDIT:          basicMode_object = new Tool_Edit;       break;
+    case Mode::ERASE:         basicMode_object = new Tool_Erase;      break;
+    case Mode::INTERACT:      basicMode_object = new Tool_Interact;   break;
+
+    case Mode::BUTTON:      currentMode_object = new Overlay_Button;  break;
+    case Mode::PASTE:       currentMode_object = new Overlay_Paste;   break;
+    case Mode::BP_ICON:     currentMode_object = new Menu_Icon;       break;
+    case Mode::BP_SELECT:   currentMode_object = new Menu_Select;     break;
     }
 
+    // Both mode and baseMode should be the same object if there is no overlay
     if (!ModeIsOverlay(newMode))
-        mode = baseMode;
+        currentMode_object = basicMode_object;
+
+    _ASSERT_EXPR(!ModeIsOverlay(GetBaseMode()), L"Base mode is not basic");
 }
 
 void ProgramData::SetGate(Gate newGate)
@@ -189,12 +216,12 @@ void ProgramData::SetGate(Gate newGate)
 
 void ProgramData::ClearOverlayMode()
 {
-    SetMode(baseMode);
+    SetMode(basicMode_object->GetMode());
 }
 
-const char* ProgramData::GetModeTooltipName(Mode mode)
+const char* ProgramData::GetModeTooltipName(Mode currentMode_object)
 {
-    switch (mode)
+    switch (currentMode_object)
     {
     case Mode::PEN:
         return "Mode: Draw [b]";
@@ -210,9 +237,9 @@ const char* ProgramData::GetModeTooltipName(Mode mode)
     }
 }
 
-const char* ProgramData::GetModeTooltipDescription(Mode mode)
+const char* ProgramData::GetModeTooltipDescription(Mode currentMode_object)
 {
-    switch (mode)
+    switch (currentMode_object)
     {
     case Mode::PEN:
         return
@@ -382,7 +409,7 @@ void ProgramData::MakeGroupFromSelection()
 
 bool ProgramData::IsSelectionRectValid() const
 {
-    return mode == Mode::EDIT && !Edit_SelectionWIP() && !(Edit_SelectionRec().w == 0 || Edit_SelectionRec().h == 0);
+    return currentMode_object == Mode::EDIT && !Edit_SelectionWIP() && !(Edit_SelectionRec().w == 0 || Edit_SelectionRec().h == 0);
 }
 
 void ProgramData::SaveBlueprint()
@@ -413,7 +440,7 @@ bool ProgramData::SelectionExists() const
 void ProgramData::ClearSelection()
 {
     selection.clear();
-    if (mode == Mode::EDIT)
+    if (currentMode_object == Mode::EDIT)
         Edit_SelectionRec() = IRect(0);
 }
 
@@ -450,7 +477,7 @@ void ProgramData::CheckHotkeys()
 
 
         // Copy
-        if (IsKeyPressed(KEY_C) && mode == Mode::EDIT)
+        if (IsKeyPressed(KEY_C) && currentMode_object == Mode::EDIT)
             CopySelectionToClipboard();
 
         // Paste
@@ -465,7 +492,7 @@ void ProgramData::CheckHotkeys()
         if (IsKeyPressed(KEY_S))
         {
             // Save blueprint
-            if (mode == Mode::PASTE)
+            if (currentMode_object == Mode::PASTE)
                 SaveBlueprint();
 
             // Save file
@@ -493,7 +520,7 @@ void ProgramData::CheckHotkeys()
     }
 
     // Gate hotkeys
-    if (ModeIsBasic() || mode == Mode::GATE)
+    if (ModeIsBasic() || currentMode_object == Mode::GATE)
     {
         if (IsKeyPressed(KEY_ONE))   SetGate(Gate::OR);
         else if (IsKeyPressed(KEY_TWO))   SetGate(Gate::AND);
@@ -519,7 +546,7 @@ void ProgramData::CheckHotkeys()
 
         // Exit overlay mode
         if (!ModeIsBasic())
-            SetMode(baseMode);
+            SetMode(basicMode_object);
 
         // Clear selection
         else if (SelectionExists())

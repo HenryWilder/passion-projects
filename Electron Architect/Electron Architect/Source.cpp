@@ -39,7 +39,7 @@ int main()
         if (!data.ModeIsMenu() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             if (data.CursorInUIBounds(ProgramData::ButtonBound_Mode() + Width(16 * 2)) &&
-                (data.mode == Mode::BUTTON ? data.Button_DropdownActive() != (data.cursorUIPos.x / 16) : true))
+                (data.currentMode_object == Mode::BUTTON ? data.Button_DropdownActive() != (data.cursorUIPos.x / 16) : true))
             {
                 data.SetMode(Mode::BUTTON);
                 goto EVAL; // Skip button sim this frame
@@ -57,7 +57,7 @@ int main()
         }
 
         // Input
-        switch (data.mode)
+        switch (data.currentMode_object)
         {
             ASSERT_SPECIALIZATION(L"Simulation phase");
             
@@ -99,7 +99,7 @@ int main()
                 
 
             // Draw
-            switch (data.mode)
+            switch (data.currentMode_object)
             {
                 ASSERT_SPECIALIZATION(L"Basic draw phase");
 
@@ -140,11 +140,11 @@ int main()
                 {
                     DrawRectangleIRect(ProgramData::ButtonBound_Mode(), WIPBLUE);
                     // Tooltip
-                    const char* name = data.GetModeTooltipName(data.baseMode);
+                    const char* name = data.GetModeTooltipName(data.basicMode_object);
                     DrawTextIV(name, ProgramData::ButtonBound_Mode().xy + tooltipNameOffset, 8, WHITE);
                     Width separatorWidth(MeasureText(name, 8));
                     DrawLineIV(ProgramData::ButtonBound_Mode().xy + tooltipSeprOffset, separatorWidth, WHITE); // Separator
-                    DrawTextIV(data.GetModeTooltipDescription(data.baseMode), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, 8, WHITE);
+                    DrawTextIV(data.GetModeTooltipDescription(data.basicMode_object), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, 8, WHITE);
                 }
                 // Gate
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Gate()))
@@ -185,7 +185,7 @@ int main()
                     DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, 8, WHITE);
                 }
 
-                data.DrawModeIcon(data.baseMode, ProgramData::ButtonBound_Mode().xy, WHITE);
+                data.DrawModeIcon(data.basicMode_object, ProgramData::ButtonBound_Mode().xy, WHITE);
                 data.DrawGateIcon16x(data.gatePick, ProgramData::ButtonBound_Gate().xy, WHITE);
                 DrawTextureIV(data.GetClipboardIcon(), ProgramData::ButtonBound_Clipboard().xy, data.IsClipboardValid() ? WHITE : ColorAlpha(WHITE, 0.25f));
             }

@@ -178,6 +178,8 @@ struct IRect
         w = maxx - minx;
         h = maxy - miny;
     }
+
+    static constexpr IRect Pixel() { return IRect(0,0,1); }
 };
 
 constexpr IRect operator+(IRect a, Width b) { return IRect(a.x, a.y, a.w + b.x, a.h); }
@@ -201,6 +203,38 @@ constexpr IRect ExpandIRect(IRect rec, int outline = 1)
 inline constexpr IRect ShrinkIRect(IRect rec, int outline = 1)
 {
     return ExpandIRect(rec, -outline);
+}
+
+/*
+*  2 | 1
+* ---+---
+*  3 | 4
+*/
+constexpr struct IRect IRectQuadrant(IRect rec, uint8_t q)
+{
+    _ASSERT_EXPR(q <= 4, L"Quadrant cannot be greater than 4");
+    switch (q)
+    {
+    case 1: return IRect(rec.xy + Width(rec.w / 2),  rec.wh / 2);
+    case 2: return IRect(rec.xy,                     rec.wh / 2);
+    case 3: return IRect(rec.xy + Height(rec.h / 2), rec.wh / 2);
+    case 4: return IRect(rec.xy + rec.wh / 2,        rec.wh / 2);
+    }
+}
+
+/*
+*  2 | 1
+* ---+---
+*  3 | 4
+*/
+constexpr struct QuadSet { IRect q1, q2, q3, q4; } SubdivideIRect(IRect rec)
+{
+    return {
+        { rec.xy + Width(rec.w / 2),    rec.wh / 2 },
+        { rec.xy,                       rec.wh / 2 },
+        { rec.xy + Height(rec.h / 2),   rec.wh / 2 },
+        { rec.xy + rec.wh / 2,          rec.wh / 2 }
+    };
 }
 
 bool InBoundingBox(IRect bounds, IVec2 pt);

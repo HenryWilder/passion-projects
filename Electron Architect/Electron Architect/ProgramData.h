@@ -41,8 +41,8 @@ public:
     int windowWidth;
     int windowHeight;
 
-    ModeHandler* mode;
-    Tool* baseMode;
+    ModeHandler* currentMode_object;
+    Tool* basicMode_object;
 
     IVec2 cursorUIPos = IVec2::Zero();
     IVec2 cursorPos = IVec2::Zero();
@@ -71,23 +71,25 @@ public:
 public:
 
     static Texture2D GetClipboardIcon();
-    static void DrawModeIcon(Mode mode, IVec2 pos, Color tint);
+    static void DrawModeIcon(Mode currentMode_object, IVec2 pos, Color tint);
     static void DrawGateIcon16x(Gate gate, IVec2 pos, Color tint);
     static void DrawGateIcon32x(Gate gate, IVec2 pos, Color tint);
 
-    static bool ModeIsMenu(Mode mode);
+    static bool ModeIsMenu(Mode currentMode_object);
     inline bool ModeIsMenu() const;
-    static bool ModeIsOverlay(Mode mode);
+    static bool ModeIsOverlay(Mode currentMode_object);
     inline bool ModeIsOverlay() const;
     bool ModeIsBasic() const;
 
+    Mode GetCurrentMode(); // Mode enum of currentMode_object
+    Mode GetBaseMode(); // Mode enum of basicMode_object
     void SetMode(Mode newMode);
     void SetGate(Gate newGate);
 
     inline void ClearOverlayMode();
 
-    static const char* GetModeTooltipName(Mode mode);
-    static const char* GetModeTooltipDescription(Mode mode);
+    static const char* GetModeTooltipName(Mode currentMode_object);
+    static const char* GetModeTooltipDescription(Mode currentMode_object);
     static const char* GetGateTooltipName(Gate gate);
     static const char* GetGateTooltipDescription(Gate gate);
 
