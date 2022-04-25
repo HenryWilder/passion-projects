@@ -24,7 +24,7 @@ void Overlay_Paste::Update()
     {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             NodeWorld::Get().SpawnBlueprint(data.clipboard, data.cursorPos);
-        data.ClearSelection();
+        data.BaseModeAs<Tool_Edit>()->ClearSelection();
         data.ClearOverlayMode();
     }
 }

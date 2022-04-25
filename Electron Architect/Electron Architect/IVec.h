@@ -58,10 +58,10 @@ struct IVec2
     constexpr IVec2& operator*=(Height b) { y *= b.y; return *this; }
     constexpr IVec2& operator/=(Height b) { y /= b.y; return *this; }
 
-    static constexpr IVec2 One()   { return IVec2(1);   }
     static constexpr IVec2 Zero()  { return IVec2(0);   }
     static constexpr IVec2 UnitX() { return IVec2(1,0); }
     static constexpr IVec2 UnitY() { return IVec2(0,1); }
+    static constexpr IVec2 One()   { return IVec2(1);   }
 
     constexpr operator Vector2() { return Vector2{ (float)x, (float)y }; }
 };
@@ -181,6 +181,7 @@ struct IRect
         h = maxy - miny;
     }
 
+    static constexpr IRect Zero()  { return IRect(0); }
     static constexpr IRect Pixel() { return IRect(0,0,1); }
 };
 

@@ -30,6 +30,18 @@ bool Tool_Edit::IsSelectionRectValid() const
     return !selectionWIP && !(selectionRec.w == 0 || selectionRec.h == 0);
 }
 
+void Tool_Edit::ClearSelection()
+{
+    data.selection.clear();
+    selectionRec = IRect(0);
+}
+
+void Tool_Edit::TryGrouping()
+{
+    if (IsSelectionRectValid())
+        MakeGroupFromSelection();
+}
+
 void Tool_Edit::Update()
 {
     if (data.b_cursorMoved)
@@ -183,7 +195,7 @@ void Tool_Edit::Update()
             }
         }
         if (draggingGroup)
-            data.ClearSelection();
+            ClearSelection();
         nodeBeingDragged = nullptr;
         selectionWIP = false;
         draggingGroup = false;

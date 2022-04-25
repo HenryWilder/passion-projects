@@ -424,18 +424,10 @@ bool ProgramData::SelectionExists() const
     return !selection.empty();
 }
 
-// todo: move to Edit mode definition
-void ProgramData::ClearSelection()
-{
-    selection.clear();
-    if (currentMode_object == Mode::EDIT)
-        Edit_SelectionRec() = IRect(0);
-}
-
 void ProgramData::DestroySelection()
 {
     NodeWorld::Get().DestroyNodes(selection);
-    ClearSelection();
+    CurrentModeAs<Tool_Edit>()->ClearSelection();
 }
 
 void ProgramData::CheckHotkeys()
@@ -473,15 +465,15 @@ void ProgramData::CheckHotkeys()
             SetMode(Mode::PASTE);
 
         // Group
-        if (IsKeyPressed(KEY_G) && IsSelectionRectValid())
-            MakeGroupFromSelection();
+        if (IsKeyPressed(KEY_G))
+            CurrentModeAs<Tool_Edit>()->TryGrouping();
 
         // Save
         if (IsKeyPressed(KEY_S))
         {
             // Save blueprint
             if (GetCurrentMode() == Mode::PASTE)
-                SaveBlueprint();
+                SaveClipboardBlueprint();
 
             // Save file
             else NodeWorld::Get().Save("save.cg");
@@ -508,16 +500,11 @@ void ProgramData::CheckHotkeys()
     }
 
     // Gate hotkeys
-    if (ModeIsBasic() || GetCurrentMode() == Mode::GATE)
+    if (ModeIsBasic())
     {
-        if      (IsKeyPressed(KEY_ONE))   SetGate(Gate::OR);
-        else if (IsKeyPressed(KEY_TWO))   SetGate(Gate::AND);
-        else if (IsKeyPressed(KEY_THREE)) SetGate(Gate::NOR);
-        else if (IsKeyPressed(KEY_FOUR))  SetGate(Gate::XOR);
-        else if (IsKeyPressed(KEY_FIVE))  SetGate(Gate::RESISTOR);
-        else if (IsKeyPressed(KEY_SIX))   SetGate(Gate::CAPACITOR);
-        else if (IsKeyPressed(KEY_SEVEN)) SetGate(Gate::LED);
-        else if (IsKeyPressed(KEY_EIGHT)) SetGate(Gate::DELAY);
+        int gate = GetCharPressed() - '0';
+        if (0 <= gate && gate <= 9)
+            SetGate(g_GateOrder[gate]);
     }
 
     // Mode hotkeys
@@ -538,7 +525,7 @@ void ProgramData::CheckHotkeys()
 
         // Clear selection
         else if (SelectionExists())
-            ClearSelection();
+            CurrentModeAs<Tool_Edit>()->ClearSelection();
 
         // Clear clipboard
         else if (IsClipboardValid())
@@ -678,6 +665,12 @@ void ProgramData::DrawTooltipAtCursor(const char* text, Color color)
     }
     else
         wat_do();
+}
+
+void ProgramData::SaveClipboardBlueprint()
+{
+    SetMode(Mode::BP_ICON);
+    CurrentModeAs<Menu_Icon>()->SaveBlueprint();
 }
 
 Texture2D ProgramData::clipboardIcon;

@@ -22,18 +22,18 @@ void Overlay_Button::Update()
 {
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        IRect rec = ProgramData::dropdownBounds[data.Button_DropdownActive()];
+        IRect rec = dropdownBounds[dropdownActive];
         if (data.CursorInUIBounds(rec))
         {
             rec.h = 16;
 
-            switch (data.Button_DropdownActive())
+            switch (dropdownActive)
             {
             case 0: // Mode
             {
-                for (Mode m : ProgramData::dropdownModeOrder)
+                for (Mode m : dropdownModeOrder)
                 {
-                    if (m == data.basicMode_object)
+                    if (m == data.GetBaseMode())
                         continue;
 
                     if (data.CursorInUIBounds(rec))
@@ -49,7 +49,7 @@ void Overlay_Button::Update()
 
             case 1: // Gate
             {
-                for (Gate g : ProgramData::dropdownGateOrder)
+                for (Gate g : dropdownGateOrder)
                 {
                     if (g == data.gatePick)
                         continue;
@@ -103,17 +103,17 @@ void Overlay_Button::Draw()
 
     data.SetMode2D(false);
 
-    IRect rec = data.dropdownBounds[data.Button_DropdownActive()];
+    IRect rec = dropdownBounds[dropdownActive];
     DrawRectangleIRect(rec, SPACEGRAY);
     rec.h = 16;
 
-    switch (data.Button_DropdownActive())
+    switch (dropdownActive)
     {
     case 0: // Mode
     {
-        for (Mode m : ProgramData::dropdownModeOrder)
+        for (Mode m : dropdownModeOrder)
         {
-            if (m == data.basicMode_object)
+            if (m == data.GetBaseMode())
                 continue;
             Color color;
             if (InBoundingBox(rec, data.cursorUIPos))
@@ -131,7 +131,7 @@ void Overlay_Button::Draw()
 
     case 1: // Gate
     {
-        for (Gate g : ProgramData::dropdownGateOrder)
+        for (Gate g : dropdownGateOrder)
         {
             if (g == data.gatePick)
                 continue;

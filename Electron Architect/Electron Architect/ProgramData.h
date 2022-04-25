@@ -123,7 +123,6 @@ public:
     bool IsClipboardValid() const;
     void ClearClipboard();
     bool SelectionExists() const;
-    void ClearSelection();
     void DestroySelection();
 
     void CheckHotkeys();
@@ -183,6 +182,8 @@ public:
     void SetMode2D(bool value);
 
     void DrawTooltipAtCursor(const char* text, Color color);
+
+    void SaveClipboardBlueprint();
 };
 extern Texture2D clipboardIcon;
 extern Texture2D modeIcons;

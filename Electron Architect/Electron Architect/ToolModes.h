@@ -95,21 +95,24 @@ public:
 
 struct Tool_Edit : public Tool
 {
-    IVec2 fallbackPos;
-    bool selectionWIP;
-    IVec2 selectionStart;
-    IRect selectionRec;
-    bool draggingGroup;
-    Group* hoveredGroup;
-    Node* hoveringMergable;
-    Node* nodeBeingDragged;
-    Wire* wireBeingDragged;
+    IVec2 fallbackPos{0};
+    bool selectionWIP = false;
+    IVec2 selectionStart{0};
+    IRect selectionRec{0};
+    bool draggingGroup = false;
+    Group* hoveredGroup = nullptr;
+    Node* hoveringMergable = nullptr;
+    Node* nodeBeingDragged = nullptr;
+    Wire* wireBeingDragged = nullptr;
 
     Tool_Edit();
     ~Tool_Edit();
 
     void MakeGroupFromSelection();
     bool IsSelectionRectValid() const;
+    void ClearSelection();
+
+    void TryGrouping();
 
     void Update() override;
     void Draw() override;
@@ -162,7 +165,7 @@ struct Overlay_Button : public ModeHandler
         IRect(32, 16, 16, 16 * (_countof(Node::g_resistanceBands) - 1)), // Parameter
     };
 
-    int dropdownActive;
+    int dropdownActive; // Set by constructor
 
     Overlay_Button();
     ~Overlay_Button();
@@ -188,8 +191,8 @@ struct Menu_Icon : public ModeHandler
     IRect sheetRec;
     BlueprintIconID_t iconID;
     uint8_t iconCount;
-    int draggingIcon; // -1 for none/not dragging
-    BlueprintIcon* object;
+    int draggingIcon = -1; // -1 for none/not dragging
+    BlueprintIcon* object; // Set by constructor
 
     Menu_Icon();
     ~Menu_Icon();
@@ -204,7 +207,7 @@ struct Menu_Icon : public ModeHandler
 // todo
 struct Menu_Select : public ModeHandler
 {
-    int hovering; // -1 for none
+    int hovering = -1; // -1 for none
 
     Menu_Select();
     ~Menu_Select();

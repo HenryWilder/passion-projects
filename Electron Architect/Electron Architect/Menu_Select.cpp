@@ -11,7 +11,7 @@
 
 Menu_Select::Menu_Select()
 {
-    hovering = -1;
+    // Start of mode
 }
 Menu_Select::~Menu_Select()
 {

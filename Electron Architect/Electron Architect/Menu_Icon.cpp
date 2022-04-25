@@ -12,7 +12,6 @@
 Menu_Icon::Menu_Icon()
 {
     object = new BlueprintIcon;
-    draggingIcon = -1;
 }
 Menu_Icon::~Menu_Icon()
 {
@@ -115,7 +114,6 @@ void Menu_Icon::Draw()
 
 void Menu_Icon::SaveBlueprint()
 {
-    SetMode(Mode::BP_ICON); // todo: What is this here for??
     object = new BlueprintIcon;
     pos = data.cursorPos - IVec2(BlueprintIcon::g_size / 2, BlueprintIcon::g_size / 2);
     sheetRec.xy = pos + IVec2(BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2);
