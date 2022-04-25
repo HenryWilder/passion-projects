@@ -5,7 +5,7 @@
 
 constexpr int g_gridSize = 8;
 
-enum class Gate : char;
+#include "Gate_Enum.h"
 class Node;
 struct Wire;
 class Blueprint;
@@ -119,8 +119,6 @@ public:
     void UpdateCamera();
 
     void CopySelectionToClipboard();
-
-    void SaveBlueprint();
 
     bool IsClipboardValid() const;
     void ClearClipboard();

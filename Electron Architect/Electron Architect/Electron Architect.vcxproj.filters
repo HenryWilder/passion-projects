@@ -130,5 +130,8 @@
     <ClInclude Include="ToolModes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Gate_Enum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

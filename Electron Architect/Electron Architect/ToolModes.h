@@ -1,7 +1,7 @@
 #pragma once
 #include "IVec.h"
 
-enum class Gate : char;
+#include "Gate_Enum.h"
 class Node;
 
 enum class ElbowConfig : uint8_t;
@@ -146,15 +146,15 @@ struct Overlay_Button : public ModeHandler
         Mode::INTERACT,
     };
     static constexpr Gate dropdownGateOrder[] = {
-        (Gate)'|',
-        (Gate)'&',
-        (Gate)'!',
-        (Gate)'^',
+        g_GateOrder[0],
+        g_GateOrder[1],
+        g_GateOrder[2],
+        g_GateOrder[3],
 
-        (Gate)'~',
-        (Gate)'=',
-        (Gate)'@',
-        (Gate)';',
+        g_GateOrder[4],
+        g_GateOrder[5],
+        g_GateOrder[6],
+        g_GateOrder[7],
     };
     static constexpr IRect dropdownBounds[] = {
         IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
@@ -193,6 +193,8 @@ struct Menu_Icon : public ModeHandler
 
     Menu_Icon();
     ~Menu_Icon();
+
+    void SaveBlueprint();
 
     void Update() override;
     void Draw() override;

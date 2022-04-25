@@ -8,6 +8,7 @@ namespace
 {
 	extern std::list<void*> g_RedoableMemory;
 }
+
 template<class T>
 class RedoReservation
 {

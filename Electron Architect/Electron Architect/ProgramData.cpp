@@ -408,16 +408,6 @@ void ProgramData::CopySelectionToClipboard()
         clipboard = new Blueprint(selection);
 }
 
-// todo: move to Menu_Icon mode definition
-void ProgramData::SaveBlueprint()
-{
-    SetMode(Mode::BP_ICON);
-    BPIcon_Object() = new BlueprintIcon;
-    BPIcon_Pos() = cursorPos - IVec2(BlueprintIcon::g_size / 2, BlueprintIcon::g_size / 2);
-    BPIcon_SheetRec().xy = BPIcon_Pos() + IVec2(BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2);
-    BPIcon_SheetRec().wh = BlueprintIcon::GetSheetSize_Px();
-}
-
 bool ProgramData::IsClipboardValid() const
 {
     return !!clipboard;

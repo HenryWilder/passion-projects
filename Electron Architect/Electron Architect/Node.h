@@ -3,18 +3,7 @@
 
 struct Wire;
 
-enum class Gate : char
-{
-    OR,
-    AND,
-    NOR,
-    XOR,
-
-    RESISTOR,
-    CAPACITOR,
-    LED,
-    DELAY,
-};
+#include "Gate_Enum.h"
 constexpr char GateToChar(Gate gate)
 {
     switch (gate)

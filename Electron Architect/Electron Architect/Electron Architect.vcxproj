@@ -226,6 +226,7 @@ copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
   <ItemGroup>
     <ClInclude Include="Blueprint.h" />
     <ClInclude Include="Component.h" />
+    <ClInclude Include="Gate_Enum.h" />
     <ClInclude Include="Group.h" />
     <ClInclude Include="HUtility.h" />
     <ClInclude Include="IVec.h" />
