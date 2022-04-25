@@ -82,8 +82,8 @@ public:
     bool ModeIsOverlay() const;
     bool ModeIsBasic() const;
 
-    Mode GetCurrentMode(); // Mode enum of currentMode_object
-    Mode GetBaseMode(); // Mode enum of basicMode_object
+    Mode GetCurrentMode() const; // Mode enum of currentMode_object
+    Mode GetBaseMode() const; // Mode enum of basicMode_object
 
     template<class T> requires std::is_base_of_v<ModeHandler, T>
     T* CurrentModeAs()
@@ -119,10 +119,6 @@ public:
     void UpdateCamera();
 
     void CopySelectionToClipboard();
-
-    void MakeGroupFromSelection();
-
-    bool IsSelectionRectValid() const;
 
     void SaveBlueprint();
 

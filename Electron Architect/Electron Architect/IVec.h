@@ -146,6 +146,8 @@ struct IRect
         : x(v.x), y(v.y), w(w), h(h) {}
     constexpr IRect(IVec2 v, IVec2 e)
         : x(v.x), y(v.y), w(e.x), h(e.y) {}
+    constexpr IRect(std::pair<int, int> minmaxX, std::pair<int, int> minmaxY)
+        : x(minmaxX.first), y(minmaxY.first), w(minmaxX.second), h(minmaxY.second) {}
     constexpr IRect(Rectangle r)
         : x((int)r.x), y((int)r.y), w((int)r.width), h((int)r.height) {}
 

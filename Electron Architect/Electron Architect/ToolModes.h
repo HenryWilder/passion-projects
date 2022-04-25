@@ -108,6 +108,9 @@ struct Tool_Edit : public Tool
     Tool_Edit();
     ~Tool_Edit();
 
+    void MakeGroupFromSelection();
+    bool IsSelectionRectValid() const;
+
     void Update() override;
     void Draw() override;
     constexpr Mode GetMode() override { return Mode::EDIT; }

@@ -137,12 +137,12 @@ bool ProgramData::ModeIsBasic() const
     return modeIsBaseMode;
 }
 
-Mode ProgramData::GetCurrentMode()
+Mode ProgramData::GetCurrentMode() const
 {
     return currentMode_object->GetMode();
 }
 
-Mode ProgramData::GetBaseMode()
+Mode ProgramData::GetBaseMode() const
 {
     return basicMode_object->GetMode();
 }
@@ -406,21 +406,6 @@ void ProgramData::CopySelectionToClipboard()
         clipboard = nullptr;
     else
         clipboard = new Blueprint(selection);
-}
-
-// todo: move to Edit mode definition
-void ProgramData::MakeGroupFromSelection()
-{
-    NodeWorld::Get().CreateGroup(Edit_SelectionRec());
-    Edit_SelectionRec() = IRect(0);
-    selection.clear();
-}
-
-// todo: move to Edit mode definition
-bool ProgramData::IsSelectionRectValid() const
-{
-    _ASSERT_EXPR(GetCurrentMode() == Mode::EDIT, L"Cannot access selection rect when not in edit mode");
-    return !Edit_SelectionWIP() && !(Edit_SelectionRec().w == 0 || Edit_SelectionRec().h == 0);
 }
 
 // todo: move to Menu_Icon mode definition
