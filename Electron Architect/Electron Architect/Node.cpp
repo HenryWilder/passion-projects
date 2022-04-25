@@ -403,3 +403,39 @@ bool Node::IsValidConnection(std::deque<Wire*>::const_iterator it) const
 {
     return it != m_wires.end();
 }
+
+char GateToChar(Gate gate)
+{
+    switch (gate)
+    {
+        ASSERT_SPECIALIZATION;
+
+    case Gate::OR:          return '|';
+    case Gate::AND:         return '&';
+    case Gate::NOR:         return '!';
+    case Gate::XOR:         return '^';
+
+    case Gate::RESISTOR:    return '~';
+    case Gate::CAPACITOR:   return '=';
+    case Gate::LED:         return '@';
+    case Gate::DELAY:       return ';';
+    }
+}
+
+Gate CharToGate(char symbol)
+{
+    switch (symbol)
+    {
+        ASSERT_SPECIALIZATION;
+
+    case '|': return Gate::OR;
+    case '&': return Gate::AND;
+    case '!': return Gate::NOR;
+    case '^': return Gate::XOR;
+
+    case '~': return Gate::RESISTOR;
+    case '=': return Gate::CAPACITOR;
+    case '@': return Gate::LED;
+    case ';': return Gate::DELAY;
+    }
+}

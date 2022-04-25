@@ -3,16 +3,16 @@
 #include <raylib.h>
 #include <type_traits>
 
-constexpr int g_gridSize = 8;
-
 #include "Gate_Enum.h"
 class Node;
 struct Wire;
-class Blueprint;
+struct Blueprint;
 
 enum class Mode;
 struct ModeHandler;
 struct Tool;
+
+#define g_gridSize 8
 
 struct ProgramData
 {
@@ -26,11 +26,11 @@ struct ProgramData
         IRect(48, 0, 16), // Blueprints
         IRect(64, 0, 16), // Clipboard
     };
-    static constexpr IRect ButtonBound_Mode() { return buttonBounds[0]; }
-    static constexpr IRect ButtonBound_Gate() { return buttonBounds[1]; }
-    static constexpr IRect ButtonBound_Parameter() { return buttonBounds[2]; }
+    static constexpr IRect ButtonBound_Mode()       { return buttonBounds[0]; }
+    static constexpr IRect ButtonBound_Gate()       { return buttonBounds[1]; }
+    static constexpr IRect ButtonBound_Parameter()  { return buttonBounds[2]; }
     static constexpr IRect ButtonBound_Blueprints() { return buttonBounds[3]; }
-    static constexpr IRect ButtonBound_Clipboard() { return buttonBounds[4]; }
+    static constexpr IRect ButtonBound_Clipboard()  { return buttonBounds[4]; }
 
 private:
     static Texture2D clipboardIcon;

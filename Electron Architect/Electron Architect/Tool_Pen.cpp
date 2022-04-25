@@ -33,7 +33,7 @@ void Tool_Pen::UpdateBulkNodes()
 {
     _ASSERT_EXPR(bulkNodesBeingMade, L"Cannot update nodes that don't exist");
 
-    size_t dist = IntGridDistance(dragStart, data.cursorPos);
+    int dist = IntGridDistance(dragStart, data.cursorPos);
 
     if (dist == 0)
         return;
