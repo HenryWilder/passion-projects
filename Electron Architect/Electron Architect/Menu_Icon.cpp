@@ -21,96 +21,96 @@ Menu_Icon::~Menu_Icon()
 
 void Menu_Icon::Update()
 {
-    if (data.b_cursorMoved && data.BPIcon_DraggingIcon() == -1)
+    if (data.b_cursorMoved && draggingIcon == -1)
     {
-        data.BPIcon_IconID() = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.BPIcon_SheetRec().xy, data.cursorUIPos));
+        iconID = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(sheetRec.xy, data.cursorUIPos));
     }
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
-        if (data.CursorInUIBounds(data.BPIcon_SheetRec()) && data.BPIcon_IconCount() < 4 && !!data.BPIcon_IconID())
+        if (data.CursorInUIBounds(sheetRec) && iconCount < 4 && !!iconID)
         {
-            data.cursorUIPos = data.BPIcon_Pos();
+            data.cursorUIPos = pos;
             SetMousePosition(data.cursorUIPos.x + BlueprintIcon::g_size / 2, data.cursorUIPos.y + BlueprintIcon::g_size / 2);
-            data.BPIcon_Object()->combo[data.BPIcon_IconCount()] = { data.BPIcon_IconID(), 0,0 };
-            data.BPIcon_DraggingIcon() = data.BPIcon_IconCount();
-            data.BPIcon_IconCount()++;
+            object->combo[iconCount] = { iconID, 0,0 };
+            draggingIcon = iconCount;
+            iconCount++;
         }
-        else if (data.CursorInUIBounds(IRect(data.BPIcon_Pos(), BlueprintIcon::g_size * 2)))
+        else if (data.CursorInUIBounds(IRect(pos, BlueprintIcon::g_size * 2)))
         {
-            data.BPIcon_DraggingIcon() = -1;
-            for (int i = 0; i < data.BPIcon_IconCount(); ++i)
+            draggingIcon = -1;
+            for (int i = 0; i < iconCount; ++i)
             {
-                if (data.BPIcon_Object()->combo[i].id == NULL)
+                if (object->combo[i].id == NULL)
                     continue;
 
                 IRect bounds(
-                    data.BPIcon_Pos().x,
-                    data.BPIcon_Pos().y,
+                    pos.x,
+                    pos.y,
                     BlueprintIcon::g_size,
                     BlueprintIcon::g_size
                 );
-                bounds.xy = bounds.xy + data.BPIcon_Object()->combo[i].Pos();
+                bounds.xy = bounds.xy + object->combo[i].Pos();
                 if (data.CursorInUIBounds(bounds))
                 {
-                    data.BPIcon_DraggingIcon() = i;
-                    data.BPIcon_IconID() = data.BPIcon_Object()->combo[i].id;
+                    draggingIcon = i;
+                    iconID = object->combo[i].id;
                     break;
                 }
             }
         }
     }
-    if ((IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) && data.BPIcon_DraggingIcon() != -1)
+    if ((IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) && draggingIcon != -1)
     {
         if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
         {
-            if (data.BPIcon_DraggingIcon() < 3)
+            if (draggingIcon < 3)
             {
                 memcpy(
-                    data.BPIcon_Object()->combo + data.BPIcon_DraggingIcon(),
-                    data.BPIcon_Object()->combo + data.BPIcon_DraggingIcon() + 1,
-                    sizeof(IconPos) * (4ull - (size_t)data.BPIcon_DraggingIcon()));
+                    object->combo + draggingIcon,
+                    object->combo + draggingIcon + 1,
+                    sizeof(IconPos) * (4ull - (size_t)draggingIcon));
             }
-            data.BPIcon_Object()->combo[3] = { NULL, 0,0 };
-            data.BPIcon_IconCount()--;
+            object->combo[3] = { NULL, 0,0 };
+            iconCount--;
         }
-        data.BPIcon_DraggingIcon() = -1;
+        draggingIcon = -1;
     }
-    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.BPIcon_IconID())
+    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!iconID)
     {
         constexpr IVec2 centerOffset = IVec2(BlueprintIcon::g_size / 2);
-        IVec2 colRow = (data.cursorUIPos - data.BPIcon_Pos() - centerOffset) / centerOffset;
+        IVec2 colRow = (data.cursorUIPos - pos - centerOffset) / centerOffset;
         colRow.x = std::min(std::max(colRow.x, 0), 2);
         colRow.y = std::min(std::max(colRow.y, 0), 2);
-        data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].x = colRow.x;
-        data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].y = colRow.y;
+        object->combo[draggingIcon].x = colRow.x;
+        object->combo[draggingIcon].y = colRow.y;
     }
 }
 void Menu_Icon::Draw()
 {
-    _ASSERT_EXPR(!!data.BPIcon_Object(), L"Blueprint icon object not initialized");
+    _ASSERT_EXPR(!!object, L"Blueprint icon object not initialized");
     _ASSERT_EXPR(data.IsClipboardValid(), L"Bad entry into Mode::BP_ICON");
 
-    data.BPIcon_Object()->DrawBackground(data.BPIcon_Pos(), SPACEGRAY);
-    data.BPIcon_Object()->Draw(data.BPIcon_Pos(), WHITE);
+    object->DrawBackground(pos, SPACEGRAY);
+    object->Draw(pos, WHITE);
 
     for (size_t i = 0; i < 4; ++i)
     {
         for (int i = 0; i < 4; ++i)
         {
-            if (data.BPIcon_Object()->combo[i].id == NULL)
+            if (object->combo[i].id == NULL)
                 continue;
 
-            IRect bounds(data.BPIcon_Pos(), BlueprintIcon::g_size);
-            bounds.xy = bounds.xy + data.BPIcon_Object()->combo[i].Pos();
+            IRect bounds(pos, BlueprintIcon::g_size);
+            bounds.xy = bounds.xy + object->combo[i].Pos();
             if (data.CursorInUIBounds(bounds))
                 DrawRectangleIRect(bounds, ColorAlpha(WIPBLUE, 0.25f));
         }
     }
-    if (data.BPIcon_DraggingIcon() != -1)
-        BlueprintIcon::DrawBPIcon(data.BPIcon_IconID(), data.BPIcon_Pos() + data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].Pos(), WIPBLUE);
+    if (draggingIcon != -1)
+        BlueprintIcon::DrawBPIcon(iconID, pos + object->combo[draggingIcon].Pos(), WIPBLUE);
 
-    BlueprintIcon::DrawSheet(data.BPIcon_SheetRec().xy, SPACEGRAY, WHITE);
+    BlueprintIcon::DrawSheet(sheetRec.xy, SPACEGRAY, WHITE);
 }
 
 void Menu_Icon::SaveBlueprint()
