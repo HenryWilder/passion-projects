@@ -1,15 +1,29 @@
 #pragma once
 #include "IVec.h"
-
-struct Wire;
+#include <span>
 
 #include "Gate_Enum.h"
 char GateToChar(Gate gate);
 Gate CharToGate(char symbol);
 
+class Node;
+struct Wire;
+
+namespace
+{
+    using NodeInstance = Node*;
+    using WireInstance = Wire*;
+}
+
 class Node
 {
 public:
+    using WireContainer = std::vector<WireInstance>;
+    using WireIter  = typename WireContainer::iterator;
+    using WireCIter = typename WireContainer::const_iterator;
+    using WireRef   = typename WireContainer::reference;
+    using WireCRef  = typename WireContainer::const_reference;
+
     IVec2 GetPosition() const;
     // Moves the node without updating its collision
     void SetPosition_Temporary(IVec2 position);
@@ -39,7 +53,7 @@ public:
 
     bool GetState() const;
 
-    std::deque<Wire*>::const_iterator FindConnection(Node* other) const;
+    WireCIter FindConnection(NodeInstance other) const;
 
     size_t GetInputCount() const;
     size_t GetOutputCount() const;
@@ -51,8 +65,8 @@ public:
     static void Draw(IVec2 position, Gate gate, Color color);
     void Draw(Color color) const;
 
-    bool WireIsInput(Wire* wire) const;
-    bool WireIsOutput(Wire* wire) const;
+    bool WireIsInput(WireInstance wire) const;
+    bool WireIsOutput(WireInstance wire) const;
 
     // Only NodeWorld can play with a node's wires/state
     friend class NodeWorld;
@@ -60,26 +74,26 @@ public:
 
 private: // Helpers usable only by NodeWorld
 
-    std::deque<Wire*>::iterator FindWireIter_Expected(Wire* wire);
-    std::deque<Wire*>::iterator FindWireIter(Wire* wire);
+    WireCIter FindWireIter_Expected(WireInstance wire);
+    WireCIter FindWireIter(WireInstance wire);
 
     void SetState(bool state);
 
-    void AddWireInput(Wire* input);
-    void AddWireOutput(Wire* output);
+    void AddWireInput(WireInstance input);
+    void AddWireOutput(WireInstance output);
 
     // Expects the wire to exist; throws a debug exception if it is not found.
-    void RemoveWire_Expected(Wire* wire);
-    void RemoveWire(Wire* wire);
+    void RemoveWire_Expected(WireInstance wire);
+    void RemoveWire(WireInstance wire);
 
     // Expects the wire to exist; throws a debug exception if it is not found.
-    void RemoveConnection_Expected(Node* node);
-    void RemoveConnection(Node* node);
+    void RemoveConnection_Expected(NodeInstance node);
+    void RemoveConnection(NodeInstance node);
 
     // Converts an existing wire
-    void MakeWireInput(Wire* wire);
+    void MakeWireInput(WireInstance wire);
     // Converts an existing wire
-    void MakeWireOutput(Wire* wire);
+    void MakeWireOutput(WireInstance wire);
 
 private: // Accessible by NodeWorld
     Node() = default;
@@ -136,16 +150,16 @@ private:
 
     } m_ntd;
     // Keep this partitioned by inputs vs outputs
-    std::deque<Wire*> m_wires;
+    WireContainer m_wires;
 
 private:
-    Range<std::deque<Wire*>::iterator> GetInputs();
-    Range<std::deque<Wire*>::iterator> GetOutputs();
+    std::span<WireRef> GetInputs();
+    std::span<WireRef> GetOutputs();
 
 public:
-    const std::deque<Wire*>& GetWires() const;
-    Range<std::deque<Wire*>::const_iterator> GetInputs() const;
-    Range<std::deque<Wire*>::const_iterator> GetOutputs() const;
+    const WireContainer& GetWires() const;
+    std::span<WireCRef> GetInputs() const;
+    std::span<WireCRef> GetOutputs() const;
 
-    bool IsValidConnection(std::deque<Wire*>::const_iterator it) const;
+    bool IsValidConnection(WireCIter it) const;
 };

@@ -42,6 +42,21 @@ ProgramData::~ProgramData()
     CloseWindow();
 }
 
+inline constexpr IRect ProgramData::ButtonBounds(int index)
+{
+    return IRect(16 * index, 0, 16);
+}
+inline constexpr IRect ProgramData::ButtonBounds(ButtonID index)
+{
+    return ButtonBounds((std::underlying_type_t<ButtonID>)index);
+}
+
+inline constexpr IRect ProgramData::ButtonBound_Mode()       { return buttonBounds[0]; }
+inline constexpr IRect ProgramData::ButtonBound_Gate()       { return buttonBounds[1]; }
+inline constexpr IRect ProgramData::ButtonBound_Parameter()  { return buttonBounds[2]; }
+inline constexpr IRect ProgramData::ButtonBound_Blueprints() { return buttonBounds[3]; }
+inline constexpr IRect ProgramData::ButtonBound_Clipboard()  { return buttonBounds[4]; }
+
 Texture2D ProgramData::GetClipboardIcon()
 {
     return clipboardIcon;

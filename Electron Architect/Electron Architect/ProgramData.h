@@ -14,23 +14,34 @@ struct Tool;
 
 #define g_gridSize 8
 
+enum class ButtonID : uint8_t
+{
+    Mode,
+    Gate,
+    Parameter,
+    Blueprints,
+    Clipboard
+};
+
 struct ProgramData
 {
     ProgramData(int windowWidth, int windowHeight);
     ~ProgramData();
 
     static constexpr IRect buttonBounds[] = {
-        IRect(0, 0, 16), // Mode
+        IRect( 0, 0, 16), // Mode
         IRect(16, 0, 16), // Gate
         IRect(32, 0, 16), // Parameter
         IRect(48, 0, 16), // Blueprints
         IRect(64, 0, 16), // Clipboard
     };
-    static constexpr IRect ButtonBound_Mode()       { return buttonBounds[0]; }
-    static constexpr IRect ButtonBound_Gate()       { return buttonBounds[1]; }
-    static constexpr IRect ButtonBound_Parameter()  { return buttonBounds[2]; }
-    static constexpr IRect ButtonBound_Blueprints() { return buttonBounds[3]; }
-    static constexpr IRect ButtonBound_Clipboard()  { return buttonBounds[4]; }
+    static constexpr IRect ButtonBounds(int index);
+    static constexpr IRect ButtonBounds(ButtonID index);
+    static constexpr IRect ButtonBound_Mode();
+    static constexpr IRect ButtonBound_Gate();
+    static constexpr IRect ButtonBound_Parameter();
+    static constexpr IRect ButtonBound_Blueprints();
+    static constexpr IRect ButtonBound_Clipboard();
 
 private:
     static Texture2D clipboardIcon;

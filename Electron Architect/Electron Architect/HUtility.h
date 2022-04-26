@@ -3,8 +3,9 @@
 #include <unordered_map>
 #include <vector>
 #include <queue>
-#include <algorithm>
-#include <limits.h>
+#include <algorithm>    // Standard functions
+#include <limits.h>     // Special values
+#include <type_traits>  // Template metaprogramming
 
 // Safe assertions for cases where you need to know, but exiting the program without some cleaning can be dangerous
 #if _DEBUG
@@ -38,58 +39,40 @@ constexpr int g_gridSize = 8;
 
 #pragma endregion
 
-template <class Iter>
-class Range {
-    Iter first;
-    Iter last;
-
-public:
-    Range(Iter first, Iter last) : first(first), last(last) {}
-
-    Iter begin()
-    {
-        return first;
-    }
-    Iter end()
-    {
-        return last;
-    }
+template<typename C, typename T>
+concept Container = requires(C x, T e)
+{
+    { std::find(x.begin(), x.end(), e) } -> std::convertible_to<typename T::const_iterator>;
 };
 
-template <class Container>
-Range<typename Container::iterator> MakeRange(Container& container, size_t begin, size_t end)
+template<typename T, Container<T> C>
+C::iterator Find(C& c, const T& element)
 {
-    return {
-        container.begin() + begin,
-        container.begin() + end
-    };
+    if (auto it = std::find(c.begin(), c.end(), element); it != c.end())
+        return it;
+    return c.end();
 }
-template <class Container>
-Range<typename Container::const_iterator> MakeRange(const Container& container, size_t begin, size_t end)
+template<typename T, Container<T> C>
+C::iterator Find_ExpectExisting(C& c, const T& element)
 {
-    return {
-        container.begin() + begin,
-        container.begin() + end
-    };
+    auto it = std::find(c.begin(), c.end(), element);
+    _ASSERT_EXPR(it != c.end(), L"Expected element to be present");
+    return it;
 }
-
 // Returns true on success
-template<typename Container>
-bool FindAndErase(Container& container, const typename Container::value_type& element)
+template<typename T, Container<T> C>
+bool FindAndErase(C& c, const T& element)
 {
-    if (auto it = std::find(container.begin(), container.end(), element); it != container.end())
-    {
-        container.erase(it);
-        return true;
-    }
-    return false;
+    auto it = Find<C>(c, element);
+    bool found = it != c.end();
+    if (found)
+        c.erase(it);
+    return found;
 }
-template<typename Container>
-void FindAndErase_ExpectExisting(Container& container, const typename Container::value_type& element)
+template<typename T, Container<T> C>
+void FindAndErase_ExpectExisting(C& c, const T& element)
 {
-    auto it = std::find(container.begin(), container.end(), element);
-    _ASSERT_EXPR(it != container.end(), L"Expected element to be present");
-    container.erase(it);
+    c.erase(Find_ExpectExisting<C>(c, element));
 }
 
 bool Between_Inclusive(int x, int a, int b);

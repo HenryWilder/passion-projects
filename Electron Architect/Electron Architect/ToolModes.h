@@ -33,6 +33,7 @@ struct ModeHandler
     virtual void Update() = 0;
     virtual void Draw() = 0;
     constexpr virtual Mode GetMode() = 0;
+    virtual ModeHandler* As(Mode mode) = 0;
 };
 
 // Basic mode/tool
@@ -41,6 +42,7 @@ struct Tool : ModeHandler
     virtual void Update() = 0;
     virtual void Draw() = 0;
     constexpr virtual Mode GetMode() = 0;
+    virtual Tool* As(Mode mode) = 0;
 };
 // Overlay mode (independent of tool)
 struct Overlay : ModeHandler
@@ -48,6 +50,7 @@ struct Overlay : ModeHandler
     virtual void Update() = 0;
     virtual void Draw() = 0;
     constexpr virtual Mode GetMode() = 0;
+    virtual Overlay* As(Mode mode) = 0;
 };
 // Menu mode (independent of tool (but replaces overlay) + overrides normal rendering)
 struct Menu : Overlay
@@ -55,6 +58,7 @@ struct Menu : Overlay
     virtual void Update() = 0;
     virtual void Draw() = 0;
     constexpr virtual Mode GetMode() = 0;
+    virtual Menu* As(Mode mode) = 0;
 };
 
 struct Tool_Pen : public Tool
@@ -94,6 +98,8 @@ public:
     void Draw() override;
 
     constexpr Mode GetMode() override { return Mode::PEN; }
+
+    virtual Tool_Pen* As(Mode mode) { _ASSERT_EXPR(mode == GetMode(), L"Tried to access non-pen member from a pen"); return this; }
 };
 
 struct Tool_Edit : public Tool
