@@ -7,6 +7,8 @@ class Node;
 enum class ElbowConfig : uint8_t;
 struct Wire;
 
+struct Group;
+
 struct ProgramData;
 
 enum class Mode
@@ -27,6 +29,7 @@ enum class Mode
 struct ModeHandler
 {
     static ProgramData& data;
+    ModeHandler(ProgramData& _data);
     virtual void Update() = 0;
     virtual void Draw() = 0;
     constexpr virtual Mode GetMode() = 0;
@@ -142,28 +145,9 @@ struct Tool_Interact : public Tool
 
 struct Overlay_Button : public ModeHandler
 {
-    static constexpr Mode dropdownModeOrder[] = {
-        Mode::PEN,
-        Mode::EDIT,
-        Mode::ERASE,
-        Mode::INTERACT,
-    };
-    static constexpr Gate dropdownGateOrder[] = {
-        g_GateOrder[0],
-        g_GateOrder[1],
-        g_GateOrder[2],
-        g_GateOrder[3],
-
-        g_GateOrder[4],
-        g_GateOrder[5],
-        g_GateOrder[6],
-        g_GateOrder[7],
-    };
-    static constexpr IRect dropdownBounds[] = {
-        IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
-        IRect(16, 16, 16, 16 * (_countof(dropdownGateOrder) - 1)), // Gate
-        IRect(32, 16, 16, 16 * (_countof(Node::g_resistanceBands) - 1)), // Parameter
-    };
+    static const Mode dropdownModeOrder[];
+    static const Gate dropdownGateOrder[];
+    static const IRect dropdownBounds[];
 
     int dropdownActive; // Set by constructor
 

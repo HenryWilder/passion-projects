@@ -9,6 +9,29 @@
 #include "ProgramData.h"
 #include "ToolModes.h"
 
+const Mode Overlay_Button::dropdownModeOrder[] = {
+        Mode::PEN,
+        Mode::EDIT,
+        Mode::ERASE,
+        Mode::INTERACT,
+};
+const Gate Overlay_Button::dropdownGateOrder[] = {
+    Gate::OR,
+    Gate::AND,
+    Gate::NOR,
+    Gate::XOR,
+
+    Gate::RESISTOR,
+    Gate::CAPACITOR,
+    Gate::LED,
+    Gate::DELAY,
+};
+const IRect Overlay_Button::dropdownBounds[] = {
+    IRect(0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
+    IRect(16, 16, 16, 16 * (_countof(dropdownGateOrder) - 1)), // Gate
+    IRect(32, 16, 16, 16 * (_countof(Node::g_resistanceBands) - 1)), // Parameter
+};
+
 Overlay_Button::Overlay_Button()
 {
     dropdownActive = data.cursorUIPos.x / 16;

@@ -210,6 +210,7 @@ copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     <ClCompile Include="Overlay_Paste.cpp" />
     <ClCompile Include="ProgramData.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="ToolModes.cpp" />
     <ClCompile Include="Tool_Edit.cpp" />
     <ClCompile Include="Tool_Erase.cpp" />
     <ClCompile Include="Tool_Interact.cpp" />
