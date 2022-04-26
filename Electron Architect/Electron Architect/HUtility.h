@@ -39,6 +39,9 @@ constexpr int g_gridSize = 8;
 
 #pragma endregion
 
+// Converts the argument to a const wchar_t* string
+#define WSTRINGIFY(arg) L ## #arg
+
 template<typename C, typename T>
 concept Container = requires(C x, T e)
 {

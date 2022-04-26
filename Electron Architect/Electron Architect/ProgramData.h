@@ -12,8 +12,6 @@ enum class Mode;
 struct ModeHandler;
 struct Tool;
 
-#define g_gridSize 8
-
 enum class ButtonID : uint8_t
 {
     Mode,

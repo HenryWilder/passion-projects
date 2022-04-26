@@ -99,7 +99,7 @@ public:
 
     constexpr Mode GetMode() override { return Mode::PEN; }
 
-    virtual Tool_Pen* As(Mode mode) { _ASSERT_EXPR(mode == GetMode(), L"Tried to access non-pen member from a pen"); return this; }
+    virtual Tool_Pen* As(Mode mode);
 };
 
 struct Tool_Edit : public Tool
@@ -126,6 +126,7 @@ struct Tool_Edit : public Tool
     void Update() override;
     void Draw() override;
     constexpr Mode GetMode() override { return Mode::EDIT; }
+    virtual Tool_Edit* As(Mode mode);
 };
 
 struct Tool_Erase : public Tool
@@ -136,6 +137,7 @@ struct Tool_Erase : public Tool
     void Update() override;
     void Draw() override;
     constexpr Mode GetMode() override { return Mode::ERASE; }
+    virtual Tool_Erase* As(Mode mode);
 };
 
 struct Tool_Interact : public Tool
@@ -146,6 +148,7 @@ struct Tool_Interact : public Tool
     void Update() override;
     void Draw() override;
     constexpr Mode GetMode() override { return Mode::INTERACT; }
+    virtual Tool_Interact* As(Mode mode);
 };
 
 
@@ -163,6 +166,7 @@ struct Overlay_Button : public ModeHandler
     void Update() override;
     void Draw() override;
     constexpr Mode GetMode() override { return Mode::BUTTON; }
+    virtual Overlay_Button* As(Mode mode);
 };
 
 struct Overlay_Paste : public ModeHandler
@@ -173,6 +177,7 @@ struct Overlay_Paste : public ModeHandler
     void Update() override;
     void Draw() override;
     constexpr Mode GetMode() override { return Mode::PASTE; }
+    virtual Overlay_Paste* As(Mode mode);
 };
 
 struct Menu_Icon : public ModeHandler
@@ -192,6 +197,7 @@ struct Menu_Icon : public ModeHandler
     void Update() override;
     void Draw() override;
     constexpr Mode GetMode() override { return Mode::BP_ICON; }
+    virtual Menu_Icon* As(Mode mode);
 };
 
 // todo
@@ -205,4 +211,5 @@ struct Menu_Select : public ModeHandler
     void Update() override;
     void Draw() override;
     constexpr Mode GetMode() override { return Mode::BP_SELECT; }
+    virtual Menu_Select* As(Mode mode);
 };
