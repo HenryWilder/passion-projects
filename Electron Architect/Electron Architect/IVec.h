@@ -37,9 +37,6 @@ struct IVec2
 
     int x, y;
 
-    bool operator==(IVec2 b) const;
-    bool operator!=(IVec2 b) const;
-
     constexpr IVec2& operator+=(IVec2 b) { x += b.x; y += b.y; return *this; }
     constexpr IVec2& operator-=(IVec2 b) { x -= b.x; y -= b.y; return *this; }
     constexpr IVec2& operator*=(IVec2 b) { x *= b.x; y *= b.y; return *this; }
@@ -58,10 +55,10 @@ struct IVec2
     constexpr IVec2& operator*=(Height b) { y *= b.y; return *this; }
     constexpr IVec2& operator/=(Height b) { y /= b.y; return *this; }
 
-    static constexpr IVec2 Zero()  { return IVec2(0);   }
-    static constexpr IVec2 UnitX() { return IVec2(1,0); }
-    static constexpr IVec2 UnitY() { return IVec2(0,1); }
-    static constexpr IVec2 One()   { return IVec2(1);   }
+    static consteval IVec2 Zero()  { return IVec2(0);   }
+    static consteval IVec2 UnitX() { return IVec2(1,0); }
+    static consteval IVec2 UnitY() { return IVec2(0,1); }
+    static consteval IVec2 One()   { return IVec2(1);   }
 
     constexpr operator Vector2() { return Vector2{ (float)x, (float)y }; }
 };
@@ -87,6 +84,9 @@ constexpr IVec2 Snap(IVec2 pt, Width grid)  { return IVec2((int)(pt.x / grid.x) 
 constexpr IVec2 Snap(IVec2 pt, Height grid) { return IVec2(pt.x, (int)(pt.y / grid.y) * grid.y); }
 
 bool InBoundingBox(IVec2 p, IVec2 a, IVec2 b);
+
+constexpr bool operator==(IVec2 a, IVec2 b) { return a.x == b.x && a.y == b.y; }
+constexpr bool operator!=(IVec2 a, IVec2 b) { return a.x != b.x || a.y != b.y; }
 
 constexpr IVec2 operator+(IVec2 a, IVec2 b) { return IVec2(a.x + b.x, a.y + b.y); }
 constexpr IVec2 operator-(IVec2 a, IVec2 b) { return IVec2(a.x - b.x, a.y - b.y); }
@@ -129,6 +129,19 @@ void DrawCircleIV(IVec2 origin, float radius, Color color);
 void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint);
 void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color);
 
+struct IRect;
+class IRectIterator
+{
+    IRectIterator(const IRect& rec, IVec2 pt) : rec(rec), pt(pt) {}
+    friend struct IRect;
+    const IRect& rec;
+    IVec2 pt;
+
+public:
+    IVec2 operator*() const;
+    IRectIterator& operator++();
+    bool operator!=(const IRectIterator& other);
+};
 struct IRect
 {
     IRect() = default;
@@ -144,8 +157,10 @@ struct IRect
         : x(v.x), y(v.y), w(w), h(w) {}
     constexpr IRect(IVec2 v, int w, int h)
         : x(v.x), y(v.y), w(w), h(h) {}
-    constexpr IRect(IVec2 v, IVec2 e)
-        : x(v.x), y(v.y), w(e.x), h(e.y) {}
+    constexpr IRect(IVec2 v, IVec2 extents)
+        : x(v.x), y(v.y), w(extents.x), h(extents.y) {}
+    constexpr IRect(IVec2 v, Width w, Height h)
+        : x(v.x), y(v.y), w(w.x), h(h.y) {}
     constexpr IRect(std::pair<int, int> minmaxX, std::pair<int, int> minmaxY)
         : x(minmaxX.first), y(minmaxY.first), w(minmaxX.second), h(minmaxY.second) {}
     constexpr IRect(Rectangle r)
@@ -159,10 +174,14 @@ struct IRect
         struct { IVec2 xy, wh; };
         struct { IVec2 position, extents; };
     };
+    constexpr int Right()  const { return x + w; }
+    constexpr int Bottom() const { return y + h; }
+    // Bottom-Right point
+    constexpr IVec2 BR()   const { return xy + wh; }
 
     constexpr operator Rectangle() { return Rectangle{ (float)x, (float)y, (float)w, (float)h }; }
 
-    constexpr operator Width() { return Width(w); }
+    constexpr operator Width()  { return Width(w); }
     constexpr operator Height() { return Height(h); }
 
     IRect& Expand(int outline = 1);
@@ -170,7 +189,7 @@ struct IRect
 
     // Abuse as min and max instead of width and height
     // Returns an IRect with INT_MIN and INT_MAX components for comparing
-    static constexpr IRect Abused()
+    static consteval IRect Abused()
     {
         return IRect(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
     }
@@ -181,8 +200,11 @@ struct IRect
         h = maxy - miny;
     }
 
-    static constexpr IRect Zero()  { return IRect(0); }
-    static constexpr IRect Pixel() { return IRect(0,0,1); }
+    static consteval IRect Zero()  { return IRect(0); }
+    static consteval IRect Pixel() { return IRect(0,0,1); }
+
+    IRectIterator begin() const;
+    IRectIterator end() const;
 };
 
 constexpr IRect operator+(IRect a, Width b) { return IRect(a.x, a.y, a.w + b.x, a.h); }

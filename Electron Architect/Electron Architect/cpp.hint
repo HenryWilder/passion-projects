@@ -1,4 +1,0 @@
-// Hint files help the Visual Studio IDE interpret Visual C++ identifiers
-// such as names of functions and macros.
-// For more information see https://go.microsoft.com/fwlink/?linkid=865984
-#define CREATE_AS_METHOD_FOR_TOOL(extension, name) extension##_##name* extension##_##name::As(Mode mode) { _ASSERT_EXPR(mode == GetMode(), L"Tried to access non-" WSTRINGIFY(name) L" member from " WSTRINGIFY(name)); return this; }

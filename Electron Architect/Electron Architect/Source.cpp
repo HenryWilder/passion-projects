@@ -88,6 +88,8 @@ int main()
             {
                 data.SetMode2D(false);
 
+                consteval
+
                 // UI
                 {
                     constexpr IRect WithClipboard = ProgramData::buttonBounds[0] + Width(16) * (_countof(ProgramData::buttonBounds) - 1);

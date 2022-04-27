@@ -1,15 +1,6 @@
 #include "HUtility.h"
 #include "IVec.h"
 
-bool IVec2::operator==(IVec2 b) const
-{
-    return x == b.x && y == b.y;
-}
-bool IVec2::operator!=(IVec2 b) const
-{
-    return x != b.x || y != b.y;
-}
-
 namespace std
 {
     size_t hash<IVec2>::operator()(const IVec2& k) const
@@ -122,29 +113,29 @@ bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2)
     }
 }
 
-void DrawLineIV(IVec2 start, IVec2 end, Color color)
+inline void DrawLineIV(IVec2 start, IVec2 end, Color color)
 {
     DrawLine(start.x, start.y, end.x, end.y, color);
 }
-void DrawLineIV(IVec2 start, Width width, Color color)
+inline void DrawLineIV(IVec2 start, Width width, Color color)
 {
     DrawLine(start.x, start.y, start.x + width.x, start.y, color);
 }
-void DrawLineIV(IVec2 start, Height height, Color color)
+inline void DrawLineIV(IVec2 start, Height height, Color color)
 {
     DrawLine(start.x, start.y, start.x, start.y + height.y, color);
 }
-void DrawCircleIV(IVec2 origin, float radius, Color color)
+inline void DrawCircleIV(IVec2 origin, float radius, Color color)
 {
     DrawCircle(origin.x, origin.y, radius, color);
 }
 
-void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint)
+inline void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint)
 {
     DrawTexture(texture, pos.x, pos.y, tint);
 }
 
-void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color)
+inline void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color)
 {
     DrawText(text, pos.x, pos.y, fontSize, color);
 }
@@ -158,12 +149,12 @@ bool InBoundingBox(IRect bounds, IVec2 pt)
         pt.y <= bounds.y + bounds.h;
 }
 
-void DrawRectangleIRect(IRect rec, Color color)
+inline void DrawRectangleIRect(IRect rec, Color color)
 {
     DrawRectangle(rec.x, rec.y, rec.w, rec.h, color);
 }
 
-void BeginScissorMode(IRect area)
+inline void BeginScissorMode(IRect area)
 {
     BeginScissorMode(area.x, area.y, area.w, area.h);
 }
@@ -180,4 +171,35 @@ IRect& IRect::Expand(int outline)
 IRect& IRect::Shrink(int outline)
 {
     return Expand(-outline);
+}
+
+IRectIterator IRect::begin() const
+{
+    return IRectIterator(*this, xy);
+}
+
+IRectIterator IRect::end() const
+{
+    return IRectIterator(*this, BR());
+}
+
+IVec2 IRectIterator::operator*() const
+{
+    return pt;
+}
+
+IRectIterator& IRectIterator::operator++()
+{
+    ++pt.x;
+    if (pt.x == rec.Right())
+    {
+        pt.x = rec.x;
+        ++pt.y;
+    }
+    return *this;
+}
+
+bool IRectIterator::operator!=(const IRectIterator& other)
+{
+    return pt != other.pt;
 }
