@@ -45,12 +45,12 @@ Node* NodeWorld::_CreateNode(Node&& base)
 }
 void NodeWorld::_ClearNodeReferences(Node* node)
 {
-    for (Wire* input : node->GetInputs())
+    for (Wire* input : node->Inputs())
     {
         input->start->RemoveWire_Expected(input);
         _DestroyWire(input);
     }
-    for (Wire* output : node->GetOutputs())
+    for (Wire* output : node->Outputs())
     {
         output->end->RemoveWire_Expected(output);
         _DestroyWire(output);
@@ -116,7 +116,7 @@ void NodeWorld::DestroyNode(Node* node)
 
 void NodeWorld::DestroyNodes(std::vector<Node*>& removeList)
 {
-    // Todo...
+    // Todo: Change bulk node-destruction to actually be an optimization
 #if 0
     std::unordered_set<Node*> internals(removeList.begin(), removeList.end());
     std::unordered_set<Wire*> uniqueWires;
@@ -204,8 +204,8 @@ void NodeWorld::BypassNode(Node* node)
     // Multiple outputs, one input
     if (node->GetInputCount() == 1)
     {
-        Wire* input = *(node->GetInputs().begin()); // Get the first (only) input
-        for (Wire* wire : node->GetOutputs())
+        Wire* input = *(node->Inputs().begin()); // Get the first (only) input
+        for (Wire* wire : node->Outputs())
         {
             CreateWire(input->start, wire->end, input->elbowConfig);
         }
@@ -213,8 +213,8 @@ void NodeWorld::BypassNode(Node* node)
     // Multiple inputs, one output
     else // OutputCount() == 1
     {
-        Wire* output = *(node->GetOutputs().begin()); // Get the first (only) input
-        for (Wire* wire : node->GetInputs())
+        Wire* output = *(node->Outputs().begin()); // Get the first (only) input
+        for (Wire* wire : node->Inputs())
         {
             CreateWire(wire->start, output->end, wire->elbowConfig);
         }
@@ -225,9 +225,9 @@ void NodeWorld::BypassNode(Node* node)
 void NodeWorld::BypassNode_Complex(Node* node)
 {
     _ASSERT_EXPR(node->IsComplexBipassable(), L"Must be complex bypassable");
-    for (Wire* input : node->GetInputs())
+    for (Wire* input : node->Inputs())
     {
-        for (Wire* output : node->GetOutputs())
+        for (Wire* output : node->Outputs())
         {
             CreateWire(input->start, output->end, input->elbowConfig);
         }
@@ -241,22 +241,22 @@ Node* NodeWorld::MergeNodes(Node* depricating, Node* overriding)
     _ASSERT_EXPR(depricating != overriding, L"Tried to merge a node with itself");
     Node* c = CreateNode(depricating->GetPosition(), overriding->GetGate(), overriding->m_ntd.r.resistance); // Generic ntd data
 
-    for (Wire* wire : depricating->GetInputs())
+    for (Wire* wire : depricating->Inputs())
     {
         if (wire->start == overriding) continue;
         CreateWire(wire->start, c, wire->elbowConfig);
     }
-    for (Wire* wire : overriding->GetInputs())
+    for (Wire* wire : overriding->Inputs())
     {
         if (wire->start == depricating) continue;
         CreateWire(wire->start, c, wire->elbowConfig);
     }
-    for (Wire* wire : depricating->GetOutputs())
+    for (Wire* wire : depricating->Outputs())
     {
         if (wire->end == overriding) continue;
         CreateWire(c, wire->end, wire->elbowConfig);
     }
-    for (Wire* wire : overriding->GetOutputs())
+    for (Wire* wire : overriding->Outputs())
     {
         if (wire->end == depricating) continue;
         CreateWire(c, wire->end, wire->elbowConfig);
@@ -459,7 +459,7 @@ void NodeWorld::EvaluateNode(Node* node)
     {
     case Gate::LED:
     case Gate::OR:
-        for (Wire* wire : node->GetInputs())
+        for (Wire* wire : node->Inputs())
         {
             if (wire->GetState())
                 return void(node->m_state = true);
@@ -468,7 +468,7 @@ void NodeWorld::EvaluateNode(Node* node)
         break;
 
     case Gate::NOR:
-        for (Wire* wire : node->GetInputs())
+        for (Wire* wire : node->Inputs())
         {
             if (wire->GetState())
                 return void(node->m_state = false);
@@ -477,7 +477,7 @@ void NodeWorld::EvaluateNode(Node* node)
         break;
 
     case Gate::AND:
-        for (Wire* wire : node->GetInputs())
+        for (Wire* wire : node->Inputs())
         {
             if (!wire->GetState())
                 return void(node->m_state = false);
@@ -487,7 +487,7 @@ void NodeWorld::EvaluateNode(Node* node)
 
     case Gate::XOR:
         node->m_state = false;
-        for (Wire* wire : node->GetInputs())
+        for (Wire* wire : node->Inputs())
         {
             if (wire->GetState() && !(node->m_state = !node->m_state))
                 return;
@@ -497,7 +497,7 @@ void NodeWorld::EvaluateNode(Node* node)
     case Gate::RESISTOR:
     {
         int activeInputs = 0;
-        for (Wire* wire : node->GetInputs())
+        for (Wire* wire : node->Inputs())
         {
             if (wire->GetState() && !!(++activeInputs > node->GetResistance()))
                 return void(node->m_state = true);
@@ -508,7 +508,7 @@ void NodeWorld::EvaluateNode(Node* node)
 
     case Gate::CAPACITOR:
         node->m_state = true;
-        for (Wire* wire : node->GetInputs())
+        for (Wire* wire : node->Inputs())
         {
             if (wire->GetState())
                 return (node->GetCharge() < node->GetCapacity()) ? node->IncrementCharge() : void();
@@ -520,7 +520,7 @@ void NodeWorld::EvaluateNode(Node* node)
 
     case Gate::DELAY:
         node->m_state = node->m_ntd.d.lastState;
-        for (Wire* wire : node->GetInputs())
+        for (Wire* wire : node->Inputs())
         {
             if (wire->GetState())
                 return void(node->m_ntd.d.lastState = true);
@@ -698,7 +698,7 @@ void NodeWorld::Save(const char* filename) const
 
 void NodeWorld::Load(const char* filename)
 {
-    // HACK: Does not conform to standard _CreateNode/Wire functions!!
+    // @Hack: Does not conform to standard _CreateNode/Wire functions!!
     auto allocNodes = [](std::vector<Node*>& nodes, size_t nodeCount)
     {
         nodes.reserve(nodeCount);
@@ -754,7 +754,7 @@ void NodeWorld::Load(const char* filename)
         }
         nodes.clear();
         wires.clear();
-        // Todo: groups?
+        // Todo: What about unloading groups?
 
         file.ignore(64, 'n');
         size_t nodeCount;

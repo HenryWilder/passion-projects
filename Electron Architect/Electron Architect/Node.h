@@ -11,25 +11,23 @@ struct Wire;
 
 namespace
 {
-    using NodeInstance = Node*;
-    using WireInstance = Wire*;
+    using WireCont  = std::vector<Wire*>;
+    using WireSpan  = std::span<Wire*>;
+    using WireCSpan = std::span<Wire* const>;
+    using WireLoc   = typename WireCont::iterator;
+    using WireCLoc  = typename WireCont::const_iterator;
 }
 
 class Node
 {
 public:
-    using WireContainer = std::vector<WireInstance>;
-    using WireIter  = typename WireContainer::iterator;
-    using WireCIter = typename WireContainer::const_iterator;
-    using WireRef   = typename WireContainer::reference;
-    using WireCRef  = typename WireContainer::const_reference;
-
     IVec2 GetPosition() const;
     // Moves the node without updating its collision
-    void SetPosition_Temporary(IVec2 position);
+    void SetPosition_Silent(IVec2 position);
     // Sets the position of the node and updates its collision in NodeWorld
     // NOTE: NodeWorld collision is currently a saved-for-later feature
     void SetPosition(IVec2 position);
+
     int GetX() const;
     void SetX(int x);
     int GetY() const;
@@ -53,7 +51,7 @@ public:
 
     bool GetState() const;
 
-    WireCIter FindConnection(NodeInstance other) const;
+    WireCLoc FindConnection(Node* other) const;
 
     size_t GetInputCount() const;
     size_t GetOutputCount() const;
@@ -65,8 +63,8 @@ public:
     static void Draw(IVec2 position, Gate gate, Color color);
     void Draw(Color color) const;
 
-    bool WireIsInput(WireInstance wire) const;
-    bool WireIsOutput(WireInstance wire) const;
+    bool WireIsInput(Wire* wire) const;
+    bool WireIsOutput(Wire* wire) const;
 
     // Only NodeWorld can play with a node's wires/state
     friend class NodeWorld;
@@ -74,26 +72,26 @@ public:
 
 private: // Helpers usable only by NodeWorld
 
-    WireCIter FindWireIter_Expected(WireInstance wire);
-    WireCIter FindWireIter(WireInstance wire);
+    WireCLoc FindWireIter_Expected(Wire* wire);
+    WireCLoc FindWireIter(Wire* wire);
 
     void SetState(bool state);
 
-    void AddWireInput(WireInstance input);
-    void AddWireOutput(WireInstance output);
+    void AddWireInput(Wire* input);
+    void AddWireOutput(Wire* output);
 
     // Expects the wire to exist; throws a debug exception if it is not found.
-    void RemoveWire_Expected(WireInstance wire);
-    void RemoveWire(WireInstance wire);
+    void RemoveWire_Expected(Wire* wire);
+    void RemoveWire(Wire* wire);
 
     // Expects the wire to exist; throws a debug exception if it is not found.
-    void RemoveConnection_Expected(NodeInstance node);
-    void RemoveConnection(NodeInstance node);
+    void RemoveConnection_Expected(Node* node);
+    void RemoveConnection(Node* node);
 
     // Converts an existing wire
-    void MakeWireInput(WireInstance wire);
+    void MakeWireInput(Wire* wire);
     // Converts an existing wire
-    void MakeWireOutput(WireInstance wire);
+    void MakeWireOutput(Wire* wire);
 
 private: // Accessible by NodeWorld
     Node() = default;
@@ -150,16 +148,16 @@ private:
 
     } m_ntd;
     // Keep this partitioned by inputs vs outputs
-    WireContainer m_wires;
+    WireCont m_wires;
 
 private:
-    std::span<WireRef> GetInputs();
-    std::span<WireRef> GetOutputs();
+    WireSpan Inputs();
+    WireSpan Outputs();
 
 public:
-    const WireContainer& GetWires() const;
-    std::span<WireCRef> GetInputs() const;
-    std::span<WireCRef> GetOutputs() const;
+    const WireCont& GetWires() const;
+    WireCSpan GetInputs() const;
+    WireCSpan GetOutputs() const;
 
-    bool IsValidConnection(WireCIter it) const;
+    bool IsValidConnection(WireCLoc it) const;
 };

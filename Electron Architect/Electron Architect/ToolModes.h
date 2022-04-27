@@ -7,9 +7,7 @@ class Node;
 enum class ElbowConfig : uint8_t;
 struct Wire;
 
-struct Group;
-
-struct ProgramData;
+class Group;
 
 enum class Mode
 {
@@ -28,8 +26,6 @@ enum class Mode
 // Polymorphic
 struct ModeHandler
 {
-    static ProgramData& data;
-    ModeHandler(ProgramData& _data);
     virtual void Update() = 0;
     virtual void Draw() = 0;
     constexpr virtual Mode GetMode() = 0;
@@ -87,7 +83,7 @@ private:
     void CycleElbow();
     void CancelWire();
 public:
-    void Update() override;
+    void Update() final;
 
 private:
     void DrawCurrentWire();
@@ -95,11 +91,11 @@ private:
     void DrawHoveredNodeWires();
     void DrawHoveredNode();
 public:
-    void Draw() override;
+    void Draw() final;
 
-    constexpr Mode GetMode() override { return Mode::PEN; }
+    constexpr Mode GetMode() final { return Mode::PEN; }
 
-    virtual Tool_Pen* As(Mode mode);
+    Tool_Pen* As(Mode mode) final;
 };
 
 struct Tool_Edit : public Tool
@@ -123,10 +119,10 @@ struct Tool_Edit : public Tool
 
     void TryGrouping();
 
-    void Update() override;
-    void Draw() override;
-    constexpr Mode GetMode() override { return Mode::EDIT; }
-    virtual Tool_Edit* As(Mode mode);
+    void Update() final;
+    void Draw() final;
+    constexpr Mode GetMode() final { return Mode::EDIT; }
+    Tool_Edit* As(Mode mode) final;
 };
 
 struct Tool_Erase : public Tool
@@ -134,10 +130,10 @@ struct Tool_Erase : public Tool
     Tool_Erase();
     ~Tool_Erase();
 
-    void Update() override;
-    void Draw() override;
-    constexpr Mode GetMode() override { return Mode::ERASE; }
-    virtual Tool_Erase* As(Mode mode);
+    void Update() final;
+    void Draw() final;
+    constexpr Mode GetMode() final { return Mode::ERASE; }
+    Tool_Erase* As(Mode mode) final;
 };
 
 struct Tool_Interact : public Tool
@@ -145,10 +141,10 @@ struct Tool_Interact : public Tool
     Tool_Interact();
     ~Tool_Interact();
 
-    void Update() override;
-    void Draw() override;
-    constexpr Mode GetMode() override { return Mode::INTERACT; }
-    virtual Tool_Interact* As(Mode mode);
+    void Update() final;
+    void Draw() final;
+    constexpr Mode GetMode() final { return Mode::INTERACT; }
+    Tool_Interact* As(Mode mode) final;
 };
 
 
@@ -163,10 +159,10 @@ struct Overlay_Button : public ModeHandler
     Overlay_Button();
     ~Overlay_Button();
 
-    void Update() override;
-    void Draw() override;
-    constexpr Mode GetMode() override { return Mode::BUTTON; }
-    virtual Overlay_Button* As(Mode mode);
+    void Update() final;
+    void Draw() final;
+    constexpr Mode GetMode() final { return Mode::BUTTON; }
+    Overlay_Button* As(Mode mode) final;
 };
 
 struct Overlay_Paste : public ModeHandler
@@ -174,17 +170,18 @@ struct Overlay_Paste : public ModeHandler
     Overlay_Paste();
     ~Overlay_Paste();
 
-    void Update() override;
-    void Draw() override;
-    constexpr Mode GetMode() override { return Mode::PASTE; }
-    virtual Overlay_Paste* As(Mode mode);
+    void Update() final;
+    void Draw() final;
+    constexpr Mode GetMode() final { return Mode::PASTE; }
+    Overlay_Paste* As(Mode mode) final;
 };
 
+struct BlueprintIcon;
 struct Menu_Icon : public ModeHandler
 {
     IVec2 pos; // Width and height are fixed
     IRect sheetRec;
-    BlueprintIconID_t iconID;
+    uint16_t iconID; // BlueprintIconID_t
     uint8_t iconCount;
     int draggingIcon = -1; // -1 for none/not dragging
     BlueprintIcon* object; // Set by constructor
@@ -194,13 +191,13 @@ struct Menu_Icon : public ModeHandler
 
     void SaveBlueprint();
 
-    void Update() override;
-    void Draw() override;
-    constexpr Mode GetMode() override { return Mode::BP_ICON; }
-    virtual Menu_Icon* As(Mode mode);
+    void Update() final;
+    void Draw() final;
+    constexpr Mode GetMode() final { return Mode::BP_ICON; }
+    Menu_Icon* As(Mode mode) final;
 };
 
-// todo
+// Todo: finish Menu_Select
 struct Menu_Select : public ModeHandler
 {
     int hovering = -1; // -1 for none
@@ -208,8 +205,8 @@ struct Menu_Select : public ModeHandler
     Menu_Select();
     ~Menu_Select();
 
-    void Update() override;
-    void Draw() override;
-    constexpr Mode GetMode() override { return Mode::BP_SELECT; }
-    virtual Menu_Select* As(Mode mode);
+    void Update() final;
+    void Draw() final;
+    constexpr Mode GetMode() final { return Mode::BP_SELECT; }
+    Menu_Select* As(Mode mode) final;
 };

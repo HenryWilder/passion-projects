@@ -22,10 +22,10 @@ Tool_Pen::~Tool_Pen()
 void Tool_Pen::CreateBulkNodes()
 {
     _ASSERT_EXPR(!bulkNodesBeingMade, L"Tried to double-dip node bulk");
-    dragStart = data.cursorPos;
+    dragStart = data::cursorPos;
     for (size_t i = 0; i < bulkNodeCount; ++i)
     {
-        nodesMadeByDragging[i] = NodeWorld::Get().CreateNode(data.cursorPos, data.gatePick, data.storedExtraParam);
+        nodesMadeByDragging[i] = NodeWorld::Get().CreateNode(data::cursorPos, data::gatePick, data::storedExtraParam);
     }
     bulkNodesBeingMade = true;
 }
@@ -33,15 +33,15 @@ void Tool_Pen::UpdateBulkNodes()
 {
     _ASSERT_EXPR(bulkNodesBeingMade, L"Cannot update nodes that don't exist");
 
-    int dist = IntGridDistance(dragStart, data.cursorPos);
+    int dist = IntGridDistance(dragStart, data::cursorPos);
 
     if (dist == 0)
         return;
 
-    IVec2 normal = Snap((data.cursorPos - dragStart) / (dist - 1), g_gridSize);
-    for (int i = 0; i < bulkNodeCount; ++i) // todo: figure out wtf this is doing. I kinda just did it, and it works, but idfk why.
+    IVec2 normal = Snap((data::cursorPos - dragStart) / (dist - 1), g_gridSize);
+    for (int i = 0; i < bulkNodeCount; ++i)
     {
-        nodesMadeByDragging[i]->SetPosition_Temporary(dragStart + normal * i);
+        nodesMadeByDragging[i]->SetPosition_Silent(dragStart + normal * i);
     }
 }
 void Tool_Pen::CancelBulkNodes()
@@ -56,12 +56,12 @@ void Tool_Pen::CancelBulkNodes()
 
 Node* Tool_Pen::CreateNode()
 {
-    return NodeWorld::Get().CreateNode(data.cursorPos, data.gatePick, data.storedExtraParam);
+    return NodeWorld::Get().CreateNode(data::cursorPos, data::gatePick, data::storedExtraParam);
 }
 void Tool_Pen::BisectWireWithNode(Node* node)
 {
-    NodeWorld::Get().BisectWire(data.hoveredWire, node);
-    data.hoveredWire = nullptr;
+    NodeWorld::Get().BisectWire(data::hoveredWire, node);
+    data::hoveredWire = nullptr;
 }
 void Tool_Pen::FinishWire(Node* wireEnd)
 {
@@ -81,8 +81,8 @@ void Tool_Pen::FinishWire(Node* wireEnd)
 
 void Tool_Pen::UpdateHover()
 {
-    data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
-    data.hoveredWire = !data.hoveredNode ? NodeWorld::Get().FindWireAtPos(data.cursorPos) : nullptr;
+    data::hoveredNode = NodeWorld::Get().FindNodeAtPos(data::cursorPos);
+    data::hoveredWire = !data::hoveredNode ? NodeWorld::Get().FindWireAtPos(data::cursorPos) : nullptr;
 }
 void Tool_Pen::CycleElbow()
 {
@@ -136,7 +136,7 @@ public:
 void Tool_Pen::Update()
 {
     // Mouse move
-    if (data.b_cursorMoved)
+    if (data::b_cursorMoved)
     {
         UpdateHover();
 
@@ -145,32 +145,32 @@ void Tool_Pen::Update()
     }
 
     // Press m1
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data.hoveredWire && !data.hoveredNode)
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data::hoveredWire && !data::hoveredNode)
         CreateBulkNodes();
 
-    // todo
-    if      (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !!data.hoveredNode) // Click an existing node (wire can't be hovered in this case)
+    // Todo: Make the actions work
+    if      (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !!data::hoveredNode) // Click an existing node (wire can't be hovered in this case)
         PushAction(Act_DrawNode());
 
-    else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data.hoveredNode && !data.hoveredWire) // Click nothing (create a new node)
+    else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data::hoveredNode && !data::hoveredWire) // Click nothing (create a new node)
         PushAction(Act_DrawNode());
 
-    if      (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data.hoveredNode && !!data.hoveredWire) // Click a wire (bisect it)
+    if      (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data::hoveredNode && !!data::hoveredWire) // Click a wire (bisect it)
         PushAction(Act_DrawNode());
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (!data.hoveredWire && !data.hoveredNode)
+        if (!data::hoveredWire && !data::hoveredNode)
             CreateBulkNodes();
 
         Node* newNode;
 
-        if (!data.hoveredNode)
+        if (!data::hoveredNode)
             newNode = CreateNode();
         else
-            newNode = data.hoveredNode;
+            newNode = data::hoveredNode;
 
-        if (!!data.hoveredWire) // Hovered nodes take precedence over hovered wires
+        if (!!data::hoveredWire) // Hovered nodes take precedence over hovered wires
             BisectWireWithNode(newNode);
 
         // Do not create a new node/wire if already hovering the start node
@@ -181,7 +181,7 @@ void Tool_Pen::Update()
     }
 
     // Release m1
-    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && IntGridDistance(dragStart, data.cursorPos) < bulkNodeCount) // Not enough space
+    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && IntGridDistance(dragStart, data::cursorPos) < bulkNodeCount) // Not enough space
         CancelBulkNodes();
 
     // Press r
@@ -203,21 +203,31 @@ void Tool_Pen::DrawCurrentWire()
         start = currentWireStart->GetPosition();
 
     IVec2 elbow;
-    IVec2 end = data.cursorPos;
+    IVec2 end = data::cursorPos;
     elbow = Wire::GetLegalElbowPosition(start, end, currentWireElbowConfig);
     Wire::Draw(start, elbow, end, WIPBLUE);
-    Node::Draw(end, data.gatePick, WIPBLUE);
+    Node::Draw(end, data::gatePick, WIPBLUE);
 }
 void Tool_Pen::DrawHoveredWire()
 {
-    data.hoveredWire->Draw(GOLD);
+    data::hoveredWire->Draw(GOLD);
 }
 void Tool_Pen::DrawHoveredNodeWires()
 {
-    for (const Wire* wire : data.hoveredNode->GetWires())
+    for (const Wire* wire : data::hoveredNode->GetInputs())
     {
         Color color;
-        if (wire->start == data.hoveredNode)
+        if (wire->start == data::hoveredNode)
+            color = OUTPUTAPRICOT; // Output
+        else
+            color = INPUTLAVENDER; // Input
+
+        wire->Draw(color);
+    }
+    for (const Wire* wire : data::hoveredNode->GetOutputs())
+    {
+        Color color;
+        if (wire->start == data::hoveredNode)
             color = OUTPUTAPRICOT; // Output
         else
             color = INPUTLAVENDER; // Input
@@ -227,7 +237,7 @@ void Tool_Pen::DrawHoveredNodeWires()
 }
 void Tool_Pen::DrawHoveredNode()
 {
-    data.hoveredNode->Draw(WIPBLUE);
+    data::hoveredNode->Draw(WIPBLUE);
 }
 
 void Tool_Pen::Draw()
@@ -237,14 +247,14 @@ void Tool_Pen::Draw()
     if (!!currentWireStart)
         DrawCurrentWire();
 
-    if (!!data.hoveredWire)
+    if (!!data::hoveredWire)
         DrawHoveredWire();
 
-    if (!!data.hoveredNode)
+    if (!!data::hoveredNode)
         DrawHoveredNodeWires();
 
     NodeWorld::Get().DrawNodes();
 
-    if (!!data.hoveredNode)
+    if (!!data::hoveredNode)
         DrawHoveredNode();
 }

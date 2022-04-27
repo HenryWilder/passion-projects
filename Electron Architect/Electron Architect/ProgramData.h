@@ -2,6 +2,8 @@
 #include <vector>
 #include <raylib.h>
 #include <type_traits>
+#include "HUtility.h"
+#include "IVec.h"
 
 #include "Gate_Enum.h"
 class Node;
@@ -12,87 +14,80 @@ enum class Mode;
 struct ModeHandler;
 struct Tool;
 
-enum class ButtonID : uint8_t
+const enum class ButtonID : uint8_t
 {
     Mode,
     Gate,
     Parameter,
     Blueprints,
-    Clipboard
+    Clipboard,
+
+    count // Not assigned to an actual button
 };
 
-struct ProgramData
+namespace data
 {
-    ProgramData(int windowWidth, int windowHeight);
-    ~ProgramData();
+    void Init(int windowWidth, int windowHeight);
+    void DeInit();
 
-    static constexpr IRect buttonBounds[] = {
-        IRect( 0, 0, 16), // Mode
-        IRect(16, 0, 16), // Gate
-        IRect(32, 0, 16), // Parameter
-        IRect(48, 0, 16), // Blueprints
-        IRect(64, 0, 16), // Clipboard
-    };
-    static constexpr IRect ButtonBounds(int index);
-    static constexpr IRect ButtonBounds(ButtonID index);
-    static constexpr IRect ButtonBound_Mode();
-    static constexpr IRect ButtonBound_Gate();
-    static constexpr IRect ButtonBound_Parameter();
-    static constexpr IRect ButtonBound_Blueprints();
-    static constexpr IRect ButtonBound_Clipboard();
+    constexpr IRect ButtonBounds(int index) { return IRect(16 * (int)index, 0, 16); }
+    constexpr IRect ButtonBounds(ButtonID index) { return IRect(16 * (int)index, 0, 16); }
 
-private:
-    static Texture2D clipboardIcon;
-    static Texture2D modeIcons;
-    static Texture2D gateIcons16x;
-    static Texture2D gateIcons32x;
-public:
+#pragma region Members
 
-    int windowWidth;
-    int windowHeight;
+    namespace iconTextures
+    {
+        extern Texture2D clipboardIcon;
+        extern Texture2D modeIcons;
+        extern Texture2D gateIcons16x;
+        extern Texture2D gateIcons32x;
+    }
 
-    ModeHandler* currentMode_object;
-    Tool* basicMode_object;
+    extern int windowWidth;
+    extern int windowHeight;
 
-    IVec2 cursorUIPos = IVec2::Zero();
-    IVec2 cursorPos = IVec2::Zero();
-    IVec2 cursorPosPrev = IVec2::Zero(); // For checking if there was movement
-    bool b_cursorMoved = false;
+    extern ModeHandler* currentMode_object;
+    extern Tool* basicMode_object;
 
-    uint8_t framesPerTick = 6; // Number of frames in a tick
-    uint8_t tickFrame = framesPerTick - 1; // Evaluate on 0
-    bool tickThisFrame;
+    extern IVec2 cursorUIPos;
+    extern IVec2 cursorPos;
+    extern IVec2 cursorPosPrev; // For checking if there was movement
+    extern bool b_cursorMoved;
 
-    Gate gatePick = (Gate)0;
-    Gate lastGate = (Gate)0;
-    uint8_t storedExtraParam = 0;
+    extern uint8_t framesPerTick; // Number of frames in a tick
+    extern uint8_t tickFrame; // Evaluate on 0
+    extern bool tickThisFrame;
 
-    Camera2D camera{ .offset{ 0,0 }, .target{ 0,0 }, .rotation{ 0 }, .zoom{ 1 } };
-    bool b_twoDee = false;
+    extern Gate gatePick;
+    extern Gate lastGate;
+    extern uint8_t storedExtraParam;
 
-    const char* deviceParameterTextFmt = "";
+    extern Camera2D camera;
+    extern bool b_twoDee;
 
-    Node* hoveredNode = nullptr;
-    Wire* hoveredWire = nullptr;
+    extern const char* deviceParameterTextFmt;
 
-    Blueprint* clipboard = nullptr;
-    std::vector<Node*> selection;
+    extern Node* hoveredNode;
+    extern Wire* hoveredWire;
 
-public:
+    extern Blueprint* clipboard;
+    extern std::vector<Node*> selection;
 
-    static Texture2D GetClipboardIcon();
-    static void DrawModeIcon(Mode mode, IVec2 pos, Color tint);
-    static void DrawGateIcon16x(Gate gate, IVec2 pos, Color tint);
-    static void DrawGateIcon32x(Gate gate, IVec2 pos, Color tint);
+#pragma endregion
 
-    static bool ModeIsMenu(Mode mode);
-    bool ModeIsMenu() const;
-    static bool ModeIsOverlay(Mode mode);
-    bool ModeIsOverlay() const;
-    bool ModeIsBasic() const;
+    Texture2D GetClipboardIcon();
+    void DrawModeIcon(Mode mode, IVec2 pos, Color tint);
+    void DrawGateIcon16x(Gate gate, IVec2 pos, Color tint);
+    void DrawGateIcon32x(Gate gate, IVec2 pos, Color tint);
 
-    Mode GetCurrentMode() const; // Mode enum of currentMode_object
-    Mode GetBaseMode() const; // Mode enum of basicMode_object
+    bool ModeIsMenu(Mode mode);
+    bool ModeIsMenu();
+    bool ModeIsOverlay(Mode mode);
+    bool ModeIsOverlay();
+    bool ModeIsBasic();
+
+    Mode GetCurrentMode(); // Mode enum of currentMode_object
+    Mode GetBaseMode(); // Mode enum of basicMode_object
 
     template<class T> requires std::is_base_of_v<ModeHandler, T>
     T* CurrentModeAs()
@@ -115,10 +110,10 @@ public:
 
     void ClearOverlayMode();
 
-    static const char* GetModeTooltipName(Mode mode);
-    static const char* GetModeTooltipDescription(Mode mode);
-    static const char* GetGateTooltipName(Gate gate);
-    static const char* GetGateTooltipDescription(Gate gate);
+    const char* GetModeTooltipName(Mode mode);
+    const char* GetModeTooltipDescription(Mode mode);
+    const char* GetGateTooltipName(Gate gate);
+    const char* GetGateTooltipDescription(Gate gate);
 
     void IncrementTick();
 
@@ -129,29 +124,30 @@ public:
 
     void CopySelectionToClipboard();
 
-    bool IsClipboardValid() const;
+    bool IsClipboardValid();
     void ClearClipboard();
-    bool SelectionExists() const;
+    bool SelectionExists();
     void DestroySelection();
 
     void CheckHotkeys();
 
-    IVec2 GetCursorDelta() const;
+    IVec2 GetCursorDelta();
 
     // Inclusive
-    bool CursorInRangeX(int xMin, int xMax) const;
+    bool CursorInRangeX(int xMin, int xMax);
     // Inclusive
-    bool CursorInUIRangeX(int xMin, int xMax) const;
+    bool CursorInUIRangeX(int xMin, int xMax);
 
     // Inclusive
-    bool CursorInRangeY(int yMin, int yMax) const;
+    bool CursorInRangeY(int yMin, int yMax);
     // Inclusive
-    bool CursorInUIRangeY(int yMin, int yMax) const;
+    bool CursorInUIRangeY(int yMin, int yMax);
 
-    bool CursorInBounds(IRect bounds) const;
-    bool CursorInUIBounds(IRect uiBounds) const;
+    bool CursorInBounds(IRect bounds);
+    bool CursorInUIBounds(IRect uiBounds);
 
-    template<int gridSize = g_gridSize> void DrawGrid() const
+    template<int gridSize = g_gridSize>
+    void DrawGrid()
     {
         // Grid
         {
@@ -180,13 +176,13 @@ public:
             DrawLine(-halfgrid, bounds.y, -halfgrid, bounds.y + bounds.h, LIFELESSNEBULA);
         }
     }
-    void DrawGrid(int gridSize) const;
+    void DrawGrid(int gridSize);
 
-    IRect GetSelectionBounds(const std::vector<Node*>& vec) const;
-    IRect GetSelectionBounds() const;
+    IRect GetSelectionBounds(const std::vector<Node*>& vec);
+    IRect GetSelectionBounds();
 
-    static Color ResistanceBandColor(uint8_t index);
-    Color ExtraParamColor() const;
+    Color ResistanceBandColor(uint8_t index);
+    Color ExtraParamColor();
 
     void SetMode2D(bool value);
 
@@ -194,7 +190,3 @@ public:
 
     void SaveClipboardBlueprint();
 };
-extern Texture2D clipboardIcon;
-extern Texture2D modeIcons;
-extern Texture2D gateIcons16x;
-extern Texture2D gateIcons32x;

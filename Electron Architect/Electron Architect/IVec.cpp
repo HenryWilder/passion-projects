@@ -113,29 +113,29 @@ bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2)
     }
 }
 
-inline void DrawLineIV(IVec2 start, IVec2 end, Color color)
+void DrawLineIV(IVec2 start, IVec2 end, Color color)
 {
     DrawLine(start.x, start.y, end.x, end.y, color);
 }
-inline void DrawLineIV(IVec2 start, Width width, Color color)
+void DrawLineIV(IVec2 start, Width width, Color color)
 {
     DrawLine(start.x, start.y, start.x + width.x, start.y, color);
 }
-inline void DrawLineIV(IVec2 start, Height height, Color color)
+void DrawLineIV(IVec2 start, Height height, Color color)
 {
     DrawLine(start.x, start.y, start.x, start.y + height.y, color);
 }
-inline void DrawCircleIV(IVec2 origin, float radius, Color color)
+void DrawCircleIV(IVec2 origin, float radius, Color color)
 {
     DrawCircle(origin.x, origin.y, radius, color);
 }
 
-inline void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint)
+void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint)
 {
     DrawTexture(texture, pos.x, pos.y, tint);
 }
 
-inline void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color)
+void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color)
 {
     DrawText(text, pos.x, pos.y, fontSize, color);
 }
@@ -149,12 +149,12 @@ bool InBoundingBox(IRect bounds, IVec2 pt)
         pt.y <= bounds.y + bounds.h;
 }
 
-inline void DrawRectangleIRect(IRect rec, Color color)
+void DrawRectangleIRect(IRect rec, Color color)
 {
     DrawRectangle(rec.x, rec.y, rec.w, rec.h, color);
 }
 
-inline void BeginScissorMode(IRect area)
+void BeginScissorMode(IRect area)
 {
     BeginScissorMode(area.x, area.y, area.w, area.h);
 }

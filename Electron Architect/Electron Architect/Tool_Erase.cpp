@@ -20,36 +20,36 @@ Tool_Erase::~Tool_Erase()
 
 void Tool_Erase::Update()
 {
-    if (data.b_cursorMoved)
+    if (data::b_cursorMoved)
     {
-        data.hoveredWire = nullptr;
-        data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
-        if (!data.hoveredNode)
-            data.hoveredWire = NodeWorld::Get().FindWireAtPos(data.cursorPos);
+        data::hoveredWire = nullptr;
+        data::hoveredNode = NodeWorld::Get().FindNodeAtPos(data::cursorPos);
+        if (!data::hoveredNode)
+            data::hoveredWire = NodeWorld::Get().FindWireAtPos(data::cursorPos);
     }
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (!!data.hoveredNode)
+        if (!!data::hoveredNode)
         {
             // Special erase
             if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
-                data.hoveredNode->IsSpecialErasable())
-                NodeWorld::Get().BypassNode(data.hoveredNode);
+                data::hoveredNode->IsSpecialErasable())
+                NodeWorld::Get().BypassNode(data::hoveredNode);
             // Complex bipass
             else if (
                 (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
                 (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) &&
-                data.hoveredNode->IsComplexBipassable())
-                NodeWorld::Get().BypassNode_Complex(data.hoveredNode);
+                data::hoveredNode->IsComplexBipassable())
+                NodeWorld::Get().BypassNode_Complex(data::hoveredNode);
             else
-                NodeWorld::Get().DestroyNode(data.hoveredNode);
+                NodeWorld::Get().DestroyNode(data::hoveredNode);
         }
-        else if (!!data.hoveredWire)
-            NodeWorld::Get().DestroyWire(data.hoveredWire);
+        else if (!!data::hoveredWire)
+            NodeWorld::Get().DestroyWire(data::hoveredWire);
 
-        data.hoveredNode = nullptr;
-        data.hoveredWire = nullptr;
+        data::hoveredNode = nullptr;
+        data::hoveredWire = nullptr;
     }
 }
 void Tool_Erase::Draw()
@@ -69,19 +69,19 @@ void Tool_Erase::Draw()
 
     NodeWorld::Get().DrawWires();
 
-    if (!!data.hoveredWire)
+    if (!!data::hoveredWire)
     {
-        data.hoveredWire->Draw(MAGENTA);
-        DrawCross(data.cursorPos, DESTRUCTIVERED);
+        data::hoveredWire->Draw(MAGENTA);
+        DrawCross(data::cursorPos, DESTRUCTIVERED);
     }
-    else if (!!data.hoveredNode)
+    else if (!!data::hoveredNode)
     {
         Color color;
         if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
         {
-            if (data.hoveredNode->IsSpecialErasable())
+            if (data::hoveredNode->IsSpecialErasable())
                 color = WIPBLUE;
-            else if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
+            else if (data::hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
                 color = VIOLET;
             else
                 color = DESTRUCTIVERED;
@@ -89,7 +89,7 @@ void Tool_Erase::Draw()
         else
             color = MAGENTA;
 
-        for (Wire* wire : data.hoveredNode->GetWires())
+        for (Wire* wire : data::hoveredNode->GetWires())
         {
             wire->Draw(color);
         }
@@ -97,16 +97,16 @@ void Tool_Erase::Draw()
 
     NodeWorld::Get().DrawNodes();
 
-    if (!!data.hoveredNode)
+    if (!!data::hoveredNode)
     {
-        data.hoveredNode->Draw(BLACK);
-        DrawCross(data.hoveredNode->GetPosition(), DESTRUCTIVERED);
+        data::hoveredNode->Draw(BLACK);
+        DrawCross(data::hoveredNode->GetPosition(), DESTRUCTIVERED);
 
-        if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && !data.hoveredNode->IsSpecialErasable())
+        if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && !data::hoveredNode->IsSpecialErasable())
         {
             const char* text;
             Color color;
-            if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
+            if (data::hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
             {
                 color = VIOLET;
                 text = "Complex bipass";
@@ -114,8 +114,8 @@ void Tool_Erase::Draw()
             else
             {
                 color = DESTRUCTIVERED;
-                size_t iCount = data.hoveredNode->GetInputCount();
-                size_t oCount = data.hoveredNode->GetOutputCount();
+                size_t iCount = data::hoveredNode->GetInputCount();
+                size_t oCount = data::hoveredNode->GetOutputCount();
 
                 if (iCount == 0 && oCount == 0)
                     text =
@@ -146,7 +146,7 @@ void Tool_Erase::Draw()
                         "\"Special erase error: i=%i, o=%i\"", iCount, oCount);
 
             }
-            data.DrawTooltipAtCursor(text, color);
+            data::DrawTooltipAtCursor(text, color);
         }
     }
 }

@@ -20,12 +20,12 @@ Tool_Interact::~Tool_Interact()
 
 void Tool_Interact::Update()
 {
-    data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
-    if (!!data.hoveredNode && !data.hoveredNode->IsOutputOnly())
-        data.hoveredNode = nullptr;
+    data::hoveredNode = NodeWorld::Get().FindNodeAtPos(data::cursorPos);
+    if (!!data::hoveredNode && !data::hoveredNode->IsOutputOnly())
+        data::hoveredNode = nullptr;
 
-    if (!!data.hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-        data.hoveredNode->SetGate(data.hoveredNode->GetGate() == Gate::NOR ? Gate::OR : Gate::NOR);
+    if (!!data::hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        data::hoveredNode->SetGate(data::hoveredNode->GetGate() == Gate::NOR ? Gate::OR : Gate::NOR);
 }
 void Tool_Interact::Draw()
 {
@@ -37,8 +37,8 @@ void Tool_Interact::Draw()
         node->Draw(WIPBLUE);
     }
 
-    if (!!data.hoveredNode)
+    if (!!data::hoveredNode)
     {
-        data.hoveredNode->Draw(CAUTIONYELLOW);
+        data::hoveredNode->Draw(CAUTIONYELLOW);
     }
 }

@@ -7,7 +7,7 @@ IVec2 Node::GetPosition() const
     return m_position;
 }
 // Moves the node without updating its collision
-void Node::SetPosition_Temporary(IVec2 position)
+void Node::SetPosition_Silent(IVec2 position)
 {
     m_position = position;
     for (Wire* wire : m_wires)
@@ -19,7 +19,7 @@ void Node::SetPosition_Temporary(IVec2 position)
 // NOTE: NodeWorld collision is currently a saved-for-later feature
 void Node::SetPosition(IVec2 position)
 {
-    SetPosition_Temporary(position);
+    SetPosition_Silent(position);
 }
 int Node::GetX() const
 {
@@ -136,7 +136,7 @@ bool Node::GetState() const
     return m_state;
 }
 
-Node::WireCIter Node::FindConnection(NodeInstance other) const
+WireCLoc Node::FindConnection(Node* other) const
 {
     return std::find_if(m_wires.begin(), m_wires.end(), [&other](Wire* wire) { return wire->start == other || wire->end == other; });
 }
@@ -283,13 +283,13 @@ bool Node::WireIsOutput(Wire* wire) const
 }
 
 
-Node::WireCIter Node::FindWireIter_Expected(WireInstance wire)
+WireCLoc Node::FindWireIter_Expected(Wire* wire)
 {
     auto it = std::find(m_wires.begin(), m_wires.end(), wire);
     _ASSERT_EXPR(it != m_wires.end(), L"Wire expected to be connected to node was not found in node's data");
     return it;
 }
-Node::WireCIter Node::FindWireIter(WireInstance wire)
+WireCLoc Node::FindWireIter(Wire* wire)
 {
     return std::find(m_wires.begin(), m_wires.end(), wire);
 }
@@ -299,12 +299,12 @@ void Node::SetState(bool state)
     m_state = state;
 }
 
-void Node::AddWireInput(WireInstance input)
+void Node::AddWireInput(Wire* input)
 {
     m_wires.insert(m_wires.begin() + m_inputs, input);
     m_inputs++;
 }
-void Node::AddWireOutput(WireInstance output)
+void Node::AddWireOutput(Wire* output)
 {
     m_wires.push_back(output);
 }
@@ -377,30 +377,30 @@ Node::Node(IVec2 position, Gate gate, uint8_t extraParam) : m_position(position)
 }
 
 
-std::span<Wire*> Node::GetInputs()
+WireSpan Node::Inputs()
 {
-    return { m_wires.begin(), GetInputCount() };
+    return WireSpan{ m_wires.begin(), GetInputCount() };
 }
-std::span<Wire*> Node::GetOutputs()
+WireSpan Node::Outputs()
 {
-    return { m_wires.begin() + GetInputCount(), GetOutputCount() };
+    return WireSpan{ m_wires.begin() + GetInputCount(), GetOutputCount() };
 }
 
 
-const std::vector<Wire*>& Node::GetWires() const
+const WireCont& Node::GetWires() const
 {
     return m_wires;
 }
-std::span<Wire* const> Node::GetInputs() const
+WireCSpan Node::GetInputs() const
 {
-    return static_cast<std::span<Wire* const>>(GetInputs());
+    return WireCSpan{ m_wires.begin(), GetInputCount() };
 }
-std::span<Wire* const> Node::GetOutputs() const
+WireCSpan Node::GetOutputs() const
 {
-    return static_cast<std::span<Wire* const>>(GetOutputs());
+    return WireCSpan{ m_wires.begin() + GetInputCount(), GetOutputCount() };
 }
 
-bool Node::IsValidConnection(std::vector<Wire*>::const_iterator it) const
+bool Node::IsValidConnection(WireCLoc it) const
 {
     return it != m_wires.end();
 }
@@ -421,6 +421,7 @@ char GateToChar(Gate gate)
     case Gate::LED:         return '@';
     case Gate::DELAY:       return ';';
     }
+    return 'X';
 }
 
 Gate CharToGate(char symbol)
@@ -439,4 +440,5 @@ Gate CharToGate(char symbol)
     case '@': return Gate::LED;
     case ';': return Gate::DELAY;
     }
+    return (Gate)-1;
 }

@@ -45,7 +45,10 @@ constexpr int g_gridSize = 8;
 template<typename C, typename T>
 concept Container = requires(C x, T e)
 {
-    { std::find(x.begin(), x.end(), e) } -> std::convertible_to<typename T::const_iterator>;
+    { x[0] } -> std::convertible_to<T>;
+    x.begin();
+    x.end();
+    std::find(x.begin(), x.end(), e);
 };
 
 template<typename T, Container<T> C>
@@ -66,7 +69,7 @@ C::iterator Find_ExpectExisting(C& c, const T& element)
 template<typename T, Container<T> C>
 bool FindAndErase(C& c, const T& element)
 {
-    auto it = Find<C>(c, element);
+    auto it = Find(c, element);
     bool found = it != c.end();
     if (found)
         c.erase(it);
@@ -75,12 +78,12 @@ bool FindAndErase(C& c, const T& element)
 template<typename T, Container<T> C>
 void FindAndErase_ExpectExisting(C& c, const T& element)
 {
-    c.erase(Find_ExpectExisting<C>(c, element));
+    c.erase(Find_ExpectExisting(c, element));
 }
 
 bool Between_Inclusive(int x, int a, int b);
 bool Between_Exclusive(int x, int a, int b);
 
-inline bool IsKeyDown_Shift();
-inline bool IsKeyDown_Ctrl();
-inline bool IsKeyDown_Alt();
+bool IsKeyDown_Shift();
+bool IsKeyDown_Ctrl();
+bool IsKeyDown_Alt();

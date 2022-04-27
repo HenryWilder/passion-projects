@@ -22,7 +22,7 @@ void Tool_Edit::MakeGroupFromSelection()
 {
     NodeWorld::Get().CreateGroup(selectionRec);
     selectionRec = IRect(0);
-    data.selection.clear();
+    data::selection.clear();
 }
 
 bool Tool_Edit::IsSelectionRectValid() const
@@ -32,7 +32,7 @@ bool Tool_Edit::IsSelectionRectValid() const
 
 void Tool_Edit::ClearSelection()
 {
-    data.selection.clear();
+    data::selection.clear();
     selectionRec = IRect(0);
 }
 
@@ -44,55 +44,55 @@ void Tool_Edit::TryGrouping()
 
 void Tool_Edit::Update()
 {
-    if (data.b_cursorMoved)
+    if (data::b_cursorMoved)
     {
         if (!nodeBeingDragged &&
             !wireBeingDragged &&
             !draggingGroup)
         {
             hoveredGroup = nullptr;
-            data.hoveredWire = nullptr;
-            data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
-            if (!data.hoveredNode)
+            data::hoveredWire = nullptr;
+            data::hoveredNode = NodeWorld::Get().FindNodeAtPos(data::cursorPos);
+            if (!data::hoveredNode)
             {
-                data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(data.cursorPos);
-                if (!data.hoveredWire)
+                data::hoveredWire = NodeWorld::Get().FindWireElbowAtPos(data::cursorPos);
+                if (!data::hoveredWire)
                 {
-                    hoveredGroup = NodeWorld::Get().FindGroupAtPos(data.cursorPos);
+                    hoveredGroup = NodeWorld::Get().FindGroupAtPos(data::cursorPos);
                 }
             }
         }
         else if (nodeBeingDragged)
         {
-            hoveringMergable = NodeWorld::Get().FindNodeAtPos(data.cursorPos); // This will come before updating the position of the dragged node
+            hoveringMergable = NodeWorld::Get().FindNodeAtPos(data::cursorPos); // This will come before updating the position of the dragged node
         }
     }
 
     // Press
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (!data.selection.empty() && !!data.hoveredNode) // There is a selection, and a node has been pressed
+        if (!data::selection.empty() && !!data::hoveredNode) // There is a selection, and a node has been pressed
         {
-            nodeBeingDragged = data.hoveredNode;
+            nodeBeingDragged = data::hoveredNode;
             wireBeingDragged = nullptr;
-            selectionRec = data.GetSelectionBounds();
+            selectionRec = data::GetSelectionBounds();
         }
         else
         {
-            data.selection.clear();
-            nodeBeingDragged = data.hoveredNode;
-            wireBeingDragged = data.hoveredWire;
+            data::selection.clear();
+            nodeBeingDragged = data::hoveredNode;
+            wireBeingDragged = data::hoveredWire;
 
             // selectionStart being used as an offset here
             if (draggingGroup = !!hoveredGroup)
             {
-                NodeWorld::Get().FindNodesInGroup(data.selection, hoveredGroup);
-                selectionStart = (data.cursorPos - (fallbackPos = hoveredGroup->GetPosition()));
+                NodeWorld::Get().FindNodesInGroup(data::selection, hoveredGroup);
+                selectionStart = (data::cursorPos - (fallbackPos = hoveredGroup->GetPosition()));
             }
 
-            fallbackPos = data.cursorPos;
+            fallbackPos = data::cursorPos;
             if (selectionWIP = !(nodeBeingDragged || wireBeingDragged || draggingGroup))
-                selectionStart = data.cursorPos;
+                selectionStart = data::cursorPos;
         }
     }
 
@@ -100,39 +100,39 @@ void Tool_Edit::Update()
     if (selectionWIP)
     {
         selectionRec = IRect(
-            std::minmax(data.cursorPos.x, selectionStart.x),
-            std::minmax(data.cursorPos.y, selectionStart.y));
+            std::minmax(data::cursorPos.x, selectionStart.x),
+            std::minmax(data::cursorPos.y, selectionStart.y));
         selectionRec.DeAbuse();
     }
     // Node
     else if (!!nodeBeingDragged)
     {
         // Multiple selection
-        if (!data.selection.empty())
+        if (!data::selection.empty())
         {
-            const IVec2 offset = data.GetCursorDelta();
-            for (Node* node : data.selection)
+            const IVec2 offset = data::GetCursorDelta();
+            for (Node* node : data::selection)
             {
-                node->SetPosition_Temporary(node->GetPosition() + offset);
+                node->SetPosition_Silent(node->GetPosition() + offset);
             }
             selectionRec.position += offset;
         }
         else
-            nodeBeingDragged->SetPosition_Temporary(data.cursorPos);
+            nodeBeingDragged->SetPosition_Silent(data::cursorPos);
     }
     // Wire
     else if (!!wireBeingDragged)
     {
-        wireBeingDragged->SnapElbowToLegal(data.cursorPos);
+        wireBeingDragged->SnapElbowToLegal(data::cursorPos);
     }
     // Group
     else if (draggingGroup)
     {
-        hoveredGroup->SetPosition(data.cursorPos - selectionStart);
-        for (Node* node : data.selection)
+        hoveredGroup->SetPosition(data::cursorPos - selectionStart);
+        for (Node* node : data::selection)
         {
-            const IVec2 offset = data.GetCursorDelta();
-            node->SetPosition_Temporary(node->GetPosition() + offset);
+            const IVec2 offset = data::GetCursorDelta();
+            node->SetPosition_Silent(node->GetPosition() + offset);
         }
     }
 
@@ -149,10 +149,10 @@ void Tool_Edit::Update()
             else if (draggingGroup)
             {
                 hoveredGroup->SetPosition(fallbackPos);
-                for (Node* node : data.selection)
+                for (Node* node : data::selection)
                 {
-                    IVec2 offset = (fallbackPos + selectionStart) - data.cursorPos;
-                    node->SetPosition_Temporary(node->GetPosition() + offset);
+                    IVec2 offset = (fallbackPos + selectionStart) - data::cursorPos;
+                    node->SetPosition_Silent(node->GetPosition() + offset);
                 }
             }
             else if (selectionWIP)
@@ -170,7 +170,7 @@ void Tool_Edit::Update()
                 {
                     if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
                     {
-                        data.hoveredNode = NodeWorld::Get().MergeNodes(hoveringMergable, nodeBeingDragged);
+                        data::hoveredNode = NodeWorld::Get().MergeNodes(hoveringMergable, nodeBeingDragged);
                         hoveringMergable = nodeBeingDragged = nullptr;
                     }
                     else
@@ -180,18 +180,18 @@ void Tool_Edit::Update()
                     }
                 }
                 else
-                    nodeBeingDragged->SetPosition(data.cursorPos);
+                    nodeBeingDragged->SetPosition(data::cursorPos);
             }
             else if (draggingGroup)
             {
-                for (Node* node : data.selection)
+                for (Node* node : data::selection)
                 {
                     node->SetPosition(node->GetPosition());
                 }
             }
             else if (selectionWIP)
             {
-                NodeWorld::Get().FindNodesInRect(data.selection, selectionRec);
+                NodeWorld::Get().FindNodesInRect(data::selection, selectionRec);
             }
         }
         if (draggingGroup)
@@ -202,14 +202,14 @@ void Tool_Edit::Update()
         wireBeingDragged = nullptr;
     }
     // Right click
-    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!data.hoveredNode)
+    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!data::hoveredNode)
     {
-        data.hoveredNode->SetGate(data.gatePick);
-        switch (data.hoveredNode->GetGate())
+        data::hoveredNode->SetGate(data::gatePick);
+        switch (data::hoveredNode->GetGate())
         {
-        case Gate::RESISTOR:  data.hoveredNode->SetResistance(data.storedExtraParam); break;
-        case Gate::LED:       data.hoveredNode->SetColorIndex(data.storedExtraParam); break;
-        case Gate::CAPACITOR: data.hoveredNode->SetCapacity(data.storedExtraParam);   break;
+        case Gate::RESISTOR:  data::hoveredNode->SetResistance(data::storedExtraParam); break;
+        case Gate::LED:       data::hoveredNode->SetColorIndex(data::storedExtraParam); break;
+        case Gate::CAPACITOR: data::hoveredNode->SetCapacity(data::storedExtraParam);   break;
         }
     }
 }
@@ -223,46 +223,46 @@ void Tool_Edit::Draw()
 
     NodeWorld::Get().DrawWires();
 
-    for (Node* node : data.selection)
+    for (Node* node : data::selection)
     {
         DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, WIPBLUE);
     }
 
-    if (!!data.hoveredWire)
+    if (!!data::hoveredWire)
     {
         IVec2 pts[4];
-        data.hoveredWire->GetLegalElbowPositions(pts);
+        data::hoveredWire->GetLegalElbowPositions(pts);
         for (const IVec2& p : pts)
         {
-            Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(WIPBLUE, 0.25f));
+            Wire::Draw(data::hoveredWire->GetStartPos(), p, data::hoveredWire->GetEndPos(), ColorAlpha(WIPBLUE, 0.25f));
             DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(WIPBLUE, 0.5f));
         }
 
-        data.hoveredWire->Draw(WIPBLUE);
+        data::hoveredWire->Draw(WIPBLUE);
         Color elbowColor;
         if (!!wireBeingDragged)
             elbowColor = WIPBLUE;
         else
             elbowColor = CAUTIONYELLOW;
-        data.hoveredWire->DrawElbow(elbowColor);
+        data::hoveredWire->DrawElbow(elbowColor);
     }
 
     NodeWorld::Get().DrawNodes();
 
-    if (!!data.hoveredNode)
+    if (!!data::hoveredNode)
     {
-        data.hoveredNode->Draw(CAUTIONYELLOW);
+        data::hoveredNode->Draw(CAUTIONYELLOW);
     }
-    if (!!data.hoveredWire)
+    if (!!data::hoveredWire)
     {
-        data.hoveredWire->start->Draw(INPUTLAVENDER);
-        data.hoveredWire->end->Draw(OUTPUTAPRICOT);
+        data::hoveredWire->start->Draw(INPUTLAVENDER);
+        data::hoveredWire->end->Draw(OUTPUTAPRICOT);
     }
 
     if (!!nodeBeingDragged && hoveringMergable)
     {
         DrawCircleIV(nodeBeingDragged->GetPosition(), Node::g_nodeRadius * 2.0f, VIOLET);
-        data.DrawTooltipAtCursor(
+        data::DrawTooltipAtCursor(
             "Hold [shift] to merge on release.\n"
             "Otherwise, nodes will only be swapped.", VIOLET);
     }

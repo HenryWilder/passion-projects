@@ -34,7 +34,7 @@ const IRect Overlay_Button::dropdownBounds[] = {
 
 Overlay_Button::Overlay_Button()
 {
-    dropdownActive = data.cursorUIPos.x / 16;
+    dropdownActive = data::cursorUIPos.x / 16;
 }
 Overlay_Button::~Overlay_Button()
 {
@@ -46,7 +46,7 @@ void Overlay_Button::Update()
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
         IRect rec = dropdownBounds[dropdownActive];
-        if (data.CursorInUIBounds(rec))
+        if (data::CursorInUIBounds(rec))
         {
             rec.h = 16;
 
@@ -56,12 +56,12 @@ void Overlay_Button::Update()
             {
                 for (Mode m : dropdownModeOrder)
                 {
-                    if (m == data.GetBaseMode())
+                    if (m == data::GetBaseMode())
                         continue;
 
-                    if (data.CursorInUIBounds(rec))
+                    if (data::CursorInUIBounds(rec))
                     {
-                        data.SetMode(m);
+                        data::SetMode(m);
                         break;
                     }
 
@@ -74,19 +74,19 @@ void Overlay_Button::Update()
             {
                 for (Gate g : dropdownGateOrder)
                 {
-                    if (g == data.gatePick)
+                    if (g == data::gatePick)
                         continue;
 
-                    if (data.CursorInUIBounds(rec))
+                    if (data::CursorInUIBounds(rec))
                     {
-                        data.SetGate(g);
+                        data::SetGate(g);
                         break;
                     }
 
                     rec.y += 16;
                 }
 
-                data.ClearOverlayMode();
+                data::ClearOverlayMode();
             }
             break;
 
@@ -94,29 +94,29 @@ void Overlay_Button::Update()
             {
                 for (uint8_t v = 0; v < 10; ++v)
                 {
-                    if (v == data.storedExtraParam)
+                    if (v == data::storedExtraParam)
                         continue;
 
-                    if (data.CursorInUIBounds(rec))
+                    if (data::CursorInUIBounds(rec))
                     {
-                        data.storedExtraParam = v;
+                        data::storedExtraParam = v;
                         break;
                     }
 
                     rec.y += 16;
                 }
 
-                data.ClearOverlayMode();
+                data::ClearOverlayMode();
             }
             break;
             }
         }
         else
-            data.ClearOverlayMode();
+            data::ClearOverlayMode();
     }
     else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
-        data.ClearOverlayMode();
+        data::ClearOverlayMode();
     }
 }
 void Overlay_Button::Draw()
@@ -124,7 +124,7 @@ void Overlay_Button::Draw()
     NodeWorld::Get().DrawWires();
     NodeWorld::Get().DrawNodes();
 
-    data.SetMode2D(false);
+    data::SetMode2D(false);
 
     IRect rec = dropdownBounds[dropdownActive];
     DrawRectangleIRect(rec, SPACEGRAY);
@@ -136,17 +136,17 @@ void Overlay_Button::Draw()
     {
         for (Mode m : dropdownModeOrder)
         {
-            if (m == data.GetBaseMode())
+            if (m == data::GetBaseMode())
                 continue;
             Color color;
-            if (InBoundingBox(rec, data.cursorUIPos))
+            if (InBoundingBox(rec, data::cursorUIPos))
             {
                 color = WHITE;
-                DrawText(ProgramData::GetModeTooltipName(m), 20, 17 + rec.y, 8, WHITE);
+                DrawText(data::GetModeTooltipName(m), 20, 17 + rec.y, 8, WHITE);
             }
             else
                 color = DEADCABLE;
-            ProgramData::DrawModeIcon(m, rec.xy, color);
+            data::DrawModeIcon(m, rec.xy, color);
             rec.y += 16;
         }
     }
@@ -156,17 +156,17 @@ void Overlay_Button::Draw()
     {
         for (Gate g : dropdownGateOrder)
         {
-            if (g == data.gatePick)
+            if (g == data::gatePick)
                 continue;
             Color color;
-            if (InBoundingBox(rec, data.cursorUIPos))
+            if (InBoundingBox(rec, data::cursorUIPos))
             {
                 color = WHITE;
-                DrawText(ProgramData::GetGateTooltipName(g), 20 + 16, 17 + rec.y, 8, WHITE);
+                DrawText(data::GetGateTooltipName(g), 20 + 16, 17 + rec.y, 8, WHITE);
             }
             else
                 color = DEADCABLE;
-            ProgramData::DrawGateIcon16x(g, rec.xy, color);
+            data::DrawGateIcon16x(g, rec.xy, color);
             rec.y += 16;
         }
     }
@@ -176,18 +176,18 @@ void Overlay_Button::Draw()
     {
         for (uint8_t v = 0; v < _countof(Node::g_resistanceBands); ++v)
         {
-            if (v == data.storedExtraParam)
+            if (v == data::storedExtraParam)
                 continue;
             Color color = Node::g_resistanceBands[v];
-            if (InBoundingBox(rec, data.cursorUIPos))
+            if (InBoundingBox(rec, data::cursorUIPos))
             {
                 DrawRectangleIRect(rec, WIPBLUE);
                 DrawRectangleIRect(ExpandIRect(rec, -2), color);
                 const char* text;
-                if (data.gatePick == Gate::LED)
-                    text = TextFormat(data.deviceParameterTextFmt, Node::GetColorName(v));
+                if (data::gatePick == Gate::LED)
+                    text = TextFormat(data::deviceParameterTextFmt, Node::GetColorName(v));
                 else
-                    text = TextFormat(data.deviceParameterTextFmt, v);
+                    text = TextFormat(data::deviceParameterTextFmt, v);
                 DrawText(text, 20 + 32, 17 + rec.y, 8, WHITE);
             }
             else
