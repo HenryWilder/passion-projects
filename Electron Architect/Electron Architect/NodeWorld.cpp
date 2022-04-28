@@ -457,7 +457,7 @@ void NodeWorld::EvaluateNode(Node* node)
 {
     switch (node->m_gate)
     {
-        ASSERT_SPECIALIZATION_NAMED(L"Node evaluation");
+        ASSERTF_SPECIALIZATION(L"%li \'%lc\'", (int)node->m_gate, (char)node->m_gate);
 
     case Gate::LED:
     case Gate::OR:
@@ -674,7 +674,7 @@ void NodeWorld::Save(const char* filename) const
 
         for (Node* node : nodes)
         {
-            file << TextFormat("%c %i %i", (char)node->m_gate, node->GetX(), node->GetY());
+            file << TextFormat("%c %i %i", GateToChar(node->m_gate), node->GetX(), node->GetY());
             if (node->GetGate() == Gate::RESISTOR)
                 file << TextFormat(" %i", node->GetResistance());
             else if (node->GetGate() == Gate::LED)
@@ -763,6 +763,7 @@ void NodeWorld::Load(const char* filename)
         for (size_t i = 0; i < nodeCount; ++i)
         {
             file >> nodeData[i].gate >> nodeData[i].pos.x >> nodeData[i].pos.y;
+            nodeData[i].gate = (char)CharToGate(nodeData[i].gate);
             if ((Gate)nodeData[i].gate == Gate::RESISTOR || (Gate)nodeData[i].gate == Gate::LED || (Gate)nodeData[i].gate == Gate::CAPACITOR)
                 file >> nodeData[i].extra;
         }

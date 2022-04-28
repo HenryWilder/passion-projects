@@ -34,8 +34,8 @@ IVec2 Normal(IVec2 vec)
     int ySqr = vec.y * vec.y;
     int lenSqr = xSqr + ySqr;
     return {
-        (int)sqrtf(xSqr / lenSqr),
-        (int)sqrtf(ySqr / lenSqr)
+        (int)sqrtf((float)xSqr / (float)lenSqr),
+        (int)sqrtf((float)ySqr / (float)lenSqr)
     };
 }
 

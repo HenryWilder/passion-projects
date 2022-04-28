@@ -22,7 +22,7 @@
     default: \
     (void)( \
         (false) || \
-        (1 != _CrtDbgReportW(_CRT_ASSERT, _CRT_WIDE(__FILE__), __LINE__, NULL, "%s" fmt, "Missing specialization for case:\ncase ", __VA_ARGS__)) || \
+        (1 != _CrtDbgReportW(_CRT_ASSERT, _CRT_WIDE(__FILE__), __LINE__, NULL, "%ls" fmt, L"Missing specialization for case:\ncase ", __VA_ARGS__)) || \
         (_CrtDbgBreak(), 0) \
     ); break
 

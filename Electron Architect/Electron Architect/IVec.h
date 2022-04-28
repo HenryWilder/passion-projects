@@ -29,7 +29,7 @@ constexpr Height operator/(Height a, int b) { return Height(a.y / b); }
 
 struct IVec2
 {
-    IVec2() = default;
+    IVec2() : x(), y() {}
 
     constexpr IVec2(int x)
         : x(x), y(x) {}
@@ -54,11 +54,6 @@ struct IVec2
         struct { int x, y; };
         struct { Width w; Height h; };
     };
-
-    bool operator>(IVec2) = delete;
-    bool operator<(IVec2) = delete;
-    bool operator>=(IVec2) = delete;
-    bool operator<=(IVec2) = delete;
 
     constexpr IVec2& operator+=(IVec2 b) { x += b.x; y += b.y; return *this; }
     constexpr IVec2& operator-=(IVec2 b) { x -= b.x; y -= b.y; return *this; }
@@ -173,7 +168,7 @@ public:
 };
 struct IRect
 {
-    IRect() = default;
+    IRect() : x(), y(), w(), h() {}
 
     constexpr IRect(int w)
         : x(0), y(0), w(w), h(w) {}

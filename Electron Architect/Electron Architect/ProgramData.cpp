@@ -237,28 +237,22 @@ namespace data
 
     void SetGate(Gate newGate)
     {
-        constexpr const char* parameterTextFmtOptions[] =
-        {
-            "Component parameter: %i",
-            "Resistance: %i inputs",
-            "Capacity: %i ticks",
-            "Color: %s"
-        };
         gatePick = newGate;
+
         switch (newGate)
         {
         default:
-            deviceParameterTextFmt = parameterTextFmtOptions[0];
+            deviceParameterTextFmt = "Component parameter: %i";
             break;
 
         case Gate::RESISTOR:
-            deviceParameterTextFmt = parameterTextFmtOptions[1];
+            deviceParameterTextFmt = "Resistance: %i inputs";
             break;
         case Gate::CAPACITOR:
-            deviceParameterTextFmt = parameterTextFmtOptions[2];
+            deviceParameterTextFmt = "Capacity: %i ticks";
             break;
         case Gate::LED:
-            deviceParameterTextFmt = parameterTextFmtOptions[3];
+            deviceParameterTextFmt = "Color: %s";
             break;
         }
     }

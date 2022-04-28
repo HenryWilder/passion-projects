@@ -59,7 +59,7 @@ struct Menu : Overlay
 
 struct Tool_Pen : public Tool
 {
-    IVec2 dragStart{};
+    IVec2 dragStart;
     ElbowConfig currentWireElbowConfig{};
     Node* previousWireStart = nullptr;
     Node* currentWireStart = nullptr;

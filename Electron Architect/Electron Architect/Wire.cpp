@@ -15,8 +15,8 @@ ElbowConfig& operator--(ElbowConfig& ec)
     return ec = (ElbowConfig)((uint8_t)ec - 1);
 }
 
-Wire::Wire(Node * start, Node * end) : elbow(), elbowConfig((ElbowConfig)0), start(start), end(end) {}
-Wire::Wire(Node * start, Node * end, ElbowConfig elbowConfig) : elbow(), elbowConfig(elbowConfig), start(start), end(end) { UpdateElbowToLegal(); }
+Wire::Wire(Node* start, Node* end) : elbow(), elbowConfig((ElbowConfig)0), start(start), end(end) {}
+Wire::Wire(Node* start, Node* end, ElbowConfig elbowConfig) : elbow(), elbowConfig(elbowConfig), start(start), end(end) { UpdateElbowToLegal(); }
 
 bool Wire::GetState() const
 {
