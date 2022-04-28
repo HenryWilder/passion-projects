@@ -228,7 +228,7 @@ void Node::Draw(IVec2 position, Gate gate, Color color)
             nodeRadius * cosf(4 * PI / 3) * 1.5f
         };
 
-        Vector2 tri[3] { position, position, position };
+        Vector2 tri[3] { (Vector2)position, (Vector2)position, (Vector2)position };
         tri[0].x += unitVerts[0];
         tri[0].y += unitVerts[1];
         tri[1].x += unitVerts[2];
@@ -409,7 +409,7 @@ char GateToChar(Gate gate)
 {
     switch (gate)
     {
-        ASSERTF_SPECIALIZATION();
+        ASSERTF_SPECIALIZATION(L"Gate was %i", (int)gate);
 
     case Gate::OR:          return '|';
     case Gate::AND:         return '&';

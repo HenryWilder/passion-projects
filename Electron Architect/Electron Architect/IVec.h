@@ -30,18 +30,22 @@ constexpr Height operator/(Height a, int b) { return Height(a.y / b); }
 struct IVec2
 {
     IVec2() = default;
-    template<std::integral T>
-    constexpr IVec2(T x)
+
+    constexpr IVec2(int x)
         : x(x), y(x) {}
+
     constexpr IVec2(Width w)
         : x(w.x), y(0) {}
+
     constexpr IVec2(Height h)
         : x(0), y(h.y) {}
+
     constexpr IVec2(Width w, Height h)
         : x(w.x), y(h.y) {}
-    template<std::integral T1, std::integral T2>
-    constexpr IVec2(T1 x, T2 y)
+
+    constexpr IVec2(int x, int y)
         : x(x), y(y) {}
+
     explicit constexpr IVec2(Vector2 v)
         : x((int)v.x), y((int)v.y) {}
 
@@ -170,33 +174,37 @@ public:
 struct IRect
 {
     IRect() = default;
-    template<std::integral T>
-    constexpr IRect(T w)
+
+    constexpr IRect(int w)
         : x(0), y(0), w(w), h(w) {}
-    template<std::integral T1, std::integral T2>
-    constexpr IRect(T1 w, T2 h)
+
+    constexpr IRect(int w, int h)
         : x(0), y(0), w(w), h(h) {}
+
     constexpr IRect(Width w, Height h)
         : x(0), y(0), w(w.x), h(h.y) {}
-    template<std::integral T1, std::integral T2, std::integral T3>
-    constexpr IRect(T1 x, T2 y, T3 w)
+
+    constexpr IRect(int x, int y, int w)
         : x(x), y(y), w(w), h(w) {}
-    template<std::integral T>
-    constexpr IRect(IVec2 v, T w)
+
+    constexpr IRect(IVec2 v, int w)
         : x(v.x), y(v.y), w(w), h(w) {}
-    template<std::integral T1, std::integral T2, std::integral T3, std::integral T4>
-    constexpr IRect(T1 x, T2 y, T3 w, T4 h)
+
+    constexpr IRect(int x, int y, int w, int h)
         : x(x), y(y), w(w), h(h) {}
-    template<std::integral T1, std::integral T2>
-    constexpr IRect(IVec2 v, T1 w, T2 h)
+
+    constexpr IRect(IVec2 v, int w, int h)
         : x(v.x), y(v.y), w(w), h(h) {}
+
     constexpr IRect(IVec2 v, IVec2 extents)
         : x(v.x), y(v.y), w(extents.x), h(extents.y) {}
+
     constexpr IRect(IVec2 v, Width w, Height h)
         : x(v.x), y(v.y), w(w.x), h(h.y) {}
-    template<std::integral T1, std::integral T2, std::integral T3, std::integral T4>
-    constexpr IRect(std::pair<T1, T2> minmaxX, std::pair<T3, T4> minmaxY)
+
+    constexpr IRect(std::pair<int, int> minmaxX, std::pair<int, int> minmaxY)
         : x(minmaxX.first), y(minmaxY.first), w(minmaxX.second), h(minmaxY.second) {}
+
     explicit constexpr IRect(Rectangle r)
         : x((int)r.x), y((int)r.y), w((int)r.width), h((int)r.height) {}
 

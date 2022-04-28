@@ -15,15 +15,16 @@
 #define ASSERTF(expr, fmt, ...) \
     (void)(                                                                                         \
         (!!(expr)) ||                                                                               \
-        (1 != _CrtDbgReport(_CRT_ASSERT, _CRT_WIDE(__FILE__), __LINE__, NULL, fmt, __VA_ARGS__)) || \
+        (1 != _CrtDbgReportW(_CRT_ASSERT, _CRT_WIDE(__FILE__), __LINE__, NULL, fmt, __VA_ARGS__)) || \
         (_CrtDbgBreak(), 0)                                                                         \
     )
 #define ASSERTF_SPECIALIZATION(fmt, ...) \
-    (void)(                                                                                                \
-        (!!(expr)) ||                                                                                      \
-        (1 != _CrtDbgReport(_CRT_ASSERT, _CRT_WIDE(__FILE__), __LINE__, NULL, "%s" fmt, "Missing specialization for case:\ncase ", __VA_ARGS__)) || \
-        (_CrtDbgBreak(), 0)                                                                                \
-    )
+    default: \
+    (void)( \
+        (false) || \
+        (1 != _CrtDbgReportW(_CRT_ASSERT, _CRT_WIDE(__FILE__), __LINE__, NULL, "%s" fmt, "Missing specialization for case:\ncase ", __VA_ARGS__)) || \
+        (_CrtDbgBreak(), 0) \
+    ); break
 
 #else
 #define ASSERT_CONDITION(expr, msg)
