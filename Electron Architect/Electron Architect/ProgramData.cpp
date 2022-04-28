@@ -59,8 +59,8 @@ namespace data
     int windowWidth;
     int windowHeight;
 
-    ModeHandler* currentMode_object;
-    Tool* basicMode_object;
+    Tool* basicMode_object = new Tool_Pen;
+    ModeHandler* currentMode_object = basicMode_object;
 
     IVec2 cursorUIPos = IVec2::Zero();
     IVec2 cursorPos = IVec2::Zero();

@@ -159,20 +159,6 @@ void BeginScissorMode(IRect area)
     BeginScissorMode(area.x, area.y, area.w, area.h);
 }
 
-IRect& IRect::Expand(int outline)
-{
-    x -= outline;
-    y -= outline;
-    w += outline * 2;
-    h += outline * 2;
-    return *this;
-}
-
-IRect& IRect::Shrink(int outline)
-{
-    return Expand(-outline);
-}
-
 IRectIterator IRect::begin() const
 {
     return IRectIterator(*this, xy);

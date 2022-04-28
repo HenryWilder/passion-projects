@@ -5,7 +5,8 @@
 
 struct Width
 {
-    constexpr Width(int x) : x(x) {}
+    template<std::integral T>
+    constexpr Width(T x) : x(x) {}
     int x;
 };
 
@@ -16,7 +17,8 @@ constexpr Width operator/(Width a, int b) { return Width(a.x / b); }
 
 struct Height
 {
-    constexpr Height(int y) : y(y) {}
+    template<std::integral T>
+    constexpr Height(T y) : y(y) {}
     int y;
 };
 
@@ -28,14 +30,31 @@ constexpr Height operator/(Height a, int b) { return Height(a.y / b); }
 struct IVec2
 {
     IVec2() = default;
-    constexpr IVec2(int x)
+    template<std::integral T>
+    constexpr IVec2(T x)
         : x(x), y(x) {}
-    constexpr IVec2(int x, int y)
+    constexpr IVec2(Width w)
+        : x(w.x), y(0) {}
+    constexpr IVec2(Height h)
+        : x(0), y(h.y) {}
+    constexpr IVec2(Width w, Height h)
+        : x(w.x), y(h.y) {}
+    template<std::integral T1, std::integral T2>
+    constexpr IVec2(T1 x, T2 y)
         : x(x), y(y) {}
-    constexpr IVec2(Vector2 v)
+    explicit constexpr IVec2(Vector2 v)
         : x((int)v.x), y((int)v.y) {}
 
-    int x, y;
+    union
+    {
+        struct { int x, y; };
+        struct { Width w; Height h; };
+    };
+
+    bool operator>(IVec2) = delete;
+    bool operator<(IVec2) = delete;
+    bool operator>=(IVec2) = delete;
+    bool operator<=(IVec2) = delete;
 
     constexpr IVec2& operator+=(IVec2 b) { x += b.x; y += b.y; return *this; }
     constexpr IVec2& operator-=(IVec2 b) { x -= b.x; y -= b.y; return *this; }
@@ -60,7 +79,7 @@ struct IVec2
     static consteval IVec2 UnitY() { return IVec2(0,1); }
     static consteval IVec2 One()   { return IVec2(1);   }
 
-    constexpr operator Vector2() { return Vector2{ (float)x, (float)y }; }
+    explicit constexpr operator Vector2() { return Vector2{ (float)x, (float)y }; }
 };
 
 namespace std
@@ -118,6 +137,12 @@ constexpr IVec2 operator-(Height a, Width b) { return IVec2(b.x, a.y); }
 constexpr IVec2 operator*(Height a, Width b) { return IVec2(b.x, a.y); }
 constexpr IVec2 operator/(Height a, Width b) { return IVec2(b.x, a.y); }
 
+template<typename T>
+concept IVec2Operable = requires(IVec2 v, T t)
+{
+    { v += t } -> std::convertible_to<IVec2>;
+};
+
 IVec2 IVec2Scale_f(IVec2 a, float b);
 
 bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2);
@@ -145,25 +170,34 @@ public:
 struct IRect
 {
     IRect() = default;
-    constexpr IRect(int w)
+    template<std::integral T>
+    constexpr IRect(T w)
         : x(0), y(0), w(w), h(w) {}
-    constexpr IRect(int w, int h)
+    template<std::integral T1, std::integral T2>
+    constexpr IRect(T1 w, T2 h)
         : x(0), y(0), w(w), h(h) {}
-    constexpr IRect(int x, int y, int w)
+    constexpr IRect(Width w, Height h)
+        : x(0), y(0), w(w.x), h(h.y) {}
+    template<std::integral T1, std::integral T2, std::integral T3>
+    constexpr IRect(T1 x, T2 y, T3 w)
         : x(x), y(y), w(w), h(w) {}
-    constexpr IRect(int x, int y, int w, int h)
-        : x(x), y(y), w(w), h(h) {}
-    constexpr IRect(IVec2 v, int w)
+    template<std::integral T>
+    constexpr IRect(IVec2 v, T w)
         : x(v.x), y(v.y), w(w), h(w) {}
-    constexpr IRect(IVec2 v, int w, int h)
+    template<std::integral T1, std::integral T2, std::integral T3, std::integral T4>
+    constexpr IRect(T1 x, T2 y, T3 w, T4 h)
+        : x(x), y(y), w(w), h(h) {}
+    template<std::integral T1, std::integral T2>
+    constexpr IRect(IVec2 v, T1 w, T2 h)
         : x(v.x), y(v.y), w(w), h(h) {}
     constexpr IRect(IVec2 v, IVec2 extents)
         : x(v.x), y(v.y), w(extents.x), h(extents.y) {}
     constexpr IRect(IVec2 v, Width w, Height h)
         : x(v.x), y(v.y), w(w.x), h(h.y) {}
-    constexpr IRect(std::pair<int, int> minmaxX, std::pair<int, int> minmaxY)
+    template<std::integral T1, std::integral T2, std::integral T3, std::integral T4>
+    constexpr IRect(std::pair<T1, T2> minmaxX, std::pair<T3, T4> minmaxY)
         : x(minmaxX.first), y(minmaxY.first), w(minmaxX.second), h(minmaxY.second) {}
-    constexpr IRect(Rectangle r)
+    explicit constexpr IRect(Rectangle r)
         : x((int)r.x), y((int)r.y), w((int)r.width), h((int)r.height) {}
 
     union
@@ -184,8 +218,19 @@ struct IRect
     constexpr operator Width()  { return Width(w); }
     constexpr operator Height() { return Height(h); }
 
-    IRect& Expand(int outline = 1);
-    IRect& Shrink(int outline = 1);
+    template<typename T>
+    IRect& Expand(T outline = 1) requires std::convertible_to<T, IVec2>
+    {
+        xy -= IVec2(outline);
+        wh += IVec2(outline * 2);
+        return *this;
+    }
+
+    template<typename T>
+    IRect& Shrink(int outline = 1) requires std::convertible_to<T, IVec2>
+    {
+        return Expand(-outline);
+    }
 
     // Abuse as min and max instead of width and height
     // Returns an IRect with INT_MIN and INT_MAX components for comparing
@@ -235,7 +280,7 @@ inline constexpr IRect ShrinkIRect(IRect rec, int outline = 1)
 * ---+---
 *  3 | 4
 */
-constexpr struct IRect IRectQuadrant(IRect rec, uint8_t q)
+constexpr IRect IRectQuadrant(IRect rec, uint8_t q)
 {
     _ASSERT_EXPR(q <= 4, L"Quadrant cannot be greater than 4");
     switch (q)
@@ -254,11 +299,12 @@ constexpr struct IRect IRectQuadrant(IRect rec, uint8_t q)
 */
 constexpr struct QuadSet { IRect q1, q2, q3, q4; } SubdivideIRect(IRect rec)
 {
+    IVec2 halfExt = rec.wh / 2;
     return {
-        { rec.xy + Width(rec.w / 2),    rec.wh / 2 },
-        { rec.xy,                       rec.wh / 2 },
-        { rec.xy + Height(rec.h / 2),   rec.wh / 2 },
-        { rec.xy + rec.wh / 2,          rec.wh / 2 }
+        { rec.xy + halfExt.w, halfExt },
+        { rec.xy,             halfExt },
+        { rec.xy + halfExt.h, halfExt },
+        { rec.xy + halfExt,   halfExt }
     };
 }
 

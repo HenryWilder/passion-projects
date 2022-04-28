@@ -457,6 +457,8 @@ void NodeWorld::EvaluateNode(Node* node)
 {
     switch (node->m_gate)
     {
+        ASSERT_SPECIALIZATION_NAMED(L"Node evaluation");
+
     case Gate::LED:
     case Gate::OR:
         for (Wire* wire : node->Inputs())
@@ -526,10 +528,6 @@ void NodeWorld::EvaluateNode(Node* node)
                 return void(node->m_ntd.d.lastState = true);
         }
         node->m_ntd.d.lastState = false;
-        break;
-
-    default:
-        _ASSERT_EXPR(false, L"No specialization for selected gate evaluation");
         break;
     }
 }

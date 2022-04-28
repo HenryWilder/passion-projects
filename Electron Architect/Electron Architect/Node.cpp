@@ -409,7 +409,7 @@ char GateToChar(Gate gate)
 {
     switch (gate)
     {
-        ASSERT_SPECIALIZATION;
+        ASSERTF_SPECIALIZATION();
 
     case Gate::OR:          return '|';
     case Gate::AND:         return '&';

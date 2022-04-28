@@ -12,12 +12,28 @@
 // Assert that the expr must be true. If it is not, the scoped code will not be executed (in debug).
 #define ASSERT_CONDITION(expr, msg) _ASSERT_EXPR(expr, msg L"\nWARNING: Before working on the bug, please click ignore and close the program OR press retry, continue, and then close the program safely! Exiting the program at this moment without some cleanup has been deemed potentially dangerous!!"); if (expr)
 #define ASSERTION_FAILSAFE else
+#define ASSERTF(expr, fmt, ...) \
+    (void)(                                                                                         \
+        (!!(expr)) ||                                                                               \
+        (1 != _CrtDbgReport(_CRT_ASSERT, _CRT_WIDE(__FILE__), __LINE__, NULL, fmt, __VA_ARGS__)) || \
+        (_CrtDbgBreak(), 0)                                                                         \
+    )
+#define ASSERTF_SPECIALIZATION(fmt, ...) \
+    (void)(                                                                                                \
+        (!!(expr)) ||                                                                                      \
+        (1 != _CrtDbgReport(_CRT_ASSERT, _CRT_WIDE(__FILE__), __LINE__, NULL, "%s" fmt, "Missing specialization for case:\ncase ", __VA_ARGS__)) || \
+        (_CrtDbgBreak(), 0)                                                                                \
+    )
+
 #else
 #define ASSERT_CONDITION(expr, msg)
 #define ASSERTION_FAILSAFE if (false)
+#define ASSERTF (void)()
+#define ASSERTF_SPECIALIZATION (void)()
 #endif
 #define ASSERT_SPECIALIZATION default: _ASSERT_EXPR(false, L"Missing specialization for encountered case"); break
 #define ASSERT_SPECIALIZATION_NAMED(being_specialized) default: _ASSERT_EXPR(false, L"Missing " being_specialized L" specialization for encountered case"); break
+#define ASSERT_SPECIALIZATION_CUSTOM(msg) default: _ASSERT_EXPR(false, msg); break
 
 #pragma region Constants
 
