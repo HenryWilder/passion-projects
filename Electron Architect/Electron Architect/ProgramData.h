@@ -84,6 +84,7 @@ namespace data
     bool ModeIsMenu();
     bool ModeIsOverlay(Mode mode);
     bool ModeIsOverlay();
+    bool ModeIsBasic(Mode mode);
     bool ModeIsBasic();
 
     Mode GetCurrentMode(); // Mode enum of currentMode_object
@@ -154,7 +155,7 @@ namespace data
             IVec2 extents((int)((float)windowWidth / camera.zoom), (int)((float)windowHeight / camera.zoom));
             IRect bounds(IVec2(camera.target), extents);
 
-            constexpr float gridSpaceFrac = 1.0f / gridSize;
+            constexpr float gridSpaceFrac = 1.0f / (float)gridSize;
             // "If the fraction of a screen pixel in a grid space equals or exceeds the fraction of a screen pixel in a world pixel"
             if (camera.zoom <= gridSpaceFrac)
             {

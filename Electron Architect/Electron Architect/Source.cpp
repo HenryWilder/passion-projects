@@ -36,6 +36,7 @@ int main()
 
         // UI buttons
         if (!data::ModeIsMenu() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            [[unlikely]] // Very, very few frames will have a click to begin with (Who on earth is clicking at 60hz in this??)
         {
             if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Mode) + Width(16 * 2)) &&
                 (data::GetCurrentMode() == Mode::BUTTON ? data::CurrentModeAs<Overlay_Button>()->dropdownActive != (data::cursorUIPos.x / 16) : true))
@@ -44,6 +45,7 @@ int main()
                 goto EVAL; // Skip button sim this frame
             }
             else if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Blueprints)))
+                [[unlikely]] // Todo: Change this not to be unlikely once there's an actual reason for people to click it
             {
                 data::SetMode(Mode::BP_SELECT);
             }
@@ -59,7 +61,7 @@ int main()
 
     EVAL:
         data::cursorPosPrev = data::cursorPos;
-        if (data::tickThisFrame)
+        if (data::tickThisFrame) [[unlikely]] // Only 10 times a second
             NodeWorld::Get().Evaluate();
 
         /******************************************
@@ -70,7 +72,7 @@ int main()
 
             ClearBackground(BLACK);
 
-            if (!data::ModeIsMenu())
+            if (!data::ModeIsMenu()) [[likely]]
             {
                 data::SetMode2D(true);
 
@@ -83,7 +85,7 @@ int main()
             // Draw
             data::currentMode_object->Draw();
 
-            if (!data::ModeIsMenu())
+            if (!data::ModeIsMenu()) [[likely]]
             {
                 data::SetMode2D(false);
 
@@ -135,7 +137,7 @@ int main()
                     DrawTextIV(text, data::ButtonBounds(ButtonID::Parameter).xy + tooltipNameOffset, 8, WHITE);
                 }
                 // Blueprints
-                else if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Blueprints)))
+                else if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Blueprints))) [[unlikely]] // Not likely while this feature is still in development
                 {
                     DrawRectangleIRect(data::ButtonBounds(ButtonID::Blueprints), WIPBLUE);
                     // Tooltip

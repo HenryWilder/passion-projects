@@ -59,6 +59,12 @@ constexpr int g_gridSize = 8;
 // Converts the argument to a const wchar_t* string
 #define WSTRINGIFY(arg) L ## #arg
 
+#if _DEBUG
+#define DELETE_AND_NULL(x) delete x; x = decltype(x)(__LINE__)
+#else
+#define DELETE_AND_NULL(x) delete x
+#endif
+
 template<typename C, typename T>
 concept Container = requires(C x, T e)
 {

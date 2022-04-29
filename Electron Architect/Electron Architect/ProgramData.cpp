@@ -25,7 +25,7 @@ namespace data
         iconTextures::modeIcons = LoadTexture("icons_mode.png");
         iconTextures::gateIcons16x = LoadTexture("icons_gate16x.png");
         iconTextures::gateIcons32x = LoadTexture("icons_gate32x.png");
-
+        currentMode_object = basicMode_object = new Tool_Edit;
         SetMode(Mode::PEN);
         SetGate(Gate::OR);
     }
@@ -169,6 +169,11 @@ namespace data
         return ModeIsOverlay(currentMode_object->GetMode());
     }
 
+    bool ModeIsBasic(Mode mode)
+    {
+        return !ModeIsOverlay(mode);
+    }
+
     bool ModeIsBasic()
     {
         bool modeIsBaseMode = currentMode_object->GetMode() == basicMode_object->GetMode();
@@ -195,6 +200,12 @@ namespace data
 
     void SetMode(Mode newMode)
     {
+        _ASSERT_EXPR(!!currentMode_object && !!basicMode_object, L"Mode should be set during init phase");
+
+        // Storing these for when their objects get deleted
+        Mode currentMode = GetCurrentMode();
+        Mode baseMode = GetBaseMode();
+
         b_cursorMoved = true; // Make sure the first frame of the new mode performs all its initial checks
 
         // No change
@@ -202,37 +213,81 @@ namespace data
             return;
 
         // Clear overlay
-        else if (newMode == GetBaseMode())
+        else if (newMode == GetBaseMode() && !ModeIsBasic())
         {
             _ASSERT_EXPR(currentMode_object != basicMode_object, L"Tried to clear overlay mode, but base mode and overlay mode are the same object");
-            delete currentMode_object;
+            DELETE_AND_NULL(currentMode_object);
+#if _DEBUG
+            currentMode_object = (ModeHandler*)1; // Tracer
+#endif // _DEBUG
+
             currentMode_object = basicMode_object;
             return;
         }
 
-        _ASSERT_EXPR(!!currentMode_object, L"Mode should be set during init phase");
-        delete currentMode_object;
+        // Free memory before overwriting
+        if (ModeIsBasic(newMode))
+        {
+            // Free both if they're different
+            if (currentMode_object != basicMode_object)
+                DELETE_AND_NULL(currentMode_object);
+            DELETE_AND_NULL(basicMode_object);
+        }
+        else
+        {
+            DELETE_AND_NULL(currentMode_object); // Deletes both or just overlay, depending on whether they are separate.
+        }
 
         switch (newMode)
         {
             ASSERT_SPECIALIZATION;
 
-        case Mode::PEN:           basicMode_object = new Tool_Pen;        break;
-        case Mode::EDIT:          basicMode_object = new Tool_Edit;       break;
-        case Mode::ERASE:         basicMode_object = new Tool_Erase;      break;
-        case Mode::INTERACT:      basicMode_object = new Tool_Interact;   break;
+        case Mode::PEN:         currentMode_object = basicMode_object = new Tool_Pen;        break;
+        case Mode::EDIT:        currentMode_object = basicMode_object = new Tool_Edit;       break;
+        case Mode::ERASE:       currentMode_object = basicMode_object = new Tool_Erase;      break;
+        case Mode::INTERACT:    currentMode_object = basicMode_object = new Tool_Interact;   break;
 
         case Mode::BUTTON:      currentMode_object = new Overlay_Button;  break;
         case Mode::PASTE:       currentMode_object = new Overlay_Paste;   break;
         case Mode::BP_ICON:     currentMode_object = new Menu_Icon;       break;
         case Mode::BP_SELECT:   currentMode_object = new Menu_Select;     break;
         }
-
-        // Both mode and baseMode should be the same object if there is no overlay
-        if (!ModeIsOverlay(newMode))
-            currentMode_object = basicMode_object;
-
-        _ASSERT_EXPR(!ModeIsOverlay(GetBaseMode()), L"Base mode is not basic");
+#if _DEBUG
+        if (!!basicMode_object && !!currentMode_object)
+        {
+            // All good!
+        }
+        else if (!!basicMode_object && !currentMode_object)
+        {
+            if (ModeIsBasic(newMode))
+                _ASSERT_EXPR(false, L"Failed to write base mode to current mode");
+            else
+                _ASSERT_EXPR(false, L"Failed to create overlay mode");
+        }
+        else if (!basicMode_object && !!currentMode_object)
+        {
+            if (ModeIsBasic(GetCurrentMode()))
+                _ASSERT_EXPR(false, L"Failed to write base mode; managed to write current mode");
+            else
+                _ASSERT_EXPR(false, L"Deleted base mode unnecessarily");
+        }
+        else if (!basicMode_object && !currentMode_object)
+        {
+            _ASSERT_EXPR(false, L"Failed to replace tool and overlay objects");
+        }
+        else
+        {
+            _ASSERT_EXPR(false,
+                L"Binary itself has ceased to operate according to the laws of logic.\n"
+                L"If you are reading this message, a grave mistake has been made.\n"
+                L"Possible causes of this error:\n"
+                L"A) This software has been tampered with.\n"
+                L"B) You are at a concerningly high risk of radiation poisoning.\n"
+                L"C) This build of the program is somehow being executed after the end of the universe,"
+                L"and the laws of physics have changed such that exclusively this point of the code failed, but no other part.\n"
+                L"D) You didn't actually get this error, and are just reading through the source code. Have a nice day.");
+        }
+#endif
     }
 
     void SetGate(Gate newGate)
