@@ -18,6 +18,12 @@
     <ClCompile Include="EACS.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Parse.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Output.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Parse.h">

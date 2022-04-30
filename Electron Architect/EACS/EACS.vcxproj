@@ -144,6 +144,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="EACS.c" />
+    <ClCompile Include="Output.c" />
+    <ClCompile Include="Parse.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Output.h" />

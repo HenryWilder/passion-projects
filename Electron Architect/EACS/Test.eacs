@@ -1,0 +1,22 @@
+{
+    for while i : min -> max [step] {
+        
+    }
+}
+&tie = reference;
+#alias = value;
+[[ comment ]]
+function
+[[ apple ]]
+[[ comment ]]
+[[ comment ]]
+&tie = reference;
+#alias = value;
+for element : array {
+    [apple]
+}
+#a = 2;
+
+for #&appl : tree {
+    
+}

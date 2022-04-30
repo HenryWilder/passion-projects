@@ -1,0 +1,4 @@
+// constexpr
+#first = 0;
+// alias
+&first = i[0];
