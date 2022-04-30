@@ -25,7 +25,7 @@ namespace data
         iconTextures::modeIcons = LoadTexture("icons_mode.png");
         iconTextures::gateIcons16x = LoadTexture("icons_gate16x.png");
         iconTextures::gateIcons32x = LoadTexture("icons_gate32x.png");
-        currentMode_object = basicMode_object = new Tool_Edit;
+        basicMode_object = new Tool_Edit;
         SetMode(Mode::PEN);
         SetGate(Gate::OR);
     }
@@ -59,8 +59,8 @@ namespace data
     int windowWidth;
     int windowHeight;
 
-    Tool* basicMode_object;
-    ModeHandler* currentMode_object;
+    Tool* basicMode_object DEBUG_MEMBER_INIT(nullptr);
+    Overlay* overlayMode_object = nullptr;
 
     IVec2 cursorUIPos = IVec2::Zero();
     IVec2 cursorPos = IVec2::Zero();
@@ -152,10 +152,9 @@ namespace data
         // Modes which disable use of basic UI and drawing of certain UI elements
         return mode == Mode::BP_ICON || mode == Mode::BP_SELECT;
     }
-
     bool ModeIsMenu()
     {
-        return ModeIsMenu(currentMode_object->GetMode());
+        return ModeIsMenu(GetCurrentMode());
     }
 
     bool ModeIsOverlay(Mode mode)
@@ -163,10 +162,9 @@ namespace data
         // Modes which can be active simultaneously with a non-overlay mode
         return mode == Mode::BUTTON || mode == Mode::PASTE || ModeIsMenu(mode);
     }
-
     bool ModeIsOverlay()
     {
-        return ModeIsOverlay(currentMode_object->GetMode());
+        return ModeIsOverlay(GetCurrentMode());
     }
 
     bool ModeIsBasic(Mode mode)
@@ -176,26 +174,34 @@ namespace data
 
     bool ModeIsBasic()
     {
-        bool modeIsBaseMode = GetCurrentMode() == GetBaseMode();
-#if _DEBUG
-        if (modeIsBaseMode)
-            _ASSERT_EXPR(currentMode_object == static_cast<ModeHandler*>(basicMode_object),
-                L"Mode and base mode tool objects aren't the same object, yet share the same mode enum");
-        else
-            _ASSERT_EXPR(currentMode_object != static_cast<ModeHandler*>(basicMode_object),
-                L"Mode and base mode tool objects are the same object, but return different mode enums (how??)");
-#endif
-        return modeIsBaseMode;
+        return ModeIsBasic(GetCurrentMode());
     }
 
-    Mode GetCurrentMode()
+    Mode GetOverlayMode()
     {
-        return currentMode_object->GetMode();
+        if (!overlayMode_object)
+            return Mode::null;
+        return overlayMode_object->GetMode();
     }
-
     Mode GetBaseMode()
     {
+        _ASSERTE(!!basicMode_object);
         return basicMode_object->GetMode();
+    }
+    Mode GetCurrentMode()
+    {
+        Mode ret = GetOverlayMode();
+        if (ret == Mode::null)
+            ret = GetBaseMode();
+        return ret;
+    }
+
+    ModeHandler* CurrentTopMode()
+    {
+        if (!!overlayMode_object)
+            return overlayMode_object;
+        else
+            return basicMode_object;
     }
 
     void SetMode(Mode newMode)
@@ -203,90 +209,43 @@ namespace data
         b_cursorMoved = true; // Make sure the first frame of the new mode performs all its initial checks
 
         // Storing these for when their objects get deleted
-        Mode currentMode = GetCurrentMode();
+        Mode overlayMode = GetOverlayMode();
         Mode baseMode = GetBaseMode();
+        Mode currentMode = GetCurrentMode();
 
         // No change
         if (newMode == currentMode)
             return;
 
-        // Clear overlay (keep base mode)
-        else if (newMode == baseMode && newMode != currentMode)
+        if (!!overlayMode_object)
+            delete overlayMode_object;
+
+        if (ModeIsBasic(newMode))
         {
-            _ASSERT_EXPR(baseMode != currentMode, L"If a==b and a!=c, b!=c. But somehow, it did...");
-            delete currentMode_object;
-            currentMode_object = basicMode_object;
+            overlayMode_object = nullptr;
+            delete basicMode_object;
+            switch (newMode)
+            {
+                ASSERT_SPECIALIZATION;
+            case Mode::PEN:      basicMode_object = new Tool_Pen;      break;
+            case Mode::EDIT:     basicMode_object = new Tool_Edit;     break;
+            case Mode::ERASE:    basicMode_object = new Tool_Erase;    break;
+            case Mode::INTERACT: basicMode_object = new Tool_Interact; break;
+            }
             return;
-        }
-
-        // Change base mode (deletes both)
-        else if (ModeIsBasic(newMode))
-        {
-            _ASSERTE(newMode != baseMode && newMode != currentMode);
-            if (baseMode != currentMode)
-                delete basicMode_object;
-            delete currentMode_object;
-        }
-
-        ModeHandler* object;
-
-#if _DEBUG
-        object = nullptr;
-#endif
-
-        switch (newMode)
-        {
-            ASSERT_SPECIALIZATION;
-
-        case Mode::PEN:         object = new Tool_Pen;        break;
-        case Mode::EDIT:        object = new Tool_Edit;       break;
-        case Mode::ERASE:       object = new Tool_Erase;      break;
-        case Mode::INTERACT:    object = new Tool_Interact;   break;
-
-        case Mode::BUTTON:      object = new Overlay_Button;  break;
-        case Mode::PASTE:       object = new Overlay_Paste;   break;
-        case Mode::BP_ICON:     object = new Menu_Icon;       break;
-        case Mode::BP_SELECT:   object = new Menu_Select;     break;
-        }
-        currentMode_object = object;
-        if (Tool* tool = dynamic_cast<Tool*>(object))
-            basicMode_object = tool;
-#if _DEBUG
-        if (!!basicMode_object && !!currentMode_object)
-        {
-            // All good!
-        }
-        else if (!!basicMode_object && !currentMode_object)
-        {
-            if (ModeIsBasic(newMode))
-                _ASSERT_EXPR(false, L"Failed to write base mode to current mode");
-            else
-                _ASSERT_EXPR(false, L"Failed to create overlay mode");
-        }
-        else if (!basicMode_object && !!currentMode_object)
-        {
-            if (ModeIsBasic(GetCurrentMode()))
-                _ASSERT_EXPR(false, L"Failed to write base mode; managed to write current mode");
-            else
-                _ASSERT_EXPR(false, L"Deleted base mode unnecessarily");
-        }
-        else if (!basicMode_object && !currentMode_object)
-        {
-            _ASSERT_EXPR(false, L"Failed to replace tool and overlay objects");
         }
         else
         {
-            _ASSERT_EXPR(false,
-                L"Binary itself has ceased to operate according to the laws of logic.\n"
-                L"If you are reading this message, a grave mistake has been made.\n"
-                L"Possible causes of this error:\n"
-                L"A) This software has been tampered with.\n"
-                L"B) You are at a concerningly high risk of radiation poisoning.\n"
-                L"C) This build of the program is somehow being executed after the end of the universe,"
-                L"and the laws of physics have changed such that exclusively this point of the code failed, but no other part.\n"
-                L"D) You didn't actually get this error, and are just reading through the source code. Have a nice day.");
+            switch (newMode)
+            {
+                ASSERT_SPECIALIZATION;
+            case Mode::BUTTON:    overlayMode_object = new Overlay_Button; break;
+            case Mode::PASTE:     overlayMode_object = new Overlay_Paste;  break;
+            case Mode::BP_ICON:   overlayMode_object = new Menu_Icon;      break;
+            case Mode::BP_SELECT: overlayMode_object = new Menu_Select;    break;
+            }
+            return;
         }
-#endif
     }
 
     void SetGate(Gate newGate)
@@ -295,7 +254,7 @@ namespace data
 
         switch (newGate)
         {
-        default:
+        default: [[likely]] // More gates are non-special than special, and they all have this singular option.
             deviceParameterTextFmt = "Component parameter: %i";
             break;
 
@@ -318,13 +277,15 @@ namespace data
 
     void ClearOverlayMode()
     {
-        SetMode(basicMode_object->GetMode());
+        SetMode(GetBaseMode());
     }
 
     const char* GetModeTooltipName(Mode mode)
     {
         switch (mode)
         {
+            ASSERT_SPECIALIZATION_RET("ERROR");
+
         case Mode::PEN:
             return "Mode: Draw [b]";
         case Mode::EDIT:
@@ -333,9 +294,6 @@ namespace data
             return "Mode: Erase [x]";
         case Mode::INTERACT:
             return "Mode: Interact [f]";
-        default:
-            _ASSERT_EXPR(false, L"Missing tooltip for selected mode");
-            return "";
         }
     }
 
@@ -343,6 +301,8 @@ namespace data
     {
         switch (mode)
         {
+            ASSERT_SPECIALIZATION_RET("ERROR");
+
         case Mode::PEN:
             return
                 "Left click to create a new node and start a wire from it, or to start a wire from an existing node.\n"
@@ -361,10 +321,6 @@ namespace data
             return
                 "Left click a node without any inputs (such nodes will render in BLUE) to toggle it between outputting true and false.\n"
                 "NOTE: Framerate is intentionally lowered from 120 to 24 while in this mode for ease of inspection.";
-
-        default:
-            _ASSERT_EXPR(false, L"Missing tooltip description for selected mode");
-            return "";
         }
     }
 
@@ -372,6 +328,8 @@ namespace data
     {
         switch (gate)
         {
+            ASSERT_SPECIALIZATION_RET("ERROR");
+
         case Gate::OR:
             return "Gate: Or [1]";
         case Gate::AND:
@@ -388,10 +346,6 @@ namespace data
             return "Device: LED [7]";
         case Gate::DELAY:
             return "Device: Delay [8]";
-
-        default:
-            _ASSERT_EXPR(false, L"Missing tooltip for selected gate");
-            return "";
         }
     }
 
@@ -399,6 +353,8 @@ namespace data
     {
         switch (gate)
         {
+            ASSERT_SPECIALIZATION_RET("ERROR");
+
         case Gate::OR:
             return
                 "Outputs true if any input is true,\n"
@@ -438,10 +394,6 @@ namespace data
                 "Treats I/O the same as an OR gate.\n"
                 "Outputs with a 1-tick delay.\n"
                 "Sequntial delay devices are recommended for delay greater than 1 tick.";
-
-        default:
-            _ASSERT_EXPR(false, L"Missing tooltip description for selected gate");
-            return "";
         }
     }
 
@@ -765,5 +717,85 @@ namespace data
     {
         SetMode(Mode::BP_ICON);
         CurrentModeAs<Menu_Icon>()->SaveBlueprint();
+    }
+
+    void Update()
+    {
+        CurrentTopMode()->Update();
+    }
+    void Draw()
+    {
+        CurrentTopMode()->Draw();
+    }
+
+    void DrawUI()
+    {
+        data::SetMode2D(false);
+
+        // UI
+        {
+            constexpr IRect WithClipboard = data::ButtonBounds(0) + Width(16) * ((int)ButtonID::count - 1);
+            constexpr IRect WithoutClipboard = WithClipboard - Width(data::ButtonBounds(ButtonID::Clipboard));
+            DrawRectangleIRect(data::IsClipboardValid() ? WithClipboard : WithoutClipboard, SPACEGRAY);
+            DrawRectangleIRect(data::ButtonBounds(ButtonID::Parameter), data::ExtraParamColor());
+        }
+
+        // Buttons
+        constexpr IVec2 tooltipNameOffset(16 + 4, 16 + 1);
+        constexpr IVec2 tooltipSeprOffset = tooltipNameOffset + Height(8 + 8 / 2);
+        constexpr IVec2 tooltipDescOffset = tooltipNameOffset + Height(8 + 8);
+        // Mode
+        if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Mode)))
+        {
+            DrawRectangleIRect(data::ButtonBounds(ButtonID::Mode), WIPBLUE);
+            // Tooltip
+            const char* name = data::GetModeTooltipName(data::GetBaseMode());
+            DrawTextIV(name, data::ButtonBounds(ButtonID::Mode).xy + tooltipNameOffset, 8, WHITE);
+            Width separatorWidth(MeasureText(name, 8));
+            DrawLineIV(data::ButtonBounds(ButtonID::Mode).xy + tooltipSeprOffset, separatorWidth, WHITE); // Separator
+            DrawTextIV(data::GetModeTooltipDescription(data::GetBaseMode()), data::ButtonBounds(ButtonID::Mode).xy + tooltipDescOffset, 8, WHITE);
+        }
+        // Gate
+        else if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Gate)))
+        {
+            DrawRectangleIRect(data::ButtonBounds(ButtonID::Gate), WIPBLUE);
+            // Tooltip
+            const char* name = data::GetGateTooltipName(data::gatePick);
+            DrawTextIV(name, data::ButtonBounds(ButtonID::Gate).xy + tooltipNameOffset, 8, WHITE);
+            Width separatorWidth(MeasureText(name, 8));
+            DrawLineIV(data::ButtonBounds(ButtonID::Gate).xy + tooltipSeprOffset, separatorWidth, WHITE);
+            DrawTextIV(data::GetGateTooltipDescription(data::gatePick), data::ButtonBounds(ButtonID::Gate).xy + tooltipDescOffset, 8, WHITE);
+        }
+        // Extra param
+        else if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Parameter)))
+        {
+            DrawRectangleIRect(data::ButtonBounds(ButtonID::Parameter), WIPBLUE);
+            DrawRectangleIRect(ShrinkIRect(data::ButtonBounds(ButtonID::Parameter), 2), data::ExtraParamColor());
+            // Tooltip
+            const char* text;
+            if (data::gatePick == Gate::LED)
+                text = TextFormat(data::deviceParameterTextFmt, Node::GetColorName(data::storedExtraParam));
+            else
+                text = TextFormat(data::deviceParameterTextFmt, data::storedExtraParam);
+            DrawTextIV(text, data::ButtonBounds(ButtonID::Parameter).xy + tooltipNameOffset, 8, WHITE);
+        }
+        // Blueprints
+        else if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Blueprints))) [[unlikely]] // Not likely while this feature is still in development
+        {
+            DrawRectangleIRect(data::ButtonBounds(ButtonID::Blueprints), WIPBLUE);
+        // Tooltip
+        DrawTextIV("Blueprints (WIP)", data::ButtonBounds(ButtonID::Blueprints).xy + tooltipNameOffset, 8, WHITE);
+        }
+            // Clipboard
+        else if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Clipboard)))
+        {
+            DrawRectangleIRect(data::ButtonBounds(ButtonID::Clipboard), WIPBLUE);
+            // Tooltip
+            DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", data::ButtonBounds(ButtonID::Clipboard).xy + tooltipNameOffset, 8, WHITE);
+        }
+
+        data::DrawModeIcon(data::GetBaseMode(), data::ButtonBounds(ButtonID::Mode).xy, WHITE);
+        data::DrawGateIcon16x(data::gatePick, data::ButtonBounds(ButtonID::Gate).xy, WHITE);
+        DrawTextureIV(data::GetClipboardIcon(), data::ButtonBounds(ButtonID::Clipboard).xy, data::IsClipboardValid() ? WHITE : ColorAlpha(WHITE, 0.25f));
     }
 }

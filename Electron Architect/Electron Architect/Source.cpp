@@ -57,7 +57,7 @@ int main()
             }
         }
 
-        data::currentMode_object->Update();
+        data::Update();
 
     EVAL:
         data::cursorPosPrev = data::cursorPos;
@@ -79,81 +79,13 @@ int main()
                 data::DrawGrid();
 
                 NodeWorld::Get().DrawGroups();
+
+                data::Draw();
+
+                data::DrawUI();
             }
-
-            // Draw
-            data::currentMode_object->Draw();
-
-            if (!data::ModeIsMenu()) [[likely]]
-            {
-                data::SetMode2D(false);
-
-                // UI
-                {
-                    constexpr IRect WithClipboard = data::ButtonBounds(0) + Width(16) * ((int)ButtonID::count - 1);
-                    constexpr IRect WithoutClipboard = WithClipboard - Width(data::ButtonBounds(ButtonID::Clipboard));
-                    DrawRectangleIRect(data::IsClipboardValid() ? WithClipboard : WithoutClipboard, SPACEGRAY);
-                    DrawRectangleIRect(data::ButtonBounds(ButtonID::Parameter), data::ExtraParamColor());
-                }
-
-                // Buttons
-                constexpr IVec2 tooltipNameOffset(16 + 4, 16 + 1);
-                constexpr IVec2 tooltipSeprOffset = tooltipNameOffset + Height(8 + 8 / 2);
-                constexpr IVec2 tooltipDescOffset = tooltipNameOffset + Height(8 + 8);
-                // Mode
-                if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Mode)))
-                {
-                    DrawRectangleIRect(data::ButtonBounds(ButtonID::Mode), WIPBLUE);
-                    // Tooltip
-                    const char* name = data::GetModeTooltipName(data::GetBaseMode());
-                    DrawTextIV(name, data::ButtonBounds(ButtonID::Mode).xy + tooltipNameOffset, 8, WHITE);
-                    Width separatorWidth(MeasureText(name, 8));
-                    DrawLineIV(data::ButtonBounds(ButtonID::Mode).xy + tooltipSeprOffset, separatorWidth, WHITE); // Separator
-                    DrawTextIV(data::GetModeTooltipDescription(data::GetBaseMode()), data::ButtonBounds(ButtonID::Mode).xy + tooltipDescOffset, 8, WHITE);
-                }
-                // Gate
-                else if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Gate)))
-                {
-                    DrawRectangleIRect(data::ButtonBounds(ButtonID::Gate), WIPBLUE);
-                    // Tooltip
-                    const char* name = data::GetGateTooltipName(data::gatePick);
-                    DrawTextIV(name, data::ButtonBounds(ButtonID::Gate).xy + tooltipNameOffset, 8, WHITE);
-                    Width separatorWidth(MeasureText(name, 8));
-                    DrawLineIV(data::ButtonBounds(ButtonID::Gate).xy + tooltipSeprOffset, separatorWidth, WHITE);
-                    DrawTextIV(data::GetGateTooltipDescription(data::gatePick), data::ButtonBounds(ButtonID::Gate).xy + tooltipDescOffset, 8, WHITE);
-                }
-                // Extra param
-                else if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Parameter)))
-                {
-                    DrawRectangleIRect(data::ButtonBounds(ButtonID::Parameter), WIPBLUE);
-                    DrawRectangleIRect(ShrinkIRect(data::ButtonBounds(ButtonID::Parameter), 2), data::ExtraParamColor());
-                    // Tooltip
-                    const char* text;
-                    if (data::gatePick == Gate::LED)
-                        text = TextFormat(data::deviceParameterTextFmt, Node::GetColorName(data::storedExtraParam));
-                    else
-                        text = TextFormat(data::deviceParameterTextFmt, data::storedExtraParam);
-                    DrawTextIV(text, data::ButtonBounds(ButtonID::Parameter).xy + tooltipNameOffset, 8, WHITE);
-                }
-                // Blueprints
-                else if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Blueprints))) [[unlikely]] // Not likely while this feature is still in development
-                {
-                    DrawRectangleIRect(data::ButtonBounds(ButtonID::Blueprints), WIPBLUE);
-                    // Tooltip
-                    DrawTextIV("Blueprints (WIP)", data::ButtonBounds(ButtonID::Blueprints).xy + tooltipNameOffset, 8, WHITE);
-                }
-                // Clipboard
-                else if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Clipboard)))
-                {
-                    DrawRectangleIRect(data::ButtonBounds(ButtonID::Clipboard), WIPBLUE);
-                    // Tooltip
-                    DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", data::ButtonBounds(ButtonID::Clipboard).xy + tooltipNameOffset, 8, WHITE);
-                }
-
-                data::DrawModeIcon(data::GetBaseMode(), data::ButtonBounds(ButtonID::Mode).xy, WHITE);
-                data::DrawGateIcon16x(data::gatePick, data::ButtonBounds(ButtonID::Gate).xy, WHITE);
-                DrawTextureIV(data::GetClipboardIcon(), data::ButtonBounds(ButtonID::Clipboard).xy, data::IsClipboardValid() ? WHITE : ColorAlpha(WHITE, 0.25f));
-            }
+            else [[unlikely]]
+                data::Draw();
 
         } EndDrawing();
     }

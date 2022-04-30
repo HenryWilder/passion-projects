@@ -25,16 +25,18 @@
         (1 != _CrtDbgReportW(_CRT_ASSERT, _CRT_WIDE(__FILE__), __LINE__, NULL, "%ls" fmt, L"Missing specialization for case:\ncase ", __VA_ARGS__)) || \
         (_CrtDbgBreak(), 0) \
     ); break
-
+#define DEBUG_MEMBER_INIT(with) {(with)}
 #else
 #define ASSERT_CONDITION(expr, msg)
 #define ASSERTION_FAILSAFE if (false)
 #define ASSERTF (void)()
 #define ASSERTF_SPECIALIZATION (void)()
+#define DEBUG_MEMBER_INIT(with)
 #endif
-#define ASSERT_SPECIALIZATION default: _ASSERT_EXPR(false, L"Missing specialization for encountered case"); break
-#define ASSERT_SPECIALIZATION_NAMED(being_specialized) default: _ASSERT_EXPR(false, L"Missing " being_specialized L" specialization for encountered case"); break
-#define ASSERT_SPECIALIZATION_CUSTOM(msg) default: _ASSERT_EXPR(false, msg); break
+#define ASSERT_SPECIALIZATION_RET(ret) default: [[unlikely]] _ASSERT_EXPR(false, L"Missing specialization for encountered case"); return ret
+#define ASSERT_SPECIALIZATION default: [[unlikely]] _ASSERT_EXPR(false, L"Missing specialization for encountered case"); break
+#define ASSERT_SPECIALIZATION_NAMED(being_specialized) default: [[unlikely]] _ASSERT_EXPR(false, L"Missing " being_specialized L" specialization for encountered case"); break
+#define ASSERT_SPECIALIZATION_CUSTOM(msg) default: [[unlikely]] _ASSERT_EXPR(false, msg); break
 
 #pragma region Constants
 

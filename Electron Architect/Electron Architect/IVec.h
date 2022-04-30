@@ -255,15 +255,20 @@ struct IRect
     IRectIterator end() const;
 };
 
-constexpr IRect operator+(IRect a, Width b) { return IRect(a.x, a.y, a.w + b.x, a.h); }
-constexpr IRect operator-(IRect a, Width b) { return IRect(a.x, a.y, a.w - b.x, a.h); }
-constexpr IRect operator*(IRect a, Width b) { return IRect(a.x, a.y, a.w * b.x, a.h); }
-constexpr IRect operator/(IRect a, Width b) { return IRect(a.x, a.y, a.w / b.x, a.h); }
+constexpr IRect operator+(IRect a, Width w) { return IRect(a.x, a.y, a.w + w.x, a.h); }
+constexpr IRect operator-(IRect a, Width w) { return IRect(a.x, a.y, a.w - w.x, a.h); }
+constexpr IRect operator*(IRect a, Width w) { return IRect(a.x, a.y, a.w * w.x, a.h); }
+constexpr IRect operator/(IRect a, Width w) { return IRect(a.x, a.y, a.w / w.x, a.h); }
 
-constexpr IRect operator+(IRect a, Height b) { return IRect(a.x, a.y, a.w, a.h + b.y); }
-constexpr IRect operator-(IRect a, Height b) { return IRect(a.x, a.y, a.w, a.h - b.y); }
-constexpr IRect operator*(IRect a, Height b) { return IRect(a.x, a.y, a.w, a.h * b.y); }
-constexpr IRect operator/(IRect a, Height b) { return IRect(a.x, a.y, a.w, a.h / b.y); }
+constexpr IRect operator+(IRect a, Height h) { return IRect(a.x, a.y, a.w, a.h + h.y); }
+constexpr IRect operator-(IRect a, Height h) { return IRect(a.x, a.y, a.w, a.h - h.y); }
+constexpr IRect operator*(IRect a, Height h) { return IRect(a.x, a.y, a.w, a.h * h.y); }
+constexpr IRect operator/(IRect a, Height h) { return IRect(a.x, a.y, a.w, a.h / h.y); }
+
+constexpr IRect operator+(IRect a, IVec2 p) { return IRect(a.x + p.x, a.y + p.y, a.w, a.h); }
+constexpr IRect operator-(IRect a, IVec2 p) { return IRect(a.x - p.x, a.y - p.y, a.w, a.h); }
+constexpr IRect operator*(IRect a, IVec2 p) { return IRect(a.x * p.x, a.y * p.y, a.w, a.h); }
+constexpr IRect operator/(IRect a, IVec2 p) { return IRect(a.x / p.x, a.y / p.y, a.w, a.h); }
 
 constexpr IRect ExpandIRect(IRect rec, int outline = 1)
 {

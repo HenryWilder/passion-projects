@@ -13,6 +13,8 @@ struct Blueprint;
 enum class Mode;
 struct ModeHandler;
 struct Tool;
+struct Overlay;
+struct Menu;
 
 const enum class ButtonID : uint8_t
 {
@@ -46,8 +48,8 @@ namespace data
     extern int windowWidth;
     extern int windowHeight;
 
-    extern ModeHandler* currentMode_object;
     extern Tool* basicMode_object;
+    extern Overlay* overlayMode_object;
 
     extern IVec2 cursorUIPos;
     extern IVec2 cursorPos;
@@ -87,23 +89,31 @@ namespace data
     bool ModeIsBasic(Mode mode);
     bool ModeIsBasic();
 
-    Mode GetCurrentMode(); // Mode enum of currentMode_object
+    Mode GetOverlayMode(); // Mode enum of overlayMode_object
     Mode GetBaseMode(); // Mode enum of basicMode_object
+    Mode GetCurrentMode(); // Topmost mode
+
+    ModeHandler* CurrentTopMode();
 
     template<class T> requires std::is_base_of_v<ModeHandler, T>
-    T* CurrentModeAs()
+    T* ModeAs(ModeHandler* object)
     {
-        T* modeObj = dynamic_cast<T*>(currentMode_object);
+        if (!object)
+            return nullptr;
+        T* modeObj = dynamic_cast<T*>(object);
         _ASSERT_EXPR(!!modeObj, L"Type does not cast to specified mode");
         return modeObj;
     }
+
+    template<class T> requires std::is_base_of_v<ModeHandler, T>
+    T* CurrentModeAs() { return ModeAs<T>(CurrentTopMode()); }
+
+    template<class T> requires std::is_base_of_v<Overlay, T>
+    T* OverlayModeAs() { return ModeAs<T>(overlayMode_object); }
+
     template<class T> requires std::is_base_of_v<Tool, T>
-    T* BaseModeAs()
-    {
-        T* modeObj = dynamic_cast<T*>(basicMode_object);
-        _ASSERT_EXPR(!!modeObj, L"Type does not cast to specified mode");
-        return modeObj;
-    }
+    T* BaseModeAs() { return ModeAs<T>(basicMode_object); }
+
     ModeHandler* BaseModeAsPolymorphic();
 
     void SetMode(Mode newMode);
@@ -190,4 +200,8 @@ namespace data
     void DrawTooltipAtCursor(const char* text, Color color);
 
     void SaveClipboardBlueprint();
+
+    void Update();
+    void Draw();
+    void DrawUI();
 };

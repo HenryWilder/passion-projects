@@ -11,6 +11,8 @@ class Group;
 
 enum class Mode
 {
+    null,
+
     PEN,
     EDIT,
     ERASE,
@@ -22,6 +24,8 @@ enum class Mode
     BP_ICON,
     BP_SELECT,
 };
+
+const enum class ButtonID : uint8_t;
 
 // Polymorphic
 struct ModeHandler
@@ -148,13 +152,13 @@ struct Tool_Interact : public Tool
 };
 
 
-struct Overlay_Button : public ModeHandler
+struct Overlay_Button : public Overlay
 {
     static const Mode dropdownModeOrder[];
     static const Gate dropdownGateOrder[];
     static const IRect dropdownBounds[];
 
-    int dropdownActive; // Set by constructor
+    ButtonID dropdownActive; // Set by constructor
 
     Overlay_Button();
     ~Overlay_Button();
@@ -165,7 +169,7 @@ struct Overlay_Button : public ModeHandler
     Overlay_Button* As(Mode mode) final;
 };
 
-struct Overlay_Paste : public ModeHandler
+struct Overlay_Paste : public Overlay
 {
     Overlay_Paste();
     ~Overlay_Paste();
@@ -177,7 +181,7 @@ struct Overlay_Paste : public ModeHandler
 };
 
 struct BlueprintIcon;
-struct Menu_Icon : public ModeHandler
+struct Menu_Icon : public Menu
 {
     IVec2 pos; // Width and height are fixed
     IRect sheetRec;
@@ -198,7 +202,7 @@ struct Menu_Icon : public ModeHandler
 };
 
 // Todo: finish Menu_Select
-struct Menu_Select : public ModeHandler
+struct Menu_Select : public Menu
 {
     int hovering = -1; // -1 for none
 

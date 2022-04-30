@@ -27,14 +27,14 @@ const Gate Overlay_Button::dropdownGateOrder[] = {
     Gate::DELAY,
 };
 const IRect Overlay_Button::dropdownBounds[] = {
-    IRect(0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
-    IRect(16, 16, 16, 16 * (_countof(dropdownGateOrder) - 1)), // Gate
-    IRect(32, 16, 16, 16 * (_countof(Node::g_resistanceBands) - 1)), // Parameter
+    IRect( 0, 16, 16) * Height(_countof(dropdownModeOrder) - 1), // Mode
+    IRect(16, 16, 16) * Height(_countof(dropdownGateOrder) - 1), // Gate
+    IRect(32, 16, 16) * Height(_countof(Node::g_resistanceBands) - 1), // Parameter
 };
 
 Overlay_Button::Overlay_Button()
 {
-    dropdownActive = data::cursorUIPos.x / 16;
+    dropdownActive = (ButtonID)(data::cursorUIPos.x / 16);
 }
 Overlay_Button::~Overlay_Button()
 {
@@ -43,82 +43,46 @@ Overlay_Button::~Overlay_Button()
 
 void Overlay_Button::Update()
 {
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) [[unlikely]] // Very few frames will ever have a click
     {
-        IRect rec = dropdownBounds[dropdownActive];
-        if (data::CursorInUIBounds(rec))
+        uint8_t dropdownIndex = (uint8_t)dropdownActive;
+        if (data::CursorInUIBounds(dropdownBounds[dropdownIndex])) [[likely]] // It's more likely that a click will be inside the button if we're already at this point
         {
-            rec.h = 16;
+            IRect rec(dropdownBounds[dropdownIndex].xy, 16);
+            
+            int skipIndex;
+            switch (dropdownActive)
+            {
+            case ButtonID::Mode:      skipIndex = (int)data::GetBaseMode(); break;
+            case ButtonID::Gate:      skipIndex = (int)data::gatePick;      break;
+            case ButtonID::Parameter: skipIndex = data::storedExtraParam;   break;
+            }
+            
+            int i = 0;
+            for (; i < dropdownBounds[dropdownIndex].h / 16; ++i, rec.y += 16)
+            {
+                if (i == skipIndex) [[unlikely]]
+                    continue;
+
+                if (data::CursorInUIBounds(rec)) [[unlikely]]
+                    break;
+            }
 
             switch (dropdownActive)
             {
-            case 0: // Mode
-            {
-                for (Mode m : dropdownModeOrder)
-                {
-                    if (m == data::GetBaseMode())
-                        continue;
-
-                    if (data::CursorInUIBounds(rec))
-                    {
-                        data::SetMode(m);
-                        break;
-                    }
-
-                    rec.y += 16;
-                }
-            }
-            break;
-
-            case 1: // Gate
-            {
-                for (Gate g : dropdownGateOrder)
-                {
-                    if (g == data::gatePick)
-                        continue;
-
-                    if (data::CursorInUIBounds(rec))
-                    {
-                        data::SetGate(g);
-                        break;
-                    }
-
-                    rec.y += 16;
-                }
-
-                data::ClearOverlayMode();
-            }
-            break;
-
-            case 2: // Resistance
-            {
-                for (uint8_t v = 0; v < 10; ++v)
-                {
-                    if (v == data::storedExtraParam)
-                        continue;
-
-                    if (data::CursorInUIBounds(rec))
-                    {
-                        data::storedExtraParam = v;
-                        break;
-                    }
-
-                    rec.y += 16;
-                }
-
-                data::ClearOverlayMode();
-            }
-            break;
+            case ButtonID::Mode:      data::SetMode((Mode)i);       return; // Exit without clearing overlay
+            case ButtonID::Gate:      data::SetGate((Gate)i);       break;
+            case ButtonID::Parameter: data::storedExtraParam = i;   break;
             }
         }
-        else
-            data::ClearOverlayMode();
+        data::ClearOverlayMode();
     }
-    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) [[unlikely]]
     {
         data::ClearOverlayMode();
     }
 }
+
 void Overlay_Button::Draw()
 {
     NodeWorld::Get().DrawWires();
