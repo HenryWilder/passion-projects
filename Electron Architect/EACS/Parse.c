@@ -2,21 +2,21 @@
 #include <stdio.h>
 #include "Parse.h"
 
-ParseNode* CreateParseNode(Token data)
+ParseNodePtr CreateParseNode(Token data)
 {
-    ParseNode* node = (ParseNode*)malloc(sizeof(ParseNode));
+    ParseNodePtr node = (ParseNodePtr)malloc(sizeof(ParseNode));
     node->data = data;
     node->childCount = 0;
     node->children = NULL;
     return node;
 }
-void AddParseNodeSub(ParseNode* parent, ParseNode* child)
+void AddParseNodeChild(ParseNodePtr parent, ParseNodePtr child)
 {
-    const unsigned nodeBytes = sizeof(ParseNode*);
+    const unsigned nodeBytes = sizeof(ParseNodePtr);
     const unsigned cpyBytes = nodeBytes * (parent->childCount);
     const unsigned allocBytes = cpyBytes + nodeBytes;
     const char* src = (char*)parent->children;
-    parent->children = (ParseNode**)malloc(allocBytes);
+    parent->children = (ParseNodePtr*)malloc(allocBytes);
     char* dest = (char*)parent->children;
     for (unsigned i = 0; i < cpyBytes; ++i)
     {
@@ -30,7 +30,7 @@ void AddParseNodeSub(ParseNode* parent, ParseNode* child)
     }
     parent->childCount++;
 }
-void DestroyParseBranch(ParseNode* node)
+void DestroyParseBranch(ParseNodePtr node)
 {
     while (node->childCount-- > 0)
     {
@@ -50,7 +50,7 @@ void PushToStack(ScopeStack* stack, Token token)
 {
     stack->data[stack->size++] = token;
 }
-void PopOffStack(ScopeStack* stack)
+void PopOffStack(ScopeStack* stack, Token expect)
 {
 #if _DEBUG
     if (stack->size == 0)
@@ -59,6 +59,11 @@ void PopOffStack(ScopeStack* stack)
         exit(2);
     }
 #endif
+    if (StackTop(stack) != expect)
+    {
+        puts("Tried to pop a different token from what was at the stack's top");
+        exit(1);
+    }
     --stack->size;
 }
 Token StackTop(ScopeStack* stack)
@@ -73,9 +78,21 @@ Token StackTop(ScopeStack* stack)
     return stack->data[stack->size - 1];
 }
 
+int IsWordChar(char c)
+{
+    return (c >= 'a' && c <= 'z') ||
+           (c >= 'A' && c <= 'Z') ||
+           (c == '_');
+}
+int IsDigitChar(char c)
+{
+    return (c >= '0' && c <= '9');
+}
+
 void Parse(FILE* fp)
 {
     ScopeStack stack;
+    ParseNode topNode;
     while (!feof(fp))
     {
         int buffSize = 64;
@@ -93,19 +110,36 @@ void Parse(FILE* fp)
             {
             case '{':
                 puts("Open scope");
+                PushToStack(&stack, _scope);
                 break;
 
             case '}':
                 puts("Close scope");
+                PopOffStack(&stack, _scope);
                 break;
 
             case '.':
                 puts("Label name");
+                PushToStack(&stack, _function);
+                ++c;
+                putchar('\"');
+                if (IsWordChar(*c))
+                {
+                    putchar(*c, fp);
+                    for (++c; !!*c; ++c)
+                    {
+                        if (!(IsWordChar(*c) || IsDigitChar(*c)))
+                            PopOffStack(&stack, _function);
+                        putchar(*c, fp);
+                    }
+                }
+                putchar('\"');
                 break;
 
             case '[':
                 if (c[1] == '[') {
                     puts("Open comment");
+                    PushToStack(&stack, _comment);
                     ++c;
                 }
                 break;
@@ -113,6 +147,7 @@ void Parse(FILE* fp)
             case ']':
                 if (c[1] == ']') {
                     puts("Close comment");
+                    PopOffStack(&stack, _comment);
                     ++c;
                 }
                 break;
