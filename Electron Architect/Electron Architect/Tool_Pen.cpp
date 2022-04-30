@@ -119,7 +119,13 @@ public:
 
 class Act_DrawNode : public Action
 {
-    RedoReservation<Node*> m_target;
+    struct NodeCloneData
+    {
+        IVec2 pos;
+        Gate gate;
+        uint8_t extraParam;
+    } m_targetData;
+    Node* m_target;
 
     void Undo() override
     {
@@ -127,10 +133,11 @@ class Act_DrawNode : public Action
     }
     void Redo() override
     {
-        _ASSERT_EXPR(false, L"Incomplete feature");
+        m_target = NodeWorld::Get().CreateNode(m_targetData.pos, m_targetData.gate, m_targetData.extraParam);
     }
 public:
-    Act_DrawNode() : m_target(nullptr) {}
+    Act_DrawNode(IVec2 position, Gate gate, uint8_t extendedParam) :
+        m_targetData{ position, gate, extendedParam  }, m_target(nullptr) {}
 };
 
 void Tool_Pen::Update()
@@ -149,36 +156,36 @@ void Tool_Pen::Update()
         CreateBulkNodes();
 
     // Todo: Make the actions work
-    if      (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !!data::hoveredNode) // Click an existing node (wire can't be hovered in this case)
-        PushAction(Act_DrawNode());
+    if      (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !!data::hoveredNode) // Todo: Click an existing node (wire can't be hovered in this case)
+        PushAction(Act_DrawNode(data::cursorPos, data::gatePick, data::storedExtraParam));
 
     else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data::hoveredNode && !data::hoveredWire) // Click nothing (create a new node)
-        PushAction(Act_DrawNode());
+        PushAction(Act_DrawNode(data::cursorPos, data::gatePick, data::storedExtraParam));
 
-    if      (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data::hoveredNode && !!data::hoveredWire) // Click a wire (bisect it)
-        PushAction(Act_DrawNode());
+    if      (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !data::hoveredNode && !!data::hoveredWire) // Todo: Click a wire (bisect it)
+        PushAction(Act_DrawNode(data::cursorPos, data::gatePick, data::storedExtraParam));
 
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-    {
-        if (!data::hoveredWire && !data::hoveredNode)
-            CreateBulkNodes();
-
-        Node* newNode;
-
-        if (!data::hoveredNode)
-            newNode = CreateNode();
-        else
-            newNode = data::hoveredNode;
-
-        if (!!data::hoveredWire) // Hovered nodes take precedence over hovered wires
-            BisectWireWithNode(newNode);
-
-        // Do not create a new node/wire if already hovering the start node
-        if (!!currentWireStart && newNode != currentWireStart)
-            FinishWire(newNode);
-
-        currentWireStart = newNode;
-    }
+    //if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    //{
+    //    if (!data::hoveredWire && !data::hoveredNode)
+    //        CreateBulkNodes();
+    //
+    //    Node* newNode;
+    //
+    //    if (!data::hoveredNode)
+    //        newNode = CreateNode();
+    //    else
+    //        newNode = data::hoveredNode;
+    //
+    //    if (!!data::hoveredWire) // Hovered nodes take precedence over hovered wires
+    //        BisectWireWithNode(newNode);
+    //
+    //    // Do not create a new node/wire if already hovering the start node
+    //    if (!!currentWireStart && newNode != currentWireStart)
+    //        FinishWire(newNode);
+    //
+    //    currentWireStart = newNode;
+    //}
 
     // Release m1
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && IntGridDistance(dragStart, data::cursorPos) < bulkNodeCount && bulkNodesBeingMade) // Not enough space

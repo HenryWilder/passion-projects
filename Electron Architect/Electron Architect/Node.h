@@ -36,6 +36,7 @@ public:
     Gate GetGate() const;
     void SetGate(Gate gate);
 
+    uint8_t GetExtendedParameter() const;
     uint8_t GetResistance() const;
     uint8_t GetColorIndex() const;
     static const char* GetColorName(uint8_t index);

@@ -147,10 +147,10 @@ void Blueprint::PopulateNodes(const std::vector<Node*>& src)
                 }
             }
         }
-
         nodes.emplace_back(
             isIO,
             node->GetGate(),
+            node->GetExtendedParameter(),
             node->GetPosition() - min);
     }
 }

@@ -55,31 +55,58 @@ void Overlay_Button::Update()
         if (data::CursorInUIBounds(activeDropdownBounds)) [[likely]] // It's more likely that a click will be inside the button if we're already at this point
         {
             IRect rec(activeDropdownBounds.xy, 16);
-
-            int skipIndex;
             switch (dropdownActive)
             {
-                ASSERT_SPECIALIZATION;
-            case ButtonID::Mode:      skipIndex = (int)data::GetBaseMode(); break;
-            case ButtonID::Gate:      skipIndex = (int)data::gatePick;      break;
-            case ButtonID::Parameter: skipIndex = data::storedExtraParam;   break;
-            }
-
-            int i = 0;
-            for (; i < buttonsInDropdown[dropdownIndex]; ++i, rec.y += 16)
+            case ButtonID::Mode:
             {
-                if (i == skipIndex) [[unlikely]]
-                    continue;
+                for (Mode m : dropdownModeOrder)
+                {
+                    if (m == data::GetBaseMode())
+                        continue;
 
-                if (data::CursorInUIBounds(rec)) [[unlikely]]
-                    break;
+                    if (InBoundingBox(rec, data::cursorUIPos))
+                    {
+                        data::SetMode(m);
+                        return; // Exit without clearing overlay
+                    }
+                    rec.y += 16;
+                }
             }
+            break;
 
-            switch (dropdownActive)
+            case ButtonID::Gate:
             {
-            case ButtonID::Mode:      data::SetMode((Mode)i);       return; // Exit without clearing overlay
-            case ButtonID::Gate:      data::SetGate((Gate)i);       break;
-            case ButtonID::Parameter: data::storedExtraParam = i;   break;
+                for (Gate g : dropdownGateOrder)
+                {
+                    if (g == data::gatePick)
+                        continue;
+
+                    if (InBoundingBox(rec, data::cursorUIPos))
+                    {
+                        data::SetGate(g);
+                        break;
+                    }
+                    rec.y += 16;
+                }
+            }
+            break;
+
+            case ButtonID::Parameter:
+            {
+                for (uint8_t v = 0; v < _countof(Node::g_resistanceBands); ++v)
+                {
+                    if (v == data::storedExtraParam)
+                        continue;
+
+                    if (InBoundingBox(rec, data::cursorUIPos))
+                    {
+                        data::storedExtraParam = v;
+                        break;
+                    }
+                    rec.y += 16;
+                }
+            }
+            break;
             }
         }
         data::ClearOverlayMode();

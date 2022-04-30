@@ -11,8 +11,6 @@ class Group;
 
 enum class Mode
 {
-    null,
-
     PEN,
     EDIT,
     ERASE,
@@ -23,6 +21,8 @@ enum class Mode
 
     BP_ICON,
     BP_SELECT,
+
+    null,
 };
 
 const enum class ButtonID : uint8_t;

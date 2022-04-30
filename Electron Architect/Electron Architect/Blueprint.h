@@ -59,6 +59,8 @@ struct NodeBP
 {
     bool b_io;
     Gate gate;
+    // Todo: Add support for this in the blueprint class!
+    uint8_t extendedParam;
     IVec2 relativePosition;
 };
 

@@ -47,6 +47,10 @@ void Node::SetGate(Gate gate)
     m_gate = gate;
 }
 
+uint8_t Node::GetExtendedParameter() const
+{
+    return m_ntd.r.resistance;
+}
 // Only use if this is a resistor
 uint8_t Node::GetResistance() const
 {
