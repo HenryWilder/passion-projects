@@ -1,5 +1,5 @@
 {
-    for while i : min -> max [step] {
+    for i : min -> max [step] {
         
     }
 }

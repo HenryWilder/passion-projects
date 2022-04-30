@@ -20,12 +20,8 @@ int main(int argc, char* argv[])
     }
 
     puts("Success!");
-    fseek(input, 0L, SEEK_END);
-    long size = ftell(input);
-    rewind(input);
-    printf("Size: %i\n", size);
 
-    Parse(input, size);
+    Parse(input);
 
     fclose(input);
     return 0;
