@@ -59,6 +59,7 @@ void Overlay_Button::Update()
             int skipIndex;
             switch (dropdownActive)
             {
+                ASSERT_SPECIALIZATION;
             case ButtonID::Mode:      skipIndex = (int)data::GetBaseMode(); break;
             case ButtonID::Gate:      skipIndex = (int)data::gatePick;      break;
             case ButtonID::Parameter: skipIndex = data::storedExtraParam;   break;
@@ -101,45 +102,9 @@ void Overlay_Button::Draw()
     DrawRectangleIRect(dropdownBounds[dropdownIndex], SPACEGRAY);
     IRect rec(dropdownBounds[dropdownIndex].xy, 16);
 
-    int skipIndex;
-    switch (dropdownActive)
-    {
-    case ButtonID::Mode:      skipIndex = (int)data::GetBaseMode(); break;
-    case ButtonID::Gate:      skipIndex = (int)data::gatePick;      break;
-    case ButtonID::Parameter: skipIndex = data::storedExtraParam;   break;
-    }
-    TooltipTextFunc
-    // Things that are drawn regardless
     switch (dropdownActive)
     {
     case ButtonID::Mode:
-        for (int i = 0; i < buttonsInDropdown[dropdownIndex]; ++i, rec.y += 16)
-        {
-            if (i == skipIndex)
-                continue;
-            data::DrawModeIcon(m, rec.xy, color);
-            const char* text = data::GetModeTooltipName(m);
-            data::DrawTooltipAtCursor(text, WHITE);
-            DrawText(data::GetModeTooltipName(m), 20, 17 + rec.y, 8, WHITE);
-        }
-        break;
-    case ButtonID::Gate:
-        break;
-    case ButtonID::Parameter:
-        break;
-    }
-    int i = 0;
-    for (; i < buttonsInDropdown[dropdownIndex]; ++i, rec.y += 16)
-    {
-        data::DrawModeIcon(m, rec.xy, color);
-        const char* text;
-        data::DrawTooltipAtCursor(text, WHITE);
-        DrawText(data::GetModeTooltipName(m), 20, 17 + rec.y, 8, WHITE);
-    }
-
-    switch (dropdownActive)
-    {
-    case 0: // Mode
     {
         for (Mode m : dropdownModeOrder)
         {
@@ -159,7 +124,7 @@ void Overlay_Button::Draw()
     }
     break;
 
-    case 1: // Gate
+    case ButtonID::Gate:
     {
         for (Gate g : dropdownGateOrder)
         {
@@ -179,7 +144,7 @@ void Overlay_Button::Draw()
     }
     break;
 
-    case 2: // Resistance
+    case ButtonID::Parameter:
     {
         for (uint8_t v = 0; v < _countof(Node::g_resistanceBands); ++v)
         {

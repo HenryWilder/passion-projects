@@ -39,8 +39,10 @@ int main()
             [[unlikely]] // Very, very few frames will have a click to begin with (Who on earth is clicking at 60hz in this??)
         {
             if (data::CursorInUIBounds(data::ButtonBounds(ButtonID::Mode) + Width(16 * 2)) &&
-                (data::GetCurrentMode() == Mode::BUTTON ? data::CurrentModeAs<Overlay_Button>()->dropdownActive != (data::cursorUIPos.x / 16) : true))
+                (data::GetCurrentMode() == Mode::BUTTON ? data::CurrentModeAs<Overlay_Button>()->dropdownActive != (ButtonID)(data::cursorUIPos.x / 16) : true))
             {
+                // Reload mode
+                data::ClearOverlayMode();
                 data::SetMode(Mode::BUTTON);
                 goto EVAL; // Skip button sim this frame
             }
