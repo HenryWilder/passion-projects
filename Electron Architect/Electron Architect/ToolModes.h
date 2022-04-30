@@ -154,8 +154,9 @@ struct Tool_Interact : public Tool
 
 struct Overlay_Button : public Overlay
 {
-    static const Mode dropdownModeOrder[];
-    static const Gate dropdownGateOrder[];
+    static const Mode dropdownModeOrder[4];
+    static const Gate dropdownGateOrder[8];
+    static const int buttonsInDropdown[];
     static const IRect dropdownBounds[];
 
     ButtonID dropdownActive; // Set by constructor

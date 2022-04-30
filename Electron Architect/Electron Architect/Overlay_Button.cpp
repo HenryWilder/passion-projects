@@ -9,13 +9,13 @@
 #include "ProgramData.h"
 #include "ToolModes.h"
 
-const Mode Overlay_Button::dropdownModeOrder[] = {
+const Mode Overlay_Button::dropdownModeOrder[4] = {
         Mode::PEN,
         Mode::EDIT,
         Mode::ERASE,
         Mode::INTERACT,
 };
-const Gate Overlay_Button::dropdownGateOrder[] = {
+const Gate Overlay_Button::dropdownGateOrder[8] = {
     Gate::OR,
     Gate::AND,
     Gate::NOR,
@@ -26,10 +26,15 @@ const Gate Overlay_Button::dropdownGateOrder[] = {
     Gate::LED,
     Gate::DELAY,
 };
-const IRect Overlay_Button::dropdownBounds[] = {
-    IRect( 0, 16, 16) * Height(_countof(dropdownModeOrder) - 1), // Mode
-    IRect(16, 16, 16) * Height(_countof(dropdownGateOrder) - 1), // Gate
-    IRect(32, 16, 16) * Height(_countof(Node::g_resistanceBands) - 1), // Parameter
+constexpr int Overlay_Button::buttonsInDropdown[] = {
+    _countof(dropdownModeOrder) - 1,
+    _countof(dropdownGateOrder) - 1,
+    _countof(Node::g_resistanceBands) - 1
+};
+constexpr IRect Overlay_Button::dropdownBounds[] = {
+    IRect( 0, 16, 16) * Height(buttonsInDropdown[0]), // Mode
+    IRect(16, 16, 16) * Height(buttonsInDropdown[1]), // Gate
+    IRect(32, 16, 16) * Height(buttonsInDropdown[2]), // Parameter
 };
 
 Overlay_Button::Overlay_Button()
@@ -46,10 +51,11 @@ void Overlay_Button::Update()
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) [[unlikely]] // Very few frames will ever have a click
     {
         uint8_t dropdownIndex = (uint8_t)dropdownActive;
-        if (data::CursorInUIBounds(dropdownBounds[dropdownIndex])) [[likely]] // It's more likely that a click will be inside the button if we're already at this point
+        const IRect& activeDropdownBounds = dropdownBounds[dropdownIndex];
+        if (data::CursorInUIBounds(activeDropdownBounds)) [[likely]] // It's more likely that a click will be inside the button if we're already at this point
         {
-            IRect rec(dropdownBounds[dropdownIndex].xy, 16);
-            
+            IRect rec(activeDropdownBounds.xy, 16);
+
             int skipIndex;
             switch (dropdownActive)
             {
@@ -57,9 +63,9 @@ void Overlay_Button::Update()
             case ButtonID::Gate:      skipIndex = (int)data::gatePick;      break;
             case ButtonID::Parameter: skipIndex = data::storedExtraParam;   break;
             }
-            
+
             int i = 0;
-            for (; i < dropdownBounds[dropdownIndex].h / 16; ++i, rec.y += 16)
+            for (; i < buttonsInDropdown[dropdownIndex]; ++i, rec.y += 16)
             {
                 if (i == skipIndex) [[unlikely]]
                     continue;
@@ -90,9 +96,46 @@ void Overlay_Button::Draw()
 
     data::SetMode2D(false);
 
-    IRect rec = dropdownBounds[dropdownActive];
-    DrawRectangleIRect(rec, SPACEGRAY);
-    rec.h = 16;
+    uint8_t dropdownIndex = (uint8_t)dropdownActive;
+
+    DrawRectangleIRect(dropdownBounds[dropdownIndex], SPACEGRAY);
+    IRect rec(dropdownBounds[dropdownIndex].xy, 16);
+
+    int skipIndex;
+    switch (dropdownActive)
+    {
+    case ButtonID::Mode:      skipIndex = (int)data::GetBaseMode(); break;
+    case ButtonID::Gate:      skipIndex = (int)data::gatePick;      break;
+    case ButtonID::Parameter: skipIndex = data::storedExtraParam;   break;
+    }
+    TooltipTextFunc
+    // Things that are drawn regardless
+    switch (dropdownActive)
+    {
+    case ButtonID::Mode:
+        for (int i = 0; i < buttonsInDropdown[dropdownIndex]; ++i, rec.y += 16)
+        {
+            if (i == skipIndex)
+                continue;
+            data::DrawModeIcon(m, rec.xy, color);
+            const char* text = data::GetModeTooltipName(m);
+            data::DrawTooltipAtCursor(text, WHITE);
+            DrawText(data::GetModeTooltipName(m), 20, 17 + rec.y, 8, WHITE);
+        }
+        break;
+    case ButtonID::Gate:
+        break;
+    case ButtonID::Parameter:
+        break;
+    }
+    int i = 0;
+    for (; i < buttonsInDropdown[dropdownIndex]; ++i, rec.y += 16)
+    {
+        data::DrawModeIcon(m, rec.xy, color);
+        const char* text;
+        data::DrawTooltipAtCursor(text, WHITE);
+        DrawText(data::GetModeTooltipName(m), 20, 17 + rec.y, 8, WHITE);
+    }
 
     switch (dropdownActive)
     {
