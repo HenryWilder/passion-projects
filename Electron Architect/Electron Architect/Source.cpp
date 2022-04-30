@@ -80,7 +80,6 @@ int main()
 
                 NodeWorld::Get().DrawGroups();
             }
-                
 
             // Draw
             data::currentMode_object->Draw();

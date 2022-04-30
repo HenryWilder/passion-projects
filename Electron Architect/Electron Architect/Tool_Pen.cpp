@@ -181,7 +181,7 @@ void Tool_Pen::Update()
     }
 
     // Release m1
-    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && IntGridDistance(dragStart, data::cursorPos) < bulkNodeCount) // Not enough space
+    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && IntGridDistance(dragStart, data::cursorPos) < bulkNodeCount && bulkNodesBeingMade) // Not enough space
         CancelBulkNodes();
 
     // Press r

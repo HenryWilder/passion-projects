@@ -60,7 +60,7 @@ constexpr int g_gridSize = 8;
 #define WSTRINGIFY(arg) L ## #arg
 
 #if _DEBUG
-#define DELETE_AND_NULL(x) delete x; x = decltype(x)(__LINE__)
+#define DELETE_AND_NULL(x) delete x; x = nullptr
 #else
 #define DELETE_AND_NULL(x) delete x
 #endif

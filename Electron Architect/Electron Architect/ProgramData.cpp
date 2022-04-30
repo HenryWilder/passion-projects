@@ -59,8 +59,8 @@ namespace data
     int windowWidth;
     int windowHeight;
 
-    Tool* basicMode_object = new Tool_Pen;
-    ModeHandler* currentMode_object = basicMode_object;
+    Tool* basicMode_object;
+    ModeHandler* currentMode_object;
 
     IVec2 cursorUIPos = IVec2::Zero();
     IVec2 cursorPos = IVec2::Zero();
@@ -176,7 +176,7 @@ namespace data
 
     bool ModeIsBasic()
     {
-        bool modeIsBaseMode = currentMode_object->GetMode() == basicMode_object->GetMode();
+        bool modeIsBaseMode = GetCurrentMode() == GetBaseMode();
 #if _DEBUG
         if (modeIsBaseMode)
             _ASSERT_EXPR(currentMode_object == static_cast<ModeHandler*>(basicMode_object),
@@ -200,58 +200,57 @@ namespace data
 
     void SetMode(Mode newMode)
     {
-        _ASSERT_EXPR(!!currentMode_object && !!basicMode_object, L"Mode should be set during init phase");
+        b_cursorMoved = true; // Make sure the first frame of the new mode performs all its initial checks
 
         // Storing these for when their objects get deleted
         Mode currentMode = GetCurrentMode();
         Mode baseMode = GetBaseMode();
 
-        b_cursorMoved = true; // Make sure the first frame of the new mode performs all its initial checks
-
         // No change
-        if (newMode == GetCurrentMode())
+        if (newMode == currentMode)
             return;
 
-        // Clear overlay
-        else if (newMode == GetBaseMode() && !ModeIsBasic())
+        // Clear overlay (keep base mode)
+        else if (newMode == baseMode && newMode != currentMode)
         {
-            _ASSERT_EXPR(currentMode_object != basicMode_object, L"Tried to clear overlay mode, but base mode and overlay mode are the same object");
-            DELETE_AND_NULL(currentMode_object);
-#if _DEBUG
-            currentMode_object = (ModeHandler*)1; // Tracer
-#endif // _DEBUG
-
+            _ASSERT_EXPR(baseMode != currentMode, L"If a==b and a!=c, b!=c. But somehow, it did...");
+            delete currentMode_object;
             currentMode_object = basicMode_object;
             return;
         }
 
-        // Free memory before overwriting
-        if (ModeIsBasic(newMode))
+        // Change base mode (deletes both)
+        else if (ModeIsBasic(newMode))
         {
-            // Free both if they're different
-            if (currentMode_object != basicMode_object)
-                DELETE_AND_NULL(currentMode_object);
-            DELETE_AND_NULL(basicMode_object);
+            _ASSERTE(newMode != baseMode && newMode != currentMode);
+            if (baseMode != currentMode)
+                delete basicMode_object;
+            delete currentMode_object;
         }
-        else
-        {
-            DELETE_AND_NULL(currentMode_object); // Deletes both or just overlay, depending on whether they are separate.
-        }
+
+        ModeHandler* object;
+
+#if _DEBUG
+        object = nullptr;
+#endif
 
         switch (newMode)
         {
             ASSERT_SPECIALIZATION;
 
-        case Mode::PEN:         currentMode_object = basicMode_object = new Tool_Pen;        break;
-        case Mode::EDIT:        currentMode_object = basicMode_object = new Tool_Edit;       break;
-        case Mode::ERASE:       currentMode_object = basicMode_object = new Tool_Erase;      break;
-        case Mode::INTERACT:    currentMode_object = basicMode_object = new Tool_Interact;   break;
+        case Mode::PEN:         object = new Tool_Pen;        break;
+        case Mode::EDIT:        object = new Tool_Edit;       break;
+        case Mode::ERASE:       object = new Tool_Erase;      break;
+        case Mode::INTERACT:    object = new Tool_Interact;   break;
 
-        case Mode::BUTTON:      currentMode_object = new Overlay_Button;  break;
-        case Mode::PASTE:       currentMode_object = new Overlay_Paste;   break;
-        case Mode::BP_ICON:     currentMode_object = new Menu_Icon;       break;
-        case Mode::BP_SELECT:   currentMode_object = new Menu_Select;     break;
+        case Mode::BUTTON:      object = new Overlay_Button;  break;
+        case Mode::PASTE:       object = new Overlay_Paste;   break;
+        case Mode::BP_ICON:     object = new Menu_Icon;       break;
+        case Mode::BP_SELECT:   object = new Menu_Select;     break;
         }
+        currentMode_object = object;
+        if (Tool* tool = dynamic_cast<Tool*>(object))
+            basicMode_object = tool;
 #if _DEBUG
         if (!!basicMode_object && !!currentMode_object)
         {
