@@ -1,20 +1,20 @@
 #pragma once
 struct FILE;
 
-typedef enum Token {
+enum Token {
     _scope, // {}
     _comment, // [[]]
     _for,
     _function,
-} Token;
+};
 
 typedef struct ParseNode {
-    Token data;
+    enum Token data;
     unsigned childCount;
-    ParseNode** children;
-} ParseNode, *ParseNodePtr;
-ParseNodePtr CreateParseNode(Token data);
-void AddParseNodeChild(ParseNodePtr parent, ParseNodePtr child);
+    ParseNode* children[];
+} ParseNode;
+ParseNode* CreateParseNode(enum Token data);
+void AddParseNodeChild(ParseNode* parent, ParseNode* child);
 void DestroyParseBranch(ParseNodePtr);
 
 void Parse(FILE* fp);

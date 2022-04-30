@@ -44,13 +44,13 @@ void DestroyParseBranch(ParseNodePtr node)
 typedef struct ScopeStack {
     int size;
     Token data[STACK_SIZE];
-} ScopeStack;
+} ScopeStack, *ScopeStackPtr;
 
-void PushToStack(ScopeStack* stack, Token token)
+void PushToStack(ScopeStackPtr stack, Token token)
 {
     stack->data[stack->size++] = token;
 }
-void PopOffStack(ScopeStack* stack, Token expect)
+void PopOffStack(ScopeStackPtr stack, Token expect)
 {
 #if _DEBUG
     if (stack->size == 0)
@@ -66,7 +66,7 @@ void PopOffStack(ScopeStack* stack, Token expect)
     }
     --stack->size;
 }
-Token StackTop(ScopeStack* stack)
+Token StackTop(ScopeStackPtr stack)
 {
 #if _DEBUG
     if (stack->size == 0)
