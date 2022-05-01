@@ -593,6 +593,9 @@ public:
 
     void SaveBlueprint()
     {
+        if (!IsClipboardValid())
+            return;
+        NodeWorld::Get().StoreBlueprint(clipboard);
         // Todo: Save blueprint to file
     }
 
