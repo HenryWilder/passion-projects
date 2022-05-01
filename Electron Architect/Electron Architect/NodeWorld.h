@@ -63,38 +63,44 @@ public:
     // Invalidates input wire! (obviously; it's being split in two)
     std::pair<Wire*, Wire*> BisectWire(Wire* wire, Node* bisector);
 
+    // Group functions
+
     Group* CreateGroup(IRect rec);
     void DestroyGroup(Group* group);
-    Group* FindGroupAtPos(IVec2 pos) const;
     void FindNodesInGroup(std::vector<Node*>& result, Group* group) const;
 
+    // Blueprint functions
+
+    void StoreBlueprint(Blueprint* bp);
+    void SpawnBlueprint(Blueprint* bp, IVec2 topLeft);
+    const std::vector<Blueprint*>& GetBlueprints() const;
+
+    // Evaluation functions
 
     // Uses BFS
     void Sort();
-
     void EvaluateNode(Node* node);
-
     void Evaluate();
 
+    // Draw functions
+    
     void DrawWires() const;
     void DrawNodes() const;
     void DrawGroups() const;
 
+    // Search functions
+
     Node* FindNodeAtPos(IVec2 pos) const;
     Wire* FindWireAtPos(IVec2 pos) const;
     Wire* FindWireElbowAtPos(IVec2 pos) const;
+    Group* FindGroupAtPos(IVec2 pos) const;
 
     void FindNodesInRect(std::vector<Node*>& result, IRect rec) const;
 
-public: // Serialization
-
-    void SpawnBlueprint(Blueprint* bp, IVec2 topLeft);
-    void StoreBlueprint(Blueprint* bp);
+    // Serialization functions
 
     void Save(const char* filename) const;
-    
     void Load(const char* filename);
-
     // Saves the graph in SVG format
     void Export(const char* filename) const;
 };

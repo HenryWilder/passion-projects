@@ -27,7 +27,7 @@ constexpr Height operator/(Height a, int b) { return Height(a.y / b); }
 
 struct IVec2
 {
-    IVec2() = default;
+    IVec2() : x(), y() {}
     constexpr IVec2(int x)
         : x(x), y(x) {}
     constexpr IVec2(int x, int y)
@@ -126,7 +126,7 @@ void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color);
 
 struct IRect
 {
-    IRect() = default;
+    IRect() : x(), y(), w(), h() {}
     constexpr IRect(int w)
         : x(0), y(0), w(w), h(w) {}
     constexpr IRect(int w, int h)
@@ -148,10 +148,13 @@ struct IRect
     {
         struct { int x, y, w, h; };
         struct { int minx, miny, maxx, maxy; }; // Be careful when using these! It's just a rename, not a function!
-        struct { int x, y, width, height; };
+        struct { int x, y; Width width; Height height; }; // width and height are of the Width/Height types, whereas w and h are regular ints.
         struct { IVec2 xy, wh; };
         struct { IVec2 position, extents; };
     };
+
+    constexpr int Right()  { return x + w; }
+    constexpr int Bottom() { return y + h; }
 
     constexpr operator Rectangle() { return Rectangle{ (float)x, (float)y, (float)w, (float)h }; }
 

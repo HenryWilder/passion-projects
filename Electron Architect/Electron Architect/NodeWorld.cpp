@@ -633,6 +633,10 @@ void NodeWorld::FindNodesInRect(std::vector<Node*>& result, IRect rec) const
 }
 
 
+void NodeWorld::StoreBlueprint(Blueprint* bp)
+{
+    blueprints.push_back(bp);
+}
 void NodeWorld::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
 {
     std::unordered_map<size_t, Node*> nodeID;
@@ -660,9 +664,10 @@ void NodeWorld::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
         Wire* wire = CreateWire(start, end, wire_bp.elbowConfig);
     }
 }
-void NodeWorld::StoreBlueprint(Blueprint* bp)
+
+const std::vector<Blueprint*>& NodeWorld::GetBlueprints() const
 {
-    blueprints.push_back(bp);
+    return blueprints;
 }
 
 void NodeWorld::Save(const char* filename) const

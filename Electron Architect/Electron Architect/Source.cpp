@@ -183,6 +183,8 @@ private:
         struct InteractModeData
         {
         } interact;
+
+        BaseModeData() { memset(this, 0, sizeof(BaseModeData)); }
     } base;
 
     // Overlay mode - doesn't reset the base mode
@@ -214,8 +216,10 @@ private:
 
         struct BP_SelectModeData
         {
-            int hovering; // -1 for none
+            Blueprint* hovering;
         } bp_select;
+
+        OverlayModeData() { memset(this, 0, sizeof(OverlayModeData)); }
     } overlay;
 
 public: // Accessors for unions
@@ -356,10 +360,6 @@ public:
         {
         case Mode::GATE:
             Gate_RadialMenuCenter() = cursorUIPos;
-            break;
-
-        case Mode::BP_SELECT:
-            BPSelect_Hovering() = -1;
             break;
 
         case Mode::BUTTON:
@@ -1636,14 +1636,59 @@ void Draw_Overlay_Paste(ProgramData& data)
     data.clipboard->DrawPreview(data.cursorPos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
 }
 
-// todo
 void Update_Menu_Select(ProgramData& data)
 {
-    
+    constexpr int halfGrid = g_gridSize / 2;
+    if (true /*data.b_cursorMoved*/) // Todo: Solve the problem of b_cursorMoved being based on gridsize and not currently being modifyable
+    {
+        IVec2 pos(0);
+        int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
+        data.BPSelect_Hovering() = nullptr;
+        for (Blueprint* bp : NodeWorld::Get().GetBlueprints())
+        {
+            if (pos.x + bp->extents.x + g_gridSize > data.windowWidth)
+                pos = IVec2(0, maxY);
+            IRect rec = IRect(pos, pos + bp->extents + IVec2(g_gridSize));
+
+            if (data.CursorInUIBounds(rec))
+                data.BPSelect_Hovering() = bp;
+
+            pos += Width(rec.x);
+            int recBottom = rec.y + rec.h;
+            maxY = std::max(maxY, recBottom);
+        }
+    }
 }
 void Draw_Menu_Select(ProgramData& data)
 {
-    DrawText("[ @TODO make blueprint selection screen ]\nPress Esc to return to circuit graph.", 4, 4, 8, WHITE);
+    constexpr int halfGrid = g_gridSize / 2;
+    IVec2 pos(0);
+    int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
+    data.DrawGrid<halfGrid>();
+    for (Blueprint* bp : NodeWorld::Get().GetBlueprints())
+    {
+        IRect rec = bp->GetSelectionPreviewRect(pos);
+        if (rec.Right() > data.windowWidth)
+            pos = IVec2(0, maxY);
+
+        Color background;
+        Color foreground;
+        if (!!data.BPSelect_Hovering() && bp == data.BPSelect_Hovering()) [[unlikely]]
+        {
+            background = WIPBLUE;
+            foreground = WHITE;
+        }
+        else [[likely]]
+        {
+            background = SPACEGRAY;
+            foreground = DEADCABLE;
+        }
+
+        bp->DrawSelectionPreview(pos, background, foreground);
+
+        pos += Width(rec);
+        maxY = std::max(maxY, rec.Bottom());
+    }
 }
 
 int main()
