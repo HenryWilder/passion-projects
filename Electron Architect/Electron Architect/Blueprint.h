@@ -18,43 +18,6 @@ struct IconPos
     void Draw(IVec2 start, Color tint) const;
 };
 
-// Combo of up to four icons for representing a blueprint
-// DEPRECATED! Using contents of blueprint instead!!
-#if 0
-struct BlueprintIcon
-{
-public:
-    static constexpr int g_size = 16;
-private:
-    static Texture2D g_iconSheet;
-    static IVec2 g_iconSheetDimensions; // Rows and columns, not pixels
-public:
-    IconPos combo[4] = { IconPos{ NULL, 0,0 }, IconPos{ NULL, 0,0 }, IconPos{ NULL, 0,0 }, IconPos{ NULL, 0,0 }, };
-
-
-private:
-    static IVec2 ColRowFromIcon(uint16_t icon);
-public:
-    static uint16_t GetIconAtColRow(IVec2 colRow);
-    static IVec2 PixelToColRow(IVec2 sheetPos, IVec2 selectPos);
-    static IVec2 GetSheetSize_RC(); // Rows and columns
-    static IVec2 GetSheetSize_Px(); // Pixels
-    static void DrawBPIcon(uint16_t icon, IVec2 pos, Color tint);
-
-    static void DrawSheet(IVec2 pos, Color background, Color tint);
-
-    static void Load(const char* filename);
-    static void Unload();
-
-    BlueprintIcon();
-    BlueprintIcon(const std::vector<IconPos>& icons);
-    BlueprintIcon(IconPos(&icons)[4]);
-
-    void DrawBackground(IVec2 pos, Color color) const;
-    void Draw(IVec2 pos, Color tint) const;
-};
-#endif
-
 struct NodeBP
 {
     NodeBP() = default;
