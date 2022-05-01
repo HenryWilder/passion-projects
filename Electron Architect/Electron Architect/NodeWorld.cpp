@@ -11,8 +11,8 @@ Blueprint nativeBlueprints[] =
     Blueprint(IVec2::UnitX() * 2,
         // Nodes
         {
-            NodeBP(false, Gate::OR, IVec2::Zero()),
-            NodeBP(false, Gate::OR, IVec2::UnitX()),
+            NodeBP(true, Gate::OR, IVec2::Zero()),
+            NodeBP(true, Gate::OR, IVec2::UnitX()),
             NodeBP(true, Gate::AND, IVec2::UnitX() * 2)
         },
         // Wires

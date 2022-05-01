@@ -15,7 +15,7 @@ struct NodeBP
     constexpr NodeBP(bool b_io, Gate gate, uint8_t extraParam, IVec2 relativePosition) :
         b_io(b_io), gate(gate), extraParam(extraParam), relativePosition(relativePosition* g_gridSize) {}
 
-    bool b_io;
+    bool b_io; // Whether the node is an input/output to the entire system (Should it be shown on the paste preview?)
     Gate gate;
     uint8_t extraParam;
     IVec2 relativePosition;
@@ -47,4 +47,7 @@ public:
     std::vector<WireBP> wires;
 
     void DrawPreview(IVec2 pos, Color boxColor, Color nodeColor) const;
+    // Draws at a 50% scale
+    // Returns the containing rectangle
+    IRect DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor) const;
 };
