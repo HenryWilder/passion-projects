@@ -1,6 +1,7 @@
 #include <thread>
 #include "Blueprint.h"
 
+#if 0
 // Position on screen
 IVec2 IconPos::Pos() const
 {
@@ -101,7 +102,7 @@ void BlueprintIcon::Draw(IVec2 pos, Color tint) const
 
 Texture2D BlueprintIcon::g_iconSheet;
 IVec2 BlueprintIcon::g_iconSheetDimensions = IVec2::Zero();
-
+#endif
 
 void Blueprint::PopulateNodes(const std::vector<Node*>& src)
 {

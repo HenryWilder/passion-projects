@@ -19,6 +19,8 @@ struct IconPos
 };
 
 // Combo of up to four icons for representing a blueprint
+// DEPRECATED! Using contents of blueprint instead!!
+#if 0
 struct BlueprintIcon
 {
 public:
@@ -51,6 +53,7 @@ public:
     void DrawBackground(IVec2 pos, Color color) const;
     void Draw(IVec2 pos, Color tint) const;
 };
+#endif
 
 struct NodeBP
 {
