@@ -56,9 +56,9 @@ struct NodeBP
 {
     NodeBP() = default;
     constexpr NodeBP(bool b_io, Gate gate, IVec2 relativePosition) :
-        b_io(b_io), gate(gate), extraParam(0), relativePosition(relativePosition) {}
+        b_io(b_io), gate(gate), extraParam(0), relativePosition(relativePosition * g_gridSize) {}
     constexpr NodeBP(bool b_io, Gate gate, uint8_t extraParam, IVec2 relativePosition) :
-        b_io(b_io), gate(gate), extraParam(extraParam), relativePosition(relativePosition) {}
+        b_io(b_io), gate(gate), extraParam(extraParam), relativePosition(relativePosition* g_gridSize) {}
 
     bool b_io;
     Gate gate;
@@ -85,7 +85,7 @@ private: // Multithread functions
 public:
     Blueprint(const std::vector<Node*>& src);
     constexpr Blueprint(IVec2 extents, std::vector<NodeBP>&& nodes, std::vector<WireBP>&& wires) :
-        extents(extents), nodes(std::begin(nodes), std::end(nodes)), wires(std::begin(wires), std::end(wires)) {}
+        extents(extents * g_gridSize), nodes(std::begin(nodes), std::end(nodes)), wires(std::begin(wires), std::end(wires)) {}
 
     IVec2 extents;
     std::vector<NodeBP> nodes;

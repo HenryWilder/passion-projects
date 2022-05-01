@@ -8,12 +8,12 @@
 // Built-in blueprints
 Blueprint nativeBlueprints[] =
 {
-    Blueprint(IVec2(3,1),
+    Blueprint(IVec2::UnitX() * 2,
         // Nodes
         {
-            NodeBP(false, Gate::OR, IVec2(0, 0)),
-            NodeBP(false, Gate::OR, IVec2(g_gridSize, 0)),
-            NodeBP(true, Gate::AND, IVec2(g_gridSize*2, 0))
+            NodeBP(false, Gate::OR, IVec2::Zero()),
+            NodeBP(false, Gate::OR, IVec2::UnitX()),
+            NodeBP(true, Gate::AND, IVec2::UnitX() * 2)
         },
         // Wires
         {
