@@ -18,7 +18,6 @@ enum class Mode
     BUTTON,
     PASTE,
 
-    BP_ICON,
     BP_SELECT,
 };
 
@@ -29,8 +28,6 @@ struct ProgramData
         InitWindow(windowWidth, windowHeight, "Electron Architect");
         SetExitKey(0);
         SetTargetFPS(60);
-
-        BlueprintIcon::Load("icons_blueprint.png");
 
         clipboardIcon = LoadTexture("icon_clipboard.png");
         modeIcons = LoadTexture("icons_mode.png");
@@ -47,7 +44,6 @@ struct ProgramData
 
         NodeWorld::Get().Save("session.cg");
         NodeWorld::Get().Export("render.svg");
-        BlueprintIcon::Unload();
         UnloadTexture(gateIcons32x);
         UnloadTexture(gateIcons16x);
         UnloadTexture(modeIcons);
@@ -209,7 +205,6 @@ private:
 
         struct BP_IconModeData
         {
-            BlueprintIcon* object;
             IVec2 pos; // Width and height are fixed
             IRect sheetRec;
             uint16_t iconID;
@@ -259,14 +254,6 @@ public: // Accessors for unions
 
     // Button
     ACCESSOR(Button_DropdownActive(),       mode == Mode::BUTTON,       overlay.button.dropdownActive)
-
-    // BP_Icon
-    ACCESSOR(BPIcon_Object(),               mode == Mode::BP_ICON,      overlay.bp_icon.object)
-    ACCESSOR(BPIcon_Pos(),                  mode == Mode::BP_ICON,      overlay.bp_icon.pos)
-    ACCESSOR(BPIcon_SheetRec(),             mode == Mode::BP_ICON,      overlay.bp_icon.sheetRec)
-    ACCESSOR(BPIcon_IconID(),               mode == Mode::BP_ICON,      overlay.bp_icon.iconID)
-    ACCESSOR(BPIcon_IconCount(),            mode == Mode::BP_ICON,      overlay.bp_icon.iconCount)
-    ACCESSOR(BPIcon_DraggingIcon(),         mode == Mode::BP_ICON,      overlay.bp_icon.draggingIcon)
 
     // Select
     ACCESSOR(BPSelect_Hovering(),           mode == Mode::BP_SELECT,    overlay.bp_select.hovering)
@@ -332,7 +319,7 @@ public:
     static bool ModeIsMenu(Mode mode)
     {
         // Modes which disable use of basic UI and drawing of certain UI elements
-        return mode == Mode::BP_ICON || mode == Mode::BP_SELECT;
+        return mode == Mode::BP_SELECT;
     }
     inline bool ModeIsMenu() const
     {
@@ -354,15 +341,6 @@ public:
 
     void SetMode(Mode newMode)
     {
-        if (mode == Mode::BP_ICON)
-        {
-            ASSERT_CONDITION(!!BPIcon_Object(), L"Object must be initialized at the start of the mode")
-            {
-                delete BPIcon_Object();
-                BPIcon_Object() = nullptr;
-            }
-        }
-
         b_cursorMoved = true;
         mode = newMode;
 
@@ -378,10 +356,6 @@ public:
         {
         case Mode::GATE:
             Gate_RadialMenuCenter() = cursorUIPos;
-            break;
-
-        case Mode::BP_ICON:
-            BPIcon_DraggingIcon() = -1;
             break;
 
         case Mode::BP_SELECT:
@@ -619,11 +593,7 @@ public:
 
     void SaveBlueprint()
     {
-        SetMode(Mode::BP_ICON);
-        BPIcon_Object() = new BlueprintIcon;
-        BPIcon_Pos() = cursorPos - IVec2(BlueprintIcon::g_size / 2, BlueprintIcon::g_size / 2);
-        BPIcon_SheetRec().xy = BPIcon_Pos() + IVec2(BlueprintIcon::g_size * 2, BlueprintIcon::g_size * 2);
-        BPIcon_SheetRec().wh = BlueprintIcon::GetSheetSize_Px();
+        // Todo: Save blueprint to file
     }
 
     bool IsClipboardValid() const
@@ -1666,100 +1636,6 @@ void Draw_Overlay_Paste(ProgramData& data)
     data.clipboard->DrawPreview(data.cursorPos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
 }
 
-void Update_Menu_Icon(ProgramData& data)
-{
-    if (data.b_cursorMoved && data.BPIcon_DraggingIcon() == -1)
-    {
-        data.BPIcon_IconID() = BlueprintIcon::GetIconAtColRow(BlueprintIcon::PixelToColRow(data.BPIcon_SheetRec().xy, data.cursorUIPos));
-    }
-
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-    {
-        if (data.CursorInUIBounds(data.BPIcon_SheetRec()) && data.BPIcon_IconCount() < 4 && !!data.BPIcon_IconID())
-        {
-            data.cursorUIPos = data.BPIcon_Pos();
-            SetMousePosition(data.cursorUIPos.x + BlueprintIcon::g_size / 2, data.cursorUIPos.y + BlueprintIcon::g_size / 2);
-            data.BPIcon_Object()->combo[data.BPIcon_IconCount()] = { data.BPIcon_IconID(), 0,0 };
-            data.BPIcon_DraggingIcon() = data.BPIcon_IconCount();
-            data.BPIcon_IconCount()++;
-        }
-        else if (data.CursorInUIBounds(IRect(data.BPIcon_Pos(), BlueprintIcon::g_size * 2)))
-        {
-            data.BPIcon_DraggingIcon() = -1;
-            for (int i = 0; i < data.BPIcon_IconCount(); ++i)
-            {
-                if (data.BPIcon_Object()->combo[i].id == NULL)
-                    continue;
-
-                IRect bounds(
-                    data.BPIcon_Pos().x,
-                    data.BPIcon_Pos().y,
-                    BlueprintIcon::g_size,
-                    BlueprintIcon::g_size
-                );
-                bounds.xy = bounds.xy + data.BPIcon_Object()->combo[i].Pos();
-                if (data.CursorInUIBounds(bounds))
-                {
-                    data.BPIcon_DraggingIcon() = i;
-                    data.BPIcon_IconID() = data.BPIcon_Object()->combo[i].id;
-                    break;
-                }
-            }
-        }
-    }
-    if ((IsMouseButtonReleased(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) && data.BPIcon_DraggingIcon() != -1)
-    {
-        if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
-        {
-            if (data.BPIcon_DraggingIcon() < 3)
-            {
-                memcpy(
-                    data.BPIcon_Object()->combo + data.BPIcon_DraggingIcon(),
-                    data.BPIcon_Object()->combo + data.BPIcon_DraggingIcon() + 1,
-                    sizeof(IconPos) * (4ull - (size_t)data.BPIcon_DraggingIcon()));
-            }
-            data.BPIcon_Object()->combo[3] = { NULL, 0,0 };
-            data.BPIcon_IconCount()--;
-        }
-        data.BPIcon_DraggingIcon() = -1;
-    }
-    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && !!data.BPIcon_IconID())
-    {
-        constexpr IVec2 centerOffset = IVec2(BlueprintIcon::g_size / 2);
-        IVec2 colRow = (data.cursorUIPos - data.BPIcon_Pos() - centerOffset) / centerOffset;
-        colRow.x = std::min(std::max(colRow.x, 0), 2);
-        colRow.y = std::min(std::max(colRow.y, 0), 2);
-        data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].x = colRow.x;
-        data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].y = colRow.y;
-    }
-}
-void Draw_Menu_Icon(ProgramData& data)
-{
-    _ASSERT_EXPR(!!data.BPIcon_Object(), L"Blueprint icon object not initialized");
-    _ASSERT_EXPR(data.IsClipboardValid(), L"Bad entry into Mode::BP_ICON");
-
-    data.BPIcon_Object()->DrawBackground(data.BPIcon_Pos(), SPACEGRAY);
-    data.BPIcon_Object()->Draw(data.BPIcon_Pos(), WHITE);
-
-    for (size_t i = 0; i < 4; ++i)
-    {
-        for (int i = 0; i < 4; ++i)
-        {
-            if (data.BPIcon_Object()->combo[i].id == NULL)
-                continue;
-
-            IRect bounds(data.BPIcon_Pos(), BlueprintIcon::g_size);
-            bounds.xy = bounds.xy + data.BPIcon_Object()->combo[i].Pos();
-            if (data.CursorInUIBounds(bounds))
-                DrawRectangleIRect(bounds, ColorAlpha(WIPBLUE, 0.25f));
-        }
-    }
-    if (data.BPIcon_DraggingIcon() != -1)
-        BlueprintIcon::DrawBPIcon(data.BPIcon_IconID(), data.BPIcon_Pos() + data.BPIcon_Object()->combo[data.BPIcon_DraggingIcon()].Pos(), WIPBLUE);
-
-    BlueprintIcon::DrawSheet(data.BPIcon_SheetRec().xy, SPACEGRAY, WHITE);
-}
-
 // todo
 void Update_Menu_Select(ProgramData& data)
 {
@@ -1830,7 +1706,6 @@ int main()
         case Mode::GATE:        Update_Overlay_Gate(data);      break;
         case Mode::BUTTON:      Update_Overlay_Button(data);    break;
         case Mode::PASTE:       Update_Overlay_Paste(data);     break;
-        case Mode::BP_ICON:     Update_Menu_Icon(data);         break;
         case Mode::BP_SELECT:   Update_Menu_Select(data);       break;
         }
 
@@ -1874,7 +1749,6 @@ int main()
             case Mode::PASTE:       Draw_Overlay_Paste(data);   break;
 
                 // Menu
-            case Mode::BP_ICON:     Draw_Menu_Icon(data);       break;
             case Mode::BP_SELECT:   Draw_Menu_Select(data);     break;
             }
 
