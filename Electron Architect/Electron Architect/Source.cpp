@@ -1656,7 +1656,7 @@ void Update_Menu_Select(ProgramData& data)
             if (data.CursorInUIBounds(rec))
                 data.BPSelect_Hovering() = bp;
 
-            pos += Width(rec.x);
+            pos += rec.width;
             int recBottom = rec.y + rec.h;
             maxY = std::max(maxY, recBottom);
         }
@@ -1701,7 +1701,7 @@ void Draw_Menu_Select(ProgramData& data)
         bp->DrawSelectionPreview(pos, background, foreground, ColorAlpha(foreground, 0.25f));
         DrawRectangleLines(rec.x, rec.y, rec.w, rec.h, foreground);
 
-        pos += Width(rec);
+        pos += rec.width;
         maxY = std::max(maxY, rec.Bottom());
     }
     if (!!data.BPSelect_Hovering())
