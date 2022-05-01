@@ -7,17 +7,6 @@
 #include "Node.h"
 #include "Wire.h"
 
-struct IconPos
-{
-    uint16_t id;
-    uint8_t x; // 0 for left, 1 for center, 2 for right
-    uint8_t y; // 0 for top,  1 for center, 2 for bottom
-
-    // Position on screen
-    IVec2 Pos() const;
-    void Draw(IVec2 start, Color tint) const;
-};
-
 struct NodeBP
 {
     NodeBP() = default;
