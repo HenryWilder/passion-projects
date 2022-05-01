@@ -10,12 +10,12 @@ Blueprint nativeBlueprints[] =
 {
     Blueprint(
         "Switch",
-        IVec2(2,0),
+        IVec2(2 * g_gridSize,0),
         // Nodes
         {
             NodeBP(true, Gate::OR, IVec2::Zero()),
-            NodeBP(true, Gate::OR, IVec2::UnitX()),
-            NodeBP(true, Gate::AND, IVec2::UnitX() * 2)
+            NodeBP(true, Gate::OR, IVec2::UnitX()* g_gridSize),
+            NodeBP(true, Gate::AND, IVec2::UnitX() * 2 * g_gridSize)
         },
         // Wires
         {

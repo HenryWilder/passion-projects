@@ -4,7 +4,7 @@
 void Blueprint::PopulateNodes(const std::vector<Node*>& src)
 {
     constexpr IRect boundsInit = IRect(
-        std::numeric_limits<int>::max(),
+        INT_MAX,
         std::numeric_limits<int>::max(),
         std::numeric_limits<int>::min(),
         std::numeric_limits<int>::min());
@@ -12,23 +12,15 @@ void Blueprint::PopulateNodes(const std::vector<Node*>& src)
     for (Node* node : src)
     {
         const IVec2& compare = node->GetPosition();
-        if (compare.x < bounds.x)
-            bounds.x = compare.x;
-        if (compare.y < bounds.y)
-            bounds.y = compare.y;
-
-        // Abusing width and height as max x/y
-        if (compare.x > bounds.w)
-            bounds.w = compare.x;
-        if (compare.y > bounds.h)
-            bounds.h = compare.y;
+        if (compare.x < bounds.minx) bounds.minx = compare.x;
+        if (compare.y < bounds.miny) bounds.miny = compare.y;
+        if (compare.x > bounds.maxx) bounds.maxx = compare.x;
+        if (compare.y > bounds.maxy) bounds.maxy = compare.y;
     }
-    // Disabuse
-    bounds.w -= bounds.x;
-    bounds.h -= bounds.y;
-    extents = IVec2(bounds.w, bounds.h);
+    bounds.DeAbuse();
+    extents = bounds.wh;
 
-    IVec2 min = IVec2(bounds.x, bounds.y);
+    IVec2 min = bounds.xy;
     nodes.reserve(src.size());
     std::unordered_set<Node*> nodeSet(src.begin(), src.end());
     for (Node* node : src)

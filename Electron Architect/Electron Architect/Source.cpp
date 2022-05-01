@@ -1661,6 +1661,11 @@ void Update_Menu_Select(ProgramData& data)
             maxY = std::max(maxY, recBottom);
         }
     }
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !!data.BPSelect_Hovering())
+    {
+        data.clipboard = new Blueprint(*data.BPSelect_Hovering()); // Hack: Why do I need to allocate a new blueprint just to push it to the clipboard?!
+        data.SetMode(Mode::PASTE);
+    }
 }
 void Draw_Menu_Select(ProgramData& data)
 {
