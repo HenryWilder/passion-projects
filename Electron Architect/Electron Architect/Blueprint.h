@@ -54,6 +54,12 @@ public:
 
 struct NodeBP
 {
+    NodeBP() = default;
+    constexpr NodeBP(bool b_io, Gate gate, IVec2 relativePosition) :
+        b_io(b_io), gate(gate), extraParam(0), relativePosition(relativePosition) {}
+    constexpr NodeBP(bool b_io, Gate gate, uint8_t extraParam, IVec2 relativePosition) :
+        b_io(b_io), gate(gate), extraParam(extraParam), relativePosition(relativePosition) {}
+
     bool b_io;
     Gate gate;
     uint8_t extraParam;
@@ -62,6 +68,10 @@ struct NodeBP
 
 struct WireBP
 {
+    WireBP() = default;
+    constexpr WireBP(size_t startNodeIndex, size_t endNodeIndex, ElbowConfig elbowConfig) :
+        startNodeIndex(startNodeIndex), endNodeIndex(endNodeIndex), elbowConfig(elbowConfig) {}
+
     size_t startNodeIndex, endNodeIndex;
     ElbowConfig elbowConfig;
 };
@@ -74,6 +84,9 @@ private: // Multithread functions
 
 public:
     Blueprint(const std::vector<Node*>& src);
+    template<size_t NODECOUNT, size_t WIRECOUNT>
+    constexpr Blueprint(IVec2 extents, NodeBP(&nodes)[NODECOUNT], WireBP(&wires)[WIRECOUNT]) :
+        extents(extents), nodes(std::begin(nodes), std::end(nodes)), wires(std::begin(wires), std::end(wires)) {}
 
     IVec2 extents;
     std::vector<NodeBP> nodes;

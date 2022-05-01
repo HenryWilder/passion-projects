@@ -3,10 +3,31 @@
 #include <fstream>
 #include "HUtility.h"
 #include "NodeWorld.h"
+#include "Blueprint.h"
+
+// Built-in blueprints
+Blueprint nativeBlueprints[] =
+{
+    Blueprint(IVec2(3,1),
+        // Nodes
+        {
+            NodeBP(false, Gate::OR, IVec2(0, 0)),
+            NodeBP(false, Gate::OR, IVec2(g_gridSize, 0)),
+            NodeBP(true, Gate::AND, IVec2(g_gridSize*2, 0))
+        },
+        // Wires
+        {
+            WireBP(0, 2, ElbowConfig::horizontal),
+            WireBP(1, 2, ElbowConfig::horizontal)
+        }),
+};
 
 NodeWorld::NodeWorld()
 {
-    
+    for (Blueprint& bp : nativeBlueprints)
+    {
+        blueprints.push_back(new Blueprint(bp));
+    }
 }
 NodeWorld::~NodeWorld()
 {
