@@ -9,8 +9,7 @@
 
 struct IconPos
 {
-    using IconID_t = uint16_t;
-    IconID_t id;
+    uint16_t id;
     uint8_t x; // 0 for left, 1 for center, 2 for right
     uint8_t y; // 0 for top,  1 for center, 2 for bottom
 
@@ -23,7 +22,6 @@ struct IconPos
 struct BlueprintIcon
 {
 public:
-    using IconID_t = IconPos::IconID_t;
     static constexpr int g_size = 16;
 private:
     static Texture2D g_iconSheet;
@@ -33,13 +31,13 @@ public:
 
 
 private:
-    static IVec2 ColRowFromIcon(IconID_t icon);
+    static IVec2 ColRowFromIcon(uint16_t icon);
 public:
-    static IconID_t GetIconAtColRow(IVec2 colRow);
+    static uint16_t GetIconAtColRow(IVec2 colRow);
     static IVec2 PixelToColRow(IVec2 sheetPos, IVec2 selectPos);
     static IVec2 GetSheetSize_RC(); // Rows and columns
     static IVec2 GetSheetSize_Px(); // Pixels
-    static void DrawBPIcon(IconID_t icon, IVec2 pos, Color tint);
+    static void DrawBPIcon(uint16_t icon, IVec2 pos, Color tint);
 
     static void DrawSheet(IVec2 pos, Color background, Color tint);
 
@@ -53,12 +51,12 @@ public:
     void DrawBackground(IVec2 pos, Color color) const;
     void Draw(IVec2 pos, Color tint) const;
 };
-using BlueprintIconID_t = BlueprintIcon::IconID_t;
 
 struct NodeBP
 {
     bool b_io;
     Gate gate;
+    uint8_t extraParam;
     IVec2 relativePosition;
 };
 

@@ -4,7 +4,10 @@
 #include "HUtility.h"
 #include "NodeWorld.h"
 
-NodeWorld::NodeWorld() = default;
+NodeWorld::NodeWorld()
+{
+    
+}
 NodeWorld::~NodeWorld()
 {
     _Free();
@@ -615,7 +618,7 @@ void NodeWorld::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
     nodes.reserve(nodes.size() + bp->nodes.size());
     for (size_t i = 0; i < bp->nodes.size(); ++i)
     {
-        Node* node = CreateNode(bp->nodes[i].relativePosition + topLeft, bp->nodes[i].gate);
+        Node* node = CreateNode(bp->nodes[i].relativePosition + topLeft, bp->nodes[i].gate, bp->nodes[i].extraParam);
         nodeID.emplace(i, node);
     }
     wires.reserve(wires.size() + bp->wires.size());

@@ -212,7 +212,7 @@ private:
             BlueprintIcon* object;
             IVec2 pos; // Width and height are fixed
             IRect sheetRec;
-            BlueprintIconID_t iconID;
+            uint16_t iconID;
             uint8_t iconCount;
             int draggingIcon; // -1 for none/not dragging
         } bp_icon;

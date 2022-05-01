@@ -14,18 +14,18 @@ void IconPos::Draw(IVec2 start, Color tint) const
         BlueprintIcon::DrawBPIcon(id, start + Pos(), tint);
 }
 
-IVec2 BlueprintIcon::ColRowFromIcon(IconID_t icon)
+IVec2 BlueprintIcon::ColRowFromIcon(uint16_t icon)
 {
     return IVec2((int)icon % g_iconSheetDimensions.x, (int)icon / g_iconSheetDimensions.y);
 }
 
 
-BlueprintIcon::IconID_t BlueprintIcon::GetIconAtColRow(IVec2 colRow)
+uint16_t BlueprintIcon::GetIconAtColRow(IVec2 colRow)
 {
     if (colRow.x < 0 || colRow.x >= g_iconSheetDimensions.x ||
         colRow.y < 0 || colRow.y >= g_iconSheetDimensions.y)
         return NULL;
-    return (IconID_t)((colRow.y * g_iconSheetDimensions.x) + colRow.x);
+    return (uint16_t)((colRow.y * g_iconSheetDimensions.x) + colRow.x);
 }
 IVec2 BlueprintIcon::PixelToColRow(IVec2 sheetPos, IVec2 selectPos)
 {
@@ -39,7 +39,7 @@ IVec2 BlueprintIcon::GetSheetSize_Px() // Pixels
 {
     return g_iconSheetDimensions * g_size;
 }
-void BlueprintIcon::DrawBPIcon(IconID_t icon, IVec2 pos, Color tint)
+void BlueprintIcon::DrawBPIcon(uint16_t icon, IVec2 pos, Color tint)
 {
     if (icon != NULL)
         DrawIcon<g_size>(g_iconSheet, ColRowFromIcon(icon), pos, tint);
@@ -148,9 +148,17 @@ void Blueprint::PopulateNodes(const std::vector<Node*>& src)
             }
         }
 
+        uint8_t extraParam;
+        switch (node->GetGate())
+        {
+        case Gate::RESISTOR:    extraParam = node->GetResistance(); break;
+        case Gate::CAPACITOR:   extraParam = node->GetCapacity();   break;
+        case Gate::LED:         extraParam = node->GetColorIndex(); break;
+        }
         nodes.emplace_back(
             isIO,
             node->GetGate(),
+            extraParam,
             node->GetPosition() - min);
     }
 }
