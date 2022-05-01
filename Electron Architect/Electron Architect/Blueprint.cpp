@@ -148,12 +148,18 @@ void Blueprint::DrawPreview(IVec2 pos, Color boxColor, Color nodeColor) const
 
 // Draws at a 50% scale
 // Returns the containing rectangle
-void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor) const
+void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color wireColor) const
 {
     constexpr int halfGrid = g_gridSize / 2;
     constexpr float halfRadius = Node::g_nodeRadius * 0.5f;
     IVec2 offset = pos + IVec2(halfGrid);
     DrawRectangleIRect(GetSelectionPreviewRect(pos), backgroundColor);
+    for (const WireBP& wire_bp : wires)
+    {
+        IVec2 start = nodes[wire_bp.startNodeIndex].relativePosition / 2 + offset - IVec2::One();
+        IVec2 end   = nodes[wire_bp.  endNodeIndex].relativePosition / 2 + offset - IVec2::One();
+        DrawLineIV(start, end, nodeColor);
+    }
     for (const NodeBP& node_bp : nodes)
     {
         DrawCircleIV(node_bp.relativePosition / 2 + offset, halfRadius, nodeColor);

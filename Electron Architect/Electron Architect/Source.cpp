@@ -1639,9 +1639,9 @@ void Draw_Overlay_Paste(ProgramData& data)
 void Update_Menu_Select(ProgramData& data)
 {
     constexpr int halfGrid = g_gridSize / 2;
-    //if (true /*data.b_cursorMoved*/) // Todo: Solve the problem of b_cursorMoved being based on gridsize and not currently being modifyable
+    // if (data.b_cursorMoved) // Todo: Solve the problem of b_cursorMoved being based on gridsize and not currently being modifyable
     {
-        IVec2 pos(0);
+        IVec2 pos(0, 16);
         int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
         data.BPSelect_Hovering() = nullptr;
         for (Blueprint* bp : NodeWorld::Get().GetBlueprints())
@@ -1665,9 +1665,12 @@ void Update_Menu_Select(ProgramData& data)
 void Draw_Menu_Select(ProgramData& data)
 {
     constexpr int halfGrid = g_gridSize / 2;
-    IVec2 pos(0);
+    IVec2 pos(0,16);
     int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
-    data.DrawGrid<halfGrid>();
+    ClearBackground({ 10,15,30, 255 });
+    data.DrawGrid();
+    DrawRectangle(0,0,data.windowWidth, 16, SPACEGRAY);
+    DrawText("Blueprints (WIP)", 4,4, 8, WHITE);
     for (Blueprint* bp : NodeWorld::Get().GetBlueprints())
     {
         IRect rec = bp->GetSelectionPreviewRect(pos);
@@ -1690,11 +1693,14 @@ void Draw_Menu_Select(ProgramData& data)
             foreground = DEADCABLE;
         }
 
-        bp->DrawSelectionPreview(pos, background, foreground);
+        bp->DrawSelectionPreview(pos, background, foreground, ColorAlpha(foreground, 0.25f));
+        DrawRectangleLines(rec.x, rec.y, rec.w, rec.h, foreground);
 
         pos += Width(rec);
         maxY = std::max(maxY, rec.Bottom());
     }
+    if (!!data.BPSelect_Hovering())
+        data.DrawTooltipAtCursor("Blueprint name", WHITE);
 }
 
 int main()
