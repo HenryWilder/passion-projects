@@ -91,7 +91,7 @@ private: // Helpers usable only by NodeWorld
     void MakeWireOutput(Wire* wire);
 
 private: // Accessible by NodeWorld
-    Node() = default;
+    Node() : m_position(), m_gate(), m_state(), m_inputs(), m_ntd() {}
     Node(IVec2 position, Gate gate);
     // It is entirely safe to pass in an extra param even if the node cannot use it!
     Node(IVec2 position, Gate gate, uint8_t extraParam);
