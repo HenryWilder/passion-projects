@@ -596,7 +596,7 @@ public:
         if (!IsClipboardValid())
             return;
         NodeWorld::Get().StoreBlueprint(clipboard);
-        clipboard.Save();
+        clipboard->Save();
     }
 
     bool IsClipboardValid() const
