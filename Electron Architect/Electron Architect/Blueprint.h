@@ -84,8 +84,7 @@ private: // Multithread functions
 
 public:
     Blueprint(const std::vector<Node*>& src);
-    template<size_t NODECOUNT, size_t WIRECOUNT>
-    constexpr Blueprint(IVec2 extents, NodeBP(&nodes)[NODECOUNT], WireBP(&wires)[WIRECOUNT]) :
+    constexpr Blueprint(IVec2 extents, std::vector<NodeBP>&& nodes, std::vector<WireBP>&& wires) :
         extents(extents), nodes(std::begin(nodes), std::end(nodes)), wires(std::begin(wires), std::end(wires)) {}
 
     IVec2 extents;
