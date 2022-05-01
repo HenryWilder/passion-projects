@@ -10,17 +10,53 @@ Blueprint nativeBlueprints[] =
 {
     Blueprint(
         "Switch",
-        IVec2(2 * g_gridSize,0),
+        IVec2(2,0) * g_gridSize,
         // Nodes
         {
-            NodeBP(true, Gate::OR, IVec2::Zero()),
-            NodeBP(true, Gate::OR, IVec2::UnitX()* g_gridSize),
-            NodeBP(true, Gate::AND, IVec2::UnitX() * 2 * g_gridSize)
+            NodeBP(true, Gate::OR,  IVec2(0,0) * g_gridSize),
+            NodeBP(true, Gate::OR,  IVec2(1,0) * g_gridSize),
+            NodeBP(true, Gate::AND, IVec2(2,0) * g_gridSize),
         },
         // Wires
         {
             WireBP(0, 2, ElbowConfig::horizontal),
-            WireBP(1, 2, ElbowConfig::horizontal)
+            WireBP(1, 2, ElbowConfig::horizontal),
+        }),
+    Blueprint(
+        "Gated SR Latch",
+        IVec2(4,1) * g_gridSize,
+        // Nodes
+        {
+            NodeBP(true,  Gate::OR,  IVec2(0,1) * g_gridSize),
+
+            NodeBP(true,  Gate::OR,  IVec2(0,0) * g_gridSize),
+
+            NodeBP(false, Gate::OR,  IVec2(1,0) * g_gridSize),
+            NodeBP(false, Gate::NOR, IVec2(1,1) * g_gridSize),
+
+            NodeBP(false, Gate::AND, IVec2(2,0) * g_gridSize),
+            NodeBP(false, Gate::AND, IVec2(2,1) * g_gridSize),
+
+            NodeBP(false, Gate::OR,  IVec2(3,0) * g_gridSize),
+            NodeBP(false, Gate::OR,  IVec2(3,1) * g_gridSize),
+
+            NodeBP(false, Gate::NOR, IVec2(4,0) * g_gridSize),
+            NodeBP(true,  Gate::NOR, IVec2(4,1) * g_gridSize),
+        },
+        // Wires
+        {
+            WireBP(0, 2, ElbowConfig::diagonalA),
+            WireBP(1, 3, ElbowConfig::diagonalA),
+            WireBP(1, 4, ElbowConfig::diagonalA),
+            WireBP(2, 4, ElbowConfig::diagonalA),
+            WireBP(2, 5, ElbowConfig::diagonalA),
+            WireBP(3, 5, ElbowConfig::diagonalA),
+            WireBP(4, 6, ElbowConfig::diagonalA),
+            WireBP(5, 7, ElbowConfig::diagonalA),
+            WireBP(6, 8, ElbowConfig::diagonalA),
+            WireBP(7, 9, ElbowConfig::diagonalA),
+            WireBP(8, 7, ElbowConfig::diagonalA),
+            WireBP(9, 6, ElbowConfig::diagonalA),
         }),
 };
 
