@@ -27,7 +27,7 @@ Blueprint nativeBlueprints[] =
         IVec2(4,1) * g_gridSize,
         // Nodes
         {
-            NodeBP(true,  Gate::OR,  IVec2(0,1) * g_gridSize),
+            NodeBP(true,  Gate::NOR, IVec2(0,1) * g_gridSize), // NOR instead of OR to prevent uninitialized-flicker
 
             NodeBP(true,  Gate::OR,  IVec2(0,0) * g_gridSize),
 
