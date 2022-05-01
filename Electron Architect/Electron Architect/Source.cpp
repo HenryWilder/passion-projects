@@ -1700,7 +1700,7 @@ void Draw_Menu_Select(ProgramData& data)
         maxY = std::max(maxY, rec.Bottom());
     }
     if (!!data.BPSelect_Hovering())
-        data.DrawTooltipAtCursor("Blueprint name", WHITE);
+        data.DrawTooltipAtCursor(data.BPSelect_Hovering()->name, WHITE);
 }
 
 int main()

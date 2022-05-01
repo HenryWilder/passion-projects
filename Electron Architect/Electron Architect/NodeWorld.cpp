@@ -8,7 +8,9 @@
 // Built-in blueprints
 Blueprint nativeBlueprints[] =
 {
-    Blueprint(IVec2::UnitX() * 2,
+    Blueprint(
+        "Switch",
+        IVec2(2,0),
         // Nodes
         {
             NodeBP(true, Gate::OR, IVec2::Zero()),

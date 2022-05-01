@@ -39,9 +39,10 @@ private: // Multithread functions
 
 public:
     Blueprint(const std::vector<Node*>& src);
-    constexpr Blueprint(IVec2 extents, std::vector<NodeBP>&& nodes, std::vector<WireBP>&& wires) :
-        extents(extents * g_gridSize), nodes(std::begin(nodes), std::end(nodes)), wires(std::begin(wires), std::end(wires)) {}
+    constexpr Blueprint(const char* name, IVec2 extents, std::vector<NodeBP>&& nodes, std::vector<WireBP>&& wires) :
+        name(name), extents(extents * g_gridSize), nodes(std::begin(nodes), std::end(nodes)), wires(std::begin(wires), std::end(wires)) {}
 
+    const char* name;
     IVec2 extents;
     std::vector<NodeBP> nodes;
     std::vector<WireBP> wires;

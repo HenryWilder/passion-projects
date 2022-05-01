@@ -124,6 +124,7 @@ void Blueprint::PopulateWires(const std::vector<Node*>& src)
 
 Blueprint::Blueprint(const std::vector<Node*>& src)
 {
+    name = "Unnamed blueprint";
     extents = IVec2::Zero();
     std::thread nodeThread(&Blueprint::PopulateNodes, this, std::ref(src));
     std::thread wireThread(&Blueprint::PopulateWires, this, std::ref(src));
