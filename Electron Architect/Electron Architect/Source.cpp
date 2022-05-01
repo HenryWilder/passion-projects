@@ -1639,16 +1639,19 @@ void Draw_Overlay_Paste(ProgramData& data)
 void Update_Menu_Select(ProgramData& data)
 {
     constexpr int halfGrid = g_gridSize / 2;
-    if (true /*data.b_cursorMoved*/) // Todo: Solve the problem of b_cursorMoved being based on gridsize and not currently being modifyable
+    //if (true /*data.b_cursorMoved*/) // Todo: Solve the problem of b_cursorMoved being based on gridsize and not currently being modifyable
     {
         IVec2 pos(0);
         int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
         data.BPSelect_Hovering() = nullptr;
         for (Blueprint* bp : NodeWorld::Get().GetBlueprints())
         {
-            if (pos.x + bp->extents.x + g_gridSize > data.windowWidth)
+            IRect rec = bp->GetSelectionPreviewRect(pos);
+            if (rec.Right() > data.windowWidth)
+            {
                 pos = IVec2(0, maxY);
-            IRect rec = IRect(pos, pos + bp->extents + IVec2(g_gridSize));
+                rec = bp->GetSelectionPreviewRect(pos);
+            }
 
             if (data.CursorInUIBounds(rec))
                 data.BPSelect_Hovering() = bp;
@@ -1669,7 +1672,10 @@ void Draw_Menu_Select(ProgramData& data)
     {
         IRect rec = bp->GetSelectionPreviewRect(pos);
         if (rec.Right() > data.windowWidth)
+        {
             pos = IVec2(0, maxY);
+            rec = bp->GetSelectionPreviewRect(pos);
+        }
 
         Color background;
         Color foreground;
