@@ -163,7 +163,7 @@ struct IRect
 
     // Abuse as min and max instead of width and height
     // Returns an IRect with INT_MIN and INT_MAX components for comparing
-    static constexpr IRect Abused()
+    static consteval IRect Abused()
     {
         return IRect(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
     }

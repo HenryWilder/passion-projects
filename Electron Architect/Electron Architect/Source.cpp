@@ -7,104 +7,6 @@
 #include "Group.h"
 #include "NodeWorld.h"
 
-// Validatable Index
-#if 0
-struct VIndex
-{
-    constexpr VIndex() : index(SIZE_MAX) {}
-    constexpr VIndex(nullptr_t) : index(SIZE_MAX) {}
-    constexpr VIndex(size_t value) : index(value) {}
-
-    bool operator!() const
-    {
-        return index == SIZE_MAX;
-    }
-    operator bool() const
-    {
-        return !!index;
-    }
-    operator size_t&()
-    {
-        return index;
-    }
-    operator size_t() const
-    {
-        return index;
-    }
-    VIndex& operator=(nullptr_t)
-    {
-        index = SIZE_MAX;
-        return *this;
-    }
-    static VIndex& operator++(VIndex& it)
-    {
-        if (it.index + 1 == SIZE_MAX) // Overflow
-            it.index = 0;
-
-        else if (it.index != SIZE_MAX) // Do not apply math to invalid
-            ++it.index;
-
-        return it;
-    }
-    VIndex operator++()
-    {
-        size_t stored = index;
-        if (index + 1 == SIZE_MAX) // Overflow
-            index = 0;
-
-        else if (index != SIZE_MAX) // Do not apply math to invalid
-            ++index;
-
-        return VIndex(stored);
-    }
-    static VIndex& operator--(VIndex& it)
-    {
-        if (it.index - 1 == SIZE_MAX) // Underflow
-            it.index = SIZE_MAX - 1;
-
-        else if (it.index != SIZE_MAX) // Do not apply math to invalid
-            --it.index;
-
-        return it;
-    }
-    VIndex operator--()
-    {
-        size_t stored = index;
-        if (index - 1 == SIZE_MAX) // Overflow
-            index = 0;
-
-        else if (index != SIZE_MAX) // Do not apply math to invalid
-            --index;
-
-        return VIndex(stored);
-    }
-    VIndex& operator+(VIndex& it)
-    {
-        if (it.index + 1 == SIZE_MAX) // Overflow
-            it.index = 0;
-
-        else if (it.index != SIZE_MAX) // Do not apply math to invalid
-            ++it.index;
-
-        return it;
-    }
-    VIndex operator-()
-    {
-        size_t stored = index;
-        if (index + 1 == SIZE_MAX) // Overflow
-            index = 0;
-
-        else if (index != SIZE_MAX) // Do not apply math to invalid
-            ++index;
-
-        return VIndex(stored);
-    }
-
-private:
-    size_t index;
-};
-#endif
-
 enum class Mode
 {
     PEN,
@@ -961,16 +863,16 @@ public:
 
     IRect GetSelectionBounds(const std::vector<Node*>& vec) const
     {
-        IRect bounds = IRect::Abused();
+        IVec2 min = vec[0]->GetPosition();
+        IVec2 max = vec[0]->GetPosition();
         for (Node* node : vec)
         {
-            if      (node->GetX() < bounds.minx) bounds.minx = node->GetX();
-            else if (node->GetX() > bounds.maxx) bounds.maxx = node->GetX();
-            if      (node->GetY() < bounds.miny) bounds.miny = node->GetY();
-            else if (node->GetY() > bounds.maxy) bounds.maxy = node->GetY();
+            if (node->GetX() < min.x) min.x = node->GetX();
+            if (node->GetY() < min.y) min.y = node->GetY();
+            if (node->GetX() > max.x) max.x = node->GetX();
+            if (node->GetY() > max.y) max.y = node->GetY();
         }
-        bounds.DeAbuse();
-        return bounds;
+        return IRect(min.x, min.y, max.x - min.x, max.y - min.y);
     }
     IRect GetSelectionBounds() const
     {
