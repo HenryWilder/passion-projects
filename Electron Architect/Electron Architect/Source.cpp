@@ -596,7 +596,7 @@ public:
         if (!IsClipboardValid())
             return;
         NodeWorld::Get().StoreBlueprint(clipboard);
-        // Todo: Save blueprint to file
+        clipboard.Save();
     }
 
     bool IsClipboardValid() const

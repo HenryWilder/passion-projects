@@ -52,4 +52,6 @@ public:
     // Returns the containing rectangle
     void DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color wireColor) const;
     IRect GetSelectionPreviewRect(IVec2 pos) const;
+
+    void Save() const;
 };

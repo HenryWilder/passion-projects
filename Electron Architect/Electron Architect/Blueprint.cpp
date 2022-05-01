@@ -1,4 +1,5 @@
 #include <thread>
+#include <fstream>
 #include "Blueprint.h"
 
 void Blueprint::PopulateNodes(const std::vector<Node*>& src)
@@ -162,4 +163,20 @@ void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nod
 IRect Blueprint::GetSelectionPreviewRect(IVec2 pos) const
 {
     return IRect(pos, extents / 2 + IVec2(g_gridSize));
+}
+
+void Blueprint::Save() const
+{
+    std::ofstream file(TextFormat("%s.bp", name));
+    file << nodes.size() << '\n';
+    for (const NodeBP& node : nodes)
+    {
+        file << node.b_io << ' ' << (char)node.gate << ' ' << node.extraParam << ' ' << node.relativePosition.x << ' ' << node.relativePosition.y << '\n';
+    }
+    file << wires.size() << '\n';
+    for (const WireBP& wire : wires)
+    {
+        file << wire.startNodeIndex << ' ' << wire.endNodeIndex << ' ' << (int)wire.elbowConfig << '\n';
+    }
+    file.close();
 }
