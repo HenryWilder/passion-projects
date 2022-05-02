@@ -1642,7 +1642,7 @@ void Draw_Overlay_Paste(ProgramData& data)
 void Update_Menu_Select(ProgramData& data)
 {
     constexpr int halfGrid = g_gridSize / 2;
-    // if (data.b_cursorMoved) // Todo: Solve the problem of b_cursorMoved being based on gridsize and not currently being modifyable
+    if (data.b_cursorMoved)
     {
         IVec2 pos(0, 16);
         int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
