@@ -2,7 +2,7 @@
 #include "Blueprint.h"
 
 // Built-in blueprints
-const Blueprint nativeBlueprints[] =
+Blueprint nativeBlueprints[] =
 {
     Blueprint(
         "NAND Gate",

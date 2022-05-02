@@ -9,7 +9,7 @@ extern Blueprint nativeBlueprints[8];
 
 NodeWorld::NodeWorld()
 {
-    for (Blueprint& bp : nativeBlueprints)
+    for (const Blueprint& bp : nativeBlueprints)
     {
         blueprints.push_back(new Blueprint(bp));
     }
