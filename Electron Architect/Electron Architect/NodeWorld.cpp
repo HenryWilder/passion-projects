@@ -402,6 +402,22 @@ Group* NodeWorld::FindGroupAtPos(IVec2 pos) const
     }
     return nullptr;
 }
+NodeWorld::GroupCorner NodeWorld::FindGroupCornerAtPos(IVec2 pos) const
+{
+    for (Group* g : groups)
+    {
+        if (!InBoundingBox(g->GetCaptureBounds(), pos))
+            continue;
+        IRect corners[4];
+        g->GetResizeCollisions(corners);
+        for (uint8_t i = 0; i < 4; ++i)
+        {
+            if (InBoundingBox(corners[i], pos))
+                return { g, i };
+        }
+    }
+    return { nullptr, 0 };
+}
 void NodeWorld::FindNodesInGroup(std::vector<Node*>& result, Group* group) const
 {
     FindNodesInRect(result, group->captureBounds);

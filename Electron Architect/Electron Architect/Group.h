@@ -38,5 +38,7 @@ public:
     IRect GetResizeCollision_TopR() const;
     IRect GetResizeCollision_BotL() const;
     IRect GetResizeCollision_BotR() const;
+    void GetResizeCollisions(_Out_ IRect(&output)[4]) const;
+    IRect GetResizeCollision(uint8_t index) const;
 };
 

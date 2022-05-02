@@ -1147,7 +1147,18 @@ void Update_Edit(ProgramData& data)
 void Draw_Edit(ProgramData& data)
 {
     if (!!data.hoveredGroup)
+    {
         data.hoveredGroup->Highlight(INTERFERENCEGRAY);
+    }
+    else
+    {
+        // Todo: Store in ProgramData during update phase so this isn't being needlessly executed twice every frame when it only needs to update once per mouse move.
+        auto[group, index] = NodeWorld::Get().FindGroupCornerAtPos(data.cursorPos);
+        if (!!group)
+        {
+            DrawRectangleIRect(group->GetResizeCollision(index), INTERFERENCEGRAY);
+        }
+    }
 
     DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(SPACEGRAY, 0.5));
     DrawRectangleLines(data.Edit_SelectionRec().x, data.Edit_SelectionRec().y, data.Edit_SelectionRec().w, data.Edit_SelectionRec().h, LIFELESSNEBULA);

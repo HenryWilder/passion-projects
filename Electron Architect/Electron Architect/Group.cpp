@@ -54,20 +54,42 @@ void Group::SetCaptureBounds(IRect bounds)
 
 IRect Group::GetResizeCollision_TopL() const
 {
-    return IRect(captureBounds.xy, 16);
+    return IRect(captureBounds.xy, g_gridSize);
 }
 
 IRect Group::GetResizeCollision_TopR() const
 {
-    return IRect(captureBounds.xy + (captureBounds.width - 16), 16);
+    return IRect(captureBounds.xy + (captureBounds.width - g_gridSize), g_gridSize);
 }
 
 IRect Group::GetResizeCollision_BotL() const
 {
-    return IRect(captureBounds.xy + (captureBounds.height - 16), 16);
+    return IRect(captureBounds.xy + (captureBounds.height - g_gridSize), g_gridSize);
 }
 
 IRect Group::GetResizeCollision_BotR() const
 {
-    return IRect(captureBounds.xy + captureBounds.wh - IVec2(16), 16);
+    return IRect(captureBounds.xy + captureBounds.wh - IVec2(g_gridSize), g_gridSize);
+}
+
+void Group::GetResizeCollisions(_Out_ IRect(&output)[4]) const
+{
+    output[0] = GetResizeCollision_TopL();
+    output[1] = GetResizeCollision_TopR();
+    output[2] = GetResizeCollision_BotL();
+    output[3] = GetResizeCollision_BotR();
+}
+
+using namespace std;
+IRect Group::GetResizeCollision(uint8_t index) const
+{
+    _ASSERT_EXPR(index < 4, "Index out of range");
+
+    switch (index)
+    {
+    case 0: return GetResizeCollision_TopL();
+    case 1: return GetResizeCollision_TopR();
+    case 2: return GetResizeCollision_BotL();
+    case 3: return GetResizeCollision_BotR();
+    }
 }
