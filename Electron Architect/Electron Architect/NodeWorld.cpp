@@ -9,28 +9,6 @@
 Blueprint nativeBlueprints[] =
 {
     Blueprint(
-        "NOT Gate",
-        IVec2(0,0) * g_gridSize,
-        // Nodes
-        {
-            NodeBP(true, Gate::NOR,  IVec2(0,0) * g_gridSize),
-        },
-        // Wires
-        {
-        }),
-    Blueprint(
-        "NOTNOT Gate",
-        IVec2(1,0) * g_gridSize,
-        // Nodes
-        {
-            NodeBP(true, Gate::NOR,  IVec2(0,0) * g_gridSize),
-            NodeBP(true, Gate::NOR,  IVec2(1,0) * g_gridSize),
-        },
-        // Wires
-        {
-            WireBP(0, 1, ElbowConfig::horizontal),
-        }),
-    Blueprint(
         "NAND Gate",
         IVec2(1,0) * g_gridSize,
         // Nodes
