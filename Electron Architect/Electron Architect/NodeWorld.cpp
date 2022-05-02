@@ -41,7 +41,7 @@ Blueprint nativeBlueprints[] =
             NodeBP(false, Gate::OR,  IVec2(3,1) * g_gridSize),
 
             NodeBP(false, Gate::NOR, IVec2(4,0) * g_gridSize),
-            NodeBP(true,  Gate::NOR, IVec2(4,1) * g_gridSize),
+            NodeBP(false, Gate::NOR, IVec2(4,1) * g_gridSize),
         },
         // Wires
         {

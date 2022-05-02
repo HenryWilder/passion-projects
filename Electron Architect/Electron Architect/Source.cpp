@@ -1881,6 +1881,9 @@ int main()
                     DrawRectangleIRect(ProgramData::ButtonBound_Clipboard(), WIPBLUE);
                     // Tooltip
                     DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, 8, WHITE);
+                    constexpr IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(16);
+                    if (!!data.clipboard)
+                        data.clipboard->DrawSelectionPreview(ProgramData::ButtonBound_Clipboard().xy + clipboardPreviewOffset, SPACEGRAY, DEADCABLE, ColorAlpha(DEADCABLE, 0.25f));
                 }
 
                 data.DrawModeIcon(data.baseMode, ProgramData::ButtonBound_Mode().xy, WHITE);
