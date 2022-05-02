@@ -33,5 +33,10 @@ public:
 
     IRect GetCaptureBounds() const;
     void SetCaptureBounds(IRect bounds);
+
+    IRect GetResizeCollision_TopL() const;
+    IRect GetResizeCollision_TopR() const;
+    IRect GetResizeCollision_BotL() const;
+    IRect GetResizeCollision_BotR() const;
 };
 

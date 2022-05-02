@@ -47,7 +47,27 @@ IRect Group::GetCaptureBounds() const
 void Group::SetCaptureBounds(IRect bounds)
 {
     captureBounds = bounds;
-    labelBounds.w = bounds.w;
     labelBounds.x = bounds.x;
     labelBounds.y = bounds.y - g_labelHeight;
+    labelBounds.w = bounds.w;
+}
+
+IRect Group::GetResizeCollision_TopL() const
+{
+    return IRect(captureBounds.xy, 16);
+}
+
+IRect Group::GetResizeCollision_TopR() const
+{
+    return IRect(captureBounds.xy + (captureBounds.width - 16), 16);
+}
+
+IRect Group::GetResizeCollision_BotL() const
+{
+    return IRect(captureBounds.xy + (captureBounds.height - 16), 16);
+}
+
+IRect Group::GetResizeCollision_BotR() const
+{
+    return IRect(captureBounds.xy + captureBounds.wh - IVec2(16), 16);
 }
