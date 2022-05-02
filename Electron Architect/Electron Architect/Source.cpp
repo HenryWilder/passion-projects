@@ -587,7 +587,7 @@ public:
 
     bool IsSelectionRectValid() const
     {
-        return mode == Mode::EDIT && !Edit_SelectionWIP() && !(Edit_SelectionRec().w == 0 || Edit_SelectionRec().h == 0);
+        return mode == Mode::EDIT && !Edit_SelectionWIP() && Edit_SelectionRec().w > 0 && Edit_SelectionRec().h > 0;
     }
 
     void SaveBlueprint()
@@ -1122,7 +1122,11 @@ void Update_Edit(ProgramData& data)
             }
             else if (data.Edit_SelectionWIP())
             {
-                NodeWorld::Get().FindNodesInRect(data.selection, data.Edit_SelectionRec());
+                data.Edit_SelectionWIP() = false;
+                if (data.IsSelectionRectValid())
+                    NodeWorld::Get().FindNodesInRect(data.selection, data.Edit_SelectionRec());
+                else
+                    data.Edit_SelectionRec() = IRect(0);
             }
         }
         if (data.Edit_DraggingGroup())
