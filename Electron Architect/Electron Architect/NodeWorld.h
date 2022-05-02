@@ -94,7 +94,7 @@ public:
     Wire* FindWireAtPos(IVec2 pos) const;
     Wire* FindWireElbowAtPos(IVec2 pos) const;
     Group* FindGroupAtPos(IVec2 pos) const;
-    struct GroupCorner { Group* group; uint8_t cornerIndex; } FindGroupCornerAtPos(IVec2 pos) const;
+    GroupCorner FindGroupCornerAtPos(IVec2 pos) const;
 
     void FindNodesInRect(std::vector<Node*>& result, IRect rec) const;
 

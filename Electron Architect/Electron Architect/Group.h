@@ -42,3 +42,10 @@ public:
     IRect GetResizeCollision(uint8_t index) const;
 };
 
+struct GroupCorner
+{
+    Group* group = nullptr;
+    uint8_t cornerIndex = 0;
+    bool Valid() const;
+    IRect GetCollisionRect() const;
+};

@@ -93,3 +93,12 @@ IRect Group::GetResizeCollision(uint8_t index) const
     case 3: return GetResizeCollision_BotR();
     }
 }
+
+bool GroupCorner::Valid() const
+{
+    return !!group;
+}
+IRect GroupCorner::GetCollisionRect() const
+{
+    return group->GetResizeCollision(cornerIndex);
+}

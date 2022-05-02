@@ -171,6 +171,7 @@ private:
             IVec2 selectionStart;
             IRect selectionRec;
             bool draggingGroup;
+            GroupCorner groupCorner;
             Node* hoveringMergable;
             Node* nodeBeingDragged;
             Wire* wireBeingDragged;
@@ -243,6 +244,7 @@ public: // Accessors for unions
     ACCESSOR(Edit_SelectionStart(),         baseMode == Mode::EDIT,     base.edit.selectionStart)
     ACCESSOR(Edit_SelectionRec(),           baseMode == Mode::EDIT,     base.edit.selectionRec)
     ACCESSOR(Edit_DraggingGroup(),          baseMode == Mode::EDIT,     base.edit.draggingGroup)
+    ACCESSOR(Edit_GroupCorner(),            baseMode == Mode::EDIT,     base.edit.groupCorner)
     ACCESSOR(Edit_HoveringMergable(),       baseMode == Mode::EDIT,     base.edit.hoveringMergable)
     ACCESSOR(Edit_NodeBeingDragged(),       baseMode == Mode::EDIT,     base.edit.nodeBeingDragged)
     ACCESSOR(Edit_WireBeingDragged(),       baseMode == Mode::EDIT,     base.edit.wireBeingDragged)
@@ -990,6 +992,10 @@ void Update_Edit(ProgramData& data)
                 if (!data.hoveredWire)
                 {
                     data.hoveredGroup = NodeWorld::Get().FindGroupAtPos(data.cursorPos);
+                    if (!data.hoveredGroup)
+                    {
+                        data.Edit_GroupCorner() = NodeWorld::Get().FindGroupCornerAtPos(data.cursorPos);
+                    }
                 }
             }
         }
@@ -1154,14 +1160,9 @@ void Draw_Edit(ProgramData& data)
     {
         data.hoveredGroup->Highlight(INTERFERENCEGRAY);
     }
-    else
+    else if (data.Edit_GroupCorner().Valid())
     {
-        // Todo: Store in ProgramData during update phase so this isn't being needlessly executed twice every frame when it only needs to update once per mouse move.
-        auto[group, index] = NodeWorld::Get().FindGroupCornerAtPos(data.cursorPos);
-        if (!!group)
-        {
-            DrawRectangleIRect(group->GetResizeCollision(index), INTERFERENCEGRAY);
-        }
+        DrawRectangleIRect(data.Edit_GroupCorner().GetCollisionRect(), INTERFERENCEGRAY);
     }
 
     DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(SPACEGRAY, 0.5));

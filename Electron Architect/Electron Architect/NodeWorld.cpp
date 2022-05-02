@@ -402,7 +402,7 @@ Group* NodeWorld::FindGroupAtPos(IVec2 pos) const
     }
     return nullptr;
 }
-NodeWorld::GroupCorner NodeWorld::FindGroupCornerAtPos(IVec2 pos) const
+GroupCorner NodeWorld::FindGroupCornerAtPos(IVec2 pos) const
 {
     for (Group* g : groups)
     {
