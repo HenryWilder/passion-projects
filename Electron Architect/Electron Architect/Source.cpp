@@ -1676,7 +1676,14 @@ void Draw_Menu_Select(ProgramData& data)
     IVec2 pos(0,16);
     int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
     ClearBackground({ 10,15,30, 255 });
-    data.DrawGrid();
+    for (int y = 0; y < data.windowHeight; y += g_gridSize)
+    {
+        DrawLine(0, y, data.windowWidth, y, SPACEGRAY);
+    }
+    for (int x = 0; x < data.windowWidth; x += g_gridSize)
+    {
+        DrawLine(x, 0, x, data.windowHeight, SPACEGRAY);
+    }
     DrawRectangle(0,0,data.windowWidth, 16, SPACEGRAY);
     DrawText("Blueprints (WIP)", 4,4, 8, WHITE);
     for (Blueprint* bp : NodeWorld::Get().GetBlueprints())
@@ -1693,7 +1700,7 @@ void Draw_Menu_Select(ProgramData& data)
         if (!!data.BPSelect_Hovering() && bp == data.BPSelect_Hovering()) [[unlikely]]
         {
             background = WIPBLUE;
-            foreground = WHITE;
+            foreground = INTERFERENCEGRAY;
         }
         else [[likely]]
         {
