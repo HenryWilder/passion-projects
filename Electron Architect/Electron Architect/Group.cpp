@@ -10,14 +10,13 @@ void Group::Draw() const
     DrawRectangleIRect(captureBounds, ColorAlpha(color, 0.25));
     DrawRectangleLines(captureBounds.x, captureBounds.y, captureBounds.w, captureBounds.h, color);
     DrawRectangleIRect(labelBounds, color);
-    constexpr int padding = g_labelHeight / 4;
-    DrawText(label.c_str(), labelBounds.x + padding, labelBounds.y + padding, g_fontSize, WHITE);
+    DrawText(label.c_str(), labelBounds.x + g_padding, labelBounds.y + g_padding, g_fontSize, WHITE);
 }
 void Group::Highlight(Color highlight) const
 {
-    IRect rec = labelBounds;
-    rec.h += captureBounds.h;
-    DrawRectangleLines(rec.x - 1, rec.y - 1, rec.w + 2, rec.h + 2, highlight);
+    DrawRectangleIRect(ExpandIRect(labelBounds), highlight);
+    DrawText(label.c_str(), labelBounds.x + g_padding, labelBounds.y + g_padding, g_fontSize, color);
+    DrawRectangleLines(captureBounds.x - 1, captureBounds.y - 1, captureBounds.w + 2, captureBounds.h + 2, highlight);
 }
 
 IVec2 Group::GetPosition() const
@@ -28,4 +27,27 @@ void Group::SetPosition(IVec2 pos)
 {
     labelBounds.xy = captureBounds.xy = pos;
     labelBounds.y -= g_labelHeight;
+}
+
+IRect Group::GetBounds() const
+{
+    return labelBounds + captureBounds.height;
+}
+
+IRect Group::GetLabelBounds() const
+{
+    return labelBounds;
+}
+
+IRect Group::GetCaptureBounds() const
+{
+    return captureBounds;
+}
+
+void Group::SetCaptureBounds(IRect bounds)
+{
+    captureBounds = bounds;
+    labelBounds.w = bounds.w;
+    labelBounds.x = bounds.x;
+    labelBounds.y = bounds.y - g_labelHeight;
 }

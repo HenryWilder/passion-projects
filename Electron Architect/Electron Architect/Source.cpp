@@ -146,6 +146,7 @@ public:
 
     Node* hoveredNode = nullptr;
     Wire* hoveredWire = nullptr;
+    Group* hoveredGroup = nullptr;
 
     Blueprint* clipboard = nullptr;
     std::vector<Node*> selection;
@@ -170,7 +171,6 @@ private:
             IVec2 selectionStart;
             IRect selectionRec;
             bool draggingGroup;
-            Group* hoveredGroup;
             Node* hoveringMergable;
             Node* nodeBeingDragged;
             Wire* wireBeingDragged;
@@ -244,7 +244,6 @@ public: // Accessors for unions
     ACCESSOR(Edit_SelectionRec(),           baseMode == Mode::EDIT,     base.edit.selectionRec)
     ACCESSOR(Edit_DraggingGroup(),          baseMode == Mode::EDIT,     base.edit.draggingGroup)
     ACCESSOR(Edit_HoveringMergable(),       baseMode == Mode::EDIT,     base.edit.hoveringMergable)
-    ACCESSOR(Edit_HoveredGroup(),           baseMode == Mode::EDIT,     base.edit.hoveredGroup)
     ACCESSOR(Edit_NodeBeingDragged(),       baseMode == Mode::EDIT,     base.edit.nodeBeingDragged)
     ACCESSOR(Edit_WireBeingDragged(),       baseMode == Mode::EDIT,     base.edit.wireBeingDragged)
 
@@ -980,7 +979,7 @@ void Update_Edit(ProgramData& data)
             !data.Edit_WireBeingDragged() &&
             !data.Edit_DraggingGroup())
         {
-            data.Edit_HoveredGroup() = nullptr;
+            data.hoveredGroup = nullptr;
             data.hoveredWire = nullptr;
             data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
             if (!data.hoveredNode)
@@ -988,7 +987,7 @@ void Update_Edit(ProgramData& data)
                 data.hoveredWire = NodeWorld::Get().FindWireElbowAtPos(data.cursorPos);
                 if (!data.hoveredWire)
                 {
-                    data.Edit_HoveredGroup() = NodeWorld::Get().FindGroupAtPos(data.cursorPos);
+                    data.hoveredGroup = NodeWorld::Get().FindGroupAtPos(data.cursorPos);
                 }
             }
         }
@@ -1014,10 +1013,10 @@ void Update_Edit(ProgramData& data)
             data.Edit_WireBeingDragged() = data.hoveredWire;
 
             // selectionStart being used as an offset here
-            if (data.Edit_DraggingGroup() = !!data.Edit_HoveredGroup())
+            if (data.Edit_DraggingGroup() = !!data.hoveredGroup)
             {
-                NodeWorld::Get().FindNodesInGroup(data.selection, data.Edit_HoveredGroup());
-                data.Edit_SelectionStart() = (data.cursorPos - (data.Edit_FallbackPos() = data.Edit_HoveredGroup()->GetPosition()));
+                NodeWorld::Get().FindNodesInGroup(data.selection, data.hoveredGroup);
+                data.Edit_SelectionStart() = (data.cursorPos - (data.Edit_FallbackPos() = data.hoveredGroup->GetPosition()));
             }
 
             data.Edit_FallbackPos() = data.cursorPos;
@@ -1058,7 +1057,7 @@ void Update_Edit(ProgramData& data)
     // Group
     else if (data.Edit_DraggingGroup())
     {
-        data.Edit_HoveredGroup()->SetPosition(data.cursorPos - data.Edit_SelectionStart());
+        data.hoveredGroup->SetPosition(data.cursorPos - data.Edit_SelectionStart());
         for (Node* node : data.selection)
         {
             const IVec2 offset = data.GetCursorDelta();
@@ -1078,7 +1077,7 @@ void Update_Edit(ProgramData& data)
             }
             else if (data.Edit_DraggingGroup())
             {
-                data.Edit_HoveredGroup()->SetPosition(data.Edit_FallbackPos());
+                data.hoveredGroup->SetPosition(data.Edit_FallbackPos());
                 for (Node* node : data.selection)
                 {
                     IVec2 offset = (data.Edit_FallbackPos() + data.Edit_SelectionStart()) - data.cursorPos;
@@ -1145,8 +1144,8 @@ void Update_Edit(ProgramData& data)
 }
 void Draw_Edit(ProgramData& data)
 {
-    if (!!data.Edit_HoveredGroup())
-        data.Edit_HoveredGroup()->Highlight(INTERFERENCEGRAY);
+    if (!!data.hoveredGroup)
+        data.hoveredGroup->Highlight(INTERFERENCEGRAY);
 
     DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(SPACEGRAY, 0.5));
     DrawRectangleLines(data.Edit_SelectionRec().x, data.Edit_SelectionRec().y, data.Edit_SelectionRec().w, data.Edit_SelectionRec().h, LIFELESSNEBULA);
@@ -1205,7 +1204,11 @@ void Update_Erase(ProgramData& data)
         data.hoveredWire = nullptr;
         data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
         if (!data.hoveredNode)
+        {
             data.hoveredWire = NodeWorld::Get().FindWireAtPos(data.cursorPos);
+            if (!data.hoveredWire)
+                data.hoveredGroup = NodeWorld::Get().FindGroupAtPos(data.cursorPos);
+        }
     }
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -1227,9 +1230,12 @@ void Update_Erase(ProgramData& data)
         }
         else if (!!data.hoveredWire)
             NodeWorld::Get().DestroyWire(data.hoveredWire);
+        else if (!!data.hoveredGroup)
+            NodeWorld::Get().DestroyGroup(data.hoveredGroup);
 
         data.hoveredNode = nullptr;
         data.hoveredWire = nullptr;
+        data.hoveredGroup = nullptr;
     }
 }
 void Draw_Erase(ProgramData& data)
@@ -1246,6 +1252,14 @@ void Draw_Erase(ProgramData& data)
                  center.x + radius, center.y - radius,
                  color);
     };
+
+    if (!!data.hoveredGroup)
+    {
+        IRect rec = data.hoveredGroup->GetLabelBounds();
+        data.hoveredGroup->Highlight(MAGENTA);
+        DrawLineEx({ (float)rec.x, (float)rec.y }, { (float)rec.x + (float)rec.h, (float)rec.Bottom() }, 3, DESTRUCTIVERED);
+        DrawLineEx({ (float)rec.x, (float)rec.Bottom() }, { (float)rec.x + (float)rec.h, (float)rec.y }, 3, DESTRUCTIVERED);
+    }
 
     NodeWorld::Get().DrawWires();
 
