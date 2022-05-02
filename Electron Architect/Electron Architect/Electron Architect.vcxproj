@@ -200,6 +200,7 @@ copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     <ClCompile Include="Group.cpp" />
     <ClCompile Include="HUtility.cpp" />
     <ClCompile Include="IVec.cpp" />
+    <ClCompile Include="NativeBlueprints.cpp" />
     <ClCompile Include="NodeWorld.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Source.cpp" />
