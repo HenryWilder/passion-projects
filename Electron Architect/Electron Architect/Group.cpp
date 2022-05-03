@@ -83,7 +83,7 @@ void Group::GetResizeCollisions(_Out_ IRect(&output)[4]) const
 using namespace std;
 IRect Group::GetResizeCollision(uint8_t index) const
 {
-    _ASSERT_EXPR(index < 4, "Index out of range");
+    _ASSERT_EXPR(index < 4, L"Index out of range");
 
     switch (index)
     {
