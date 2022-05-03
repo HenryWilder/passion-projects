@@ -1082,7 +1082,18 @@ void Update_Edit(ProgramData& data)
     // Resize group
     else if (data.Edit_DraggingGroupCorner())
     {
-        // Todo
+        _ASSERT_EXPR(data.Edit_GroupCorner().cornerIndex < 4, L"Index out of range");
+        IRect captureBounds =  data.Edit_GroupCorner().group->GetCaptureBounds();
+        IVec2 otherEnd;
+        switch (data.Edit_GroupCorner().cornerIndex)
+        {
+        case 0: otherEnd = captureBounds.BR(); break;
+        case 1: otherEnd = captureBounds.BL(); break;
+        case 2: otherEnd = captureBounds.TR(); break;
+        case 3: otherEnd = captureBounds.TL(); break;
+        }
+        captureBounds = IRectFromTwoPoints(data.cursorPos, otherEnd);
+        data.Edit_GroupCorner().group->SetCaptureBounds(captureBounds);
     }
 
     // Release
