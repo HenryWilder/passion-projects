@@ -177,3 +177,32 @@ void Blueprint::Save() const
     }
     file.close();
 }
+
+void Load(const char* name, Blueprint& dest)
+{
+    std::ifstream file(TextFormat("%s.bp", name));
+    dest.name = name;
+    size_t nodeCount;
+    file >> nodeCount;
+    dest.nodes.reserve(nodeCount);
+    for (size_t i = 0; i < nodeCount; ++i)
+    {
+        bool io;
+        char gate;
+        uint8_t ep;
+        IVec2 pos;
+        file >> io >> gate >> ep >> pos.x >> pos.y;
+        dest.nodes.emplace_back(io, (Gate)gate, ep, pos);
+    }
+    size_t wireCount;
+    file >> wireCount;
+    dest.wires.reserve(wireCount);
+    for (size_t i = 0; i < wireCount; ++i)
+    {
+        size_t startNodeIndex, endNodeIndex;
+        uint8_t elbowConfig;
+        file >> startNodeIndex >> endNodeIndex >> elbowConfig;
+        dest.wires.emplace_back(startNodeIndex, endNodeIndex, (ElbowConfig)elbowConfig);
+    }
+    file.close();
+}

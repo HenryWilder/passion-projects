@@ -55,3 +55,5 @@ public:
 
     void Save() const;
 };
+
+void Load(const char* name, Blueprint& dest);
