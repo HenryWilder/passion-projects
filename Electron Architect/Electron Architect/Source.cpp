@@ -871,6 +871,23 @@ public:
         DrawTextIV(text, cursorUIPos + IVec2(16), 8, color);
         BeginMode2D(camera);
     }
+
+    void DrawTooltipAtCursor_Shadowed(const char* text, Color color)
+    {
+        EndMode2D();
+        IVec2 offset;
+        for (offset.y = 16 - 1; offset.y <= 16 + 1; ++offset.y)
+        {
+            for (offset.x = 16 - 1; offset.x <= 16 + 1; ++offset.x)
+            {
+                if (offset == IVec2(16)) [[unlikely]]
+                    continue;
+                DrawTextIV(text, cursorUIPos + offset, 8, BLACK);
+            }
+        }
+        DrawTextIV(text, cursorUIPos + IVec2(16), 8, color);
+        BeginMode2D(camera);
+    }
 };
 Texture2D ProgramData::clipboardIcon;
 Texture2D ProgramData::modeIcons;
@@ -1369,11 +1386,16 @@ void Draw_Erase(ProgramData& data)
         data.hoveredNode->Draw(BLACK);
         DrawCross(data.hoveredNode->GetPosition(), DESTRUCTIVERED);
 
-        if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) && !data.hoveredNode->IsSpecialErasable())
+        if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
         {
             const char* text;
             Color color;
-            if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
+            if (data.hoveredNode->IsSpecialErasable())
+            {
+                color = WIPBLUE;
+                text = "Simple bipass";
+            }
+            else if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
             {
                 color = VIOLET;
                 text = "Complex bipass";
@@ -1413,7 +1435,7 @@ void Draw_Erase(ProgramData& data)
                         "\"Special erase error: i=%i, o=%i\"", iCount, oCount);
 
             }
-            data.DrawTooltipAtCursor(text, color);
+            data.DrawTooltipAtCursor_Shadowed(text, color);
         }
     }
 }
