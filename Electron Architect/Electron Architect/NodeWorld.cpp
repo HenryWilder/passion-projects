@@ -42,7 +42,6 @@ void NodeWorld::_Free()
 void NodeWorld::_Clear()
 {
     _Free();
-
 }
 
 Node* NodeWorld::_CreateNode(Node&& base)
@@ -748,7 +747,7 @@ void NodeWorld::Load(const char* filename)
     };
 
 
-    struct FNodeData { char gate; IVec2 pos; int extra; };
+    struct FNodeData { char gate{}; IVec2 pos{}; int extra{}; };
     auto initNodes = [](std::vector<Node*>& nodes, const FNodeData* nodeData)
     {
         for (size_t i = 0; i < nodes.size(); ++i)

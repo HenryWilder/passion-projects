@@ -141,7 +141,7 @@ void Blueprint::DrawPreview(IVec2 pos, Color boxColor, Color nodeColor) const
 }
 
 // Returns the containing rectangle
-void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color wireColor) const
+void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor) const
 {
     IVec2 offset = pos + IVec2(g_gridSize);
     DrawRectangleIRect(GetSelectionPreviewRect(pos), backgroundColor);
@@ -153,6 +153,11 @@ void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nod
     }
     for (const NodeBP& node_bp : nodes)
     {
+        Color color;
+        if (node_bp.b_io)
+            color = ioNodeColor;
+        else
+            color = nodeColor;
         Node::Draw(node_bp.relativePosition + offset, node_bp.gate, nodeColor);
     }
 }
@@ -193,7 +198,18 @@ void LoadBlueprint(const char* filename, Blueprint& dest)
     IVec2 extents = IVec2::Zero();
     size_t nodeCount;
     file >> nodeCount;
-    dest.nodes.reserve(nodeCount);
+    try
+    {
+        dest.nodes.reserve(nodeCount);
+    }
+    catch (std::length_error e)
+    {
+        throw e;
+    }
+    catch (...)
+    {
+        throw std::exception("unknown");
+    }
     for (size_t i = 0; i < nodeCount; ++i)
     {
         bool io;
@@ -208,7 +224,18 @@ void LoadBlueprint(const char* filename, Blueprint& dest)
     dest.extents = extents;
     size_t wireCount;
     file >> wireCount;
-    dest.wires.reserve(wireCount);
+    try
+    {
+        dest.wires.reserve(wireCount);
+    }
+    catch (std::length_error e)
+    {
+        throw e;
+    }
+    catch (...)
+    {
+        throw std::exception("unknown");
+    }
     for (size_t i = 0; i < wireCount; ++i)
     {
         size_t startNodeIndex, endNodeIndex;

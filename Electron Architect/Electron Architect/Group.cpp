@@ -90,6 +90,7 @@ IRect Group::GetResizeCollision(uint8_t index) const
 {
     _ASSERT_EXPR(index < 4, L"Index out of range");
 
+#pragma warning(disable:4715)
     switch (index)
     {
     case 0: return GetResizeCollision_TopL();
@@ -97,6 +98,8 @@ IRect Group::GetResizeCollision(uint8_t index) const
     case 2: return GetResizeCollision_BotL();
     case 3: return GetResizeCollision_BotR();
     }
+    return IRect(0);
+#pragma warning(default:4715)
 }
 
 bool GroupCorner::Valid() const

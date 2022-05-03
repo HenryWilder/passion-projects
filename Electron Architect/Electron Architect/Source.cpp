@@ -608,7 +608,6 @@ public:
     }
     void ClearClipboard()
     {
-        delete clipboard;
         clipboard = nullptr;
     }
     bool SelectionExists() const
@@ -1806,18 +1805,21 @@ void Draw_Menu_Select(ProgramData& data)
 
         Color background;
         Color foreground;
+        Color foregroundIO;
         if (!!data.BPSelect_Hovering() && bp == data.BPSelect_Hovering()) [[unlikely]]
         {
             background = WIPBLUE;
             foreground = INTERFERENCEGRAY;
+            foregroundIO = HAUNTINGWHITE;
         }
         else [[likely]]
         {
             background = SPACEGRAY;
             foreground = DEADCABLE;
+            foregroundIO = LIFELESSNEBULA;
         }
 
-        bp->DrawSelectionPreview(pos, background, foreground, ColorAlpha(foreground, 0.25f));
+        bp->DrawSelectionPreview(pos, background, foreground, foregroundIO, ColorAlpha(foreground, 0.25f));
         DrawRectangleLines(rec.x, rec.y, rec.w, rec.h, foreground);
 
         pos += rec.width;
@@ -1846,8 +1848,15 @@ int main()
             if (filename.substr(filename.size() - 3, filename.size()) == ".bp")
             printf("Loading blueprint \"%s\"\n", filename.c_str());
             Blueprint bp;
-            LoadBlueprint(filename.c_str(), bp);
-            NodeWorld::Get().StoreBlueprint(&bp);
+            try
+            {
+                LoadBlueprint(filename.c_str(), bp);
+                NodeWorld::Get().StoreBlueprint(&bp);
+            }
+            catch (std::length_error e)
+            {
+                printf("File corrupt. Encountered \"%s\" error\n", e.what());
+            }
         }
     }
 
@@ -2013,7 +2022,7 @@ int main()
                     DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, 8, WHITE);
                     constexpr IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(16);
                     if (data.IsClipboardValid())
-                        data.clipboard->DrawSelectionPreview(ProgramData::ButtonBound_Clipboard().xy + clipboardPreviewOffset, SPACEGRAY, DEADCABLE, ColorAlpha(DEADCABLE, 0.25f));
+                        data.clipboard->DrawSelectionPreview(ProgramData::ButtonBound_Clipboard().xy + clipboardPreviewOffset, SPACEGRAY, DEADCABLE, LIFELESSNEBULA, ColorAlpha(DEADCABLE, 0.25f));
                 }
 
                 data.DrawModeIcon(data.baseMode, ProgramData::ButtonBound_Mode().xy, WHITE);
