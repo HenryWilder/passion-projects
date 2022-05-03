@@ -22,6 +22,8 @@ enum class Mode
     BP_SELECT,
 };
 
+Blueprint g_clipboardBP; // Reusable address so clipboard doesn't have to delete
+
 struct ProgramData
 {
     ProgramData(int windowWidth, int windowHeight) : windowWidth(windowWidth), windowHeight(windowHeight)
@@ -40,9 +42,6 @@ struct ProgramData
     }
     ~ProgramData()
     {
-        if (clipboard != nullptr)
-            delete clipboard;
-
         NodeWorld::Get().Save("session.cg");
         NodeWorld::Get().Export("render.svg");
         UnloadTexture(gateIcons32x);
@@ -225,8 +224,8 @@ private:
         OverlayModeData() { memset(this, 0, sizeof(OverlayModeData)); }
     } overlay;
 
+#pragma region Accessors
 public: // Accessors for unions
-
 #define ACCESSOR(name, assertion, bind) \
     inline       decltype(bind)& name       { _ASSERT_EXPR(assertion, L"Tried to access member of different mode"); return bind; } \
     inline const decltype(bind)& name const { _ASSERT_EXPR(assertion, L"Tried to access member of different mode"); return bind; }
@@ -267,7 +266,7 @@ public: // Accessors for unions
     ACCESSOR(BPSelect_Hovering(),           mode == Mode::BP_SELECT,    overlay.bp_select.hovering)
 
 #undef ACCESSOR
-
+#pragma endregion
 
 public:
 
@@ -574,13 +573,13 @@ public:
 
     void CopySelectionToClipboard()
     {
-        if (clipboard != nullptr)
-            delete clipboard;
-
         if (selection.empty())
             clipboard = nullptr;
         else
-            clipboard = new Blueprint(selection);
+        {
+            g_clipboardBP = Blueprint(selection);
+            clipboard = &g_clipboardBP;
+        }
     }
 
     void MakeGroupFromSelection()
@@ -1776,7 +1775,7 @@ void Update_Menu_Select(ProgramData& data)
     }
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !!data.BPSelect_Hovering())
     {
-        data.clipboard = new Blueprint(*data.BPSelect_Hovering()); // Hack: Why do I need to allocate a new blueprint just to push it to the clipboard?!
+        data.clipboard = data.BPSelect_Hovering();
         data.SetMode(Mode::PASTE);
     }
 }
@@ -1825,7 +1824,7 @@ void Draw_Menu_Select(ProgramData& data)
         maxY = std::max(maxY, rec.Bottom());
     }
     if (!!data.BPSelect_Hovering())
-        data.DrawTooltipAtCursor(data.BPSelect_Hovering()->name, WHITE);
+        data.DrawTooltipAtCursor(data.BPSelect_Hovering()->name.c_str(), WHITE);
 }
 
 int main()
@@ -1843,7 +1842,12 @@ int main()
         std::filesystem::create_directories(blueprints);
         for (auto const& dir_entry : std::filesystem::directory_iterator{ blueprints })
         {
-            // Todo
+            std::string filename = dir_entry.path().string();
+            if (filename.substr(filename.size() - 3, filename.size()) == ".bp")
+            printf("Loading blueprint \"%s\"\n", filename.c_str());
+            Blueprint bp;
+            LoadBlueprint(filename.c_str(), bp);
+            NodeWorld::Get().StoreBlueprint(&bp);
         }
     }
 
@@ -2008,7 +2012,7 @@ int main()
                     // Tooltip
                     DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, 8, WHITE);
                     constexpr IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(16);
-                    if (!!data.clipboard)
+                    if (data.IsClipboardValid())
                         data.clipboard->DrawSelectionPreview(ProgramData::ButtonBound_Clipboard().xy + clipboardPreviewOffset, SPACEGRAY, DEADCABLE, ColorAlpha(DEADCABLE, 0.25f));
                 }
 

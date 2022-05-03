@@ -38,11 +38,12 @@ private: // Multithread functions
     void PopulateWires(const std::vector<Node*>& src);
 
 public:
+    Blueprint() : name("Unnamed blueprint"), extents() {}
     Blueprint(const std::vector<Node*>& src);
     constexpr Blueprint(const char* name, IVec2 extents, std::vector<NodeBP>&& nodes, std::vector<WireBP>&& wires) :
         name(name), extents(extents), nodes(std::begin(nodes), std::end(nodes)), wires(std::begin(wires), std::end(wires)) {}
 
-    const char* name;
+    std::string name;
     IVec2 extents;
     std::vector<NodeBP> nodes;
     std::vector<WireBP> wires;
@@ -56,4 +57,4 @@ public:
     void Save() const;
 };
 
-void Load(const char* name, Blueprint& dest);
+void LoadBlueprint(const char* filename, Blueprint& dest);

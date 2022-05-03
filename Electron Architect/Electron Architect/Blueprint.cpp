@@ -164,11 +164,11 @@ IRect Blueprint::GetSelectionPreviewRect(IVec2 pos) const
 
 void Blueprint::Save() const
 {
-    std::ofstream file(TextFormat("%s.bp", name));
+    std::ofstream file(TextFormat("blueprints/%s.bp", name));
     file << nodes.size() << '\n';
     for (const NodeBP& node : nodes)
     {
-        file << node.b_io << ' ' << (char)node.gate << ' ' << node.extraParam << ' ' << node.relativePosition.x << ' ' << node.relativePosition.y << '\n';
+        file << node.b_io << ' ' << (char)node.gate << ' ' << (unsigned)node.extraParam << ' ' << node.relativePosition.x << ' ' << node.relativePosition.y << '\n';
     }
     file << wires.size() << '\n';
     for (const WireBP& wire : wires)
@@ -178,10 +178,19 @@ void Blueprint::Save() const
     file.close();
 }
 
-void Load(const char* name, Blueprint& dest)
+void LoadBlueprint(const char* filename, Blueprint& dest)
 {
-    std::ifstream file(TextFormat("%s.bp", name));
-    dest.name = name;
+    std::ifstream file(TextFormat("%s", filename));
+    if (file.bad())
+        return;
+    std::string name = filename;
+    size_t start = name.find_last_of('\\') + 1;
+    size_t end = name.size() - 3;
+    if (start != name.npos)
+        dest.name = name.substr(start, end - start);
+    else
+        dest.name = name;
+    IVec2 extents = IVec2::Zero();
     size_t nodeCount;
     file >> nodeCount;
     dest.nodes.reserve(nodeCount);
@@ -193,7 +202,10 @@ void Load(const char* name, Blueprint& dest)
         IVec2 pos;
         file >> io >> gate >> ep >> pos.x >> pos.y;
         dest.nodes.emplace_back(io, (Gate)gate, ep, pos);
+        extents.x = std::max(pos.x, extents.x);
+        extents.y = std::max(pos.y, extents.y);
     }
+    dest.extents = extents;
     size_t wireCount;
     file >> wireCount;
     dest.wires.reserve(wireCount);

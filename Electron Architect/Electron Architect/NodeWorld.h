@@ -38,7 +38,7 @@ public:
 
     // Node functions
 
-    /// <summary>CreateNode does not insert at the end of the <see cref="nodes"/>.</summary>
+    // CreateNode does not insert at the end of the nodes
     Node* CreateNode(IVec2 position, Gate gate, uint8_t extendedParam = 0);
     void DestroyNode(Node* node);
     // More efficient for bulk operation
