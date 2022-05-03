@@ -1083,16 +1083,34 @@ void Update_Edit(ProgramData& data)
     else if (data.Edit_DraggingGroupCorner())
     {
         _ASSERT_EXPR(data.Edit_GroupCorner().cornerIndex < 4, L"Index out of range");
+        constexpr int minWidth = g_gridSize * 2;
         IRect captureBounds =  data.Edit_GroupCorner().group->GetCaptureBounds();
+        IVec2 cursorEnd;
         IVec2 otherEnd;
         switch (data.Edit_GroupCorner().cornerIndex)
         {
-        case 0: otherEnd = captureBounds.BR(); break;
-        case 1: otherEnd = captureBounds.BL(); break;
-        case 2: otherEnd = captureBounds.TR(); break;
-        case 3: otherEnd = captureBounds.TL(); break;
+        case 0:
+            cursorEnd.x = std::min(data.cursorPos.x, captureBounds.Right() - minWidth);
+            cursorEnd.y = std::min(data.cursorPos.y, captureBounds.Bottom() - minWidth);
+            otherEnd = captureBounds.BR();
+            break;
+        case 1:
+            cursorEnd.x = std::max(data.cursorPos.x, captureBounds.x + minWidth);
+            cursorEnd.y = std::min(data.cursorPos.y, captureBounds.Bottom() - minWidth);
+            otherEnd = captureBounds.BL();
+            break;
+        case 2:
+            cursorEnd.x = std::min(data.cursorPos.x, captureBounds.Right() - minWidth);
+            cursorEnd.y = std::max(data.cursorPos.y, captureBounds.y + minWidth);
+            otherEnd = captureBounds.TR();
+            break;
+        case 3:
+            cursorEnd.x = std::max(data.cursorPos.x, captureBounds.x + minWidth);
+            cursorEnd.y = std::max(data.cursorPos.y, captureBounds.y + minWidth);
+            otherEnd = captureBounds.TL();
+            break;
         }
-        captureBounds = IRectFromTwoPoints(data.cursorPos, otherEnd);
+        captureBounds = IRectFromTwoPoints(cursorEnd, otherEnd);
         data.Edit_GroupCorner().group->SetCaptureBounds(captureBounds);
     }
 
@@ -1196,9 +1214,9 @@ void Draw_Edit(ProgramData& data)
     {
         Color color;
         if (data.Edit_DraggingGroupCorner())
-            color = RED;
-        else
             color = INTERFERENCEGRAY;
+        else
+            color = data.Edit_GroupCorner().group->GetColor();
         DrawRectangleIRect(data.Edit_GroupCorner().GetCollisionRect(), color);
     }
 
