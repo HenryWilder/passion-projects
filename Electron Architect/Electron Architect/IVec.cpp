@@ -145,6 +145,13 @@ void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color)
     DrawText(text, pos.x, pos.y, fontSize, color);
 }
 
+IRect IRectFromTwoPoints(IVec2 a, IVec2 b)
+{
+    auto[minx, maxx] = std::minmax(a.x, b.x);
+    auto[miny, maxy] = std::minmax(a.y, b.y);
+    return IRect(minx, miny, maxx - minx, maxy - miny);
+}
+
 bool InBoundingBox(IRect bounds, IVec2 pt)
 {
     return

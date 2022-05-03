@@ -155,6 +155,8 @@ struct IRect
 
     constexpr int Right()  { return x + w; }
     constexpr int Bottom() { return y + h; }
+    // Bottom-right
+    constexpr IVec2 BR() { return xy + wh; }
 
     constexpr operator Rectangle() { return Rectangle{ (float)x, (float)y, (float)w, (float)h }; }
 
@@ -177,6 +179,8 @@ struct IRect
         h = maxy - miny;
     }
 };
+
+IRect IRectFromTwoPoints(IVec2 a, IVec2 b);
 
 constexpr IRect operator+(IRect a, Width b) { return IRect(a.x, a.y, a.w + b.x, a.h); }
 constexpr IRect operator-(IRect a, Width b) { return IRect(a.x, a.y, a.w - b.x, a.h); }
