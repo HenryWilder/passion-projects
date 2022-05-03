@@ -24,6 +24,8 @@ public:
     void Draw() const;
     void Highlight(Color highlight) const;
 
+    Color GetColor() const;
+
     IVec2 GetPosition() const;
     void SetPosition(IVec2 pos);
 

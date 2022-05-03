@@ -19,6 +19,11 @@ void Group::Highlight(Color highlight) const
     DrawRectangleLines(captureBounds.x - 1, captureBounds.y - 1, captureBounds.w + 2, captureBounds.h + 2, highlight);
 }
 
+Color Group::GetColor() const
+{
+    return color;
+}
+
 IVec2 Group::GetPosition() const
 {
     return captureBounds.xy;
