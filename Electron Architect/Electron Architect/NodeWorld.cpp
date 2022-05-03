@@ -700,7 +700,7 @@ void NodeWorld::Save(const char* filename) const
 
     std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
     {
-        file << "1.1\n";
+        file << "1.2\n";
 
         std::unordered_map<Node*, size_t> nodeIDs;
         std::unordered_map<Wire*, size_t> wireIDs;
@@ -709,8 +709,8 @@ void NodeWorld::Save(const char* filename) const
         a.join();
         b.join();
 
+        // Nodes
         file << TextFormat("n %i\n", nodes.size());
-
         for (Node* node : nodes)
         {
             file << TextFormat("%c %i %i", (char)node->m_gate, node->GetX(), node->GetY());
@@ -723,11 +723,21 @@ void NodeWorld::Save(const char* filename) const
             file << '\n';
         }
 
+        // Wires
         file << TextFormat("w %i\n", wires.size());
-
         for (Wire* wire : wires)
         {
             file << TextFormat("%i %i %i\n", wire->elbowConfig, nodeIDs.find(wire->start)->second, nodeIDs.find(wire->end)->second);
+        }
+
+        // Groups
+        file << TextFormat("g %i\n", groups.size());
+        for (Group* group : groups)
+        {
+            file << TextFormat("%s %i %i %i %i %i %i %i %i\n",
+                group->label.c_str(),
+                group->captureBounds.x, group->captureBounds.y, group->captureBounds.w, group->captureBounds.h,
+                (int)group->color.r, (int)group->color.g, (int)group->color.b, (int)group->color.a);
         }
     }
     file.close();
@@ -754,7 +764,6 @@ void NodeWorld::Load(const char* filename)
         }
     };
 
-
     struct FNodeData { char gate{}; IVec2 pos{}; int extra{}; };
     auto initNodes = [](std::vector<Node*>& nodes, const FNodeData* nodeData)
     {
@@ -777,7 +786,7 @@ void NodeWorld::Load(const char* filename)
     {
         double version;
         file >> version;
-        if (version != 1.1)
+        if (version != 1.2 && version != 1.1)
             return;
 
         // Unload existing
@@ -817,6 +826,25 @@ void NodeWorld::Load(const char* filename)
             file >> wireData[i].config >> wireData[i].startID >> wireData[i].endID;
         }
 
+        if (version == 1.2) // Version 1.2 feature
+        {
+            file.ignore(64, 'g');
+            size_t groupCount;
+            file >> groupCount;
+            groups.reserve(groupCount);
+            for (size_t i = 0; i < groupCount; ++i)
+            {
+                int x, y, w, h;
+                int r, g, b, a;
+                std::string label;
+                file
+                    >> label
+                    >> x >> y >> w >> h
+                    >> r >> g >> b >> a;
+                groups.push_back(new Group(IRect(x, y, w, h), Color((uint8_t)r, (uint8_t)g, (uint8_t)b, (uint8_t)a), label));
+            }
+        }
+
         std::thread allocNodesThread(allocNodes, std::ref(nodes), nodeCount);
         std::thread allocWiresThread(allocWires, std::ref(wires), wireCount);
 
@@ -839,6 +867,8 @@ void NodeWorld::Load(const char* filename)
             wire->end->AddWireInput(wire);
             wire->UpdateElbowToLegal();
         }
+
+
 
         orderDirty = true;
     }
