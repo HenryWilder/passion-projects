@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <filesystem>
 #include "HUtility.h"
 #include "IVec.h"
 #include "Node.h"
@@ -1836,6 +1837,15 @@ int main()
     ProgramData data(1280, 720);
 
     NodeWorld::Get().Load("session.cg"); // Construct and load last session
+    // Load blueprints
+    {
+        std::filesystem::path blueprints{ "blueprints" };
+        std::filesystem::create_directories(blueprints);
+        for (auto const& dir_entry : std::filesystem::directory_iterator{ blueprints })
+        {
+            // Todo
+        }
+    }
 
     while (!WindowShouldClose())
     {
