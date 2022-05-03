@@ -635,7 +635,15 @@ void NodeWorld::FindNodesInRect(std::vector<Node*>& result, IRect rec) const
 
 void NodeWorld::StoreBlueprint(Blueprint* bp)
 {
-    blueprints.push_back(new Blueprint(*bp));
+    Blueprint* copy = new Blueprint(*bp);
+    for (Blueprint* existing : blueprints)
+    {
+        if (existing->name == copy->name)
+        {
+            copy->name.append(" (1)");
+        }
+    }
+    blueprints.push_back(copy);
 }
 void NodeWorld::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
 {

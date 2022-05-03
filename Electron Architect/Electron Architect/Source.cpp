@@ -633,7 +633,6 @@ public:
         // Ctrl
         if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
         {
-            
             // Ctrl-Alt
             if (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT))
             {
@@ -650,7 +649,6 @@ public:
             {
                 return; // Don't miscommunicate to the user!!
             }
-
 
             // Copy
             if (IsKeyPressed(KEY_C) && mode == Mode::EDIT)

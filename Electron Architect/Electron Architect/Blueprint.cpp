@@ -169,7 +169,7 @@ IRect Blueprint::GetSelectionPreviewRect(IVec2 pos) const
 
 void Blueprint::Save() const
 {
-    std::ofstream file(TextFormat("blueprints/%s.bp", name));
+    std::ofstream file(TextFormat(".\\blueprints\\%s.bp", name.c_str()));
     file << nodes.size() << '\n';
     for (const NodeBP& node : nodes)
     {
@@ -185,6 +185,7 @@ void Blueprint::Save() const
 
 void LoadBlueprint(const char* filename, Blueprint& dest)
 {
+    dest = Blueprint(); // Reset in case of edge cases
     std::ifstream file(TextFormat("%s", filename));
     if (file.bad())
         return;
@@ -204,10 +205,12 @@ void LoadBlueprint(const char* filename, Blueprint& dest)
     }
     catch (std::length_error e)
     {
+        file.close();
         throw e;
     }
     catch (...)
     {
+        file.close();
         throw std::exception("unknown");
     }
     for (size_t i = 0; i < nodeCount; ++i)
@@ -230,10 +233,12 @@ void LoadBlueprint(const char* filename, Blueprint& dest)
     }
     catch (std::length_error e)
     {
+        file.close();
         throw e;
     }
     catch (...)
     {
+        file.close();
         throw std::exception("unknown");
     }
     for (size_t i = 0; i < wireCount; ++i)
