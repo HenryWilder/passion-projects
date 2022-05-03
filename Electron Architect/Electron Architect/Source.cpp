@@ -171,6 +171,7 @@ private:
             IVec2 selectionStart;
             IRect selectionRec;
             bool draggingGroup;
+            bool draggingGroupCorner;
             GroupCorner groupCorner;
             Node* hoveringMergable;
             Node* nodeBeingDragged;
@@ -244,6 +245,7 @@ public: // Accessors for unions
     ACCESSOR(Edit_SelectionStart(),         baseMode == Mode::EDIT,     base.edit.selectionStart)
     ACCESSOR(Edit_SelectionRec(),           baseMode == Mode::EDIT,     base.edit.selectionRec)
     ACCESSOR(Edit_DraggingGroup(),          baseMode == Mode::EDIT,     base.edit.draggingGroup)
+    ACCESSOR(Edit_DraggingGroupCorner(),    baseMode == Mode::EDIT,     base.edit.draggingGroupCorner)
     ACCESSOR(Edit_GroupCorner(),            baseMode == Mode::EDIT,     base.edit.groupCorner)
     ACCESSOR(Edit_HoveringMergable(),       baseMode == Mode::EDIT,     base.edit.hoveringMergable)
     ACCESSOR(Edit_NodeBeingDragged(),       baseMode == Mode::EDIT,     base.edit.nodeBeingDragged)
@@ -981,7 +983,8 @@ void Update_Edit(ProgramData& data)
     {
         if (!data.Edit_NodeBeingDragged() &&
             !data.Edit_WireBeingDragged() &&
-            !data.Edit_DraggingGroup())
+            !data.Edit_DraggingGroup() &&
+            !data.Edit_DraggingGroupCorner())
         {
             data.hoveredGroup = nullptr;
             data.hoveredWire = nullptr;
@@ -1008,7 +1011,7 @@ void Update_Edit(ProgramData& data)
     // Press
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (!data.selection.empty() && !!data.hoveredNode) // There is a selection, and a node has been pressed
+        if (!data.selection.empty() && !!data.hoveredNode) // There is a selection, and a node has been pressed (move selected)
         {
             data.Edit_NodeBeingDragged() = data.hoveredNode;
             data.Edit_WireBeingDragged() = nullptr;
@@ -1026,9 +1029,13 @@ void Update_Edit(ProgramData& data)
                 NodeWorld::Get().FindNodesInGroup(data.selection, data.hoveredGroup);
                 data.Edit_SelectionStart() = (data.cursorPos - (data.Edit_FallbackPos() = data.hoveredGroup->GetPosition()));
             }
+            else if (data.Edit_DraggingGroupCorner() = data.Edit_GroupCorner().Valid())
+            {
+                // Todo
+            }
 
             data.Edit_FallbackPos() = data.cursorPos;
-            if (data.Edit_SelectionWIP() = !(data.Edit_NodeBeingDragged() || data.Edit_WireBeingDragged() || data.Edit_DraggingGroup()))
+            if (data.Edit_SelectionWIP() = !(data.Edit_NodeBeingDragged() || data.Edit_WireBeingDragged() || data.Edit_DraggingGroup() || data.Edit_DraggingGroupCorner()))
                 data.Edit_SelectionStart() = data.cursorPos;
         }
     }
@@ -1072,6 +1079,11 @@ void Update_Edit(ProgramData& data)
             node->SetPosition_Temporary(node->GetPosition() + offset);
         }
     }
+    // Resize group
+    else if (data.Edit_DraggingGroupCorner())
+    {
+        // Todo
+    }
 
     // Release
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) || (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)))
@@ -1091,6 +1103,10 @@ void Update_Edit(ProgramData& data)
                     IVec2 offset = (data.Edit_FallbackPos() + data.Edit_SelectionStart()) - data.cursorPos;
                     node->SetPosition_Temporary(node->GetPosition() + offset);
                 }
+            }
+            else if (data.Edit_DraggingGroupCorner())
+            {
+                // Todo
             }
             else if (data.Edit_SelectionWIP())
             {
@@ -1126,6 +1142,10 @@ void Update_Edit(ProgramData& data)
                     node->SetPosition(node->GetPosition());
                 }
             }
+            else if (data.Edit_DraggingGroupCorner())
+            {
+                // Todo
+            }
             else if (data.Edit_SelectionWIP())
             {
                 data.Edit_SelectionWIP() = false;
@@ -1140,6 +1160,7 @@ void Update_Edit(ProgramData& data)
         data.Edit_NodeBeingDragged() = nullptr;
         data.Edit_SelectionWIP() = false;
         data.Edit_DraggingGroup() = false;
+        data.Edit_DraggingGroupCorner() = false;
         data.Edit_WireBeingDragged() = nullptr;
     }
     // Right click
@@ -1162,7 +1183,12 @@ void Draw_Edit(ProgramData& data)
     }
     else if (data.Edit_GroupCorner().Valid())
     {
-        DrawRectangleIRect(data.Edit_GroupCorner().GetCollisionRect(), INTERFERENCEGRAY);
+        Color color;
+        if (data.Edit_DraggingGroupCorner())
+            color = RED;
+        else
+            color = INTERFERENCEGRAY;
+        DrawRectangleIRect(data.Edit_GroupCorner().GetCollisionRect(), color);
     }
 
     DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(SPACEGRAY, 0.5));
