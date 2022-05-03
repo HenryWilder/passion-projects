@@ -868,8 +868,6 @@ void NodeWorld::Load(const char* filename)
             wire->UpdateElbowToLegal();
         }
 
-
-
         orderDirty = true;
     }
     file.close();
