@@ -158,7 +158,7 @@ void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nod
             color = ioNodeColor;
         else
             color = nodeColor;
-        Node::Draw(node_bp.relativePosition + offset, node_bp.gate, nodeColor);
+        Node::Draw(node_bp.relativePosition + offset, node_bp.gate, color);
     }
 }
 
