@@ -155,6 +155,12 @@ struct IRect
 
     constexpr int Right()  { return x + w; }
     constexpr int Bottom() { return y + h; }
+    // Top-left
+    constexpr IVec2 TL() { return xy; }
+    // Top-right
+    constexpr IVec2 TR() { return xy + width; }
+    // Bottom-left
+    constexpr IVec2 BL() { return xy + height; }
     // Bottom-right
     constexpr IVec2 BR() { return xy + wh; }
 
