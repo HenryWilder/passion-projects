@@ -163,32 +163,6 @@ private:
             ElbowConfig currentWireElbowConfig;
             Node* previousWireStart;
             Node* currentWireStart;
-            // Highly specialized contained made for exactly one purpose
-            class {
-            private:
-                static constexpr uint8_t m_capacity = 8;
-                uint8_t m_size = 0;
-                Node* m_nodes[m_capacity]{};
-
-            public:
-                static constexpr uint8_t capacity() { return m_capacity; }
-                uint8_t size() const { return m_size; }
-                bool has_space() const { return m_size < m_capacity; }
-
-                void push(Node* node) { _ASSERT_EXPR(has_space(), L"Capacity exceeded"); m_nodes[m_size++] = node; }
-                void pop() { _ASSERT_EXPR(m_size > 0, L"Cannot pop empty container"); m_size--; }
-                void clear() { m_size = 0; }
-
-                Node* back() const { return m_nodes[m_size - 1]; }
-                Node* front() const { _ASSERT_EXPR(m_size > 0, L"front() is uninitialized"); return m_nodes[0]; }
-                IVec2 vector() const { _ASSERT_EXPR(m_size > 1, L"vector() is uninitialized"); return (m_nodes[1]->GetPosition() - m_nodes[0]->GetPosition()) * g_gridSize; }
-                Node* operator[](uint8_t i) const { _ASSERT_EXPR(i < m_size, L"Subscript out of bounds"); return m_nodes[i]; }
-
-                Node*& back() { return m_nodes[m_size - 1]; }
-                Node*& front() { _ASSERT_EXPR(m_size > 0, L"front() is uninitialized"); return m_nodes[0]; }
-                Node*& operator[](uint8_t i) { _ASSERT_EXPR(i < m_size, L"Subscript out of bounds"); return m_nodes[i]; }
-            } nodesMadeByDragging;
-
         } pen;
 
         struct EditModeData
@@ -266,7 +240,6 @@ public: // Accessors for unions
     ACCESSOR(Pen_CurrentWireElbowConfig(),  baseMode == Mode::PEN,      base.pen.currentWireElbowConfig)
     ACCESSOR(Pen_PreviousWireStart(),       baseMode == Mode::PEN,      base.pen.previousWireStart)
     ACCESSOR(Pen_CurrentWireStart(),        baseMode == Mode::PEN,      base.pen.currentWireStart)
-    ACCESSOR(Pen_NodesMadeByDragging(),     baseMode == Mode::PEN,      base.pen.nodesMadeByDragging)
 
     // Edit
     ACCESSOR(Edit_FallbackPos(),            baseMode == Mode::EDIT,     base.edit.fallbackPos)
@@ -928,45 +901,10 @@ void Update_Pen(ProgramData& data)
         data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
         if (!data.hoveredNode)
             data.hoveredWire = NodeWorld::Get().FindWireAtPos(data.cursorPos);
-
-        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON) && data.Pen_NodesMadeByDragging().size() != 0)
-        {
-            uint8_t dist = IntGridDistance(data.Pen_DragStart(), data.cursorPos);
-            if (dist != 0)
-            {
-                IVec2 normal = (data.cursorPos - data.Pen_DragStart()) / (std::min(data.Pen_NodesMadeByDragging().size(), dist) - 1);
-                normal /= g_gridSize;
-                normal *= g_gridSize;
-                for (uint8_t i = 0; i < std::min(data.Pen_NodesMadeByDragging().size(), dist); ++i)
-                {
-                    data.Pen_NodesMadeByDragging()[i]->SetPosition_Temporary(data.Pen_DragStart() + normal * i);
-                }
-            }
-        }
-        else if (data.Pen_NodesMadeByDragging().size() != 0)
-        {
-            for (uint8_t i = 0; i < data.Pen_NodesMadeByDragging().size(); ++i)
-            {
-                data.Pen_NodesMadeByDragging()[i]->SetPosition_Temporary(data.cursorPos + Width(g_gridSize) * i);
-            }
-        }
     }
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (!data.hoveredWire && !data.hoveredNode && data.Pen_NodesMadeByDragging().size() == 0)
-        {
-            data.Pen_DragStart() = data.cursorPos;
-            for (size_t i = 0; i < data.Pen_NodesMadeByDragging().capacity(); ++i)
-            {
-                data.Pen_NodesMadeByDragging().push(NodeWorld::Get().CreateNode(data.cursorPos, data.gatePick, data.storedExtraParam));
-            }
-        }
-        else
-        {
-            data.Pen_NodesMadeByDragging().clear();
-        }
-
         Node* newNode = data.hoveredNode;
         if (!newNode)
         {
@@ -1006,25 +944,6 @@ void Update_Pen(ProgramData& data)
     else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
         data.Pen_PreviousWireStart() = data.Pen_CurrentWireStart() = nullptr;
-    }
-    else if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
-    {
-        if (data.cursorPos != data.Pen_DragStart())
-        {
-            data.Pen_NodesMadeByDragging().clear();
-            for (size_t i = 0; i < data.Pen_NodesMadeByDragging().capacity(); ++i)
-            {
-                data.Pen_NodesMadeByDragging().push(NodeWorld::Get().CreateNode(data.cursorPos, data.gatePick, data.storedExtraParam));
-            }
-        }
-        else
-        {
-            for (uint8_t i = 0; i < data.Pen_NodesMadeByDragging().size(); ++i)
-            {
-                NodeWorld::Get().DestroyNode(data.Pen_NodesMadeByDragging()[i]);
-            }
-            data.Pen_NodesMadeByDragging().clear();
-        }
     }
 }
 void Draw_Pen(ProgramData& data)
