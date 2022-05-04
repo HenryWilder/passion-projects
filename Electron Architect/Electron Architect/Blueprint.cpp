@@ -1,112 +1,11 @@
 #include <thread>
+#include <fstream>
 #include "Blueprint.h"
-
-// Position on screen
-IVec2 IconPos::Pos() const
-{
-    constexpr int unit = BlueprintIcon::g_size / 2;
-    return IVec2(x * unit, y * unit);
-}
-
-void IconPos::Draw(IVec2 start, Color tint) const
-{
-    if (id != NULL)
-        BlueprintIcon::DrawBPIcon(id, start + Pos(), tint);
-}
-
-IVec2 BlueprintIcon::ColRowFromIcon(IconID_t icon)
-{
-    return IVec2((int)icon % g_iconSheetDimensions.x, (int)icon / g_iconSheetDimensions.y);
-}
-
-
-BlueprintIcon::IconID_t BlueprintIcon::GetIconAtColRow(IVec2 colRow)
-{
-    if (colRow.x < 0 || colRow.x >= g_iconSheetDimensions.x ||
-        colRow.y < 0 || colRow.y >= g_iconSheetDimensions.y)
-        return NULL;
-    return (IconID_t)((colRow.y * g_iconSheetDimensions.x) + colRow.x);
-}
-IVec2 BlueprintIcon::PixelToColRow(IVec2 sheetPos, IVec2 selectPos)
-{
-    return (selectPos - sheetPos) / g_size;
-}
-IVec2 BlueprintIcon::GetSheetSize_RC() // Rows and columns
-{
-    return g_iconSheetDimensions;
-}
-IVec2 BlueprintIcon::GetSheetSize_Px() // Pixels
-{
-    return g_iconSheetDimensions * g_size;
-}
-void BlueprintIcon::DrawBPIcon(IconID_t icon, IVec2 pos, Color tint)
-{
-    if (icon != NULL)
-        DrawIcon<g_size>(g_iconSheet, ColRowFromIcon(icon), pos, tint);
-}
-
-void BlueprintIcon::DrawSheet(IVec2 pos, Color background, Color tint)
-{
-    DrawRectangle(pos.x, pos.y, g_iconSheet.width, g_iconSheet.height, background);
-    DrawTexture(g_iconSheet, pos.x, pos.y, tint);
-}
-
-
-// Global
-void BlueprintIcon::Load(const char* filename)
-{
-    g_iconSheet = LoadTexture(filename);
-    g_iconSheetDimensions.x = g_iconSheet.width / g_size;
-    g_iconSheetDimensions.y = g_iconSheet.height / g_size;
-}
-void BlueprintIcon::Unload()
-{
-    UnloadTexture(g_iconSheet);
-}
-
-// Instance
-BlueprintIcon::BlueprintIcon() = default;
-BlueprintIcon::BlueprintIcon(const std::vector<IconPos>&icons)
-{
-    _ASSERT_EXPR(icons.size() <= 4, L"Icon vector too large");
-    size_t i = 0;
-    for (; i < icons.size(); ++i)
-    {
-        combo[i] = icons[i];
-    }
-    for (; i < 4; ++i)
-    {
-        combo[i] = { NULL, 0,0 };
-    }
-
-}
-BlueprintIcon::BlueprintIcon(IconPos(&icons)[4])
-{
-    memcpy(combo, icons, sizeof(IconPos) * 4);
-}
-
-void BlueprintIcon::DrawBackground(IVec2 pos, Color color) const
-{
-    constexpr int width = g_size * 2;
-    DrawRectangle(pos.x, pos.y, width, width, color);
-}
-void BlueprintIcon::Draw(IVec2 pos, Color tint) const
-{
-    // Draw
-    for (const IconPos& icon : combo)
-    {
-        icon.Draw(pos, tint);
-    }
-}
-
-Texture2D BlueprintIcon::g_iconSheet;
-IVec2 BlueprintIcon::g_iconSheetDimensions = IVec2::Zero();
-
 
 void Blueprint::PopulateNodes(const std::vector<Node*>& src)
 {
     constexpr IRect boundsInit = IRect(
-        std::numeric_limits<int>::max(),
+        INT_MAX,
         std::numeric_limits<int>::max(),
         std::numeric_limits<int>::min(),
         std::numeric_limits<int>::min());
@@ -114,23 +13,15 @@ void Blueprint::PopulateNodes(const std::vector<Node*>& src)
     for (Node* node : src)
     {
         const IVec2& compare = node->GetPosition();
-        if (compare.x < bounds.x)
-            bounds.x = compare.x;
-        if (compare.y < bounds.y)
-            bounds.y = compare.y;
-
-        // Abusing width and height as max x/y
-        if (compare.x > bounds.w)
-            bounds.w = compare.x;
-        if (compare.y > bounds.h)
-            bounds.h = compare.y;
+        if (compare.x < bounds.minx) bounds.minx = compare.x;
+        if (compare.y < bounds.miny) bounds.miny = compare.y;
+        if (compare.x > bounds.maxx) bounds.maxx = compare.x;
+        if (compare.y > bounds.maxy) bounds.maxy = compare.y;
     }
-    // Disabuse
-    bounds.w -= bounds.x;
-    bounds.h -= bounds.y;
-    extents = IVec2(bounds.w, bounds.h);
+    bounds.DeAbuse();
+    extents = bounds.wh;
 
-    IVec2 min = IVec2(bounds.x, bounds.y);
+    IVec2 min = bounds.xy;
     nodes.reserve(src.size());
     std::unordered_set<Node*> nodeSet(src.begin(), src.end());
     for (Node* node : src)
@@ -148,9 +39,17 @@ void Blueprint::PopulateNodes(const std::vector<Node*>& src)
             }
         }
 
+        uint8_t extraParam;
+        switch (node->GetGate())
+        {
+        case Gate::RESISTOR:    extraParam = node->GetResistance(); break;
+        case Gate::CAPACITOR:   extraParam = node->GetCapacity();   break;
+        case Gate::LED:         extraParam = node->GetColorIndex(); break;
+        }
         nodes.emplace_back(
             isIO,
             node->GetGate(),
+            extraParam,
             node->GetPosition() - min);
     }
 }
@@ -218,6 +117,7 @@ void Blueprint::PopulateWires(const std::vector<Node*>& src)
 
 Blueprint::Blueprint(const std::vector<Node*>& src)
 {
+    name = "Unnamed blueprint";
     extents = IVec2::Zero();
     std::thread nodeThread(&Blueprint::PopulateNodes, this, std::ref(src));
     std::thread wireThread(&Blueprint::PopulateWires, this, std::ref(src));
@@ -238,4 +138,115 @@ void Blueprint::DrawPreview(IVec2 pos, Color boxColor, Color nodeColor) const
             DrawCircleIV(node_bp.relativePosition + pos, Node::g_nodeRadius - 1.0f, boxColor);
         }
     }
+}
+
+// Returns the containing rectangle
+void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor) const
+{
+    IVec2 offset = pos + IVec2(g_gridSize);
+    DrawRectangleIRect(GetSelectionPreviewRect(pos), backgroundColor);
+    for (const WireBP& wire_bp : wires)
+    {
+        IVec2 start = nodes[wire_bp.startNodeIndex].relativePosition + offset - IVec2::One();
+        IVec2 end   = nodes[wire_bp.  endNodeIndex].relativePosition + offset - IVec2::One();
+        DrawLineIV(start, end, wireColor);
+    }
+    for (const NodeBP& node_bp : nodes)
+    {
+        Color color;
+        if (node_bp.b_io)
+            color = ioNodeColor;
+        else
+            color = nodeColor;
+        Node::Draw(node_bp.relativePosition + offset, node_bp.gate, color);
+    }
+}
+
+IRect Blueprint::GetSelectionPreviewRect(IVec2 pos) const
+{
+    return IRect(pos, extents + IVec2(g_gridSize * 2));
+}
+
+void Blueprint::Save() const
+{
+    std::ofstream file(TextFormat(".\\blueprints\\%s.bp", name.c_str()));
+    file << nodes.size() << '\n';
+    for (const NodeBP& node : nodes)
+    {
+        file << node.b_io << ' ' << (char)node.gate << ' ' << (unsigned)node.extraParam << ' ' << node.relativePosition.x << ' ' << node.relativePosition.y << '\n';
+    }
+    file << wires.size() << '\n';
+    for (const WireBP& wire : wires)
+    {
+        file << wire.startNodeIndex << ' ' << wire.endNodeIndex << ' ' << (int)wire.elbowConfig << '\n';
+    }
+    file.close();
+}
+
+void LoadBlueprint(const char* filename, Blueprint& dest)
+{
+    dest = Blueprint(); // Reset in case of edge cases
+    std::ifstream file(TextFormat("%s", filename));
+    if (file.bad())
+        return;
+    std::string name = filename;
+    size_t start = name.find_last_of('\\') + 1;
+    size_t end = name.size() - 3;
+    if (start != name.npos)
+        dest.name = name.substr(start, end - start);
+    else
+        dest.name = name;
+    IVec2 extents = IVec2::Zero();
+    size_t nodeCount;
+    file >> nodeCount;
+    try
+    {
+        dest.nodes.reserve(nodeCount);
+    }
+    catch (std::length_error e)
+    {
+        file.close();
+        throw e;
+    }
+    catch (...)
+    {
+        file.close();
+        throw std::exception("unknown");
+    }
+    for (size_t i = 0; i < nodeCount; ++i)
+    {
+        bool io;
+        char gate;
+        uint8_t ep;
+        IVec2 pos;
+        file >> io >> gate >> ep >> pos.x >> pos.y;
+        dest.nodes.emplace_back(io, (Gate)gate, ep, pos);
+        extents.x = std::max(pos.x, extents.x);
+        extents.y = std::max(pos.y, extents.y);
+    }
+    dest.extents = extents;
+    size_t wireCount;
+    file >> wireCount;
+    try
+    {
+        dest.wires.reserve(wireCount);
+    }
+    catch (std::length_error e)
+    {
+        file.close();
+        throw e;
+    }
+    catch (...)
+    {
+        file.close();
+        throw std::exception("unknown");
+    }
+    for (size_t i = 0; i < wireCount; ++i)
+    {
+        size_t startNodeIndex, endNodeIndex;
+        uint8_t elbowConfig;
+        file >> startNodeIndex >> endNodeIndex >> elbowConfig;
+        dest.wires.emplace_back(startNodeIndex, endNodeIndex, (ElbowConfig)elbowConfig);
+    }
+    file.close();
 }

@@ -77,6 +77,8 @@
 
 # Custom files
 *.cg
+*.bp
 *.psd
 *.svg
 *.zip
+*.vs

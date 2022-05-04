@@ -3,8 +3,17 @@
 #include <fstream>
 #include "HUtility.h"
 #include "NodeWorld.h"
+#include "Blueprint.h"
 
-NodeWorld::NodeWorld() = default;
+extern Blueprint nativeBlueprints[8];
+
+NodeWorld::NodeWorld()
+{
+    for (const Blueprint& bp : nativeBlueprints)
+    {
+        blueprints.push_back(new Blueprint(bp));
+    }
+}
 NodeWorld::~NodeWorld()
 {
     _Free();
@@ -33,7 +42,6 @@ void NodeWorld::_Free()
 void NodeWorld::_Clear()
 {
     _Free();
-
 }
 
 Node* NodeWorld::_CreateNode(Node&& base)
@@ -393,6 +401,22 @@ Group* NodeWorld::FindGroupAtPos(IVec2 pos) const
     }
     return nullptr;
 }
+GroupCorner NodeWorld::FindGroupCornerAtPos(IVec2 pos) const
+{
+    for (Group* g : groups)
+    {
+        if (!InBoundingBox(g->GetCaptureBounds(), pos))
+            continue;
+        IRect corners[4];
+        g->GetResizeCollisions(corners);
+        for (uint8_t i = 0; i < 4; ++i)
+        {
+            if (InBoundingBox(corners[i], pos))
+                return { g, i };
+        }
+    }
+    return { nullptr, 0 };
+}
 void NodeWorld::FindNodesInGroup(std::vector<Node*>& result, Group* group) const
 {
     FindNodesInRect(result, group->captureBounds);
@@ -609,13 +633,25 @@ void NodeWorld::FindNodesInRect(std::vector<Node*>& result, IRect rec) const
 }
 
 
+void NodeWorld::StoreBlueprint(Blueprint* bp)
+{
+    Blueprint* copy = new Blueprint(*bp);
+    for (Blueprint* existing : blueprints)
+    {
+        if (existing->name == copy->name)
+        {
+            copy->name.append(" (1)");
+        }
+    }
+    blueprints.push_back(copy);
+}
 void NodeWorld::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
 {
     std::unordered_map<size_t, Node*> nodeID;
     nodes.reserve(nodes.size() + bp->nodes.size());
     for (size_t i = 0; i < bp->nodes.size(); ++i)
     {
-        Node* node = CreateNode(bp->nodes[i].relativePosition + topLeft, bp->nodes[i].gate);
+        Node* node = CreateNode(bp->nodes[i].relativePosition + topLeft, bp->nodes[i].gate, bp->nodes[i].extraParam);
         nodeID.emplace(i, node);
     }
     wires.reserve(wires.size() + bp->wires.size());
@@ -636,9 +672,10 @@ void NodeWorld::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
         Wire* wire = CreateWire(start, end, wire_bp.elbowConfig);
     }
 }
-void NodeWorld::StoreBlueprint(Blueprint* bp)
+
+const std::vector<Blueprint*>& NodeWorld::GetBlueprints() const
 {
-    blueprints.push_back(bp);
+    return blueprints;
 }
 
 void NodeWorld::Save(const char* filename) const
@@ -663,7 +700,7 @@ void NodeWorld::Save(const char* filename) const
 
     std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
     {
-        file << "1.1\n";
+        file << "1.2\n";
 
         std::unordered_map<Node*, size_t> nodeIDs;
         std::unordered_map<Wire*, size_t> wireIDs;
@@ -672,8 +709,8 @@ void NodeWorld::Save(const char* filename) const
         a.join();
         b.join();
 
+        // Nodes
         file << TextFormat("n %i\n", nodes.size());
-
         for (Node* node : nodes)
         {
             file << TextFormat("%c %i %i", (char)node->m_gate, node->GetX(), node->GetY());
@@ -686,11 +723,21 @@ void NodeWorld::Save(const char* filename) const
             file << '\n';
         }
 
+        // Wires
         file << TextFormat("w %i\n", wires.size());
-
         for (Wire* wire : wires)
         {
             file << TextFormat("%i %i %i\n", wire->elbowConfig, nodeIDs.find(wire->start)->second, nodeIDs.find(wire->end)->second);
+        }
+
+        // Groups
+        file << TextFormat("g %i\n", groups.size());
+        for (Group* group : groups)
+        {
+            file << TextFormat("%s %i %i %i %i %i %i %i %i\n",
+                group->label.c_str(),
+                group->captureBounds.x, group->captureBounds.y, group->captureBounds.w, group->captureBounds.h,
+                (int)group->color.r, (int)group->color.g, (int)group->color.b, (int)group->color.a);
         }
     }
     file.close();
@@ -717,8 +764,7 @@ void NodeWorld::Load(const char* filename)
         }
     };
 
-
-    struct FNodeData { char gate; IVec2 pos; int extra; };
+    struct FNodeData { char gate{}; IVec2 pos{}; int extra{}; };
     auto initNodes = [](std::vector<Node*>& nodes, const FNodeData* nodeData)
     {
         for (size_t i = 0; i < nodes.size(); ++i)
@@ -740,7 +786,7 @@ void NodeWorld::Load(const char* filename)
     {
         double version;
         file >> version;
-        if (version != 1.1)
+        if (version != 1.2 && version != 1.1)
             return;
 
         // Unload existing
@@ -778,6 +824,25 @@ void NodeWorld::Load(const char* filename)
         for (size_t i = 0; i < wireCount; ++i)
         {
             file >> wireData[i].config >> wireData[i].startID >> wireData[i].endID;
+        }
+
+        if (version == 1.2) // Version 1.2 feature
+        {
+            file.ignore(64, 'g');
+            size_t groupCount;
+            file >> groupCount;
+            groups.reserve(groupCount);
+            for (size_t i = 0; i < groupCount; ++i)
+            {
+                int x, y, w, h;
+                int r, g, b, a;
+                std::string label;
+                file
+                    >> label
+                    >> x >> y >> w >> h
+                    >> r >> g >> b >> a;
+                groups.push_back(new Group(IRect(x, y, w, h), Color((uint8_t)r, (uint8_t)g, (uint8_t)b, (uint8_t)a), label));
+            }
         }
 
         std::thread allocNodesThread(allocNodes, std::ref(nodes), nodeCount);
