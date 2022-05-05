@@ -125,21 +125,6 @@ Blueprint::Blueprint(const std::vector<Node*>& src)
     wireThread.join();
 }
 
-void Blueprint::DrawPreview(IVec2 pos, Color boxColor, Color nodeColor) const
-{
-    constexpr int halfGrid = g_gridSize / 2;
-    DrawRectangle(pos.x - halfGrid, pos.y - halfGrid, extents.x + g_gridSize, extents.y + g_gridSize, boxColor);
-    for (const NodeBP& node_bp : nodes)
-    {
-        if (node_bp.b_io)
-        {
-            DrawCircleIV(node_bp.relativePosition + pos, Node::g_nodeRadius, nodeColor);
-            DrawCircleIV(node_bp.relativePosition + pos, Node::g_nodeRadius - 1.0f, BLACK); // In case boxColor is transparent
-            DrawCircleIV(node_bp.relativePosition + pos, Node::g_nodeRadius - 1.0f, boxColor);
-        }
-    }
-}
-
 // Returns the containing rectangle
 void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const
 {
