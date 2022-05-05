@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <fstream>
 #include <filesystem>
 #include "HUtility.h"
 #include "IVec.h"
@@ -40,6 +41,7 @@ struct ProgramData
 
         SetMode(Mode::PEN);
         SetGate(Gate::OR);
+        ReloadConfig();
     }
     ~ProgramData()
     {
@@ -125,6 +127,10 @@ public:
 
     int windowWidth;
     int windowHeight;
+
+    uint8_t blueprintLOD = 0;
+    uint8_t clipboardPreviewLOD = 0;
+    uint8_t pastePreviewLOD = 0;
 
     Mode mode = Mode::PEN;
     Mode baseMode = Mode::PEN;
@@ -892,6 +898,37 @@ public:
         }
         DrawTextIV(text, cursorUIPos + IVec2(16), 8, color);
         BeginMode2D(camera);
+    }
+
+    void ReloadConfig()
+    {
+        std::ifstream file("config.ini");
+        while (!file.eof())
+        {
+            std::string line;
+            std::getline(file, line);
+            if (line[0] == '[') // Comment
+                continue;
+            std::string attribute = line.substr(0, line.find('='));
+            std::string value = line.substr(line.find('=') + 1);
+            if (attribute == "background_color")
+            {
+                // Todo
+            }
+            else if (attribute == "blueprint_menu_lod")
+            {
+                blueprintLOD = std::stoi(value);
+            }
+            else if (attribute == "clipboard_preview_lod")
+            {
+                clipboardPreviewLOD = std::stoi(value);
+            }
+            else if (attribute == "paste_preview_lod")
+            {
+                pastePreviewLOD = std::stoi(value);
+            }
+        }
+        file.close();
     }
 };
 Texture2D ProgramData::blueprintIcon;
@@ -1751,7 +1788,7 @@ void Draw_Overlay_Paste(ProgramData& data)
     NodeWorld::Get().DrawWires();
     NodeWorld::Get().DrawNodes();
 
-    data.clipboard->DrawPreview(data.cursorPos, ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE);
+    data.clipboard->DrawSelectionPreview(data.cursorPos - IVec2(g_gridSize), ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE, LIFELESSNEBULA, DEADCABLE, data.pastePreviewLOD);
 }
 
 void Update_Menu_Select(ProgramData& data)
@@ -1826,7 +1863,7 @@ void Draw_Menu_Select(ProgramData& data)
             foregroundIO = LIFELESSNEBULA;
         }
 
-        bp->DrawSelectionPreview(pos, background, foreground, foregroundIO, ColorAlpha(foreground, 0.25f));
+        bp->DrawSelectionPreview(pos, background, foreground, foregroundIO, ColorAlpha(foreground, 0.25f), data.blueprintLOD);
         DrawRectangleLines(rec.x, rec.y, rec.w, rec.h, foreground);
 
         pos += rec.width;
@@ -2019,7 +2056,7 @@ int main()
                 {
                     DrawRectangleIRect(ProgramData::ButtonBound_Blueprints(), WIPBLUE);
                     // Tooltip
-                    DrawTextIV("Blueprints (WIP)", ProgramData::ButtonBound_Blueprints().xy + tooltipNameOffset, 8, WHITE);
+                    DrawTextIV("Blueprints", ProgramData::ButtonBound_Blueprints().xy + tooltipNameOffset, 8, WHITE);
                 }
                 // Clipboard
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Clipboard()))
@@ -2030,7 +2067,13 @@ int main()
                     constexpr IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(16);
                     // Clipboard preview
                     if (data.IsClipboardValid())
-                        data.clipboard->DrawSelectionPreview(ProgramData::ButtonBound_Clipboard().xy + clipboardPreviewOffset, SPACEGRAY, DEADCABLE, LIFELESSNEBULA, ColorAlpha(DEADCABLE, 0.25f));
+                        data.clipboard->DrawSelectionPreview(
+                            ProgramData::ButtonBound_Clipboard().xy + clipboardPreviewOffset,
+                            SPACEGRAY,
+                            DEADCABLE,
+                            LIFELESSNEBULA,
+                            ColorAlpha(DEADCABLE, 0.25f),
+                            data.clipboardPreviewLOD);
                 }
 
                 data.DrawModeIcon(data.baseMode, ProgramData::ButtonBound_Mode().xy, WHITE);

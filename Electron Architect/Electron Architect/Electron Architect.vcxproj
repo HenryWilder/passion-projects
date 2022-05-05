@@ -229,7 +229,15 @@ copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     <ClInclude Include="resource.h" />
     <ClInclude Include="Wire.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="config.ini" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties config_3user_1json__JsonSchema="https://github.com/HenryWilder/passion-projects/releases/latest/download/userconfig_schema.json" />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>

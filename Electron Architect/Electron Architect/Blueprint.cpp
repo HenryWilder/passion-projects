@@ -141,24 +141,76 @@ void Blueprint::DrawPreview(IVec2 pos, Color boxColor, Color nodeColor) const
 }
 
 // Returns the containing rectangle
-void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor) const
+void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const
 {
     IVec2 offset = pos + IVec2(g_gridSize);
     DrawRectangleIRect(GetSelectionPreviewRect(pos), backgroundColor);
-    for (const WireBP& wire_bp : wires)
+
+    // Wires
+    switch (lod)
     {
-        IVec2 start = nodes[wire_bp.startNodeIndex].relativePosition + offset - IVec2::One();
-        IVec2 end   = nodes[wire_bp.  endNodeIndex].relativePosition + offset - IVec2::One();
-        DrawLineIV(start, end, wireColor);
+    case 0: // Full wire quality
+        for (const WireBP& wire_bp : wires)
+        {
+            IVec2 start = nodes[wire_bp.startNodeIndex].relativePosition + offset - IVec2::One();
+            IVec2 end = nodes[wire_bp.endNodeIndex].relativePosition + offset - IVec2::One();
+            IVec2 elbow = Wire::GetLegalElbowPosition(start, end, wire_bp.elbowConfig);
+            Wire::Draw(start, elbow, end, wireColor);
+        }
+        break;
+    case 1: // Wires are straight lines without elbows
+        for (const WireBP& wire_bp : wires)
+        {
+            IVec2 start = nodes[wire_bp.startNodeIndex].relativePosition + offset - IVec2::One();
+            IVec2 end = nodes[wire_bp.endNodeIndex].relativePosition + offset - IVec2::One();
+            DrawLineIV(start, end, wireColor);
+        }
+        break;
+    default: // Wires are not drawn
+        break;
     }
-    for (const NodeBP& node_bp : nodes)
+
+    // Nodes
+    switch (lod)
     {
-        Color color;
-        if (node_bp.b_io)
-            color = ioNodeColor;
-        else
-            color = nodeColor;
-        Node::Draw(node_bp.relativePosition + offset, node_bp.gate, color);
+    case 0: // Full node quality
+    case 1: // Full node quality
+        for (const NodeBP& node_bp : nodes)
+        {
+            Color color;
+            if (node_bp.b_io)
+                color = ioNodeColor;
+            else
+                color = nodeColor;
+            Node::Draw(node_bp.relativePosition + offset, node_bp.gate, color);
+        }
+        break;
+    case 2: // All nodes are circles, io are colored
+        for (const NodeBP& node_bp : nodes)
+        {
+            Color color;
+            if (node_bp.b_io)
+                color = ioNodeColor;
+            else
+                color = nodeColor;
+            DrawCircleIV(node_bp.relativePosition + offset, Node::g_nodeRadius, color);
+        }
+        break;
+    case 3: // All nodes are circles
+        for (const NodeBP& node_bp : nodes)
+        {
+            DrawCircleIV(node_bp.relativePosition + offset, Node::g_nodeRadius, nodeColor);
+        }
+        break;
+    case 4: // Only io is drawn, and they are circles
+        for (const NodeBP& node_bp : nodes)
+        {
+            if (node_bp.b_io)
+                DrawCircleIV(node_bp.relativePosition + offset, Node::g_nodeRadius, nodeColor);
+        }
+        break;
+    default: // Nodes are not drawn
+        break;
     }
 }
 
