@@ -34,6 +34,8 @@ private: // Internal
 public:
     static NodeWorld& Get();
 
+    bool IsOrderDirty() const;
+
     const decltype(startNodes)& GetStartNodes() const;
 
     // Node functions

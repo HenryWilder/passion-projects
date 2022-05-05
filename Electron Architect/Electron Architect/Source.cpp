@@ -927,6 +927,14 @@ public:
             {
                 pastePreviewLOD = std::stoi(value);
             }
+            else if (attribute == "paste_preview_lod")
+            {
+                pastePreviewLOD = std::stoi(value);
+            }
+            else if (attribute == "frames_per_tick")
+            {
+                framesPerTick = std::stoi(value);
+            }
         }
         file.close();
     }
@@ -1959,6 +1967,10 @@ int main()
 
     EVAL:
         data.cursorPosPrev = data.cursorPos;
+        if (NodeWorld::Get().IsOrderDirty())
+        {
+            data.tickThisFrame = !(data.tickFrame = 0);
+        }
         if (data.tickThisFrame)
             NodeWorld::Get().Evaluate();
 

@@ -102,6 +102,11 @@ NodeWorld& NodeWorld::Get()
     return g_only;
 }
 
+bool NodeWorld::IsOrderDirty() const
+{
+    return orderDirty;
+}
+
 const decltype(NodeWorld::startNodes)& NodeWorld::GetStartNodes() const
 {
     return startNodes;
