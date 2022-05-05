@@ -215,6 +215,7 @@ copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     <Image Include="icons_gate16x.png" />
     <Image Include="icons_mode.png" />
     <Image Include="icons_gate32x.png" />
+    <Image Include="icon_blueprints.png" />
     <Image Include="icon_clipboard.png" />
   </ItemGroup>
   <ItemGroup>

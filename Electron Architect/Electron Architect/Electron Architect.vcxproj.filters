@@ -62,6 +62,9 @@
     <Image Include="icons_blueprint.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="icon_blueprints.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Node.h">

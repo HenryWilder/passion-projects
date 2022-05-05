@@ -32,6 +32,7 @@ struct ProgramData
         SetExitKey(0);
         SetTargetFPS(60);
 
+        blueprintIcon = LoadTexture("icon_blueprints.png");
         clipboardIcon = LoadTexture("icon_clipboard.png");
         modeIcons = LoadTexture("icons_mode.png");
         gateIcons16x = LoadTexture("icons_gate16x.png");
@@ -115,6 +116,7 @@ struct ProgramData
     };
 
 private:
+    static Texture2D blueprintIcon;
     static Texture2D clipboardIcon;
     static Texture2D modeIcons;
     static Texture2D gateIcons16x;
@@ -272,6 +274,10 @@ public: // Accessors for unions
 
 public:
 
+    static Texture2D GetBlueprintIcon()
+    {
+        return blueprintIcon;
+    }
     static Texture2D GetClipboardIcon()
     {
         return clipboardIcon;
@@ -888,6 +894,7 @@ public:
         BeginMode2D(camera);
     }
 };
+Texture2D ProgramData::blueprintIcon;
 Texture2D ProgramData::clipboardIcon;
 Texture2D ProgramData::modeIcons;
 Texture2D ProgramData::gateIcons16x;
@@ -2021,12 +2028,22 @@ int main()
                     // Tooltip
                     DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, 8, WHITE);
                     constexpr IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(16);
+                    // Clipboard preview
                     if (data.IsClipboardValid())
                         data.clipboard->DrawSelectionPreview(ProgramData::ButtonBound_Clipboard().xy + clipboardPreviewOffset, SPACEGRAY, DEADCABLE, LIFELESSNEBULA, ColorAlpha(DEADCABLE, 0.25f));
                 }
 
                 data.DrawModeIcon(data.baseMode, ProgramData::ButtonBound_Mode().xy, WHITE);
                 data.DrawGateIcon16x(data.gatePick, ProgramData::ButtonBound_Gate().xy, WHITE);
+                for (IVec2 offset = IVec2(-1); offset.y <= 1; ++offset.y)
+                {
+                    for (offset.x = -1; offset.x <= 1; ++offset.x)
+                    {
+                        DrawTextIV(TextFormat("%i", data.storedExtraParam), ProgramData::ButtonBound_Parameter().xy + IVec2(2,1) + offset, 8, BLACK);
+                    }
+                }
+                DrawTextIV(TextFormat("%i", data.storedExtraParam), ProgramData::ButtonBound_Parameter().xy + IVec2(2,1), 8, WHITE);
+                DrawTextureIV(data.GetBlueprintIcon(), ProgramData::ButtonBound_Blueprints().xy, WHITE);
                 DrawTextureIV(data.GetClipboardIcon(), ProgramData::ButtonBound_Clipboard().xy, data.IsClipboardValid() ? WHITE : ColorAlpha(WHITE, 0.25f));
             }
 
