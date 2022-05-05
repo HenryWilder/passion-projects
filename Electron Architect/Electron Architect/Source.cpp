@@ -1968,9 +1968,7 @@ int main()
     EVAL:
         data.cursorPosPrev = data.cursorPos;
         if (NodeWorld::Get().IsOrderDirty())
-        {
             data.tickThisFrame = !(data.tickFrame = 0);
-        }
         if (data.tickThisFrame)
             NodeWorld::Get().Evaluate();
 
