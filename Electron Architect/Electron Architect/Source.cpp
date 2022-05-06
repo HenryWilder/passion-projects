@@ -24,6 +24,31 @@ enum class Mode
 
 Blueprint g_clipboardBP; // Reusable address so clipboard doesn't have to delete
 
+#pragma region UI Colors
+
+Color uiColors[16];
+enum UIColorLocs : unsigned
+{
+    UI_COLOR_BACKGROUND, // BLACK
+    UI_COLOR_BACKGROUND1, // SPACEGRAY
+    UI_COLOR_BACKGROUND2, // LIFELESSNEBULA
+    UI_COLOR_BACKGROUND3, // GLEEFULDUST
+    UI_COLOR_FOREGROUND3, // DEADCABLE
+    UI_COLOR_FOREGROUND2, // HAUNTINGWHITE
+    UI_COLOR_FOREGROUND1, // INTERFERENCEGRAY
+    UI_COLOR_FOREGROUND, // WHITE
+    UI_COLOR_INPUT, // INPUTLAVENDER
+    UI_COLOR_OUTPUT, // OUTPUTAPRICOT
+    UI_COLOR_AVAILABLE, // WIPBLUE
+    UI_COLOR_INTERACT, // YELLOW
+    UI_COLOR_ACTIVE, // REDSTONE
+    UI_COLOR_ERROR, // MAGENTA
+    UI_COLOR_DESTRUCTIVE, // DESTRUCTIVERED
+    UI_COLOR_CAUTION, // CAUTIONYELLOW
+};
+
+#pragma endregion
+
 struct ProgramData
 {
     ProgramData(int windowWidth, int windowHeight) : windowWidth(windowWidth), windowHeight(windowHeight)
@@ -800,17 +825,17 @@ public:
             // "If the fraction of a screen pixel in a grid space equals or exceeds the fraction of a screen pixel in a world pixel"
             if (camera.zoom <= gridSpaceFrac)
             {
-                DrawRectangleIRect(bounds, SPACEGRAY);
+                DrawRectangleIRect(bounds, uiColors[UI_COLOR_BACKGROUND1]);
             }
             else
             {
                 for (int y = bounds.y; y < bounds.y + bounds.h; y += gridSize)
                 {
-                    DrawLine(bounds.x, y, bounds.x + bounds.w, y, SPACEGRAY);
+                    DrawLine(bounds.x, y, bounds.x + bounds.w, y, uiColors[UI_COLOR_BACKGROUND1]);
                 }
                 for (int x = bounds.x; x < bounds.x + bounds.w; x += gridSize)
                 {
-                    DrawLine(x, bounds.y, x, bounds.y + bounds.h, SPACEGRAY);
+                    DrawLine(x, bounds.y, x, bounds.y + bounds.h, uiColors[UI_COLOR_BACKGROUND1]);
                 }
             }
             constexpr int halfgrid = gridSize / 2;
@@ -828,17 +853,17 @@ public:
             // "If the number of world pixels compacted into a single screen pixel equal or exceed the pixels between gridlines"
             if ((int)(1.0f / camera.zoom) >= gridSize)
             {
-                DrawRectangleIRect(bounds, SPACEGRAY);
+                DrawRectangleIRect(bounds, uiColors[UI_COLOR_BACKGROUND1]);
             }
             else
             {
                 for (int y = bounds.y; y < bounds.y + bounds.h; y += gridSize)
                 {
-                    DrawLine(bounds.x, y, bounds.x + bounds.w, y, SPACEGRAY);
+                    DrawLine(bounds.x, y, bounds.x + bounds.w, y, uiColors[UI_COLOR_BACKGROUND1]);
                 }
                 for (int x = bounds.x; x < bounds.x + bounds.w; x += gridSize)
                 {
-                    DrawLine(x, bounds.y, x, bounds.y + bounds.h, SPACEGRAY);
+                    DrawLine(x, bounds.y, x, bounds.y + bounds.h, uiColors[UI_COLOR_BACKGROUND1]);
                 }
             }
             int halfgrid = gridSize / 2;
@@ -892,30 +917,94 @@ public:
             {
                 if (offset == IVec2(16)) [[unlikely]]
                     continue;
-                DrawTextIV(text, cursorUIPos + offset, 8, BLACK);
+                DrawTextIV(text, cursorUIPos + offset, 8, uiColors[UI_COLOR_BACKGROUND]);
             }
         }
         DrawTextIV(text, cursorUIPos + IVec2(16), 8, color);
         BeginMode2D(camera);
     }
 
+    Color ConfigStrToColor(const std::string& str)
+    {
+        size_t separators[2];
+        separators[0] = str.find('|');
+        if (separators[0] == str.npos)
+            return MAGENTA;
+        separators[1] = str.find('|', separators[0] + 1);
+        if (separators[1] == str.npos)
+            return MAGENTA;
+        try
+        {
+            int r = std::stoi(str.substr(0, separators[0]));
+            int g = std::stoi(str.substr(separators[0] + 1, separators[1] - (separators[0] + 1)));
+            int b = std::stoi(str.substr(separators[1] + 1));
+            return { (uint8_t)r, (uint8_t)g, (uint8_t)b, 255u };
+        }
+        catch (...)
+        {
+            return MAGENTA;
+        }
+    }
+    const char* ConfigColorToString(Color color)
+    {
+        return TextFormat("%u|%u|%u", color.r, color.g, color.b);
+    }
     void ReloadConfig()
     {
         std::ifstream file("config.ini");
+
+        uiColors[UI_COLOR_BACKGROUND] = BLACK;
+        uiColors[UI_COLOR_BACKGROUND1] = SPACEGRAY;
+        uiColors[UI_COLOR_BACKGROUND2] = LIFELESSNEBULA;
+        uiColors[UI_COLOR_BACKGROUND3] = GLEEFULDUST;
+
+        uiColors[UI_COLOR_FOREGROUND3] = DEADCABLE;
+        uiColors[UI_COLOR_FOREGROUND2] = HAUNTINGWHITE;
+        uiColors[UI_COLOR_FOREGROUND1] = INTERFERENCEGRAY;
+        uiColors[UI_COLOR_FOREGROUND] = WHITE;
+
+        uiColors[UI_COLOR_INPUT] = INPUTLAVENDER;
+        uiColors[UI_COLOR_OUTPUT] = OUTPUTAPRICOT;
+
+        uiColors[UI_COLOR_AVAILABLE] = WIPBLUE;
+        uiColors[UI_COLOR_INTERACT] = YELLOW;
+
+        uiColors[UI_COLOR_ACTIVE] = REDSTONE;
+
+        uiColors[UI_COLOR_ERROR] = MAGENTA;
+        uiColors[UI_COLOR_DESTRUCTIVE] = DESTRUCTIVERED;
+        uiColors[UI_COLOR_CAUTION] = CAUTIONYELLOW;
+
         if (!file.is_open()) // In case of deletion
         {
             file.close();
 
             std::ofstream replacement("config.ini");
 
-            replacement << R"txt([Colors]
-background_color=28|26|41|255
-[LOD]
-blueprint_menu_lod=1
-clipboard_preview_lod=0
-paste_preview_lod=4
-frames_per_tick=6
-ui_scale=1)txt";
+            replacement << 
+                "[Colors]"
+                "\nbackground_color="   << ConfigColorToString(uiColors[UI_COLOR_BACKGROUND] ) <<
+                "\nbackground1_color="  << ConfigColorToString(uiColors[UI_COLOR_BACKGROUND1]) <<
+                "\nbackground2_color="  << ConfigColorToString(uiColors[UI_COLOR_BACKGROUND2]) <<
+                "\nbackground3_color="  << ConfigColorToString(uiColors[UI_COLOR_BACKGROUND3]) <<
+                "\nforeground3_color="  << ConfigColorToString(uiColors[UI_COLOR_FOREGROUND3]) <<
+                "\nforeground2_color="  << ConfigColorToString(uiColors[UI_COLOR_FOREGROUND2]) <<
+                "\nforeground1_color="  << ConfigColorToString(uiColors[UI_COLOR_FOREGROUND1]) <<
+                "\nforeground_color="   << ConfigColorToString(uiColors[UI_COLOR_FOREGROUND] ) <<
+                "\ninput_color="        << ConfigColorToString(uiColors[UI_COLOR_INPUT]      ) <<
+                "\noutput_color="       << ConfigColorToString(uiColors[UI_COLOR_OUTPUT]     ) <<
+                "\navailable_color="    << ConfigColorToString(uiColors[UI_COLOR_AVAILABLE]  ) <<
+                "\ninteract_color="     << ConfigColorToString(uiColors[UI_COLOR_INTERACT]   ) <<
+                "\nactive_color="       << ConfigColorToString(uiColors[UI_COLOR_ACTIVE]     ) <<
+                "\nerror_color="        << ConfigColorToString(uiColors[UI_COLOR_ERROR]      ) <<
+                "\ndestruction_color="  << ConfigColorToString(uiColors[UI_COLOR_DESTRUCTIVE]) <<
+                "\ncaution_color="      << ConfigColorToString(uiColors[UI_COLOR_CAUTION]    ) <<
+                "\n\n[LOD]"
+                "\nblueprint_menu_lod=1"
+                "\nclipboard_preview_lod=0"
+                "\npaste_preview_lod=4"
+                "\nframes_per_tick=6"
+                "\nui_scale=1";
 
             replacement.close();
 
@@ -927,62 +1016,55 @@ ui_scale=1)txt";
             std::getline(file, line);
             if (line[0] == '[') // Comment
                 continue;
+
             std::string attribute = line.substr(0, line.find('='));
             std::string value = line.substr(line.find('=') + 1);
+
             if (attribute == "background_color")
-            {
-                // Todo
-            }
+                uiColors[UI_COLOR_BACKGROUND] = ConfigStrToColor(value);
+            else if (attribute == "midground_color")
+                uiColors[UI_COLOR_BACKGROUND1] = ConfigStrToColor(value);
+            else if (attribute == "foreground_color")
+                uiColors[UI_COLOR_FOREGROUND] = ConfigStrToColor(value);
             else if (attribute == "blueprint_menu_lod")
-            {
                 blueprintLOD = std::stoi(value);
-            }
             else if (attribute == "clipboard_preview_lod")
-            {
                 clipboardPreviewLOD = std::stoi(value);
-            }
             else if (attribute == "paste_preview_lod")
-            {
                 pastePreviewLOD = std::stoi(value);
-            }
             else if (attribute == "paste_preview_lod")
-            {
                 pastePreviewLOD = std::stoi(value);
-            }
             else if (attribute == "frames_per_tick")
-            {
                 framesPerTick = std::stoi(value);
-            }
             else if (attribute == "ui_scale")
-            {
                 uiScale = std::stoi(value);
-
-                if (uiScale >= 2)
-                    uiScale = 2;
-                if (uiScale <= 1)
-                    uiScale = 1;
-
-                const int width = 16 * uiScale;
-                for (int i = 0; i < _countof(buttonBounds); ++i)
-                {
-                    buttonBounds[i] = IRect(i * width, 0, width);
-                }
-
-                constexpr int heights[] =
-                {
-                    _countof(dropdownModeOrder) - 1,
-                    _countof(dropdownGateOrder) - 1,
-                    _countof(Node::g_resistanceBands) - 1,
-                };
-                for (int i = 0; i < _countof(dropdownBounds); ++i)
-                {
-                    dropdownBounds[i].x = i * width;
-                    dropdownBounds[i].y = width;
-                    dropdownBounds[i].w = width;
-                    dropdownBounds[i].h = width * heights[i];
-                }
-            }
         }
+
+        if (uiScale >= 2)
+            uiScale = 2;
+        if (uiScale <= 1)
+            uiScale = 1;
+
+        const int width = 16 * uiScale;
+        for (int i = 0; i < _countof(buttonBounds); ++i)
+        {
+            buttonBounds[i] = IRect(i * width, 0, width);
+        }
+
+        constexpr int heights[] =
+        {
+            _countof(dropdownModeOrder) - 1,
+            _countof(dropdownGateOrder) - 1,
+            _countof(Node::g_resistanceBands) - 1,
+        };
+        for (int i = 0; i < _countof(dropdownBounds); ++i)
+        {
+            dropdownBounds[i].x = i * width;
+            dropdownBounds[i].y = width;
+            dropdownBounds[i].w = width;
+            dropdownBounds[i].h = width * heights[i];
+        }
+
         file.close();
     }
 };
@@ -1079,9 +1161,9 @@ void Draw_Pen(ProgramData& data)
         {
             Color color;
             if (wire->start == data.hoveredNode)
-                color = OUTPUTAPRICOT; // Output
+                color = uiColors[UI_COLOR_OUTPUT]; // Output
             else
-                color = INPUTLAVENDER; // Input
+                color = uiColors[UI_COLOR_INPUT]; // Input
 
             wire->Draw(color);
         }
@@ -1091,8 +1173,8 @@ void Draw_Pen(ProgramData& data)
 
     if (!!data.hoveredWire)
     {
-        data.hoveredWire->start->Draw(INPUTLAVENDER);
-        data.hoveredWire->end->Draw(OUTPUTAPRICOT);
+        data.hoveredWire->start->Draw(uiColors[UI_COLOR_INPUT]);
+        data.hoveredWire->end->Draw(uiColors[UI_COLOR_OUTPUT]);
     }
     else if (!!data.hoveredNode)
     {
@@ -1105,8 +1187,8 @@ void Draw_Pen(ProgramData& data)
     {
         int i = 0;
         // Cursor stats
-        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
-        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
+        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
+        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         
         // Node hover stats
         if (!!data.hoveredNode)
@@ -1136,22 +1218,22 @@ void Draw_Pen(ProgramData& data)
                     stateName = "\tinactive";
                 DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             }
-            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, OUTPUTAPRICOT);
-            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, INPUTLAVENDER);
+            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_OUTPUT]);
+            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_INPUT]);
             DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText("hovered node", 2, data.windowHeight - (++i * 12), 8, WHITE);
+            DrawText("hovered node", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
         // Wire hover stats
         else if (!!data.hoveredWire)
         {
             DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->end), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\t\tserial: %u", NodeWorld::Get().NodeID(data.hoveredWire->end)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText("\toutput", 2, data.windowHeight - (++i * 12), 8, OUTPUTAPRICOT);
+            DrawText("\toutput", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_OUTPUT]);
             DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->start), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\t\tserial: %u", NodeWorld::Get().NodeID(data.hoveredWire->start)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText("\tinput", 2, data.windowHeight - (++i * 12), 8, INPUTLAVENDER);
+            DrawText("\tinput", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_INPUT]);
             // State
             {
                 const char* stateName;
@@ -1162,7 +1244,7 @@ void Draw_Pen(ProgramData& data)
                 DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             }
             DrawText(TextFormat("\tptr: %p", data.hoveredWire), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText("hovered wire", 2, data.windowHeight - (++i * 12), 8, WHITE);
+            DrawText("hovered wire", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
     }
 }
@@ -1413,7 +1495,7 @@ void Draw_Edit(ProgramData& data)
         DrawRectangleIRect(data.Edit_GroupCorner().GetCollisionRect(), color);
     }
 
-    DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(SPACEGRAY, 0.5));
+    DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(uiColors[UI_COLOR_BACKGROUND1], 0.5));
     DrawRectangleLines(data.Edit_SelectionRec().x, data.Edit_SelectionRec().y, data.Edit_SelectionRec().w, data.Edit_SelectionRec().h, LIFELESSNEBULA);
 
     NodeWorld::Get().DrawWires();
@@ -1456,8 +1538,8 @@ void Draw_Edit(ProgramData& data)
     }
     if (!!data.hoveredWire)
     {
-        data.hoveredWire->start->Draw(INPUTLAVENDER);
-        data.hoveredWire->end->Draw(OUTPUTAPRICOT);
+        data.hoveredWire->start->Draw(uiColors[UI_COLOR_INPUT]);
+        data.hoveredWire->end->Draw(uiColors[UI_COLOR_OUTPUT]);
     }
 
     if (!!data.Edit_NodeBeingDragged() && data.Edit_HoveringMergable())
@@ -1474,8 +1556,8 @@ void Draw_Edit(ProgramData& data)
     {
         int i = 0;
         // Cursor stats
-        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
-        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
+        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
+        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
 
         // Selection stats
         if (data.SelectionExists())
@@ -1513,7 +1595,7 @@ void Draw_Edit(ProgramData& data)
             if (ANDs) DrawText(TextFormat("\t\tand: %i", ANDs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             if (ORs)  DrawText(TextFormat("\t\tor: %i", ORs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\ttotal: %i", data.selection.size()), 2, data.windowHeight - (++i * 12), 8, INTERFERENCEGRAY);
-            DrawText("selection", 2, data.windowHeight - (++i * 12), 8, WHITE);
+            DrawText("selection", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
 
 
@@ -1545,12 +1627,12 @@ void Draw_Edit(ProgramData& data)
                     stateName = "\tinactive";
                 DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             }
-            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, OUTPUTAPRICOT);
-            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, INPUTLAVENDER);
+            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_OUTPUT]);
+            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_INPUT]);
             DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText("hovered node", 2, data.windowHeight - (++i * 12), 8, WHITE);
+            DrawText("hovered node", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
         // Joint hover stats
         else if (!!data.hoveredWire)
@@ -1566,14 +1648,14 @@ void Draw_Edit(ProgramData& data)
             }
             DrawText(TextFormat("\tconfiguration: %s", configurationName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\twire ptr: %p", data.hoveredWire), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText("hovered wire-joint", 2, data.windowHeight - (++i * 12), 8, WHITE);
+            DrawText("hovered wire-joint", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
         // Group hover stats
         else if (!!data.hoveredGroup)
         {
             DrawText(TextFormat("\tlabel: %s", data.hoveredGroup->GetLabel().c_str()), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\tptr: %p", data.hoveredGroup), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText("hovered group", 2, data.windowHeight - (++i * 12), 8, WHITE);
+            DrawText("hovered group", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
     }
 }
@@ -1625,7 +1707,7 @@ void Draw_Erase(ProgramData& data)
     {
         int radius = 3;
         int expandedRad = radius + 1;
-        DrawRectangle(center.x - expandedRad, center.y - expandedRad, expandedRad * 2, expandedRad * 2, BLACK);
+        DrawRectangle(center.x - expandedRad, center.y - expandedRad, expandedRad * 2, expandedRad * 2, uiColors[UI_COLOR_BACKGROUND]);
         DrawLine(center.x - radius, center.y - radius,
                  center.x + radius, center.y + radius,
                  color);
@@ -1674,7 +1756,7 @@ void Draw_Erase(ProgramData& data)
 
     if (!!data.hoveredNode)
     {
-        data.hoveredNode->Draw(BLACK);
+        data.hoveredNode->Draw(uiColors[UI_COLOR_BACKGROUND]);
         DrawCross(data.hoveredNode->GetPosition(), DESTRUCTIVERED);
 
         if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
@@ -1761,8 +1843,8 @@ void Draw_Interact(ProgramData& data)
     {
         int i = 0;
         // Cursor stats
-        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
-        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
+        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
+        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
 
         // Node hover stats
         if (!!data.hoveredNode)
@@ -1776,11 +1858,11 @@ void Draw_Interact(ProgramData& data)
                     stateName = "\tinactive";
                 DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             }
-            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, OUTPUTAPRICOT);
+            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_OUTPUT]);
             DrawText(TextFormat("\tinteraction serial: %u", NodeWorld::Get().StartNodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText("hovered interactable node", 2, data.windowHeight - (++i * 12), 8, WHITE);
+            DrawText("hovered interactable node", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
     }
 }
@@ -1871,7 +1953,7 @@ void Draw_Overlay_Button(ProgramData& data)
     EndMode2D();
 
     IRect rec = data.dropdownBounds[data.Button_DropdownActive()];
-    DrawRectangleIRect(rec, SPACEGRAY);
+    DrawRectangleIRect(rec, uiColors[UI_COLOR_BACKGROUND1]);
     rec.h = data.ButtonWidth();
 
     switch (data.Button_DropdownActive())
@@ -1885,8 +1967,8 @@ void Draw_Overlay_Button(ProgramData& data)
             Color color;
             if (InBoundingBox(rec, data.cursorUIPos))
             {
-                color = WHITE;
-                DrawText(ProgramData::GetModeTooltipName(m), data.ButtonWidth() + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), WHITE);
+                color = uiColors[UI_COLOR_FOREGROUND];
+                DrawText(ProgramData::GetModeTooltipName(m), data.ButtonWidth() + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
             }
             else
                 color = DEADCABLE;
@@ -1905,8 +1987,8 @@ void Draw_Overlay_Button(ProgramData& data)
             Color color;
             if (InBoundingBox(rec, data.cursorUIPos))
             {
-                color = WHITE;
-                DrawText(ProgramData::GetGateTooltipName(g), data.ButtonWidth() * 2 + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), WHITE);
+                color = uiColors[UI_COLOR_FOREGROUND];
+                DrawText(ProgramData::GetGateTooltipName(g), data.ButtonWidth() * 2 + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
             }
             else
                 color = DEADCABLE;
@@ -1932,7 +2014,7 @@ void Draw_Overlay_Button(ProgramData& data)
                     text = TextFormat(data.deviceParameterTextFmt, Node::GetColorName(v));
                 else
                     text = TextFormat(data.deviceParameterTextFmt, v);
-                DrawText(text, data.ButtonWidth() * 3 + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), WHITE);
+                DrawText(text, data.ButtonWidth() * 3 + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
             }
             else
                 DrawRectangleIRect(rec, color);
@@ -2000,15 +2082,15 @@ void Draw_Menu_Select(ProgramData& data)
     ClearBackground({ 10,15,30, 255 });
     for (int y = 0; y < data.windowHeight; y += g_gridSize)
     {
-        DrawLine(0, y, data.windowWidth, y, SPACEGRAY);
+        DrawLine(0, y, data.windowWidth, y, uiColors[UI_COLOR_BACKGROUND1]);
     }
     for (int x = 0; x < data.windowWidth; x += g_gridSize)
     {
-        DrawLine(x, 0, x, data.windowHeight, SPACEGRAY);
+        DrawLine(x, 0, x, data.windowHeight, uiColors[UI_COLOR_BACKGROUND1]);
     }
-    DrawRectangle(0,0,data.windowWidth, data.ButtonWidth(), SPACEGRAY);
+    DrawRectangle(0,0,data.windowWidth, data.ButtonWidth(), uiColors[UI_COLOR_BACKGROUND1]);
     const int padding = data.ButtonWidth() / 2 - (data.FontSize() / 2);
-    DrawText("Blueprints", padding, padding, data.FontSize(), WHITE);
+    DrawText("Blueprints", padding, padding, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
     for (Blueprint* bp : NodeWorld::Get().GetBlueprints())
     {
         IRect rec = bp->GetSelectionPreviewRect(pos);
@@ -2029,7 +2111,7 @@ void Draw_Menu_Select(ProgramData& data)
         }
         else [[likely]]
         {
-            background = SPACEGRAY;
+            background = uiColors[UI_COLOR_BACKGROUND1];
             foreground = DEADCABLE;
             foregroundIO = LIFELESSNEBULA;
         }
@@ -2041,7 +2123,7 @@ void Draw_Menu_Select(ProgramData& data)
         maxY = std::max(maxY, rec.Bottom());
     }
     if (!!data.BPSelect_Hovering())
-        data.DrawTooltipAtCursor(data.BPSelect_Hovering()->name.c_str(), WHITE);
+        data.DrawTooltipAtCursor(data.BPSelect_Hovering()->name.c_str(), uiColors[UI_COLOR_FOREGROUND]);
 }
 
 int main()
@@ -2145,7 +2227,7 @@ int main()
 
         BeginDrawing(); {
 
-            ClearBackground(BLACK);
+            ClearBackground(uiColors[UI_COLOR_BACKGROUND]);
 
             if (!data.ModeIsMenu())
             {
@@ -2185,7 +2267,7 @@ int main()
                 // Buttons
                 const IRect WithClipboard = ProgramData::buttonBounds[0] + Width(data.ButtonWidth()) * (_countof(ProgramData::buttonBounds) - 1);
                 const IRect WithoutClipboard = WithClipboard - Width(ProgramData::ButtonBound_Clipboard());
-                DrawRectangleIRect(data.IsClipboardValid() ? WithClipboard : WithoutClipboard, SPACEGRAY);
+                DrawRectangleIRect(data.IsClipboardValid() ? WithClipboard : WithoutClipboard, uiColors[UI_COLOR_BACKGROUND1]);
                 DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
 
                 const IVec2 tooltipNameOffset = IVec2(data.ButtonWidth()) + IVec2(data.FontSize() / 2, data.FontSize() / 8);
@@ -2198,10 +2280,10 @@ int main()
                     DrawRectangleIRect(ProgramData::ButtonBound_Mode(), WIPBLUE);
                     // Tooltip
                     const char* name = data.GetModeTooltipName(data.baseMode);
-                    DrawTextIV(name, ProgramData::ButtonBound_Mode().xy + tooltipNameOffset, data.FontSize(), WHITE);
+                    DrawTextIV(name, ProgramData::ButtonBound_Mode().xy + tooltipNameOffset, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
                     Width separatorWidth(MeasureText(name, data.FontSize()));
-                    DrawLineIV(ProgramData::ButtonBound_Mode().xy + tooltipSeprOffset, separatorWidth, WHITE); // Separator
-                    DrawTextIV(data.GetModeTooltipDescription(data.baseMode), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, data.FontSize(), WHITE);
+                    DrawLineIV(ProgramData::ButtonBound_Mode().xy + tooltipSeprOffset, separatorWidth, uiColors[UI_COLOR_FOREGROUND]); // Separator
+                    DrawTextIV(data.GetModeTooltipDescription(data.baseMode), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
                 }
                 // Gate
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Gate()))
@@ -2209,10 +2291,10 @@ int main()
                     DrawRectangleIRect(ProgramData::ButtonBound_Gate(), WIPBLUE);
                     // Tooltip
                     const char* name = data.GetGateTooltipName(data.gatePick);
-                    DrawTextIV(name, ProgramData::ButtonBound_Gate().xy + tooltipNameOffset, data.FontSize(), WHITE);
+                    DrawTextIV(name, ProgramData::ButtonBound_Gate().xy + tooltipNameOffset, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
                     Width separatorWidth(MeasureText(name, data.FontSize()));
-                    DrawLineIV(ProgramData::ButtonBound_Gate().xy + tooltipSeprOffset, separatorWidth, WHITE);
-                    DrawTextIV(data.GetGateTooltipDescription(data.gatePick), ProgramData::ButtonBound_Gate().xy + tooltipDescOffset, data.FontSize(), WHITE);
+                    DrawLineIV(ProgramData::ButtonBound_Gate().xy + tooltipSeprOffset, separatorWidth, uiColors[UI_COLOR_FOREGROUND]);
+                    DrawTextIV(data.GetGateTooltipDescription(data.gatePick), ProgramData::ButtonBound_Gate().xy + tooltipDescOffset, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
                 }
                 // Extra param
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Parameter()))
@@ -2225,46 +2307,46 @@ int main()
                         text = TextFormat(data.deviceParameterTextFmt, Node::GetColorName(data.storedExtraParam));
                     else
                         text = TextFormat(data.deviceParameterTextFmt, data.storedExtraParam);
-                    DrawTextIV(text, ProgramData::ButtonBound_Parameter().xy + tooltipNameOffset, data.FontSize(), WHITE);
+                    DrawTextIV(text, ProgramData::ButtonBound_Parameter().xy + tooltipNameOffset, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
                 }
                 // Blueprints
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Blueprints()))
                 {
                     DrawRectangleIRect(ProgramData::ButtonBound_Blueprints(), WIPBLUE);
                     // Tooltip
-                    DrawTextIV("Blueprints", ProgramData::ButtonBound_Blueprints().xy + tooltipNameOffset, data.FontSize(), WHITE);
+                    DrawTextIV("Blueprints", ProgramData::ButtonBound_Blueprints().xy + tooltipNameOffset, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
                 }
                 // Clipboard
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Clipboard()))
                 {
                     DrawRectangleIRect(ProgramData::ButtonBound_Clipboard(), WIPBLUE);
                     // Tooltip
-                    DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, data.FontSize(), WHITE);
+                    DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
                     const IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(data.ButtonWidth());
                     // Clipboard preview
                     if (data.IsClipboardValid())
                         data.clipboard->DrawSelectionPreview(
                             ProgramData::ButtonBound_Clipboard().xy + clipboardPreviewOffset,
-                            SPACEGRAY,
+                            uiColors[UI_COLOR_BACKGROUND1],
                             DEADCABLE,
                             LIFELESSNEBULA,
                             ColorAlpha(DEADCABLE, 0.25f),
                             data.clipboardPreviewLOD);
                 }
 
-                data.DrawModeIcon(data.baseMode, ProgramData::ButtonBound_Mode().xy, WHITE);
-                data.DrawGateIcon(data.gatePick, ProgramData::ButtonBound_Gate().xy, WHITE);
+                data.DrawModeIcon(data.baseMode, ProgramData::ButtonBound_Mode().xy, uiColors[UI_COLOR_FOREGROUND]);
+                data.DrawGateIcon(data.gatePick, ProgramData::ButtonBound_Gate().xy, uiColors[UI_COLOR_FOREGROUND]);
                 
                 for (IVec2 offset = IVec2(-1); offset.y <= 1; ++offset.y)
                 {
                     for (offset.x = -1; offset.x <= 1; ++offset.x)
                     {
-                        DrawTextIV(TextFormat("%i", data.storedExtraParam), ProgramData::ButtonBound_Parameter().xy + IVec2(2, 1) + offset, data.FontSize(), BLACK);
+                        DrawTextIV(TextFormat("%i", data.storedExtraParam), ProgramData::ButtonBound_Parameter().xy + IVec2(2, 1) + offset, data.FontSize(), uiColors[UI_COLOR_BACKGROUND]);
                     }
                 }
-                DrawTextIV(TextFormat("%i", data.storedExtraParam), ProgramData::ButtonBound_Parameter().xy + IVec2(2,1), data.FontSize(), WHITE);
-                DrawTextureIV(data.GetBlueprintIcon(), ProgramData::ButtonBound_Blueprints().xy, WHITE);
-                DrawTextureIV(data.GetClipboardIcon(), ProgramData::ButtonBound_Clipboard().xy, data.IsClipboardValid() ? WHITE : ColorAlpha(WHITE, 0.25f));
+                DrawTextIV(TextFormat("%i", data.storedExtraParam), ProgramData::ButtonBound_Parameter().xy + IVec2(2,1), data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
+                DrawTextureIV(data.GetBlueprintIcon(), ProgramData::ButtonBound_Blueprints().xy, uiColors[UI_COLOR_FOREGROUND]);
+                DrawTextureIV(data.GetClipboardIcon(), ProgramData::ButtonBound_Clipboard().xy, data.IsClipboardValid() ? uiColors[UI_COLOR_FOREGROUND] : ColorAlpha(uiColors[UI_COLOR_FOREGROUND], 0.25f));
             }
 
         } EndDrawing();
