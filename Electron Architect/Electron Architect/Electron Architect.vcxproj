@@ -105,11 +105,15 @@
     </Link>
     <PostBuildEvent>
       <Command>copy /b "$(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll" "$(OutDir)raylib.dll";
-copy /b "$(ProjectDir)icon_clipboard.png" "$(OutDir)";
-copy /b "$(ProjectDir)icons_blueprint.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_blueprints16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_blueprints32x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_blueprint16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_clipboard16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_clipboard32x.png" "$(OutDir)";
 copy /b "$(ProjectDir)icons_gate16x.png" "$(OutDir)";
 copy /b "$(ProjectDir)icons_gate32x.png" "$(OutDir)";
-copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
+copy /b "$(ProjectDir)icons_mode16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_mode32x.png" "$(OutDir)";</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -135,11 +139,15 @@ copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     </Link>
     <PostBuildEvent>
       <Command>copy /b "$(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll" "$(OutDir)raylib.dll";
-copy /b "$(ProjectDir)icon_clipboard.png" "$(OutDir)";
-copy /b "$(ProjectDir)icons_blueprint.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_blueprints16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_blueprints32x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_blueprint16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_clipboard16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_clipboard32x.png" "$(OutDir)";
 copy /b "$(ProjectDir)icons_gate16x.png" "$(OutDir)";
 copy /b "$(ProjectDir)icons_gate32x.png" "$(OutDir)";
-copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
+copy /b "$(ProjectDir)icons_mode16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_mode32x.png" "$(OutDir)";</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -161,11 +169,15 @@ copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     </Link>
     <PostBuildEvent>
       <Command>copy /b "$(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll" "$(OutDir)raylib.dll";
-copy /b "$(ProjectDir)icon_clipboard.png" "$(OutDir)";
-copy /b "$(ProjectDir)icons_blueprint.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_blueprints16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_blueprints32x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_blueprint16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_clipboard16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_clipboard32x.png" "$(OutDir)";
 copy /b "$(ProjectDir)icons_gate16x.png" "$(OutDir)";
 copy /b "$(ProjectDir)icons_gate32x.png" "$(OutDir)";
-copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
+copy /b "$(ProjectDir)icons_mode16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_mode32x.png" "$(OutDir)";</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -191,11 +203,15 @@ copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     </Link>
     <PostBuildEvent>
       <Command>copy /b "$(SolutionDir)..\raylib\bin\$(Platform)\$(Configuration).DLL\raylib.dll" "$(OutDir)raylib.dll";
-copy /b "$(ProjectDir)icon_clipboard.png" "$(OutDir)";
-copy /b "$(ProjectDir)icons_blueprint.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_blueprints16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_blueprints32x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_blueprint16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_clipboard16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icon_clipboard32x.png" "$(OutDir)";
 copy /b "$(ProjectDir)icons_gate16x.png" "$(OutDir)";
 copy /b "$(ProjectDir)icons_gate32x.png" "$(OutDir)";
-copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
+copy /b "$(ProjectDir)icons_mode16x.png" "$(OutDir)";
+copy /b "$(ProjectDir)icons_mode32x.png" "$(OutDir)";</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

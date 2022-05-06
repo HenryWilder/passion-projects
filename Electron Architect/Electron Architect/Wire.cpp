@@ -107,32 +107,22 @@ IVec2 Wire::GetLegalElbowPosition(ElbowConfig config) const
 {
     return GetLegalElbowPosition(GetStartPos(), GetEndPos(), config);
 }
-void Wire::GetLegalElbowPositions(IVec2(&legal)[4]) const
-{
-    int shortLength = std::min(
-        abs(GetEndX() - GetStartX()),
-        abs(GetEndY() - GetStartY())
-    );
-
-    legal[0] = IVec2(GetStartX(), GetEndY());
-    legal[1] = IVec2(GetEndX(), GetStartY());
-    legal[2] = GetStartPos() + IVec2(GetEndX() < GetStartX() ? -shortLength : shortLength,
-                                     GetEndY() < GetStartY() ? -shortLength : shortLength);
-    legal[3] = GetEndPos()   + IVec2(GetStartX() < GetEndX() ? -shortLength : shortLength,
-                                     GetStartY() < GetEndY() ? -shortLength : shortLength);
-}
 void Wire::UpdateElbowToLegal()
 {
     elbow = GetLegalElbowPosition(elbowConfig);
 }
 void Wire::SnapElbowToLegal(IVec2 pos)
 {
-    IVec2 legal[4];
-    GetLegalElbowPositions(legal);
-
-    uint8_t pick = 0;
+    constexpr ElbowConfig configOrder[] =
+    {
+        ElbowConfig::horizontal,
+        ElbowConfig::diagonalA,
+        ElbowConfig::vertical,
+        ElbowConfig::diagonalB,
+    };
+    ElbowConfig pick = ElbowConfig(0);
     long shortestDist = LONG_MAX;
-    for (uint8_t i = 0; i < 4; ++i)
+    for (; pick; ++pick)
     {
         long dist = DistanceSqr(pos, legal[i]);
         if (dist < shortestDist)

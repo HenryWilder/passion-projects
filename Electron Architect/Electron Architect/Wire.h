@@ -52,7 +52,6 @@ struct Wire
 
     static IVec2 GetLegalElbowPosition(IVec2 start, IVec2 end, ElbowConfig config);
     IVec2 GetLegalElbowPosition(ElbowConfig config) const;
-    void GetLegalElbowPositions(IVec2(&legal)[4]) const;
     void UpdateElbowToLegal();
     void SnapElbowToLegal(IVec2 pos);
 };

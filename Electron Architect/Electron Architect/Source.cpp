@@ -81,6 +81,19 @@ struct ProgramData
         Gate::LED,
         Gate::DELAY,
     };
+    int ButtonWidth() const
+    {
+        return 16 * uiScale;
+    }
+    int FontSize() const
+    {
+        switch (uiScale)
+        {
+        default:
+        case 1: return 8;
+        case 2: return 20;
+        }
+    }
     static IRect buttonBounds[5];
     static IRect ButtonBound_Mode()
     {
@@ -102,20 +115,7 @@ struct ProgramData
     {
         return buttonBounds[4];
     }
-
-    static constexpr IRect dropdownBounds[] =
-    {
-        IRect( 0, 16, 16, 16 * (_countof(dropdownModeOrder) - 1)), // Mode
-        IRect(16, 16, 16, 16 * (_countof(dropdownGateOrder) - 1)), // Gate
-        IRect(32, 16, 16, 16 * (_countof(Node::g_resistanceBands) - 1)), // Parameter
-    };
-    static constexpr Gate radialGateOrder[] =
-    {
-        Gate::XOR,
-        Gate::AND,
-        Gate::OR,
-        Gate::NOR,
-    };
+    static IRect dropdownBounds[3];
 
 private:
     static Texture2D blueprintIcon16x;
@@ -134,7 +134,7 @@ public:
     uint8_t blueprintLOD = 0;
     uint8_t clipboardPreviewLOD = 0;
     uint8_t pastePreviewLOD = 0;
-    uint8_t uiScale = 1;
+    int uiScale = 1;
 
     Mode mode = Mode::PEN;
     Mode baseMode = Mode::PEN;
@@ -379,7 +379,7 @@ public:
         switch (newMode)
         {
         case Mode::BUTTON:
-            Button_DropdownActive() = cursorUIPos.x / 16;
+            Button_DropdownActive() = cursorUIPos.x / ButtonWidth();
             break;
         }
     };
@@ -955,21 +955,30 @@ frames_per_tick=6)txt";
             else if (attribute == "ui_scale")
             {
                 uiScale = std::stoi(value);
-                if (uiScale > 2)
-                {
+
+                if (uiScale >= 2)
                     uiScale = 2;
-                    for (int i = 0; i < _countof(buttonBounds); ++i)
-                    {
-                        buttonBounds[0] = IRect(i * 32, 0, 32);
-                    }
-                }
-                if (uiScale < 1)
-                {
+                if (uiScale <= 1)
                     uiScale = 1;
-                    for (int i = 0; i < _countof(buttonBounds); ++i)
-                    {
-                        buttonBounds[0] = IRect(i * 16, 0, 16);
-                    }
+
+                const int width = 16 * uiScale;
+                for (int i = 0; i < _countof(buttonBounds); ++i)
+                {
+                    buttonBounds[i] = IRect(i * width, 0, width);
+                }
+
+                constexpr int heights[] =
+                {
+                    _countof(dropdownModeOrder) - 1,
+                    _countof(dropdownGateOrder) - 1,
+                    _countof(Node::g_resistanceBands) - 1,
+                };
+                for (int i = 0; i < _countof(dropdownBounds); ++i)
+                {
+                    dropdownBounds[i].x = i * width;
+                    dropdownBounds[i].y = width;
+                    dropdownBounds[i].w = width;
+                    dropdownBounds[i].h = width * heights[i];
                 }
             }
         }
@@ -977,6 +986,7 @@ frames_per_tick=6)txt";
     }
 };
 IRect ProgramData::buttonBounds[5];
+IRect ProgramData::dropdownBounds[3];
 Texture2D ProgramData::blueprintIcon16x;
 Texture2D ProgramData::blueprintIcon32x;
 Texture2D ProgramData::clipboardIcon16x;
@@ -1081,6 +1091,73 @@ void Draw_Pen(ProgramData& data)
     if (!!data.hoveredNode)
     {
         data.hoveredNode->Draw(WIPBLUE);
+    }
+
+    EndMode2D();
+
+    // Stats
+    {
+        int i = 0;
+        // Cursor stats
+        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
+        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
+        
+        // Node hover stats
+        if (!!data.hoveredNode)
+        {
+            const char* gateName;
+            switch (data.hoveredNode->GetGate())
+            {
+            case Gate::OR:        gateName = "or";        break;
+            case Gate::AND:       gateName = "and";       break;
+            case Gate::NOR:       gateName = "nor";       break;
+            case Gate::XOR:       gateName = "xor";       break;
+            case Gate::RESISTOR:  gateName = "resistor";  break;
+            case Gate::CAPACITOR: gateName = "capacitor"; break;
+            case Gate::LED:       gateName = "LED";       break;
+            case Gate::DELAY:     gateName = "delay";     break;
+            default:
+                _ASSERT_EXPR(false, L"Missing specialization for gate name");
+                gateName = "ERROR";
+                break;
+            }
+            // State
+            {
+                const char* stateName;
+                if (data.hoveredNode->GetState())
+                    stateName = "\tactive";
+                else
+                    stateName = "\tinactive";
+                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            }
+            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText("hovered node", 2, data.windowHeight - (++i * 12), 8, WHITE);
+        }
+        // Wire hover stats
+        else if (!!data.hoveredWire)
+        {
+            DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->end), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\t\tserial: %u", NodeWorld::Get().NodeID(data.hoveredWire->end)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText("\toutput", 2, data.windowHeight - (++i * 12), 8, INTERFERENCEGRAY);
+            DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->start), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\t\tserial: %u", NodeWorld::Get().NodeID(data.hoveredWire->start)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText("\tinput", 2, data.windowHeight - (++i * 12), 8, INTERFERENCEGRAY);
+            // State
+            {
+                const char* stateName;
+                if (data.hoveredWire->GetState())
+                    stateName = "\tactive";
+                else
+                    stateName = "\tinactive";
+                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            }
+            DrawText(TextFormat("\tptr: %p", data.hoveredWire), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText("hovered wire", 2, data.windowHeight - (++i * 12), 8, WHITE);
+        }
     }
 }
 
@@ -1377,6 +1454,108 @@ void Draw_Edit(ProgramData& data)
             "Hold [shift] to merge on release.\n"
             "Otherwise, nodes will only be swapped.", VIOLET);
     }
+
+    EndMode2D();
+    
+    // Stats
+    {
+        int i = 0;
+        // Cursor stats
+        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
+        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
+
+        // Selection stats
+        if (data.SelectionExists())
+        {
+            unsigned ORs = 0;
+            unsigned ANDs = 0;
+            unsigned NORs = 0;
+            unsigned XORs = 0;
+            unsigned RESs = 0;
+            unsigned CAPs = 0;
+            unsigned LEDs = 0;
+            unsigned DELs = 0;
+
+            for (Node* node : data.selection)
+            {
+                switch (node->GetGate())
+                {
+                case Gate::OR:        ++ORs;  break;
+                case Gate::AND:       ++ANDs; break;
+                case Gate::NOR:       ++NORs; break;
+                case Gate::XOR:       ++XORs; break;
+                case Gate::RESISTOR:  ++RESs; break;
+                case Gate::CAPACITOR: ++CAPs; break;
+                case Gate::LED:       ++LEDs; break;
+                case Gate::DELAY:     ++DELs; break;
+                }
+            }
+
+            if (DELs) DrawText(TextFormat("\t\tdelay: %i", DELs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            if (LEDs) DrawText(TextFormat("\t\tLED: %i", LEDs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            if (CAPs) DrawText(TextFormat("\t\tcapacitor: %i", CAPs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            if (RESs) DrawText(TextFormat("\t\tresistor: %i", RESs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            if (XORs) DrawText(TextFormat("\t\txor: %i", XORs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            if (NORs) DrawText(TextFormat("\t\tnor: %i", NORs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            if (ANDs) DrawText(TextFormat("\t\tand: %i", ANDs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            if (ORs)  DrawText(TextFormat("\t\tor: %i", ORs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\ttotal: %i", data.selection.size()), 2, data.windowHeight - (++i * 12), 8, INTERFERENCEGRAY);
+            DrawText("selection", 2, data.windowHeight - (++i * 12), 8, WHITE);
+        }
+
+
+        // Node hover stats
+        if (!!data.hoveredNode)
+        {
+            const char* gateName;
+            switch (data.hoveredNode->GetGate())
+            {
+            case Gate::OR:        gateName = "or";        break;
+            case Gate::AND:       gateName = "and";       break;
+            case Gate::NOR:       gateName = "nor";       break;
+            case Gate::XOR:       gateName = "xor";       break;
+            case Gate::RESISTOR:  gateName = "resistor";  break;
+            case Gate::CAPACITOR: gateName = "capacitor"; break;
+            case Gate::LED:       gateName = "LED";       break;
+            case Gate::DELAY:     gateName = "delay";     break;
+            default:
+                _ASSERT_EXPR(false, L"Missing specialization for gate name");
+                gateName = "ERROR";
+                break;
+            }
+            // State
+            {
+                const char* stateName;
+                if (data.hoveredNode->GetState())
+                    stateName = "\tactive";
+                else
+                    stateName = "\tinactive";
+                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            }
+            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText("hovered node", 2, data.windowHeight - (++i * 12), 8, WHITE);
+        }
+        // Joint hover stats
+        else if (!!data.hoveredWire)
+        {
+            const char* configurationName;
+            switch (data.hoveredWire->elbowConfig)
+            {
+            case ElbowConfig::horizontal: configurationName = "horizontal"; break;
+            case ElbowConfig::diagonalA: configurationName = "diagonal - input closer"; break;
+            case ElbowConfig::vertical: configurationName = "vertical"; break;
+            case ElbowConfig::diagonalB: configurationName = "diagonal - output closer"; break;
+            default: configurationName = "ERROR"; break;
+            }
+            DrawText(TextFormat("\tconfiguration: %s", configurationName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\twire ptr: %p", data.hoveredWire), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText("hovered wire-joint", 2, data.windowHeight - (++i * 12), 8, WHITE);
+        }
+    }
 }
 
 void Update_Erase(ProgramData& data)
@@ -1564,7 +1743,7 @@ void Update_Overlay_Button(ProgramData& data)
         IRect rec = ProgramData::dropdownBounds[data.Button_DropdownActive()];
         if (data.CursorInUIBounds(rec))
         {
-            rec.h = 16;
+            rec.h = data.ButtonWidth();
 
             switch (data.Button_DropdownActive())
             {
@@ -1581,7 +1760,7 @@ void Update_Overlay_Button(ProgramData& data)
                         break;
                     }
 
-                    rec.y += 16;
+                    rec.y += data.ButtonWidth();
                 }
             }
             break;
@@ -1599,7 +1778,7 @@ void Update_Overlay_Button(ProgramData& data)
                         break;
                     }
 
-                    rec.y += 16;
+                    rec.y += data.ButtonWidth();
                 }
 
                 data.ClearOverlayMode();
@@ -1608,7 +1787,7 @@ void Update_Overlay_Button(ProgramData& data)
 
             case 2: // Resistance
             {
-                for (uint8_t v = 0; v < 10; ++v)
+                for (uint8_t v = 0; v < _countof(Node::g_resistanceBands); ++v)
                 {
                     if (v == data.storedExtraParam)
                         continue;
@@ -1619,7 +1798,7 @@ void Update_Overlay_Button(ProgramData& data)
                         break;
                     }
 
-                    rec.y += 16;
+                    rec.y += data.ButtonWidth();
                 }
 
                 data.ClearOverlayMode();
@@ -1644,7 +1823,7 @@ void Draw_Overlay_Button(ProgramData& data)
 
     IRect rec = data.dropdownBounds[data.Button_DropdownActive()];
     DrawRectangleIRect(rec, SPACEGRAY);
-    rec.h = 16;
+    rec.h = data.ButtonWidth();
 
     switch (data.Button_DropdownActive())
     {
@@ -1658,12 +1837,12 @@ void Draw_Overlay_Button(ProgramData& data)
             if (InBoundingBox(rec, data.cursorUIPos))
             {
                 color = WHITE;
-                DrawText(ProgramData::GetModeTooltipName(m), 20, 17 + rec.y, 8, WHITE);
+                DrawText(ProgramData::GetModeTooltipName(m), data.ButtonWidth() + 4, data.ButtonWidth() + 1 + rec.y, 8, WHITE);
             }
             else
                 color = DEADCABLE;
             data.DrawModeIcon(m, rec.xy, color);
-            rec.y += 16;
+            rec.y += data.ButtonWidth();
         }
     }
     break;
@@ -1678,12 +1857,12 @@ void Draw_Overlay_Button(ProgramData& data)
             if (InBoundingBox(rec, data.cursorUIPos))
             {
                 color = WHITE;
-                DrawText(ProgramData::GetGateTooltipName(g), 20 + 16, 17 + rec.y, 8, WHITE);
+                DrawText(ProgramData::GetGateTooltipName(g), data.ButtonWidth() * 2 + 4, data.ButtonWidth() + 1 + rec.y, 8, WHITE);
             }
             else
                 color = DEADCABLE;
             data.DrawGateIcon(g, rec.xy, color);
-            rec.y += 16;
+            rec.y += data.ButtonWidth();
         }
     }
     break;
@@ -1704,11 +1883,11 @@ void Draw_Overlay_Button(ProgramData& data)
                     text = TextFormat(data.deviceParameterTextFmt, Node::GetColorName(v));
                 else
                     text = TextFormat(data.deviceParameterTextFmt, v);
-                DrawText(text, 20 + 32, 17 + rec.y, 8, WHITE);
+                DrawText(text, data.ButtonWidth() * 3 + 4, data.ButtonWidth() + 1 + rec.y, 8, WHITE);
             }
             else
                 DrawRectangleIRect(rec, color);
-            rec.y += 16;
+            rec.y += data.ButtonWidth();
         }
     }
     break;
@@ -1863,8 +2042,12 @@ int main()
         // UI buttons
         if (!data.ModeIsMenu() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            if (data.CursorInUIBounds(ProgramData::ButtonBound_Mode() + Width(16 * 2)) &&
-                (data.mode == Mode::BUTTON ? data.Button_DropdownActive() != (data.cursorUIPos.x / 16) : true))
+            if ((data.CursorInUIBounds(ProgramData::ButtonBound_Mode()) ||
+                 data.CursorInUIBounds(ProgramData::ButtonBound_Gate()) ||
+                 data.CursorInUIBounds(ProgramData::ButtonBound_Parameter())) &&
+                (data.mode == Mode::BUTTON ?
+                    data.Button_DropdownActive() != (data.cursorUIPos.x / data.ButtonWidth()) :
+                    true))
             {
                 data.SetMode(Mode::BUTTON);
                 goto EVAL; // Skip button sim this frame
@@ -1872,6 +2055,7 @@ int main()
             else if (data.CursorInUIBounds(ProgramData::ButtonBound_Blueprints()))
             {
                 data.SetMode(Mode::BP_SELECT);
+                goto EVAL; // Skip button sim this frame
             }
             else if (data.CursorInUIBounds(ProgramData::ButtonBound_Clipboard()))
             {
@@ -1948,78 +2132,16 @@ int main()
 
                 // UI
 
-                IRect WithClipboard = ProgramData::buttonBounds[0] + Width(16) * (_countof(ProgramData::buttonBounds) - 1);
-                IRect WithoutClipboard = WithClipboard - Width(ProgramData::ButtonBound_Clipboard());
+                // Buttons
+                const IRect WithClipboard = ProgramData::buttonBounds[0] + Width(data.ButtonWidth()) * (_countof(ProgramData::buttonBounds) - 1);
+                const IRect WithoutClipboard = WithClipboard - Width(ProgramData::ButtonBound_Clipboard());
                 DrawRectangleIRect(data.IsClipboardValid() ? WithClipboard : WithoutClipboard, SPACEGRAY);
                 DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
-                int i = 0;
-                DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
-                DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
-                if (data.SelectionExists())
-                {
-                    unsigned ORs = 0;
-                    unsigned ANDs = 0;
-                    unsigned NORs = 0;
-                    unsigned XORs = 0;
-                    unsigned RESs = 0;
-                    unsigned CAPs = 0;
-                    unsigned LEDs = 0;
-                    unsigned DELs = 0;
 
-                    for (Node* node : data.selection)
-                    {
-                        switch (node->GetGate())
-                        {
-                        case Gate::OR:        ++ORs;  break;
-                        case Gate::AND:       ++ANDs; break;
-                        case Gate::NOR:       ++NORs; break;
-                        case Gate::XOR:       ++XORs; break;
-                        case Gate::RESISTOR:  ++RESs; break;
-                        case Gate::CAPACITOR: ++CAPs; break;
-                        case Gate::LED:       ++LEDs; break;
-                        case Gate::DELAY:     ++DELs; break;
-                        }
-                    }
+                const IVec2 tooltipNameOffset = IVec2(data.ButtonWidth()) + IVec2(4,1);
+                const IVec2 tooltipSeprOffset = tooltipNameOffset + Height(8 + 8 / 2);
+                const IVec2 tooltipDescOffset = tooltipNameOffset + Height(8 + 8);
 
-                    if (DELs) DrawText(TextFormat("delay: %i", DELs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (LEDs) DrawText(TextFormat("LED: %i",   LEDs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (CAPs) DrawText(TextFormat("capacitor: %i", CAPs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (RESs) DrawText(TextFormat("resistor: %i", RESs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (XORs) DrawText(TextFormat("xor: %i", XORs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (NORs) DrawText(TextFormat("nor: %i", NORs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (ANDs) DrawText(TextFormat("and: %i", ANDs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (ORs)  DrawText(TextFormat("or: %i",  ORs),  2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    DrawText(TextFormat("selected: %i", data.selection.size()), 2, data.windowHeight - (++i * 12), 8, WHITE);
-                }
-                if (data.hoveredNode)
-                {
-                    const char* gateName;
-                    switch (data.hoveredNode->GetGate())
-                    {
-                    case Gate::OR:        gateName = "or";        break;
-                    case Gate::AND:       gateName = "and";       break;
-                    case Gate::NOR:       gateName = "nor";       break;
-                    case Gate::XOR:       gateName = "xor";       break;
-                    case Gate::RESISTOR:  gateName = "resistor";  break;
-                    case Gate::CAPACITOR: gateName = "capacitor"; break;
-                    case Gate::LED:       gateName = "LED";       break;
-                    case Gate::DELAY:     gateName = "delay";     break;
-                    default:
-                        _ASSERT_EXPR(false, L"Missing specialization for gate name");
-                        gateName = "ERROR";
-                        break;
-                    }
-                    DrawText(TextFormat("outputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    DrawText(TextFormat("inputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    DrawText(TextFormat("id: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    DrawText(TextFormat("index: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    DrawText(TextFormat("hovering: %s", gateName), 2, data.windowHeight - (++i * 12), 8, WHITE);
-                }
-
-                // Buttons
-                constexpr IVec2 tooltipNameOffset(16 + 4, 16 + 1);
-                constexpr IVec2 tooltipSeprOffset = tooltipNameOffset + Height(8 + 8 / 2);
-                constexpr IVec2 tooltipDescOffset = tooltipNameOffset + Height(8 + 8);
                 // Mode
                 if (data.CursorInUIBounds(ProgramData::ButtonBound_Mode()))
                 {
@@ -2068,7 +2190,7 @@ int main()
                     DrawRectangleIRect(ProgramData::ButtonBound_Clipboard(), WIPBLUE);
                     // Tooltip
                     DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, 8, WHITE);
-                    constexpr IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(16);
+                    const IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(data.ButtonWidth());
                     // Clipboard preview
                     if (data.IsClipboardValid())
                         data.clipboard->DrawSelectionPreview(
@@ -2082,14 +2204,15 @@ int main()
 
                 data.DrawModeIcon(data.baseMode, ProgramData::ButtonBound_Mode().xy, WHITE);
                 data.DrawGateIcon(data.gatePick, ProgramData::ButtonBound_Gate().xy, WHITE);
+                
                 for (IVec2 offset = IVec2(-1); offset.y <= 1; ++offset.y)
                 {
                     for (offset.x = -1; offset.x <= 1; ++offset.x)
                     {
-                        DrawTextIV(TextFormat("%i", data.storedExtraParam), ProgramData::ButtonBound_Parameter().xy + IVec2(2,1) + offset, 8, BLACK);
+                        DrawTextIV(TextFormat("%i", data.storedExtraParam), ProgramData::ButtonBound_Parameter().xy + IVec2(2, 1) + offset, data.FontSize(), BLACK);
                     }
                 }
-                DrawTextIV(TextFormat("%i", data.storedExtraParam), ProgramData::ButtonBound_Parameter().xy + IVec2(2,1), 8, WHITE);
+                DrawTextIV(TextFormat("%i", data.storedExtraParam), ProgramData::ButtonBound_Parameter().xy + IVec2(2,1), data.FontSize(), WHITE);
                 DrawTextureIV(data.GetBlueprintIcon(), ProgramData::ButtonBound_Blueprints().xy, WHITE);
                 DrawTextureIV(data.GetClipboardIcon(), ProgramData::ButtonBound_Clipboard().xy, data.IsClipboardValid() ? WHITE : ColorAlpha(WHITE, 0.25f));
             }
