@@ -1332,6 +1332,11 @@ void Update_Edit(ProgramData& data)
             data.Edit_WireBeingDragged() = nullptr;
             data.Edit_SelectionRec() = data.GetSelectionBounds();
         }
+        else if (data.IsSelectionRectValid() && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
+        {
+            data.selection.clear();
+            data.Edit_SelectionWIP() = true;
+        }
         else
         {
             data.selection.clear();
