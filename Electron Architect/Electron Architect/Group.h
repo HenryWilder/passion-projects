@@ -32,6 +32,7 @@ public:
     IRect GetBounds() const;
 
     IRect GetLabelBounds() const;
+    const std::string& GetLabel() const;
 
     IRect GetCaptureBounds() const;
     void SetCaptureBounds(IRect bounds);

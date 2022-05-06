@@ -1566,6 +1566,13 @@ void Draw_Edit(ProgramData& data)
             DrawText(TextFormat("\twire ptr: %p", data.hoveredWire), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText("hovered wire-joint", 2, data.windowHeight - (++i * 12), 8, WHITE);
         }
+        // Group hover stats
+        else if (!!data.hoveredGroup)
+        {
+            DrawText(TextFormat("\tlabel: %s", data.hoveredGroup->GetLabel().c_str()), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tptr: %p", data.hoveredGroup), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText("hovered group", 2, data.windowHeight - (++i * 12), 8, WHITE);
+        }
     }
 }
 
