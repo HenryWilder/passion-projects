@@ -1317,7 +1317,7 @@ void Update_Edit(ProgramData& data)
                 }
             }
         }
-        else if (data.Edit_NodeBeingDragged())
+        else if (data.Edit_NodeBeingDragged() && !data.SelectionExists())
         {
             data.Edit_HoveringMergable() = NodeWorld::Get().FindNodeAtPos(data.cursorPos); // This will come before updating the position of the dragged node
         }
@@ -1582,7 +1582,7 @@ void Draw_Edit(ProgramData& data)
         data.hoveredWire->end->Draw(uiColors[UI_COLOR_OUTPUT]);
     }
 
-    if (!!data.Edit_NodeBeingDragged() && data.Edit_HoveringMergable() && !data.SelectionExists())
+    if (!!data.Edit_NodeBeingDragged() && data.Edit_HoveringMergable())
     {
         DrawCircleIV(data.Edit_NodeBeingDragged()->GetPosition(), Node::g_nodeRadius * 2.0f, uiColors[UI_COLOR_SPECIAL]);
         data.DrawTooltipAtCursor(
