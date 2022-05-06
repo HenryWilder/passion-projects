@@ -1885,7 +1885,7 @@ void Draw_Overlay_Button(ProgramData& data)
             if (InBoundingBox(rec, data.cursorUIPos))
             {
                 color = WHITE;
-                DrawText(ProgramData::GetModeTooltipName(m), data.ButtonWidth() + 4, data.ButtonWidth() + 1 + rec.y, 8, WHITE);
+                DrawText(ProgramData::GetModeTooltipName(m), data.ButtonWidth() + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), WHITE);
             }
             else
                 color = DEADCABLE;
@@ -1905,7 +1905,7 @@ void Draw_Overlay_Button(ProgramData& data)
             if (InBoundingBox(rec, data.cursorUIPos))
             {
                 color = WHITE;
-                DrawText(ProgramData::GetGateTooltipName(g), data.ButtonWidth() * 2 + 4, data.ButtonWidth() + 1 + rec.y, 8, WHITE);
+                DrawText(ProgramData::GetGateTooltipName(g), data.ButtonWidth() * 2 + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), WHITE);
             }
             else
                 color = DEADCABLE;
@@ -1931,7 +1931,7 @@ void Draw_Overlay_Button(ProgramData& data)
                     text = TextFormat(data.deviceParameterTextFmt, Node::GetColorName(v));
                 else
                     text = TextFormat(data.deviceParameterTextFmt, v);
-                DrawText(text, data.ButtonWidth() * 3 + 4, data.ButtonWidth() + 1 + rec.y, 8, WHITE);
+                DrawText(text, data.ButtonWidth() * 3 + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), WHITE);
             }
             else
                 DrawRectangleIRect(rec, color);
@@ -2006,8 +2006,8 @@ void Draw_Menu_Select(ProgramData& data)
         DrawLine(x, 0, x, data.windowHeight, SPACEGRAY);
     }
     DrawRectangle(0,0,data.windowWidth, data.ButtonWidth(), SPACEGRAY);
-    const int padding = data.ButtonWidth() / 2 - 4;
-    DrawText("Blueprints", padding, padding, 8, WHITE);
+    const int padding = data.ButtonWidth() / 2 - (data.FontSize() / 2);
+    DrawText("Blueprints", padding, padding, data.FontSize(), WHITE);
     for (Blueprint* bp : NodeWorld::Get().GetBlueprints())
     {
         IRect rec = bp->GetSelectionPreviewRect(pos);
@@ -2187,9 +2187,9 @@ int main()
                 DrawRectangleIRect(data.IsClipboardValid() ? WithClipboard : WithoutClipboard, SPACEGRAY);
                 DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
 
-                const IVec2 tooltipNameOffset = IVec2(data.ButtonWidth()) + IVec2(4,1);
-                const IVec2 tooltipSeprOffset = tooltipNameOffset + Height(8 + 8 / 2);
-                const IVec2 tooltipDescOffset = tooltipNameOffset + Height(8 + 8);
+                const IVec2 tooltipNameOffset = IVec2(data.ButtonWidth()) + IVec2(data.FontSize() / 2, data.FontSize() / 8);
+                const IVec2 tooltipSeprOffset = tooltipNameOffset + Height(data.FontSize() + data.FontSize() / 2);
+                const IVec2 tooltipDescOffset = tooltipNameOffset + Height(data.FontSize() + data.FontSize());
 
                 // Mode
                 if (data.CursorInUIBounds(ProgramData::ButtonBound_Mode()))
@@ -2197,10 +2197,10 @@ int main()
                     DrawRectangleIRect(ProgramData::ButtonBound_Mode(), WIPBLUE);
                     // Tooltip
                     const char* name = data.GetModeTooltipName(data.baseMode);
-                    DrawTextIV(name, ProgramData::ButtonBound_Mode().xy + tooltipNameOffset, 8, WHITE);
-                    Width separatorWidth(MeasureText(name, 8));
+                    DrawTextIV(name, ProgramData::ButtonBound_Mode().xy + tooltipNameOffset, data.FontSize(), WHITE);
+                    Width separatorWidth(MeasureText(name, data.FontSize()));
                     DrawLineIV(ProgramData::ButtonBound_Mode().xy + tooltipSeprOffset, separatorWidth, WHITE); // Separator
-                    DrawTextIV(data.GetModeTooltipDescription(data.baseMode), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, 8, WHITE);
+                    DrawTextIV(data.GetModeTooltipDescription(data.baseMode), ProgramData::ButtonBound_Mode().xy + tooltipDescOffset, data.FontSize(), WHITE);
                 }
                 // Gate
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Gate()))
@@ -2208,10 +2208,10 @@ int main()
                     DrawRectangleIRect(ProgramData::ButtonBound_Gate(), WIPBLUE);
                     // Tooltip
                     const char* name = data.GetGateTooltipName(data.gatePick);
-                    DrawTextIV(name, ProgramData::ButtonBound_Gate().xy + tooltipNameOffset, 8, WHITE);
-                    Width separatorWidth(MeasureText(name, 8));
+                    DrawTextIV(name, ProgramData::ButtonBound_Gate().xy + tooltipNameOffset, data.FontSize(), WHITE);
+                    Width separatorWidth(MeasureText(name, data.FontSize()));
                     DrawLineIV(ProgramData::ButtonBound_Gate().xy + tooltipSeprOffset, separatorWidth, WHITE);
-                    DrawTextIV(data.GetGateTooltipDescription(data.gatePick), ProgramData::ButtonBound_Gate().xy + tooltipDescOffset, 8, WHITE);
+                    DrawTextIV(data.GetGateTooltipDescription(data.gatePick), ProgramData::ButtonBound_Gate().xy + tooltipDescOffset, data.FontSize(), WHITE);
                 }
                 // Extra param
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Parameter()))
@@ -2224,21 +2224,21 @@ int main()
                         text = TextFormat(data.deviceParameterTextFmt, Node::GetColorName(data.storedExtraParam));
                     else
                         text = TextFormat(data.deviceParameterTextFmt, data.storedExtraParam);
-                    DrawTextIV(text, ProgramData::ButtonBound_Parameter().xy + tooltipNameOffset, 8, WHITE);
+                    DrawTextIV(text, ProgramData::ButtonBound_Parameter().xy + tooltipNameOffset, data.FontSize(), WHITE);
                 }
                 // Blueprints
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Blueprints()))
                 {
                     DrawRectangleIRect(ProgramData::ButtonBound_Blueprints(), WIPBLUE);
                     // Tooltip
-                    DrawTextIV("Blueprints", ProgramData::ButtonBound_Blueprints().xy + tooltipNameOffset, 8, WHITE);
+                    DrawTextIV("Blueprints", ProgramData::ButtonBound_Blueprints().xy + tooltipNameOffset, data.FontSize(), WHITE);
                 }
                 // Clipboard
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Clipboard()))
                 {
                     DrawRectangleIRect(ProgramData::ButtonBound_Clipboard(), WIPBLUE);
                     // Tooltip
-                    DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, 8, WHITE);
+                    DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, data.FontSize(), WHITE);
                     const IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(data.ButtonWidth());
                     // Clipboard preview
                     if (data.IsClipboardValid())
