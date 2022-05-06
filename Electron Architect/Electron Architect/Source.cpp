@@ -2015,12 +2015,13 @@ int main()
                 EndMode2D();
 
                 // UI
-                {
-                    constexpr IRect WithClipboard = ProgramData::buttonBounds[0] + Width(16) * (_countof(ProgramData::buttonBounds) - 1);
-                    constexpr IRect WithoutClipboard = WithClipboard - Width(ProgramData::ButtonBound_Clipboard());
-                    DrawRectangleIRect(data.IsClipboardValid() ? WithClipboard : WithoutClipboard, SPACEGRAY);
-                    DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
-                }
+
+                constexpr IRect WithClipboard = ProgramData::buttonBounds[0] + Width(16) * (_countof(ProgramData::buttonBounds) - 1);
+                constexpr IRect WithoutClipboard = WithClipboard - Width(ProgramData::ButtonBound_Clipboard());
+                DrawRectangleIRect(data.IsClipboardValid() ? WithClipboard : WithoutClipboard, SPACEGRAY);
+                DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
+                DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 0, data.windowHeight - 20, 8, { 255,0,0,255 });
+                DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 0, data.windowHeight - 10, 8, { 0,255,0,255 });
 
                 // Buttons
                 constexpr IVec2 tooltipNameOffset(16 + 4, 16 + 1);
