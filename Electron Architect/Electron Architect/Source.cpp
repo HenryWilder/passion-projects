@@ -1582,7 +1582,7 @@ void Draw_Edit(ProgramData& data)
         data.hoveredWire->end->Draw(uiColors[UI_COLOR_OUTPUT]);
     }
 
-    if (!!data.Edit_NodeBeingDragged() && data.Edit_HoveringMergable())
+    if (!!data.Edit_NodeBeingDragged() && data.Edit_HoveringMergable() && !data.SelectionExists())
     {
         DrawCircleIV(data.Edit_NodeBeingDragged()->GetPosition(), Node::g_nodeRadius * 2.0f, uiColors[UI_COLOR_SPECIAL]);
         data.DrawTooltipAtCursor(
