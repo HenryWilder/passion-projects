@@ -26,7 +26,7 @@ Blueprint g_clipboardBP; // Reusable address so clipboard doesn't have to delete
 
 #pragma region UI Colors
 
-Color uiColors[16];
+Color uiColors[17];
 enum UIColorLocs : unsigned
 {
     UI_COLOR_BACKGROUND, // BLACK
@@ -45,6 +45,7 @@ enum UIColorLocs : unsigned
     UI_COLOR_ERROR, // MAGENTA
     UI_COLOR_DESTRUCTIVE, // DESTRUCTIVERED
     UI_COLOR_CAUTION, // CAUTIONYELLOW
+    UI_COLOR_BLUEPRINTS_BACKGROUND,
 };
 
 #pragma endregion
@@ -979,6 +980,8 @@ public:
         uiColors[UI_COLOR_DESTRUCTIVE] = DESTRUCTIVERED;
         uiColors[UI_COLOR_CAUTION] = CAUTIONYELLOW;
 
+        uiColors[UI_COLOR_BLUEPRINTS_BACKGROUND] = { 10,15,30, 255 };
+
         if (!file.is_open()) // In case of deletion
         {
             file.close();
@@ -1003,6 +1006,7 @@ public:
                 "\nerror_color="        << ConfigColorToString(uiColors[UI_COLOR_ERROR]      ) <<
                 "\ndestruction_color="  << ConfigColorToString(uiColors[UI_COLOR_DESTRUCTIVE]) <<
                 "\ncaution_color="      << ConfigColorToString(uiColors[UI_COLOR_CAUTION]    ) <<
+                "\nblueprint_background_color=" << ConfigColorToString(uiColors[UI_COLOR_BLUEPRINTS_BACKGROUND]) <<
                 "\n\n[LOD]"
                 "\nblueprint_menu_lod=1"
                 "\nclipboard_preview_lod=0"
@@ -2112,7 +2116,7 @@ void Draw_Menu_Select(ProgramData& data)
     constexpr int halfGrid = g_gridSize / 2;
     IVec2 pos(0, data.ButtonWidth());
     int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
-    ClearBackground({ 10,15,30, 255 });
+    ClearBackground(uiColors[UI_COLOR_BLUEPRINTS_BACKGROUND]);
     for (int y = 0; y < data.windowHeight; y += g_gridSize)
     {
         DrawLine(0, y, data.windowWidth, y, uiColors[UI_COLOR_BACKGROUND1]);
