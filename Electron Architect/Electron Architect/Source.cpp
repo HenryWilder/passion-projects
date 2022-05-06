@@ -1965,7 +1965,7 @@ void Update_Menu_Select(ProgramData& data)
     constexpr int halfGrid = g_gridSize / 2;
     if (data.b_cursorMoved)
     {
-        IVec2 pos(0, 16);
+        IVec2 pos(0, data.ButtonWidth());
         int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
         data.BPSelect_Hovering() = nullptr;
         for (Blueprint* bp : NodeWorld::Get().GetBlueprints())
@@ -1994,7 +1994,7 @@ void Update_Menu_Select(ProgramData& data)
 void Draw_Menu_Select(ProgramData& data)
 {
     constexpr int halfGrid = g_gridSize / 2;
-    IVec2 pos(0,16);
+    IVec2 pos(0, data.ButtonWidth());
     int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
     ClearBackground({ 10,15,30, 255 });
     for (int y = 0; y < data.windowHeight; y += g_gridSize)
@@ -2005,8 +2005,9 @@ void Draw_Menu_Select(ProgramData& data)
     {
         DrawLine(x, 0, x, data.windowHeight, SPACEGRAY);
     }
-    DrawRectangle(0,0,data.windowWidth, 16, SPACEGRAY);
-    DrawText("Blueprints (WIP)", 4,4, 8, WHITE);
+    DrawRectangle(0,0,data.windowWidth, data.ButtonWidth(), SPACEGRAY);
+    const int padding = data.ButtonWidth() / 2 - 4;
+    DrawText("Blueprints", padding, padding, 8, WHITE);
     for (Blueprint* bp : NodeWorld::Get().GetBlueprints())
     {
         IRect rec = bp->GetSelectionPreviewRect(pos);
