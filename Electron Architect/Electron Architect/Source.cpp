@@ -26,7 +26,7 @@ Blueprint g_clipboardBP; // Reusable address so clipboard doesn't have to delete
 
 #pragma region UI Colors
 
-Color uiColors[17];
+Color uiColors[18];
 enum UIColorLocs : unsigned
 {
     UI_COLOR_BACKGROUND, // BLACK
@@ -44,6 +44,7 @@ enum UIColorLocs : unsigned
     UI_COLOR_ACTIVE, // REDSTONE
     UI_COLOR_ERROR, // MAGENTA
     UI_COLOR_DESTRUCTIVE, // DESTRUCTIVERED
+    UI_COLOR_SPECIAL, // VIOLET
     UI_COLOR_CAUTION, // CAUTIONYELLOW
     UI_COLOR_BLUEPRINTS_BACKGROUND,
 };
@@ -978,6 +979,7 @@ public:
 
         uiColors[UI_COLOR_ERROR] = MAGENTA;
         uiColors[UI_COLOR_DESTRUCTIVE] = DESTRUCTIVERED;
+        uiColors[UI_COLOR_SPECIAL] = VIOLET;
         uiColors[UI_COLOR_CAUTION] = CAUTIONYELLOW;
 
         uiColors[UI_COLOR_BLUEPRINTS_BACKGROUND] = { 10,15,30, 255 };
@@ -1005,6 +1007,7 @@ public:
                 "\nactive_color="       << ConfigColorToString(uiColors[UI_COLOR_ACTIVE]     ) <<
                 "\nerror_color="        << ConfigColorToString(uiColors[UI_COLOR_ERROR]      ) <<
                 "\ndestruction_color="  << ConfigColorToString(uiColors[UI_COLOR_DESTRUCTIVE]) <<
+                "\naugment_color="      << ConfigColorToString(uiColors[UI_COLOR_SPECIAL]    ) <<
                 "\ncaution_color="      << ConfigColorToString(uiColors[UI_COLOR_CAUTION]    ) <<
                 "\nblueprint_background_color=" << ConfigColorToString(uiColors[UI_COLOR_BLUEPRINTS_BACKGROUND]) <<
                 "\n\n[LOD]"
@@ -1581,10 +1584,10 @@ void Draw_Edit(ProgramData& data)
 
     if (!!data.Edit_NodeBeingDragged() && data.Edit_HoveringMergable())
     {
-        DrawCircleIV(data.Edit_NodeBeingDragged()->GetPosition(), Node::g_nodeRadius * 2.0f, VIOLET);
+        DrawCircleIV(data.Edit_NodeBeingDragged()->GetPosition(), Node::g_nodeRadius * 2.0f, uiColors[UI_COLOR_SPECIAL]);
         data.DrawTooltipAtCursor(
             "Hold [shift] to merge on release.\n"
-            "Otherwise, nodes will only be swapped.", VIOLET);
+            "Otherwise, nodes will only be swapped.", uiColors[UI_COLOR_SPECIAL]);
     }
 
     EndMode2D();
@@ -1776,7 +1779,7 @@ void Draw_Erase(ProgramData& data)
             if (data.hoveredNode->IsSpecialErasable())
                 color = uiColors[UI_COLOR_AVAILABLE];
             else if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
-                color = VIOLET;
+                color = uiColors[UI_COLOR_SPECIAL];
             else
                 color = uiColors[UI_COLOR_DESTRUCTIVE];
         }
@@ -1807,7 +1810,7 @@ void Draw_Erase(ProgramData& data)
             }
             else if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
             {
-                color = VIOLET;
+                color = uiColors[UI_COLOR_SPECIAL];
                 text = "Complex bipass";
             }
             else
