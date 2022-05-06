@@ -640,9 +640,11 @@ Wire* NodeWorld::FindWireElbowAtPos(IVec2 pos) const
 
 void NodeWorld::FindNodesInRect(std::vector<Node*>& result, IRect rec) const
 {
+    // Exclusive bounds
+    IRect bounds = ShrinkIRect(rec);
     for (Node* node : nodes)
     {
-        if (InBoundingBox(rec, node->GetPosition()))
+        if (InBoundingBox(bounds, node->GetPosition()))
             result.push_back(node);
     }
 }
