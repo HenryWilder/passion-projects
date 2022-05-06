@@ -839,8 +839,8 @@ public:
                 }
             }
             constexpr int halfgrid = gridSize / 2;
-            DrawLine(bounds.x, -halfgrid, bounds.x + bounds.w, -halfgrid, LIFELESSNEBULA);
-            DrawLine(-halfgrid, bounds.y, -halfgrid, bounds.y + bounds.h, LIFELESSNEBULA);
+            DrawLine(bounds.x, -halfgrid, bounds.x + bounds.w, -halfgrid, uiColors[UI_COLOR_BACKGROUND2]);
+            DrawLine(-halfgrid, bounds.y, -halfgrid, bounds.y + bounds.h, uiColors[UI_COLOR_BACKGROUND2]);
         }
     }
     void DrawGrid(int gridSize) const
@@ -867,8 +867,8 @@ public:
                 }
             }
             int halfgrid = gridSize / 2;
-            DrawLine(bounds.x, -halfgrid, bounds.x + bounds.w, -halfgrid, LIFELESSNEBULA);
-            DrawLine(-halfgrid, bounds.y, -halfgrid, bounds.y + bounds.h, LIFELESSNEBULA);
+            DrawLine(bounds.x, -halfgrid, bounds.x + bounds.w, -halfgrid, uiColors[UI_COLOR_BACKGROUND2]);
+            DrawLine(-halfgrid, bounds.y, -halfgrid, bounds.y + bounds.h, uiColors[UI_COLOR_BACKGROUND2]);
         }
     }
 
@@ -1020,12 +1020,41 @@ public:
             std::string attribute = line.substr(0, line.find('='));
             std::string value = line.substr(line.find('=') + 1);
 
+            // Colors
             if (attribute == "background_color")
                 uiColors[UI_COLOR_BACKGROUND] = ConfigStrToColor(value);
-            else if (attribute == "midground_color")
+            else if (attribute == "background1_color")
                 uiColors[UI_COLOR_BACKGROUND1] = ConfigStrToColor(value);
+            else if (attribute == "background2_color")
+                uiColors[UI_COLOR_BACKGROUND2] = ConfigStrToColor(value);
+            else if (attribute == "background3_color")
+                uiColors[UI_COLOR_BACKGROUND3] = ConfigStrToColor(value);
+            else if (attribute == "foreground3_color")
+                uiColors[UI_COLOR_FOREGROUND3] = ConfigStrToColor(value);
+            else if (attribute == "foreground2_color")
+                uiColors[UI_COLOR_FOREGROUND2] = ConfigStrToColor(value);
+            else if (attribute == "foreground1_color")
+                uiColors[UI_COLOR_FOREGROUND1] = ConfigStrToColor(value);
             else if (attribute == "foreground_color")
                 uiColors[UI_COLOR_FOREGROUND] = ConfigStrToColor(value);
+            else if (attribute == "input_color")
+                uiColors[UI_COLOR_INPUT] = ConfigStrToColor(value);
+            else if (attribute == "output_color")
+                uiColors[UI_COLOR_OUTPUT] = ConfigStrToColor(value);
+            else if (attribute == "available_color")
+                uiColors[UI_COLOR_AVAILABLE] = ConfigStrToColor(value);
+            else if (attribute == "interact_color")
+                uiColors[UI_COLOR_INTERACT] = ConfigStrToColor(value);
+            else if (attribute == "active_color")
+                uiColors[UI_COLOR_ACTIVE] = ConfigStrToColor(value);
+            else if (attribute == "error_color")
+                uiColors[UI_COLOR_ERROR] = ConfigStrToColor(value);
+            else if (attribute == "destruction_color")
+                uiColors[UI_COLOR_DESTRUCTIVE] = ConfigStrToColor(value);
+            else if (attribute == "caution_color")
+                uiColors[UI_COLOR_CAUTION] = ConfigStrToColor(value);
+
+            // Integers
             else if (attribute == "blueprint_menu_lod")
                 blueprintLOD = std::stoi(value);
             else if (attribute == "clipboard_preview_lod")
@@ -1146,13 +1175,13 @@ void Draw_Pen(ProgramData& data)
         IVec2 elbow;
         IVec2 end = data.cursorPos;
         elbow = Wire::GetLegalElbowPosition(start, end, data.Pen_CurrentWireElbowConfig());
-        Wire::Draw(start, elbow, end, WIPBLUE);
-        Node::Draw(end, data.gatePick, WIPBLUE);
+        Wire::Draw(start, elbow, end, uiColors[UI_COLOR_AVAILABLE]);
+        Node::Draw(end, data.gatePick, uiColors[UI_COLOR_AVAILABLE]);
     }
 
     if (!!data.hoveredWire)
     {
-        data.hoveredWire->Draw(WIPBLUE);
+        data.hoveredWire->Draw(uiColors[UI_COLOR_AVAILABLE]);
     }
     else if (!!data.hoveredNode)
     {
@@ -1178,7 +1207,7 @@ void Draw_Pen(ProgramData& data)
     }
     else if (!!data.hoveredNode)
     {
-        data.hoveredNode->Draw(WIPBLUE);
+        data.hoveredNode->Draw(uiColors[UI_COLOR_AVAILABLE]);
     }
 
     EndMode2D();
@@ -1216,23 +1245,23 @@ void Draw_Pen(ProgramData& data)
                     stateName = "\tactive";
                 else
                     stateName = "\tinactive";
-                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             }
             DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_OUTPUT]);
             DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_INPUT]);
-            DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             DrawText("hovered node", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
         // Wire hover stats
         else if (!!data.hoveredWire)
         {
-            DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->end), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\t\tserial: %u", NodeWorld::Get().NodeID(data.hoveredWire->end)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->end), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            DrawText(TextFormat("\t\tserial: %u", NodeWorld::Get().NodeID(data.hoveredWire->end)), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             DrawText("\toutput", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_OUTPUT]);
-            DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->start), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\t\tserial: %u", NodeWorld::Get().NodeID(data.hoveredWire->start)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->start), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            DrawText(TextFormat("\t\tserial: %u", NodeWorld::Get().NodeID(data.hoveredWire->start)), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             DrawText("\tinput", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_INPUT]);
             // State
             {
@@ -1241,9 +1270,9 @@ void Draw_Pen(ProgramData& data)
                     stateName = "\tactive";
                 else
                     stateName = "\tinactive";
-                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             }
-            DrawText(TextFormat("\tptr: %p", data.hoveredWire), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tptr: %p", data.hoveredWire), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             DrawText("hovered wire", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
     }
@@ -1483,26 +1512,26 @@ void Draw_Edit(ProgramData& data)
 {
     if (!!data.hoveredGroup)
     {
-        data.hoveredGroup->Highlight(INTERFERENCEGRAY);
+        data.hoveredGroup->Highlight(uiColors[UI_COLOR_FOREGROUND1]);
     }
     else if (data.Edit_GroupCorner().Valid())
     {
         Color color;
         if (data.Edit_DraggingGroupCorner())
-            color = INTERFERENCEGRAY;
+            color = uiColors[UI_COLOR_FOREGROUND1];
         else
             color = data.Edit_GroupCorner().group->GetColor();
         DrawRectangleIRect(data.Edit_GroupCorner().GetCollisionRect(), color);
     }
 
     DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(uiColors[UI_COLOR_BACKGROUND1], 0.5));
-    DrawRectangleLines(data.Edit_SelectionRec().x, data.Edit_SelectionRec().y, data.Edit_SelectionRec().w, data.Edit_SelectionRec().h, LIFELESSNEBULA);
+    DrawRectangleLines(data.Edit_SelectionRec().x, data.Edit_SelectionRec().y, data.Edit_SelectionRec().w, data.Edit_SelectionRec().h, uiColors[UI_COLOR_BACKGROUND2]);
 
     NodeWorld::Get().DrawWires();
 
     for (Node* node : data.selection)
     {
-        DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, WIPBLUE);
+        DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, uiColors[UI_COLOR_AVAILABLE]);
     }
 
     if (!!data.hoveredWire)
@@ -1517,16 +1546,16 @@ void Draw_Edit(ProgramData& data)
         for (int i = 0; i < _countof(configOrder); ++i)
         {
             IVec2 p = data.hoveredWire->GetLegalElbowPosition(configOrder[i]);
-            Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(WIPBLUE, 0.25f));
-            DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(WIPBLUE, 0.5f));
+            Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(uiColors[UI_COLOR_AVAILABLE], 0.25f));
+            DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(uiColors[UI_COLOR_AVAILABLE], 0.5f));
         }
 
-        data.hoveredWire->Draw(WIPBLUE);
+        data.hoveredWire->Draw(uiColors[UI_COLOR_AVAILABLE]);
         Color elbowColor;
         if (!!data.Edit_WireBeingDragged())
-            elbowColor = WIPBLUE;
+            elbowColor = uiColors[UI_COLOR_AVAILABLE];
         else
-            elbowColor = CAUTIONYELLOW;
+            elbowColor = uiColors[UI_COLOR_CAUTION];
         data.hoveredWire->DrawElbow(elbowColor);
     }
 
@@ -1534,7 +1563,7 @@ void Draw_Edit(ProgramData& data)
 
     if (!!data.hoveredNode)
     {
-        data.hoveredNode->Draw(CAUTIONYELLOW);
+        data.hoveredNode->Draw(uiColors[UI_COLOR_CAUTION]);
     }
     if (!!data.hoveredWire)
     {
@@ -1586,15 +1615,15 @@ void Draw_Edit(ProgramData& data)
                 }
             }
 
-            if (DELs) DrawText(TextFormat("\t\tdelay: %i", DELs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            if (LEDs) DrawText(TextFormat("\t\tLED: %i", LEDs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            if (CAPs) DrawText(TextFormat("\t\tcapacitor: %i", CAPs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            if (RESs) DrawText(TextFormat("\t\tresistor: %i", RESs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            if (XORs) DrawText(TextFormat("\t\txor: %i", XORs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            if (NORs) DrawText(TextFormat("\t\tnor: %i", NORs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            if (ANDs) DrawText(TextFormat("\t\tand: %i", ANDs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            if (ORs)  DrawText(TextFormat("\t\tor: %i", ORs), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\ttotal: %i", data.selection.size()), 2, data.windowHeight - (++i * 12), 8, INTERFERENCEGRAY);
+            if (DELs) DrawText(TextFormat("\t\tdelay: %i", DELs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            if (LEDs) DrawText(TextFormat("\t\tLED: %i", LEDs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            if (CAPs) DrawText(TextFormat("\t\tcapacitor: %i", CAPs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            if (RESs) DrawText(TextFormat("\t\tresistor: %i", RESs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            if (XORs) DrawText(TextFormat("\t\txor: %i", XORs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            if (NORs) DrawText(TextFormat("\t\tnor: %i", NORs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            if (ANDs) DrawText(TextFormat("\t\tand: %i", ANDs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            if (ORs)  DrawText(TextFormat("\t\tor: %i", ORs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            DrawText(TextFormat("\ttotal: %i", data.selection.size()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND1]);
             DrawText("selection", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
 
@@ -1625,13 +1654,13 @@ void Draw_Edit(ProgramData& data)
                     stateName = "\tactive";
                 else
                     stateName = "\tinactive";
-                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             }
             DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_OUTPUT]);
             DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_INPUT]);
-            DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             DrawText("hovered node", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
         // Joint hover stats
@@ -1646,15 +1675,15 @@ void Draw_Edit(ProgramData& data)
             case ElbowConfig::diagonalB: configurationName = "diagonal from output"; break;
             default: configurationName = "ERROR"; break;
             }
-            DrawText(TextFormat("\tconfiguration: %s", configurationName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\twire ptr: %p", data.hoveredWire), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tconfiguration: %s", configurationName), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            DrawText(TextFormat("\twire ptr: %p", data.hoveredWire), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             DrawText("hovered wire-joint", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
         // Group hover stats
         else if (!!data.hoveredGroup)
         {
-            DrawText(TextFormat("\tlabel: %s", data.hoveredGroup->GetLabel().c_str()), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\tptr: %p", data.hoveredGroup), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tlabel: %s", data.hoveredGroup->GetLabel().c_str()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            DrawText(TextFormat("\tptr: %p", data.hoveredGroup), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             DrawText("hovered group", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
     }
@@ -1719,17 +1748,17 @@ void Draw_Erase(ProgramData& data)
     if (!!data.hoveredGroup)
     {
         IRect rec = data.hoveredGroup->GetLabelBounds();
-        data.hoveredGroup->Highlight(MAGENTA);
-        DrawLineEx({ (float)rec.x, (float)rec.y }, { (float)rec.x + (float)rec.h, (float)rec.Bottom() }, 3, DESTRUCTIVERED);
-        DrawLineEx({ (float)rec.x, (float)rec.Bottom() }, { (float)rec.x + (float)rec.h, (float)rec.y }, 3, DESTRUCTIVERED);
+        data.hoveredGroup->Highlight(uiColors[UI_COLOR_ERROR]);
+        DrawLineEx({ (float)rec.x, (float)rec.y }, { (float)rec.x + (float)rec.h, (float)rec.Bottom() }, 3, uiColors[UI_COLOR_DESTRUCTIVE]);
+        DrawLineEx({ (float)rec.x, (float)rec.Bottom() }, { (float)rec.x + (float)rec.h, (float)rec.y }, 3, uiColors[UI_COLOR_DESTRUCTIVE]);
     }
 
     NodeWorld::Get().DrawWires();
 
     if (!!data.hoveredWire)
     {
-        data.hoveredWire->Draw(MAGENTA);
-        DrawCross(data.cursorPos, DESTRUCTIVERED);
+        data.hoveredWire->Draw(uiColors[UI_COLOR_ERROR]);
+        DrawCross(data.cursorPos, uiColors[UI_COLOR_DESTRUCTIVE]);
     }
     else if (!!data.hoveredNode)
     {
@@ -1737,14 +1766,14 @@ void Draw_Erase(ProgramData& data)
         if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
         {
             if (data.hoveredNode->IsSpecialErasable())
-                color = WIPBLUE;
+                color = uiColors[UI_COLOR_AVAILABLE];
             else if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
                 color = VIOLET;
             else
-                color = DESTRUCTIVERED;
+                color = uiColors[UI_COLOR_DESTRUCTIVE];
         }
         else
-            color = MAGENTA;
+            color = uiColors[UI_COLOR_ERROR];
 
         for (Wire* wire : data.hoveredNode->GetWires())
         {
@@ -1757,7 +1786,7 @@ void Draw_Erase(ProgramData& data)
     if (!!data.hoveredNode)
     {
         data.hoveredNode->Draw(uiColors[UI_COLOR_BACKGROUND]);
-        DrawCross(data.hoveredNode->GetPosition(), DESTRUCTIVERED);
+        DrawCross(data.hoveredNode->GetPosition(), uiColors[UI_COLOR_DESTRUCTIVE]);
 
         if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
         {
@@ -1765,7 +1794,7 @@ void Draw_Erase(ProgramData& data)
             Color color;
             if (data.hoveredNode->IsSpecialErasable())
             {
-                color = WIPBLUE;
+                color = uiColors[UI_COLOR_AVAILABLE];
                 text = "Simple bipass";
             }
             else if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
@@ -1775,7 +1804,7 @@ void Draw_Erase(ProgramData& data)
             }
             else
             {
-                color = DESTRUCTIVERED;
+                color = uiColors[UI_COLOR_DESTRUCTIVE];
                 size_t iCount = data.hoveredNode->GetInputCount();
                 size_t oCount = data.hoveredNode->GetOutputCount();
 
@@ -1829,12 +1858,12 @@ void Draw_Interact(ProgramData& data)
 
     for (const Node* node : NodeWorld::Get().GetStartNodes())
     {
-        node->Draw(WIPBLUE);
+        node->Draw(uiColors[UI_COLOR_AVAILABLE]);
     }
 
     if (!!data.hoveredNode)
     {
-        data.hoveredNode->Draw(CAUTIONYELLOW);
+        data.hoveredNode->Draw(uiColors[UI_COLOR_CAUTION]);
     }
 
     EndMode2D();
@@ -1856,12 +1885,12 @@ void Draw_Interact(ProgramData& data)
                     stateName = "\tactive";
                 else
                     stateName = "\tinactive";
-                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             }
             DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_OUTPUT]);
-            DrawText(TextFormat("\tinteraction serial: %u", NodeWorld::Get().StartNodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tinteraction serial: %u", NodeWorld::Get().StartNodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
+            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             DrawText("hovered interactable node", 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND]);
         }
     }
@@ -1971,7 +2000,7 @@ void Draw_Overlay_Button(ProgramData& data)
                 DrawText(ProgramData::GetModeTooltipName(m), data.ButtonWidth() + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
             }
             else
-                color = DEADCABLE;
+                color = uiColors[UI_COLOR_FOREGROUND3];
             data.DrawModeIcon(m, rec.xy, color);
             rec.y += data.ButtonWidth();
         }
@@ -1991,7 +2020,7 @@ void Draw_Overlay_Button(ProgramData& data)
                 DrawText(ProgramData::GetGateTooltipName(g), data.ButtonWidth() * 2 + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
             }
             else
-                color = DEADCABLE;
+                color = uiColors[UI_COLOR_FOREGROUND3];
             data.DrawGateIcon(g, rec.xy, color);
             rec.y += data.ButtonWidth();
         }
@@ -2007,7 +2036,7 @@ void Draw_Overlay_Button(ProgramData& data)
             Color color = Node::g_resistanceBands[v];
             if (InBoundingBox(rec, data.cursorUIPos))
             {
-                DrawRectangleIRect(rec, WIPBLUE);
+                DrawRectangleIRect(rec, uiColors[UI_COLOR_AVAILABLE]);
                 DrawRectangleIRect(ExpandIRect(rec, -2), color);
                 const char* text;
                 if (data.gatePick == Gate::LED)
@@ -2040,7 +2069,7 @@ void Draw_Overlay_Paste(ProgramData& data)
     NodeWorld::Get().DrawWires();
     NodeWorld::Get().DrawNodes();
 
-    data.clipboard->DrawSelectionPreview(data.cursorPos - IVec2(g_gridSize), ColorAlpha(LIFELESSNEBULA, 0.5f), HAUNTINGWHITE, LIFELESSNEBULA, DEADCABLE, data.pastePreviewLOD);
+    data.clipboard->DrawSelectionPreview(data.cursorPos - IVec2(g_gridSize), ColorAlpha(uiColors[UI_COLOR_BACKGROUND2], 0.5f), uiColors[UI_COLOR_FOREGROUND2], uiColors[UI_COLOR_BACKGROUND2], uiColors[UI_COLOR_FOREGROUND3], data.pastePreviewLOD);
 }
 
 void Update_Menu_Select(ProgramData& data)
@@ -2105,15 +2134,15 @@ void Draw_Menu_Select(ProgramData& data)
         Color foregroundIO;
         if (!!data.BPSelect_Hovering() && bp == data.BPSelect_Hovering()) [[unlikely]]
         {
-            background = WIPBLUE;
-            foreground = INTERFERENCEGRAY;
-            foregroundIO = HAUNTINGWHITE;
+            background = uiColors[UI_COLOR_AVAILABLE];
+            foreground = uiColors[UI_COLOR_FOREGROUND1];
+            foregroundIO = uiColors[UI_COLOR_FOREGROUND2];
         }
         else [[likely]]
         {
             background = uiColors[UI_COLOR_BACKGROUND1];
-            foreground = DEADCABLE;
-            foregroundIO = LIFELESSNEBULA;
+            foreground = uiColors[UI_COLOR_FOREGROUND3];
+            foregroundIO = uiColors[UI_COLOR_BACKGROUND2];
         }
 
         bp->DrawSelectionPreview(pos, background, foreground, foregroundIO, ColorAlpha(foreground, 0.25f), data.blueprintLOD);
@@ -2277,7 +2306,7 @@ int main()
                 // Mode
                 if (data.CursorInUIBounds(ProgramData::ButtonBound_Mode()))
                 {
-                    DrawRectangleIRect(ProgramData::ButtonBound_Mode(), WIPBLUE);
+                    DrawRectangleIRect(ProgramData::ButtonBound_Mode(), uiColors[UI_COLOR_AVAILABLE]);
                     // Tooltip
                     const char* name = data.GetModeTooltipName(data.baseMode);
                     DrawTextIV(name, ProgramData::ButtonBound_Mode().xy + tooltipNameOffset, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
@@ -2288,7 +2317,7 @@ int main()
                 // Gate
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Gate()))
                 {
-                    DrawRectangleIRect(ProgramData::ButtonBound_Gate(), WIPBLUE);
+                    DrawRectangleIRect(ProgramData::ButtonBound_Gate(), uiColors[UI_COLOR_AVAILABLE]);
                     // Tooltip
                     const char* name = data.GetGateTooltipName(data.gatePick);
                     DrawTextIV(name, ProgramData::ButtonBound_Gate().xy + tooltipNameOffset, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
@@ -2299,7 +2328,7 @@ int main()
                 // Extra param
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Parameter()))
                 {
-                    DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), WIPBLUE);
+                    DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), uiColors[UI_COLOR_AVAILABLE]);
                     DrawRectangleIRect(ShrinkIRect(ProgramData::ButtonBound_Parameter(), 2), data.ExtraParamColor());
                     // Tooltip
                     const char* text;
@@ -2312,14 +2341,14 @@ int main()
                 // Blueprints
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Blueprints()))
                 {
-                    DrawRectangleIRect(ProgramData::ButtonBound_Blueprints(), WIPBLUE);
+                    DrawRectangleIRect(ProgramData::ButtonBound_Blueprints(), uiColors[UI_COLOR_AVAILABLE]);
                     // Tooltip
                     DrawTextIV("Blueprints", ProgramData::ButtonBound_Blueprints().xy + tooltipNameOffset, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
                 }
                 // Clipboard
                 else if (data.CursorInUIBounds(ProgramData::ButtonBound_Clipboard()))
                 {
-                    DrawRectangleIRect(ProgramData::ButtonBound_Clipboard(), WIPBLUE);
+                    DrawRectangleIRect(ProgramData::ButtonBound_Clipboard(), uiColors[UI_COLOR_AVAILABLE]);
                     // Tooltip
                     DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", ProgramData::ButtonBound_Clipboard().xy + tooltipNameOffset, data.FontSize(), uiColors[UI_COLOR_FOREGROUND]);
                     const IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(data.ButtonWidth());
@@ -2328,9 +2357,9 @@ int main()
                         data.clipboard->DrawSelectionPreview(
                             ProgramData::ButtonBound_Clipboard().xy + clipboardPreviewOffset,
                             uiColors[UI_COLOR_BACKGROUND1],
-                            DEADCABLE,
-                            LIFELESSNEBULA,
-                            ColorAlpha(DEADCABLE, 0.25f),
+                            uiColors[UI_COLOR_FOREGROUND3],
+                            uiColors[UI_COLOR_BACKGROUND2],
+                            ColorAlpha(uiColors[UI_COLOR_FOREGROUND3], 0.25f),
                             data.clipboardPreviewLOD);
                 }
 
