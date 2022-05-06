@@ -480,8 +480,7 @@ public:
                 "Left click a wire to erase only that wire, disconnecting the nodes without erasing them.";
         case Mode::INTERACT:
             return
-                "Left click a node without any inputs (such nodes will render in BLUE) to toggle it between outputting true and false.\n"
-                "NOTE: Framerate is intentionally lowered from 120 to 24 while in this mode for ease of inspection.";
+                "Left click a node without any inputs (such nodes will render in \"available_color\" (blue by default)) to toggle it between outputting true and false.";
 
         default:
             _ASSERT_EXPR(false, L"Missing tooltip description for selected mode");
@@ -2088,7 +2087,7 @@ void Draw_Overlay_Paste(ProgramData& data)
     data.clipboard->DrawSelectionPreview(data.cursorPos - IVec2(g_gridSize), ColorAlpha(uiColors[UI_COLOR_BACKGROUND2], 0.5f), uiColors[UI_COLOR_FOREGROUND2], uiColors[UI_COLOR_BACKGROUND2], uiColors[UI_COLOR_FOREGROUND3], data.pastePreviewLOD);
 }
 
-void Update_Menu_Select(ProgramData& data)
+void Update_Menu_Blueprints(ProgramData& data)
 {
     constexpr int halfGrid = g_gridSize / 2;
     if (data.b_cursorMoved)
@@ -2119,7 +2118,7 @@ void Update_Menu_Select(ProgramData& data)
         data.SetMode(Mode::PASTE);
     }
 }
-void Draw_Menu_Select(ProgramData& data)
+void Draw_Menu_Blueprints(ProgramData& data)
 {
     constexpr int halfGrid = g_gridSize / 2;
     IVec2 pos(0, data.ButtonWidth());
@@ -2168,7 +2167,7 @@ void Draw_Menu_Select(ProgramData& data)
         maxY = std::max(maxY, rec.Bottom());
     }
     if (!!data.BPSelect_Hovering())
-        data.DrawTooltipAtCursor(data.BPSelect_Hovering()->name.c_str(), uiColors[UI_COLOR_FOREGROUND]);
+        data.DrawTooltipAtCursor_Shadowed(data.BPSelect_Hovering()->name.c_str(), uiColors[UI_COLOR_FOREGROUND]);
 }
 
 int main()
@@ -2256,7 +2255,7 @@ int main()
         // Overlay
         case Mode::BUTTON:      Update_Overlay_Button(data);    break;
         case Mode::PASTE:       Update_Overlay_Paste(data);     break;
-        case Mode::BP_SELECT:   Update_Menu_Select(data);       break;
+        case Mode::BP_SELECT:   Update_Menu_Blueprints(data);       break;
         }
 
     EVAL:
@@ -2300,7 +2299,7 @@ int main()
             case Mode::PASTE:       Draw_Overlay_Paste(data);   break;
 
                 // Menu
-            case Mode::BP_SELECT:   Draw_Menu_Select(data);     break;
+            case Mode::BP_SELECT:   Draw_Menu_Blueprints(data);     break;
             }
 
             if (!data.ModeIsMenu())
