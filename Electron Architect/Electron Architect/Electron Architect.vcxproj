@@ -211,12 +211,15 @@ copy /b "$(ProjectDir)icons_mode.png" "$(OutDir)";</Command>
     <ClCompile Include="Wire.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icons_blueprint.png" />
+    <Image Include="icons_blueprint16x.png" />
     <Image Include="icons_gate16x.png" />
-    <Image Include="icons_mode.png" />
+    <Image Include="icons_mode16x.png" />
     <Image Include="icons_gate32x.png" />
-    <Image Include="icon_blueprints.png" />
-    <Image Include="icon_clipboard.png" />
+    <Image Include="icons_mode32x.png" />
+    <Image Include="icon_blueprints16x.png" />
+    <Image Include="icon_blueprints32x.png" />
+    <Image Include="icon_clipboard16x.png" />
+    <Image Include="icon_clipboard32x.png" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Blueprint.h" />

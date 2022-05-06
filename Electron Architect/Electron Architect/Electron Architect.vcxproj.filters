@@ -47,7 +47,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icons_mode.png">
+    <Image Include="icons_mode16x.png">
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="icons_gate16x.png">
@@ -56,13 +56,22 @@
     <Image Include="icons_gate32x.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="icon_clipboard.png">
+    <Image Include="icon_clipboard16x.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="icons_blueprint.png">
+    <Image Include="icons_blueprint16x.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="icon_blueprints.png">
+    <Image Include="icon_blueprints16x.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icons_mode32x.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icon_blueprints32x.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icon_clipboard32x.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

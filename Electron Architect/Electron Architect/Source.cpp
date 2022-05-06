@@ -16,7 +16,6 @@ enum class Mode
     ERASE,
     INTERACT,
 
-    GATE,
     BUTTON,
     PASTE,
 
@@ -33,9 +32,12 @@ struct ProgramData
         SetExitKey(0);
         SetTargetFPS(60);
 
-        blueprintIcon = LoadTexture("icon_blueprints.png");
-        clipboardIcon = LoadTexture("icon_clipboard.png");
-        modeIcons = LoadTexture("icons_mode.png");
+        blueprintIcon16x = LoadTexture("icon_blueprints16x.png");
+        blueprintIcon32x = LoadTexture("icon_blueprints32x.png");
+        clipboardIcon16x = LoadTexture("icon_clipboard16x.png");
+        clipboardIcon32x = LoadTexture("icon_clipboard32x.png");
+        modeIcons16x = LoadTexture("icons_mode16x.png");
+        modeIcons32x = LoadTexture("icons_mode32x.png");
         gateIcons16x = LoadTexture("icons_gate16x.png");
         gateIcons32x = LoadTexture("icons_gate32x.png");
 
@@ -47,10 +49,15 @@ struct ProgramData
     {
         NodeWorld::Get().Save("session.cg");
         NodeWorld::Get().Export("render.svg");
-        UnloadTexture(gateIcons32x);
+
+        UnloadTexture(blueprintIcon16x);
+        UnloadTexture(blueprintIcon32x);
+        UnloadTexture(clipboardIcon16x);
+        UnloadTexture(clipboardIcon32x);
+        UnloadTexture(modeIcons16x);
+        UnloadTexture(modeIcons32x);
         UnloadTexture(gateIcons16x);
-        UnloadTexture(modeIcons);
-        UnloadTexture(clipboardIcon);
+        UnloadTexture(gateIcons32x);
 
         CloseWindow();
     }
@@ -74,31 +81,24 @@ struct ProgramData
         Gate::LED,
         Gate::DELAY,
     };
-    static constexpr IRect buttonBounds[] =
-    {
-        IRect( 0, 0, 16), // Mode
-        IRect(16, 0, 16), // Gate
-        IRect(32, 0, 16), // Parameter
-        IRect(48, 0, 16), // Blueprints
-        IRect(64, 0, 16), // Clipboard
-    };
-    static constexpr IRect ButtonBound_Mode()
+    static IRect buttonBounds[5];
+    static IRect ButtonBound_Mode()
     {
         return buttonBounds[0];
     }
-    static constexpr IRect ButtonBound_Gate()
+    static IRect ButtonBound_Gate()
     {
         return buttonBounds[1];
     }
-    static constexpr IRect ButtonBound_Parameter()
+    static IRect ButtonBound_Parameter()
     {
         return buttonBounds[2];
     }
-    static constexpr IRect ButtonBound_Blueprints()
+    static IRect ButtonBound_Blueprints()
     {
         return buttonBounds[3];
     }
-    static constexpr IRect ButtonBound_Clipboard()
+    static IRect ButtonBound_Clipboard()
     {
         return buttonBounds[4];
     }
@@ -118,9 +118,12 @@ struct ProgramData
     };
 
 private:
-    static Texture2D blueprintIcon;
-    static Texture2D clipboardIcon;
-    static Texture2D modeIcons;
+    static Texture2D blueprintIcon16x;
+    static Texture2D blueprintIcon32x;
+    static Texture2D clipboardIcon16x;
+    static Texture2D clipboardIcon32x;
+    static Texture2D modeIcons16x;
+    static Texture2D modeIcons32x;
     static Texture2D gateIcons16x;
     static Texture2D gateIcons32x;
 public:
@@ -266,10 +269,6 @@ public: // Accessors for unions
     * Overlay
     **********/
 
-    // Gate
-    ACCESSOR(Gate_RadialMenuCenter(),       mode == Mode::GATE,         overlay.gate.radialMenuCenter)
-    ACCESSOR(Gate_OverlappedSection(),      mode == Mode::GATE,         overlay.gate.overlappedSection)
-
     // Button
     ACCESSOR(Button_DropdownActive(),       mode == Mode::BUTTON,       overlay.button.dropdownActive)
 
@@ -281,15 +280,25 @@ public: // Accessors for unions
 
 public:
 
-    static Texture2D GetBlueprintIcon()
+    Texture2D GetBlueprintIcon()
     {
-        return blueprintIcon;
+        switch (uiScale)
+        {
+        default:
+        case 1: return blueprintIcon16x;
+        case 2: return blueprintIcon32x;
+        }
     }
-    static Texture2D GetClipboardIcon()
+    Texture2D GetClipboardIcon()
     {
-        return clipboardIcon;
+        switch (uiScale)
+        {
+        default:
+        case 1: return clipboardIcon16x;
+        case 2: return clipboardIcon32x;
+        }
     }
-    static void DrawModeIcon(Mode mode, IVec2 pos, Color tint)
+    void DrawModeIcon(Mode mode, IVec2 pos, Color tint)
     {
         IVec2 offset;
         switch (mode)
@@ -300,9 +309,14 @@ public:
         case Mode::INTERACT: offset = IVec2(1, 1); break;
         default: return;
         }
-        DrawIcon<16>(modeIcons, offset, pos, tint);
+        switch (uiScale)
+        {
+        case 1: DrawIcon<16>(modeIcons16x, offset, pos, tint); break;
+        case 2: DrawIcon<32>(modeIcons32x, offset, pos, tint); break;
+        default: break;
+        }
     };
-    static void DrawGateIcon16x(Gate gate, IVec2 pos, Color tint)
+    void DrawGateIcon(Gate gate, IVec2 pos, Color tint)
     {
         IVec2 offset;
         switch (gate)
@@ -318,25 +332,13 @@ public:
         case Gate::DELAY:     offset = IVec2(1, 3); break;
         default: return;
         }
-        DrawIcon<16>(gateIcons16x, offset, pos, tint);
-    };
-    static void DrawGateIcon32x(Gate gate, IVec2 pos, Color tint)
-    {
-        IVec2 offset;
-        switch (gate)
+        switch (uiScale)
         {
-        case Gate::OR:  offset = IVec2(0, 0); break;
-        case Gate::AND: offset = IVec2(1, 0); break;
-        case Gate::NOR: offset = IVec2(0, 1); break;
-        case Gate::XOR: offset = IVec2(1, 1); break;
-
-        case Gate::RESISTOR:  offset = IVec2(0, 2); break;
-        case Gate::CAPACITOR: offset = IVec2(1, 2); break;
-        case Gate::LED:       offset = IVec2(0, 3); break;
-        default: return;
+        case 1: DrawIcon<16>(gateIcons16x, offset, pos, tint); break;
+        case 2: DrawIcon<32>(gateIcons32x, offset, pos, tint); break;
+        default: break;
         }
-        DrawIcon<32>(gateIcons32x, offset, pos, tint);
-    };
+    }
 
     static bool ModeIsMenu(Mode mode)
     {
@@ -350,7 +352,7 @@ public:
     static bool ModeIsOverlay(Mode mode)
     {
         // Modes which can be active simultaneously with a non-overlay mode
-        return mode == Mode::GATE || mode == Mode::BUTTON || mode == Mode::PASTE || ModeIsMenu(mode);
+        return mode == Mode::BUTTON || mode == Mode::PASTE || ModeIsMenu(mode);
     }
     inline bool ModeIsOverlay() const
     {
@@ -376,10 +378,6 @@ public:
         // Initialize any non-zero values
         switch (newMode)
         {
-        case Mode::GATE:
-            Gate_RadialMenuCenter() = cursorUIPos;
-            break;
-
         case Mode::BUTTON:
             Button_DropdownActive() = cursorUIPos.x / 16;
             break;
@@ -709,7 +707,7 @@ public:
         }
 
         // Gate hotkeys
-        if (ModeIsBasic() || mode == Mode::GATE)
+        if (ModeIsBasic())
         {
             if      (IsKeyPressed(KEY_ONE))   SetGate(Gate::OR);
             else if (IsKeyPressed(KEY_TWO))   SetGate(Gate::AND);
@@ -957,16 +955,34 @@ frames_per_tick=6)txt";
             else if (attribute == "ui_scale")
             {
                 uiScale = std::stoi(value);
-                if (uiScale > 2) uiScale = 2;
-                if (uiScale < 1) uiScale = 1;
+                if (uiScale > 2)
+                {
+                    uiScale = 2;
+                    for (int i = 0; i < _countof(buttonBounds); ++i)
+                    {
+                        buttonBounds[0] = IRect(i * 32, 0, 32);
+                    }
+                }
+                if (uiScale < 1)
+                {
+                    uiScale = 1;
+                    for (int i = 0; i < _countof(buttonBounds); ++i)
+                    {
+                        buttonBounds[0] = IRect(i * 16, 0, 16);
+                    }
+                }
             }
         }
         file.close();
     }
 };
-Texture2D ProgramData::blueprintIcon;
-Texture2D ProgramData::clipboardIcon;
-Texture2D ProgramData::modeIcons;
+IRect ProgramData::buttonBounds[5];
+Texture2D ProgramData::blueprintIcon16x;
+Texture2D ProgramData::blueprintIcon32x;
+Texture2D ProgramData::clipboardIcon16x;
+Texture2D ProgramData::clipboardIcon32x;
+Texture2D ProgramData::modeIcons16x;
+Texture2D ProgramData::modeIcons32x;
 Texture2D ProgramData::gateIcons16x;
 Texture2D ProgramData::gateIcons32x;
 
@@ -1541,113 +1557,6 @@ void Draw_Interact(ProgramData& data)
     }
 }
 
-void Update_Overlay_Gate(ProgramData& data)
-{
-    if (data.b_cursorMoved)
-    {
-        if (data.cursorUIPos.x < data.Gate_RadialMenuCenter().x)
-        {
-            if (data.cursorUIPos.y < data.Gate_RadialMenuCenter().y)
-                data.Gate_OverlappedSection() = 2;
-            else // cursorPos.y > data.Gate_RadialMenuCenter().y
-                data.Gate_OverlappedSection() = 3;
-        }
-        else // cursorPos.x > data.Gate_RadialMenuCenter().x
-        {
-            if (data.cursorUIPos.y < data.Gate_RadialMenuCenter().y)
-                data.Gate_OverlappedSection() = 1;
-            else // cursorPos.y > data.Gate_RadialMenuCenter().y
-                data.Gate_OverlappedSection() = 0;
-        }
-    }
-
-    bool leftMouse = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-    if (leftMouse || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-    {
-        if (leftMouse)
-            data.SetGate(ProgramData::radialGateOrder[data.Gate_OverlappedSection()]);
-
-        data.ClearOverlayMode();
-        SetMousePosition(data.Gate_RadialMenuCenter().x, data.Gate_RadialMenuCenter().y);
-        data.cursorUIPos = data.Gate_RadialMenuCenter(); // Todo: This doesn't update the non-UI cursorPos?
-    }
-}
-void Draw_Overlay_Gate(ProgramData& data)
-{
-    if (data.baseMode == Mode::PEN)
-    {
-        NodeWorld::Get().DrawWires();
-
-        if (!!data.Pen_CurrentWireStart())
-        {
-            IVec2 start = data.Pen_CurrentWireStart()->GetPosition();
-            IVec2 elbow;
-            IVec2 end = data.Gate_RadialMenuCenter();
-            elbow = Wire::GetLegalElbowPosition(start, end, data.Pen_CurrentWireElbowConfig());
-            Wire::Draw(start, elbow, end, WIPBLUE);
-            Node::Draw(end, data.gatePick, WIPBLUE);
-        }
-
-        NodeWorld::Get().DrawNodes();
-    }
-    else
-    {
-        NodeWorld::Get().DrawWires();
-        NodeWorld::Get().DrawNodes();
-    }
-
-    EndMode2D();
-
-    constexpr int menuRadius = 64;
-    constexpr int menuIconOffset = 12;
-    constexpr IVec2 menuOff[4] = {
-        IVec2(0, 0),
-        IVec2(0,-1),
-        IVec2(-1,-1),
-        IVec2(-1, 0),
-    };
-    constexpr IRect iconDest[4] = {
-        IRect(+menuIconOffset,      +menuIconOffset,      32, 32),
-        IRect(+menuIconOffset,      -menuIconOffset - 32, 32, 32),
-        IRect(-menuIconOffset - 32, -menuIconOffset - 32, 32, 32),
-        IRect(-menuIconOffset - 32, +menuIconOffset,      32, 32),
-    };
-    int x = data.Gate_RadialMenuCenter().x;
-    int y = data.Gate_RadialMenuCenter().y;
-    constexpr Color menuBackground = SPACEGRAY;
-    DrawCircleIV(data.Gate_RadialMenuCenter(), static_cast<float>(menuRadius + 4), menuBackground);
-
-    for (int i = 0; i < 4; ++i)
-    {
-        Color colorA;
-        Color colorB;
-        int radius;
-
-        if (i == data.Gate_OverlappedSection()) // Active
-        {
-            colorA = GLEEFULDUST;
-            colorB = INTERFERENCEGRAY;
-            radius = menuRadius + 8;
-        }
-        else // Inactive
-        {
-            colorA = LIFELESSNEBULA;
-            colorB = HAUNTINGWHITE;
-            radius = menuRadius;
-        }
-        BeginScissorMode(x + (menuOff[i].x * 8 + 4) + menuOff[i].x * radius, y + (menuOff[i].y * 8 + 4) + menuOff[i].y * radius, radius, radius);
-
-        float startAngle = static_cast<float>(i * 90);
-        DrawCircleSector({ static_cast<float>(x), static_cast<float>(y) }, static_cast<float>(radius), startAngle, startAngle + 90.0f, 8, colorA);
-        IVec2 rec = iconDest[i].xy;
-        rec.x += x;
-        rec.y += y;
-        ProgramData::DrawGateIcon32x(ProgramData::radialGateOrder[i], rec, colorB);
-
-        EndScissorMode();
-    }
-}
-
 void Update_Overlay_Button(ProgramData& data)
 {
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -1753,7 +1662,7 @@ void Draw_Overlay_Button(ProgramData& data)
             }
             else
                 color = DEADCABLE;
-            ProgramData::DrawModeIcon(m, rec.xy, color);
+            data.DrawModeIcon(m, rec.xy, color);
             rec.y += 16;
         }
     }
@@ -1773,7 +1682,7 @@ void Draw_Overlay_Button(ProgramData& data)
             }
             else
                 color = DEADCABLE;
-            ProgramData::DrawGateIcon16x(g, rec.xy, color);
+            data.DrawGateIcon(g, rec.xy, color);
             rec.y += 16;
         }
     }
@@ -1984,7 +1893,6 @@ int main()
         case Mode::INTERACT:    Update_Interact(data);          break;
 
         // Overlay
-        case Mode::GATE:        Update_Overlay_Gate(data);      break;
         case Mode::BUTTON:      Update_Overlay_Button(data);    break;
         case Mode::PASTE:       Update_Overlay_Paste(data);     break;
         case Mode::BP_SELECT:   Update_Menu_Select(data);       break;
@@ -2027,7 +1935,6 @@ int main()
             case Mode::INTERACT:    Draw_Interact(data);        break;
 
                 // Overlay
-            case Mode::GATE:        Draw_Overlay_Gate(data);    break;
             case Mode::BUTTON:      Draw_Overlay_Button(data);  break;
             case Mode::PASTE:       Draw_Overlay_Paste(data);   break;
 
@@ -2041,8 +1948,8 @@ int main()
 
                 // UI
 
-                constexpr IRect WithClipboard = ProgramData::buttonBounds[0] + Width(16) * (_countof(ProgramData::buttonBounds) - 1);
-                constexpr IRect WithoutClipboard = WithClipboard - Width(ProgramData::ButtonBound_Clipboard());
+                IRect WithClipboard = ProgramData::buttonBounds[0] + Width(16) * (_countof(ProgramData::buttonBounds) - 1);
+                IRect WithoutClipboard = WithClipboard - Width(ProgramData::ButtonBound_Clipboard());
                 DrawRectangleIRect(data.IsClipboardValid() ? WithClipboard : WithoutClipboard, SPACEGRAY);
                 DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
                 int i = 0;
@@ -2174,7 +2081,7 @@ int main()
                 }
 
                 data.DrawModeIcon(data.baseMode, ProgramData::ButtonBound_Mode().xy, WHITE);
-                data.DrawGateIcon16x(data.gatePick, ProgramData::ButtonBound_Gate().xy, WHITE);
+                data.DrawGateIcon(data.gatePick, ProgramData::ButtonBound_Gate().xy, WHITE);
                 for (IVec2 offset = IVec2(-1); offset.y <= 1; ++offset.y)
                 {
                     for (offset.x = -1; offset.x <= 1; ++offset.x)
