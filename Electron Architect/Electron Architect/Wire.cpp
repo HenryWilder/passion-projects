@@ -120,17 +120,16 @@ void Wire::SnapElbowToLegal(IVec2 pos)
         ElbowConfig::vertical,
         ElbowConfig::diagonalB,
     };
-    ElbowConfig pick = ElbowConfig(0);
     long shortestDist = LONG_MAX;
-    for (; pick; ++pick)
+    for (int i = 0; i < _countof(configOrder); ++i)
     {
-        long dist = DistanceSqr(pos, legal[i]);
+        IVec2 propPosed = GetLegalElbowPosition(configOrder[i]);
+        long dist = DistanceSqr(pos, propPosed);
         if (dist < shortestDist)
         {
             shortestDist = dist;
-            pick = i;
+            elbowConfig = configOrder[i];
+            elbow = propPosed;
         }
     }
-    elbowConfig = (ElbowConfig)pick; // Index of pick
-    elbow = legal[pick];
 }

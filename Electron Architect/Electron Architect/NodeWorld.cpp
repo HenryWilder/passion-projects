@@ -132,6 +132,11 @@ size_t NodeWorld::NodeID(Node* node)
     return std::find(nodes.begin(), nodes.end(), node) - nodes.begin();
 }
 
+size_t NodeWorld::StartNodeID(Node* node)
+{
+    return std::find(startNodes.begin(), startNodes.end(), node) - startNodes.begin();
+}
+
 void NodeWorld::DestroyNodes(std::vector<Node*>& removeList)
 {
     // Todo...

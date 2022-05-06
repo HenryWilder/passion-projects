@@ -1069,11 +1069,11 @@ void Draw_Pen(ProgramData& data)
 
     if (!!data.hoveredWire)
     {
-        data.hoveredWire->Draw(GOLD);
+        data.hoveredWire->Draw(WIPBLUE);
     }
-
-    if (!!data.hoveredNode)
+    else if (!!data.hoveredNode)
     {
+        // Todo: Can this please be based on the input and output ranges and not a test being run on an already partitioned vector?...
         for (const Wire* wire : data.hoveredNode->GetWires())
         {
             Color color;
@@ -1088,7 +1088,12 @@ void Draw_Pen(ProgramData& data)
 
     NodeWorld::Get().DrawNodes();
 
-    if (!!data.hoveredNode)
+    if (!!data.hoveredWire)
+    {
+        data.hoveredWire->start->Draw(INPUTLAVENDER);
+        data.hoveredWire->end->Draw(OUTPUTAPRICOT);
+    }
+    else if (!!data.hoveredNode)
     {
         data.hoveredNode->Draw(WIPBLUE);
     }
@@ -1130,8 +1135,8 @@ void Draw_Pen(ProgramData& data)
                     stateName = "\tinactive";
                 DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             }
-            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, OUTPUTAPRICOT);
+            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, INPUTLAVENDER);
             DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
@@ -1142,10 +1147,10 @@ void Draw_Pen(ProgramData& data)
         {
             DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->end), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\t\tserial: %u", NodeWorld::Get().NodeID(data.hoveredWire->end)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText("\toutput", 2, data.windowHeight - (++i * 12), 8, INTERFERENCEGRAY);
+            DrawText("\toutput", 2, data.windowHeight - (++i * 12), 8, OUTPUTAPRICOT);
             DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->start), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\t\tserial: %u", NodeWorld::Get().NodeID(data.hoveredWire->start)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText("\tinput", 2, data.windowHeight - (++i * 12), 8, INTERFERENCEGRAY);
+            DrawText("\tinput", 2, data.windowHeight - (++i * 12), 8, INPUTLAVENDER);
             // State
             {
                 const char* stateName;
@@ -1418,10 +1423,16 @@ void Draw_Edit(ProgramData& data)
 
     if (!!data.hoveredWire)
     {
-        IVec2 pts[4];
-        data.hoveredWire->GetLegalElbowPositions(pts);
-        for (const IVec2& p : pts)
+        constexpr ElbowConfig configOrder[] =
         {
+            ElbowConfig::horizontal,
+            ElbowConfig::diagonalA,
+            ElbowConfig::vertical,
+            ElbowConfig::diagonalB,
+        };
+        for (int i = 0; i < _countof(configOrder); ++i)
+        {
+            IVec2 p = data.hoveredWire->GetLegalElbowPosition(configOrder[i]);
             Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(WIPBLUE, 0.25f));
             DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(WIPBLUE, 0.5f));
         }
@@ -1532,8 +1543,8 @@ void Draw_Edit(ProgramData& data)
                     stateName = "\tinactive";
                 DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             }
-            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
-            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, OUTPUTAPRICOT);
+            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, INPUTLAVENDER);
             DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
             DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
@@ -1546,9 +1557,9 @@ void Draw_Edit(ProgramData& data)
             switch (data.hoveredWire->elbowConfig)
             {
             case ElbowConfig::horizontal: configurationName = "horizontal"; break;
-            case ElbowConfig::diagonalA: configurationName = "diagonal - input closer"; break;
+            case ElbowConfig::diagonalA: configurationName = "diagonal from input"; break;
             case ElbowConfig::vertical: configurationName = "vertical"; break;
-            case ElbowConfig::diagonalB: configurationName = "diagonal - output closer"; break;
+            case ElbowConfig::diagonalB: configurationName = "diagonal from output"; break;
             default: configurationName = "ERROR"; break;
             }
             DrawText(TextFormat("\tconfiguration: %s", configurationName), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
@@ -1733,6 +1744,35 @@ void Draw_Interact(ProgramData& data)
     if (!!data.hoveredNode)
     {
         data.hoveredNode->Draw(CAUTIONYELLOW);
+    }
+
+    EndMode2D();
+
+    // Stats
+    {
+        int i = 0;
+        // Cursor stats
+        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
+        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
+
+        // Node hover stats
+        if (!!data.hoveredNode)
+        {
+            // State
+            {
+                const char* stateName;
+                if (data.hoveredNode->GetState())
+                    stateName = "\tactive";
+                else
+                    stateName = "\tinactive";
+                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            }
+            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, OUTPUTAPRICOT);
+            DrawText(TextFormat("\tinteraction serial: %u", NodeWorld::Get().StartNodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tserial: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, HAUNTINGWHITE);
+            DrawText("hovered interactable node", 2, data.windowHeight - (++i * 12), 8, WHITE);
+        }
     }
 }
 
