@@ -2020,8 +2020,45 @@ int main()
                 constexpr IRect WithoutClipboard = WithClipboard - Width(ProgramData::ButtonBound_Clipboard());
                 DrawRectangleIRect(data.IsClipboardValid() ? WithClipboard : WithoutClipboard, SPACEGRAY);
                 DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
-                DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 0, data.windowHeight - 20, 8, { 255,0,0,255 });
-                DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 0, data.windowHeight - 10, 8, { 0,255,0,255 });
+                int i = 0;
+                DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 0, data.windowHeight - (++i * 12), 8, WHITE);
+                DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 0, data.windowHeight - (++i * 12), 8, WHITE);
+                if (data.SelectionExists())
+                {
+                    unsigned ORs = 0;
+                    unsigned ANDs = 0;
+                    unsigned NORs = 0;
+                    unsigned XORs = 0;
+                    unsigned RESs = 0;
+                    unsigned CAPs = 0;
+                    unsigned LEDs = 0;
+                    unsigned DELs = 0;
+
+                    for (Node* node : data.selection)
+                    {
+                        switch (node->GetGate())
+                        {
+                        case Gate::OR:        ++ORs;  break;
+                        case Gate::AND:       ++ANDs; break;
+                        case Gate::NOR:       ++NORs; break;
+                        case Gate::XOR:       ++XORs; break;
+                        case Gate::RESISTOR:  ++RESs; break;
+                        case Gate::CAPACITOR: ++CAPs; break;
+                        case Gate::LED:       ++LEDs; break;
+                        case Gate::DELAY:     ++DELs; break;
+                        }
+                    }
+
+                    if (DELs) DrawText(TextFormat("%i delay", DELs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (LEDs) DrawText(TextFormat("%i LED",   LEDs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (CAPs) DrawText(TextFormat("%i capacitor", CAPs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (RESs) DrawText(TextFormat("%i resistor", RESs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (XORs) DrawText(TextFormat("%i 'xor'", XORs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (NORs) DrawText(TextFormat("%i 'nor'", NORs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (ANDs) DrawText(TextFormat("%i 'and'", ANDs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (ORs)  DrawText(TextFormat("%i 'or'",  ORs),  0, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    DrawText(TextFormat("selected: %i", data.selection.size()), 0, data.windowHeight - (++i * 12), 8, WHITE);
+                }
 
                 // Buttons
                 constexpr IVec2 tooltipNameOffset(16 + 4, 16 + 1);
