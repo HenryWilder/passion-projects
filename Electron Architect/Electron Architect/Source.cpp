@@ -131,6 +131,7 @@ public:
     uint8_t blueprintLOD = 0;
     uint8_t clipboardPreviewLOD = 0;
     uint8_t pastePreviewLOD = 0;
+    uint8_t uiScale = 1;
 
     Mode mode = Mode::PEN;
     Mode baseMode = Mode::PEN;
@@ -952,6 +953,12 @@ frames_per_tick=6)txt";
             else if (attribute == "frames_per_tick")
             {
                 framesPerTick = std::stoi(value);
+            }
+            else if (attribute == "ui_scale")
+            {
+                uiScale = std::stoi(value);
+                if (uiScale > 2) uiScale = 2;
+                if (uiScale < 1) uiScale = 1;
             }
         }
         file.close();
