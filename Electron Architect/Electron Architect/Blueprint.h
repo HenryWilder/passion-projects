@@ -40,8 +40,18 @@ private: // Multithread functions
 public:
     Blueprint() : name("Unnamed blueprint"), extents() {}
     Blueprint(const std::vector<Node*>& src);
-    constexpr Blueprint(const char* name, IVec2 extents, std::vector<NodeBP>&& nodes, std::vector<WireBP>&& wires) :
-        name(name), extents(extents), nodes(std::begin(nodes), std::end(nodes)), wires(std::begin(wires), std::end(wires)) {}
+    Blueprint(const char* name, std::vector<NodeBP>&& nodes, std::vector<WireBP>&& wires) :
+        name(name), nodes(std::begin(nodes), std::end(nodes)), wires(std::begin(wires), std::end(wires))
+    {
+        extents = IVec2::Zero();
+        for (NodeBP node_bp : nodes)
+        {
+            if (node_bp.relativePosition.x > extents.x)
+                extents.x = node_bp.relativePosition.x;
+            if (node_bp.relativePosition.y > extents.y)
+                extents.y = node_bp.relativePosition.y;
+        }
+    }
 
     std::string name;
     IVec2 extents;

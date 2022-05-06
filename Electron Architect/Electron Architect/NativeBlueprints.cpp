@@ -6,7 +6,6 @@ Blueprint nativeBlueprints[] =
 {
     Blueprint(
         "NAND Gate",
-        IVec2(1,0) * g_gridSize,
         // Nodes
         {
             NodeBP(true, Gate::AND,  IVec2(0,0) * g_gridSize),
@@ -18,7 +17,6 @@ Blueprint nativeBlueprints[] =
         }),
     Blueprint(
         "XNOR Gate",
-        IVec2(1,0) * g_gridSize,
         // Nodes
         {
             NodeBP(true, Gate::XOR,  IVec2(0,0) * g_gridSize),
@@ -30,7 +28,6 @@ Blueprint nativeBlueprints[] =
         }),
     Blueprint(
         "Switch",
-        IVec2(2,0) * g_gridSize,
         // Nodes
         {
             NodeBP(true, Gate::OR,  IVec2(0,0) * g_gridSize),
@@ -44,7 +41,6 @@ Blueprint nativeBlueprints[] =
         }),
     Blueprint(
         "Gated SR Latch",
-        IVec2(4,1) * g_gridSize,
         // Nodes
         {
             NodeBP(true,  Gate::NOR, IVec2(0,1) * g_gridSize), // NOR instead of OR to prevent uninitialized-flicker
@@ -80,7 +76,6 @@ Blueprint nativeBlueprints[] =
         }),
     Blueprint(
         "Half-Adder",
-        IVec2(1,1) * g_gridSize,
         // Nodes
         {
             NodeBP(true, Gate::OR,  IVec2(0,1) * g_gridSize),
@@ -96,8 +91,25 @@ Blueprint nativeBlueprints[] =
             WireBP(1, 3, ElbowConfig::vertical),
         }),
     Blueprint(
+        "Half-Subtractor",
+        // Nodes
+        {
+            NodeBP(true, Gate::OR,  IVec2(0,1) * g_gridSize), // A
+            NodeBP(true, Gate::OR,  IVec2(0,0) * g_gridSize), // B
+            NodeBP(true, Gate::NOR, IVec2(1,1) * g_gridSize),
+            NodeBP(true, Gate::XOR, IVec2(2,0) * g_gridSize), // Difference
+            NodeBP(true, Gate::AND, IVec2(2,1) * g_gridSize), // Borrow
+        },
+        // Wires
+        {
+            WireBP(0, 2, ElbowConfig::vertical),
+            WireBP(0, 3, ElbowConfig::horizontal),
+            WireBP(1, 3, ElbowConfig::horizontal),
+            WireBP(1, 4, ElbowConfig::vertical),
+            WireBP(2, 4, ElbowConfig::vertical),
+        }),
+    Blueprint(
         "Full-Adder",
-        IVec2(3,1) * g_gridSize,
         // Nodes
         {
             NodeBP(true,  Gate::OR,  IVec2(0,0) * g_gridSize),
@@ -124,7 +136,6 @@ Blueprint nativeBlueprints[] =
         }),
     Blueprint(
         "Byte-Adder",
-        IVec2(3,15) * g_gridSize,
         // Nodes
         {
             // Bit 1
@@ -297,7 +308,6 @@ Blueprint nativeBlueprints[] =
         }),
     Blueprint(
         "Byte-Adder (Separated)",
-        IVec2(5,15) * g_gridSize,
         // Nodes
         {
             // Bit 1
