@@ -774,7 +774,11 @@ public:
 
         // Selection delete
         if ((IsKeyPressed(KEY_DELETE) || IsKeyPressed(KEY_BACKSPACE)) && SelectionExists())
+        {
             DestroySelection();
+            hoveredNode = nullptr;
+            hoveredWire = nullptr;
+        }
     }
 
     inline IVec2 GetCursorDelta() const
