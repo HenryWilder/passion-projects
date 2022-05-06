@@ -903,6 +903,24 @@ public:
     void ReloadConfig()
     {
         std::ifstream file("config.ini");
+        if (!file.is_open()) // In case of deletion
+        {
+            file.close();
+
+            std::ofstream replacement("config.ini");
+
+            replacement << R"txt([Colors]
+background_color=28|26|41|255
+[LOD]
+blueprint_menu_lod=1
+clipboard_preview_lod=0
+paste_preview_lod=4
+frames_per_tick=6)txt";
+
+            replacement.close();
+
+            file.open("config.ini");
+        }
         while (!file.eof())
         {
             std::string line;
