@@ -1177,6 +1177,7 @@ void Update_Edit(ProgramData& data)
             !data.Edit_DraggingGroup() &&
             !data.Edit_DraggingGroupCorner())
         {
+            data.Edit_GroupCorner().group = nullptr;
             data.hoveredGroup = nullptr;
             data.hoveredWire = nullptr;
             data.hoveredNode = NodeWorld::Get().FindNodeAtPos(data.cursorPos);
