@@ -1293,7 +1293,7 @@ void Update_Edit(ProgramData& data)
 {
     // Todo: fix bug with canceling multiple-drag (And update group dragging to match!!)
 
-    if (data.b_cursorMoved)
+    if (data.b_cursorMoved && !data.Edit_SelectionWIP())
     {
         if (!data.Edit_NodeBeingDragged() &&
             !data.Edit_WireBeingDragged() &&
