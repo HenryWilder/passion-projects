@@ -137,8 +137,8 @@ void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nod
     case 0: // Full wire quality
         for (const WireBP& wire_bp : wires)
         {
-            IVec2 start = nodes[wire_bp.startNodeIndex].relativePosition + offset - IVec2::One();
-            IVec2 end = nodes[wire_bp.endNodeIndex].relativePosition + offset - IVec2::One();
+            IVec2 start = nodes[wire_bp.startNodeIndex].relativePosition + offset;
+            IVec2 end = nodes[wire_bp.endNodeIndex].relativePosition + offset;
             IVec2 elbow = Wire::GetLegalElbowPosition(start, end, wire_bp.elbowConfig);
             Wire::Draw(start, elbow, end, wireColor);
         }
@@ -146,8 +146,8 @@ void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nod
     case 1: // Wires are straight lines without elbows
         for (const WireBP& wire_bp : wires)
         {
-            IVec2 start = nodes[wire_bp.startNodeIndex].relativePosition + offset - IVec2::One();
-            IVec2 end = nodes[wire_bp.endNodeIndex].relativePosition + offset - IVec2::One();
+            IVec2 start = nodes[wire_bp.startNodeIndex].relativePosition + offset;
+            IVec2 end = nodes[wire_bp.endNodeIndex].relativePosition + offset;
             DrawLineIV(start, end, wireColor);
         }
         break;

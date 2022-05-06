@@ -43,6 +43,8 @@ public:
     // CreateNode does not insert at the end of the nodes
     Node* CreateNode(IVec2 position, Gate gate, uint8_t extendedParam = 0);
     void DestroyNode(Node* node);
+    // Gets the index of the node in nodes
+    size_t NodeID(Node* node);
     // More efficient for bulk operation
     void DestroyNodes(std::vector<Node*>& removeList);
     // Invalidates input node and all its wires!

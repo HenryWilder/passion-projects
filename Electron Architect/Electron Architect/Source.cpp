@@ -2039,8 +2039,8 @@ int main()
                 DrawRectangleIRect(data.IsClipboardValid() ? WithClipboard : WithoutClipboard, SPACEGRAY);
                 DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
                 int i = 0;
-                DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 0, data.windowHeight - (++i * 12), 8, WHITE);
-                DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 0, data.windowHeight - (++i * 12), 8, WHITE);
+                DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
+                DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, WHITE);
                 if (data.SelectionExists())
                 {
                     unsigned ORs = 0;
@@ -2067,15 +2067,39 @@ int main()
                         }
                     }
 
-                    if (DELs) DrawText(TextFormat("%i delay", DELs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (LEDs) DrawText(TextFormat("%i LED",   LEDs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (CAPs) DrawText(TextFormat("%i capacitor", CAPs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (RESs) DrawText(TextFormat("%i resistor", RESs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (XORs) DrawText(TextFormat("%i 'xor'", XORs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (NORs) DrawText(TextFormat("%i 'nor'", NORs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (ANDs) DrawText(TextFormat("%i 'and'", ANDs), 0, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    if (ORs)  DrawText(TextFormat("%i 'or'",  ORs),  0, data.windowHeight - (++i * 12), 8, DEADCABLE);
-                    DrawText(TextFormat("selected: %i", data.selection.size()), 0, data.windowHeight - (++i * 12), 8, WHITE);
+                    if (DELs) DrawText(TextFormat("delay: %i", DELs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (LEDs) DrawText(TextFormat("LED: %i",   LEDs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (CAPs) DrawText(TextFormat("capacitor: %i", CAPs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (RESs) DrawText(TextFormat("resistor: %i", RESs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (XORs) DrawText(TextFormat("xor: %i", XORs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (NORs) DrawText(TextFormat("nor: %i", NORs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (ANDs) DrawText(TextFormat("and: %i", ANDs), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    if (ORs)  DrawText(TextFormat("or: %i",  ORs),  2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    DrawText(TextFormat("selected: %i", data.selection.size()), 2, data.windowHeight - (++i * 12), 8, WHITE);
+                }
+                if (data.hoveredNode)
+                {
+                    const char* gateName;
+                    switch (data.hoveredNode->GetGate())
+                    {
+                    case Gate::OR:        gateName = "or";        break;
+                    case Gate::AND:       gateName = "and";       break;
+                    case Gate::NOR:       gateName = "nor";       break;
+                    case Gate::XOR:       gateName = "xor";       break;
+                    case Gate::RESISTOR:  gateName = "resistor";  break;
+                    case Gate::CAPACITOR: gateName = "capacitor"; break;
+                    case Gate::LED:       gateName = "LED";       break;
+                    case Gate::DELAY:     gateName = "delay";     break;
+                    default:
+                        _ASSERT_EXPR(false, L"Missing specialization for gate name");
+                        gateName = "ERROR";
+                        break;
+                    }
+                    DrawText(TextFormat("outputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    DrawText(TextFormat("inputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    DrawText(TextFormat("id: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    DrawText(TextFormat("index: %u", NodeWorld::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, DEADCABLE);
+                    DrawText(TextFormat("hovering: %s", gateName), 2, data.windowHeight - (++i * 12), 8, WHITE);
                 }
 
                 // Buttons
