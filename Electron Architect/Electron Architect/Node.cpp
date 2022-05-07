@@ -192,7 +192,7 @@ void Node::Draw(IVec2 position, Gate gate, Color color)
             return;
         }
     }
-    else if (gate == Gate::AND || gate == Gate::RESISTOR || gate == Gate::CAPACITOR || gate == Gate::DELAY)
+    else if (gate == Gate::AND || gate == Gate::RESISTOR || gate == Gate::CAPACITOR || gate == Gate::DELAY || gate == Gate::BATTERY)
     {
         IRect rec(position - IVec2(nodeRadius), nodeRadius * 2);
         switch (gate)
@@ -213,6 +213,11 @@ void Node::Draw(IVec2 position, Gate gate, Color color)
             DrawRectangleIRect(ExpandIRect(rec), color);
             DrawRectangleIRect(rec, BLACK);
             DrawLine(rec.x, rec.y + rec.h / 2, rec.x + rec.w, rec.y + rec.h / 2, color);
+            return;
+        case Gate::BATTERY:
+            DrawRectangleIRect(ExpandIRect(rec), color);
+            DrawRectangleIRect(rec, BLACK);
+            DrawRectangleIRect(rec / Height(2), color);
             return;
         }
     }
@@ -269,7 +274,7 @@ void Node::Draw(Color color) const
     }
     else if (m_gate == Gate::CAPACITOR)
     {
-        DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, ColorAlpha(g_nodeColorInactive, 1.0f - GetChargePercent()));
+        DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, ColorAlpha(WHITE, 1.0f - GetChargePercent()));
     }
 }
 
