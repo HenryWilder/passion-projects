@@ -3,6 +3,9 @@
 #include <vector>
 #include "IVec.h"
 
+// Reusable address so clipboard doesn't have to delete
+extern Blueprint g_clipboardBP;
+
 struct Window
 {
     Window(int windowWidth, int windowHeight);

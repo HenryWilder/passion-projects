@@ -78,7 +78,7 @@ public:
 
     // Blueprint functions
 
-    void StoreBlueprint(Blueprint* bp);
+    void StoreBlueprint(Blueprint* bp); // Todo: make this window-wide instead of tab-specific
     void SpawnBlueprint(Blueprint* bp, IVec2 topLeft);
     const std::vector<Blueprint*>& GetBlueprints() const;
 

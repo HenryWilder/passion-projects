@@ -14,8 +14,6 @@
 #include "Mode.h"
 #include "Window.h"
 
-Blueprint g_clipboardBP; // Reusable address so clipboard doesn't have to delete
-
 int main()
 {
     /******************************************

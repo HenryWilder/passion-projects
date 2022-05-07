@@ -14,6 +14,8 @@
 #include "Mode.h"
 #include "Window.h"
 
+Blueprint g_clipboardBP;
+
 Window::Window(int windowWidth, int windowHeight) : windowWidth(windowWidth), windowHeight(windowHeight)
 {
     InitWindow(windowWidth, windowHeight, "Electron Architect");
@@ -31,8 +33,6 @@ Window::Window(int windowWidth, int windowHeight) : windowWidth(windowWidth), wi
 
     activeTab = 0;
     tabs.push_back(new Tab);
-
-    base = new EditTool; // So that it can be deleted
 
     SetMode(Mode::PEN);
     SetGate(Gate::OR);
@@ -77,7 +77,7 @@ int Window::FontSize() const
     }
 }
 
-void Window::DrawWindowIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint) const
+void Window::DrawUIIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint) const
 {
     switch (uiScale)
     {
@@ -106,24 +106,25 @@ ModeType Window::GetModeType()
 void Window::SetMode(Mode newMode)
 {
     b_cursorMoved = true;
-    if (!!overlayMode)
-        delete overlayMode;
-    if ()
-        overlayMode = NewToolOfMode(newMode);
 
-    if (!ModeIsOverlay(newMode))
+    if (!!overlay ? newMode != overlay->GetMode() : true)
     {
-        baseMode = newMode;
-        memset(&base, 0, sizeof(base));
+        if (!!overlay)
+            delete overlay;
+
+        if (TypeOfMode(newMode) != ModeType::Basic)
+            overlay = NewToolOfMode(newMode);
+        else // Mode is basic; no overlay
+            overlay = nullptr;
     }
-    memset(&overlay, 0, sizeof(overlay));
 
-    // Initialize any non-zero values
-    switch (newMode)
+    if (TypeOfMode(newMode) == ModeType::Basic &&
+        (!!base ? newMode != base->GetMode() : true))
     {
-    case Mode::BUTTON:
-        Button_DropdownActive() = cursorUIPos.x / ButtonWidth();
-        break;
+        if (!!base) [[likely]] // There should only be one point in the program where base is nullptr. Namely, the start.
+            delete base;
+
+        base = NewToolOfMode(newMode);
     }
 }
 
@@ -157,7 +158,8 @@ void Window::SetGate(Gate newGate)
 
 void Window::ClearOverlayMode()
 {
-    SetMode(baseMode->GetMode());
+    _ASSERT_EXPR(!!base, L"Base mode was not initialized or got nullified");
+    SetMode(base->GetMode());
 }
 
 void Window::IncrementTick()
@@ -192,19 +194,16 @@ void Window::UpdateCursorPos()
 
 void Window::UpdateCamera()
 {
-    if (!ModeIsMenu())
+    if (GetModeType() != ModeType::Menu)
     {
         if (GetMouseWheelMove() > 0 && camera.zoom < 2.0f)
-        {
             camera.zoom *= 2;
-        }
-        else if (GetMouseWheelMove() < 0 && camera.zoom > 0.125f)
-        {
-            camera.zoom /= 2;
-        }
 
-        camera.target.x += (float)(IsKeyDown(KEY_RIGHT) - IsKeyDown(KEY_LEFT)) * g_gridSize;
-        camera.target.y += (float)(IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP)) * g_gridSize;
+        else if (GetMouseWheelMove() < 0 && camera.zoom > 0.125f)
+            camera.zoom /= 2;
+
+        camera.target.x += (float)(((int)IsKeyDown(KEY_RIGHT) - (int)IsKeyDown(KEY_LEFT)) * g_gridSize);
+        camera.target.y += (float)(((int)IsKeyDown(KEY_DOWN)  - (int)IsKeyDown(KEY_UP))   * g_gridSize);
     }
 }
 
@@ -221,21 +220,24 @@ void Window::CopySelectionToClipboard()
 
 void Window::MakeGroupFromSelection()
 {
-    Tab::Get().CreateGroup(Edit_SelectionRec());
-    Edit_SelectionRec() = IRect(0);
+    _ASSERT_EXPR(base->GetMode() == Mode::EDIT, L"Group from selection shouldn't be possible outside of edit mode");
+    EditTool* edit = dynamic_cast<EditTool*>(base);
+    CurrentTab().CreateGroup(edit->selectionRec);
+    edit->selectionRec = IRect(0);
     selection.clear();
 }
 
 bool Window::IsSelectionRectValid() const
 {
-    return mode == Mode::EDIT && !Edit_SelectionWIP() && Edit_SelectionRec().w > 0 && Edit_SelectionRec().h > 0;
+    EditTool* edit = dynamic_cast<EditTool*>(base);
+    return !!edit && !edit->selectionWIP && edit->selectionRec.w > 0 && edit->selectionRec.h > 0;
 }
 
 void Window::SaveBlueprint()
 {
     if (!IsClipboardValid())
         return;
-    Tab::Get().StoreBlueprint(clipboard);
+    CurrentTab().StoreBlueprint(clipboard);
     clipboard->Save();
 }
 
