@@ -627,7 +627,7 @@ void Window::DrawTooltipAtCursor_Shadowed(const char* text, Color color)
 
 Color ConfigStrToColor(const std::string& str)
 {
-    size_t separators[2];
+    size_t separators[2]{ 0,0 };
     separators[0] = str.find('|');
     if (separators[0] == str.npos)
         return MAGENTA;
