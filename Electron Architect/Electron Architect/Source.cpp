@@ -56,7 +56,7 @@ enum UIColorLocs : unsigned
 
 struct Button
 {
-    Button(IVec2 offset, const char* tooltip, IVec2 textureSheetPos, const Texture2D* textureSheet, std::function<void()> clickCallback) :
+    Button(IVec2 offset, const char* tooltip, const char* description, IVec2 textureSheetPos, const Texture2D* textureSheet, std::function<void()> clickCallback) :
         offset(offset), tooltipName(tooltip), textureSheetPos(textureSheetPos), textureSheet(textureSheet), OnClick(clickCallback) {}
 
     static int g_width;
