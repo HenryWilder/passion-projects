@@ -1,6 +1,7 @@
 #include <raylib.h>
 #include <fstream>
 #include <filesystem>
+#include <functional>
 #include "HUtility.h"
 #include "IVec.h"
 #include "Node.h"
@@ -51,6 +52,28 @@ enum UIColorLocs : unsigned
 
 #pragma endregion
 
+#pragma region Buttons
+
+struct Button
+{
+    Button(IVec2 offset, const char* tooltip, IVec2 textureSheetPos, const Texture2D* textureSheet, std::function<void()> clickCallback) :
+        offset(offset), tooltipName(tooltip), textureSheetPos(textureSheetPos), textureSheet(textureSheet), OnClick(clickCallback) {}
+
+    static int g_width;
+
+    IVec2 offset;
+    const char* tooltipName;
+    const char* tooltipDesc;
+    IVec2 textureSheetPos;
+    const Texture2D* textureSheet;
+    std::function<void()> OnClick;
+
+    IRect Bounds() const { return IRect(offset * g_width, g_width); }
+};
+int Button::g_width = 16;
+
+#pragma endregion
+
 struct ProgramData
 {
     ProgramData(int windowWidth, int windowHeight) : windowWidth(windowWidth), windowHeight(windowHeight)
@@ -89,14 +112,14 @@ struct ProgramData
         CloseWindow();
     }
 
-    static constexpr Mode dropdownModeOrder[] =
+    static constexpr Mode sidebarModeOrder[] =
     {
         Mode::PEN,
         Mode::EDIT,
         Mode::ERASE,
         Mode::INTERACT,
     };
-    static constexpr Gate dropdownGateOrder[] =
+    static constexpr Gate sidebarGateOrder[] =
     {
         Gate::OR,
         Gate::AND,
@@ -109,10 +132,6 @@ struct ProgramData
         Gate::DELAY,
         Gate::BATTERY,
     };
-    int ButtonWidth() const
-    {
-        return 16 * uiScale;
-    }
     int FontSize() const
     {
         switch (uiScale)
@@ -122,28 +141,6 @@ struct ProgramData
         case 2: return 20;
         }
     }
-    static IRect buttonBounds[5];
-    static IRect ButtonBound_Mode()
-    {
-        return buttonBounds[0];
-    }
-    static IRect ButtonBound_Gate()
-    {
-        return buttonBounds[1];
-    }
-    static IRect ButtonBound_Parameter()
-    {
-        return buttonBounds[2];
-    }
-    static IRect ButtonBound_Blueprints()
-    {
-        return buttonBounds[3];
-    }
-    static IRect ButtonBound_Clipboard()
-    {
-        return buttonBounds[4];
-    }
-    static IRect dropdownBounds[3];
 
 private:
     static Texture2D blueprintIcon16x;
@@ -190,6 +187,32 @@ public:
 
     Blueprint* clipboard = nullptr;
     std::vector<Node*> selection;
+
+private:
+    void SetMode_Pen() { SetMode(Mode::PEN); }
+public:
+
+    std::vector<Button> modeButtons
+    {
+        Button(IVec2(0,0), "Mode: Draw [b]",        IVec2(0,0), &modeIcons16x, [this]() { SetMode(Mode::PEN); }),
+        Button(IVec2(0,1), "Mode: Edit [v]",        IVec2(1,0), &modeIcons16x, [this]() { SetMode(Mode::EDIT); }),
+        Button(IVec2(0,2), "Mode: Erase [x]",       IVec2(0,1), &modeIcons16x, [this]() { SetMode(Mode::ERASE); }),
+        Button(IVec2(0,3), "Mode: Interact [f]",    IVec2(1,1), &modeIcons16x, [this]() { SetMode(Mode::INTERACT); }),
+    };
+    std::vector<Button> gateButtons
+    {
+        Button(IVec2(1,0), "Gate: Or [1]",          IVec2(0,0), &gateIcons16x, [this]() { SetGate(Gate::OR); }),
+        Button(IVec2(1,1), "Gate: And [2]",         IVec2(1,0), &gateIcons16x, [this]() { SetGate(Gate::AND); }),
+        Button(IVec2(1,2), "Gate: Nor [3]",         IVec2(0,1), &gateIcons16x, [this]() { SetGate(Gate::NOR); }),
+        Button(IVec2(1,3), "Gate: Xor [4]",         IVec2(1,1), &gateIcons16x, [this]() { SetGate(Gate::XOR); }),
+        Button(IVec2(1,4), "Element: Resistor [5]", IVec2(0,2), &gateIcons16x, [this]() { SetGate(Gate::RESISTOR); }),
+        Button(IVec2(1,5), "Element: Capacitor [6]",IVec2(1,2), &gateIcons16x, [this]() { SetGate(Gate::CAPACITOR); }),
+        Button(IVec2(1,6), "Element: LED [7]",      IVec2(0,3), &gateIcons16x, [this]() { SetGate(Gate::LED); }),
+        Button(IVec2(1,7), "Element: Delay [8]",    IVec2(1,3), &gateIcons16x, [this]() { SetGate(Gate::DELAY); }),
+        Button(IVec2(1,8), "Element: Battery [9]",  IVec2(0,4), &gateIcons16x, [this]() { SetGate(Gate::BATTERY); }),
+    };
+    Button blueprintsButton = Button(IVec2(2, 0), "Blueprints", IVec2::Zero(), &blueprintIcon16x, [this]() { SetMode(Mode::BP_SELECT); });
+    Button clipboardButton = Button(IVec2(2,1), "Clipboard", IVec2::Zero(), &clipboardIcon16x, [this]() { SetMode(Mode::PASTE); });
 
 #if _DEBUG
 private:
@@ -307,68 +330,6 @@ public: // Accessors for unions
 #pragma endregion
 
 public:
-
-    Texture2D GetBlueprintIcon()
-    {
-        switch (uiScale)
-        {
-        default:
-        case 1: return blueprintIcon16x;
-        case 2: return blueprintIcon32x;
-        }
-    }
-    Texture2D GetClipboardIcon()
-    {
-        switch (uiScale)
-        {
-        default:
-        case 1: return clipboardIcon16x;
-        case 2: return clipboardIcon32x;
-        }
-    }
-    void DrawModeIcon(Mode mode, IVec2 pos, Color tint)
-    {
-        IVec2 offset;
-        switch (mode)
-        {
-        case Mode::PEN:      offset = IVec2(0, 0); break;
-        case Mode::EDIT:     offset = IVec2(1, 0); break;
-        case Mode::ERASE:    offset = IVec2(0, 1); break;
-        case Mode::INTERACT: offset = IVec2(1, 1); break;
-        default: return;
-        }
-        switch (uiScale)
-        {
-        case 1: DrawIcon<16>(modeIcons16x, offset, pos, tint); break;
-        case 2: DrawIcon<32>(modeIcons32x, offset, pos, tint); break;
-        default: break;
-        }
-    };
-    void DrawGateIcon(Gate gate, IVec2 pos, Color tint)
-    {
-        IVec2 offset;
-        switch (gate)
-        {
-        case Gate::OR:  offset = IVec2(0, 0); break;
-        case Gate::AND: offset = IVec2(1, 0); break;
-        case Gate::NOR: offset = IVec2(0, 1); break;
-        case Gate::XOR: offset = IVec2(1, 1); break;
-
-        case Gate::RESISTOR:  offset = IVec2(0, 2); break;
-        case Gate::CAPACITOR: offset = IVec2(1, 2); break;
-        case Gate::LED:       offset = IVec2(0, 3); break;
-        case Gate::DELAY:     offset = IVec2(1, 3); break;
-
-        case Gate::BATTERY:   offset = IVec2(0, 4); break;
-        default: return;
-        }
-        switch (uiScale)
-        {
-        case 1: DrawIcon<16>(gateIcons16x, offset, pos, tint); break;
-        case 2: DrawIcon<32>(gateIcons32x, offset, pos, tint); break;
-        default: break;
-        }
-    }
 
     static bool ModeIsMenu(Mode mode)
     {
@@ -1093,31 +1054,40 @@ public:
         if (uiScale <= 1)
             uiScale = 1;
 
-        const int width = 16 * uiScale;
-        for (int i = 0; i < _countof(buttonBounds); ++i)
+        Button::g_width = 16 * uiScale;
+        switch (uiScale)
         {
-            buttonBounds[i] = IRect(i * width, 0, width);
-        }
-
-        constexpr int heights[] =
-        {
-            _countof(dropdownModeOrder) - 1,
-            _countof(dropdownGateOrder) - 1,
-            _countof(Node::g_resistanceBands) - 1,
-        };
-        for (int i = 0; i < _countof(dropdownBounds); ++i)
-        {
-            dropdownBounds[i].x = i * width;
-            dropdownBounds[i].y = width;
-            dropdownBounds[i].w = width;
-            dropdownBounds[i].h = width * heights[i];
+        default:
+            break;
+        case 1:
+            for (Button& b : modeButtons)
+            {
+                b.textureSheet = &modeIcons16x;
+            }
+            for (Button& b : gateButtons)
+            {
+                b.textureSheet = &gateIcons16x;
+            }
+            blueprintsButton.textureSheet = &blueprintIcon16x;
+            clipboardButton.textureSheet = &clipboardIcon16x;
+            break;
+        case 2:
+            for (Button& b : modeButtons)
+            {
+                b.textureSheet = &modeIcons32x;
+            }
+            for (Button& b : gateButtons)
+            {
+                b.textureSheet = &gateIcons32x;
+            }
+            blueprintsButton.textureSheet = &blueprintIcon32x;
+            clipboardButton.textureSheet = &clipboardIcon32x;
+            break;
         }
 
         file.close();
     }
 };
-IRect ProgramData::buttonBounds[5];
-IRect ProgramData::dropdownBounds[3];
 Texture2D ProgramData::blueprintIcon16x;
 Texture2D ProgramData::blueprintIcon32x;
 Texture2D ProgramData::clipboardIcon16x;
@@ -1938,7 +1908,7 @@ void Update_Overlay_Button(ProgramData& data)
             {
             case 0: // Mode
             {
-                for (Mode m : ProgramData::dropdownModeOrder)
+                for (Mode m : ProgramData::sidebarModeOrder)
                 {
                     if (m == data.baseMode)
                         continue;
@@ -1956,7 +1926,7 @@ void Update_Overlay_Button(ProgramData& data)
 
             case 1: // Gate
             {
-                for (Gate g : ProgramData::dropdownGateOrder)
+                for (Gate g : ProgramData::sidebarGateOrder)
                 {
                     if (g == data.gatePick)
                         continue;
@@ -2018,7 +1988,7 @@ void Draw_Overlay_Button(ProgramData& data)
     {
     case 0: // Mode
     {
-        for (Mode m : ProgramData::dropdownModeOrder)
+        for (Mode m : ProgramData::sidebarModeOrder)
         {
             if (m == data.baseMode)
                 continue;
@@ -2038,7 +2008,7 @@ void Draw_Overlay_Button(ProgramData& data)
 
     case 1: // Gate
     {
-        for (Gate g : ProgramData::dropdownGateOrder)
+        for (Gate g : ProgramData::sidebarGateOrder)
         {
             if (g == data.gatePick)
                 continue;
@@ -2232,15 +2202,9 @@ int main()
         // UI buttons
         if (!data.ModeIsMenu() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            if ((data.CursorInUIBounds(ProgramData::ButtonBound_Mode()) ||
-                 data.CursorInUIBounds(ProgramData::ButtonBound_Gate()) ||
-                 data.CursorInUIBounds(ProgramData::ButtonBound_Parameter())) &&
-                (data.mode == Mode::BUTTON ?
-                    data.Button_DropdownActive() != (data.cursorUIPos.x / data.ButtonWidth()) :
-                    true))
+            if (data.CursorInUIBounds(IRect(data.ButtonWidth(), 0, data.ButtonWidth(), data.ButtonWidth() * _countof(data.sidebarGateOrder))))
             {
-                data.SetMode(Mode::BUTTON);
-                goto EVAL; // Skip button sim this frame
+                // todo
             }
             else if (data.CursorInUIBounds(ProgramData::ButtonBound_Blueprints()))
             {
@@ -2267,9 +2231,9 @@ int main()
         case Mode::INTERACT:    Update_Interact(data);          break;
 
         // Overlay
-        case Mode::BUTTON:      Update_Overlay_Button(data);    break;
+        //case Mode::BUTTON:      Update_Overlay_Button(data);    break;
         case Mode::PASTE:       Update_Overlay_Paste(data);     break;
-        case Mode::BP_SELECT:   Update_Menu_Blueprints(data);       break;
+        case Mode::BP_SELECT:   Update_Menu_Blueprints(data);   break;
         }
 
     EVAL:
@@ -2313,7 +2277,7 @@ int main()
             case Mode::PASTE:       Draw_Overlay_Paste(data);   break;
 
                 // Menu
-            case Mode::BP_SELECT:   Draw_Menu_Blueprints(data);     break;
+            case Mode::BP_SELECT:   Draw_Menu_Blueprints(data); break;
             }
 
             if (!data.ModeIsMenu())
@@ -2322,11 +2286,10 @@ int main()
 
                 // UI
 
-                // Buttons
-                const IRect WithClipboard = ProgramData::buttonBounds[0] + Width(data.ButtonWidth()) * (_countof(ProgramData::buttonBounds) - 1);
-                const IRect WithoutClipboard = WithClipboard - Width(ProgramData::ButtonBound_Clipboard());
-                DrawRectangleIRect(data.IsClipboardValid() ? WithClipboard : WithoutClipboard, uiColors[UI_COLOR_BACKGROUND1]);
-                DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
+                // Sidebars
+                DrawRectangleIRect(IRect(data.ButtonWidth() * 2, data.windowHeight), uiColors[UI_COLOR_BACKGROUND1]);
+                //DrawLine(data.ButtonWidth() * 2 + 1, 0, data.ButtonWidth() * 2 + 1, data.windowHeight, uiColors[UI_COLOR_BACKGROUND2]);
+                //DrawRectangleIRect(ProgramData::ButtonBound_Parameter(), data.ExtraParamColor());
 
                 const IVec2 tooltipNameOffset = IVec2(data.ButtonWidth()) + IVec2(data.FontSize() / 2, data.FontSize() / 8);
                 const IVec2 tooltipSeprOffset = tooltipNameOffset + Height(data.FontSize() + data.FontSize() / 2);
