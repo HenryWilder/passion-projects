@@ -567,6 +567,10 @@ void NodeWorld::EvaluateNode(Node* node)
         node->m_ntd.d.lastState = false;
         break;
 
+    case Gate::BATTERY:
+        node->m_state = true;
+        break;
+
     default:
         _ASSERT_EXPR(false, L"No specialization for selected gate evaluation");
         break;
@@ -924,6 +928,7 @@ void NodeWorld::Export(const char* filename) const
         bool CAPs = false;
         bool LEDs = false;
         bool DELs = false;
+        bool BATs = false;
 
         for (Node* node : nodes)
         {
@@ -937,8 +942,9 @@ void NodeWorld::Export(const char* filename) const
             case Gate::CAPACITOR: CAPs = true; break;
             case Gate::LED:       LEDs = true; break;
             case Gate::DELAY:     DELs = true; break;
+            case Gate::BATTERY:   BATs = true; break;
             }
-            if (ORs && ANDs && NORs && XORs && RESs && CAPs && LEDs && DELs)
+            if (ORs && ANDs && NORs && XORs && RESs && CAPs && LEDs && DELs && BATs)
                 break;
         }
 
@@ -1019,6 +1025,15 @@ void NodeWorld::Export(const char* filename) const
                 "      <line x1=\"" << -r << "\" y1=\"" << 0 << "\" x2=\"" << r << "\" y2=\"" << 0 << "\" stroke=\"black\" stroke-width=\"1\" fill=\"none\" />\n"
                 "    </g>\n";
         }
+        if (BATs)
+        {
+            file <<
+                "    <!-- reusable battery shape -->\n"
+                "    <g id=\"gate_bat\">\n"
+                "      <rect x=\"" << -r << "\" y=\"" << -r << "\" width=\"" << w << "\" height=\"" << w << "\" stroke=\"black\" stroke-width=\"1\" fill=\"white\" />\n"
+                "      <rect x=\"" << -r << "\" y=\"" << -r << "\" width=\"" << w << "\" height=\"" << w / 2 << "\" stroke=\"none\" stroke-width=\"0\" fill=\"black\" />\n"
+                "    </g>\n";
+        }
         file << "  </defs>\n";
 
         if (!wires.empty())
@@ -1054,6 +1069,7 @@ void NodeWorld::Export(const char* filename) const
             case Gate::CAPACITOR: id = "#gate_cap"; break;
             case Gate::LED:       id = "#gate_led"; break;
             case Gate::DELAY:     id = "#gate_del"; break;
+            case Gate::BATTERY:   id = "#gate_bat"; break;
             default: _ASSERT_EXPR(false, L"No SVG export specialization for selected gate"); id = ""; break;
             }
             file << "  <use href=\"" << id << "\" x=\"" << x <<"\" y=\"" << y << "\" />\n";
