@@ -107,6 +107,7 @@ struct ProgramData
         Gate::CAPACITOR,
         Gate::LED,
         Gate::DELAY,
+        Gate::BATTERY,
     };
     int ButtonWidth() const
     {
@@ -750,6 +751,7 @@ public:
             else if (IsKeyPressed(KEY_SIX))   SetGate(Gate::CAPACITOR);
             else if (IsKeyPressed(KEY_SEVEN)) SetGate(Gate::LED);
             else if (IsKeyPressed(KEY_EIGHT)) SetGate(Gate::DELAY);
+            else if (IsKeyPressed(KEY_NINE))  SetGate(Gate::BATTERY);
         }
 
         // Mode hotkeys
