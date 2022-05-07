@@ -22,7 +22,9 @@ public:
     int windowWidth;
     int windowHeight;
 
+    size_t activeTab;
     std::vector<Tab*> tabs;
+    Tab& CurrentTab();
 
     uint8_t blueprintLOD = 0;
     uint8_t clipboardPreviewLOD = 0;
@@ -189,6 +191,10 @@ private:
 public:
 
     int FontSize() const;
+
+    Mode GetBaseMode();
+    Mode GetMode();
+    ModeType GetModeType();
 
     void SetMode(Mode newMode);
     void SetGate(Gate newGate);
@@ -391,12 +397,7 @@ public:
     void DrawTooltipAtCursor_Shadowed(const char* text, Color color);
 
     void ReloadConfig();
+
+    void UpdateTool();
+    void DrawTool();
 };
-Texture2D ProgramData::blueprintIcon16x;
-Texture2D ProgramData::blueprintIcon32x;
-Texture2D ProgramData::clipboardIcon16x;
-Texture2D ProgramData::clipboardIcon32x;
-Texture2D ProgramData::modeIcons16x;
-Texture2D ProgramData::modeIcons32x;
-Texture2D ProgramData::gateIcons16x;
-Texture2D ProgramData::gateIcons32x;

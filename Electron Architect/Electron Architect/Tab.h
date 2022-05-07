@@ -10,6 +10,8 @@ class Tab
 private:
     bool orderDirty = false;
 
+    const char* name;
+
     std::vector<Node*> nodes;
     std::vector<Node*> startNodes;
     std::vector<Wire*> wires; // Inputs/outputs don't exist here
@@ -30,7 +32,7 @@ private: // Internal
 
 public:
 
-    Tab();
+    Tab(const char* name = "Unnamed graph");
     ~Tab();
 
     bool IsOrderDirty() const;

@@ -29,6 +29,11 @@ Window::Window(int windowWidth, int windowHeight) : windowWidth(windowWidth), wi
     gateIcons16x = LoadTexture("icons_gate16x.png");
     gateIcons32x = LoadTexture("icons_gate32x.png");
 
+    activeTab = 0;
+    tabs.push_back(new Tab);
+
+    base = new EditTool; // So that it can be deleted
+
     SetMode(Mode::PEN);
     SetGate(Gate::OR);
     ReloadConfig();
@@ -40,6 +45,7 @@ Window::~Window()
     {
         tab->Save("session.cg");
         tab->Export("render.svg");
+        delete tab;
     }
 
     UnloadTexture(blueprintIcon16x);
@@ -54,6 +60,13 @@ Window::~Window()
     CloseWindow();
 }
 
+Tab& Window::CurrentTab()
+{
+    _ASSERT_EXPR(activeTab < tabs.size(), L"Subscript out of range");
+    _ASSERT_EXPR(!!tabs[activeTab], L"Current tab is nullptr");
+    return *tabs[activeTab];
+}
+
 int Window::FontSize() const
 {
     switch (uiScale)
@@ -62,6 +75,23 @@ int Window::FontSize() const
     case 1: return 8;
     case 2: return 20;
     }
+}
+
+Mode Window::GetBaseMode()
+{
+    return base->GetMode();
+}
+Mode Window::GetMode()
+{
+    if (!!overlay)
+        return overlay->GetMode();
+    return GetBaseMode();
+}
+ModeType Window::GetModeType()
+{
+    if (!!overlay)
+        return overlay->GetModeType();
+    return base->GetModeType();
 }
 
 void Window::SetMode(Mode newMode)
@@ -611,4 +641,19 @@ void Window::ReloadConfig()
     }
 
     file.close();
+}
+
+void Window::UpdateTool()
+{
+    if (!!overlay)
+        overlay->Update(*this);
+    else
+        base->Update(*this);
+}
+void Window::DrawTool()
+{
+    if (!!overlay)
+        overlay->Draw(*this);
+    else
+        base->Draw(*this);
 }

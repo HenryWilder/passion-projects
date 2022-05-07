@@ -24,7 +24,7 @@ int main()
 
     Window data(1280, 720);
 
-    Tab::Get().Load("session.cg"); // Construct and load last session
+    data.CurrentTab().Load("session.cg"); // Construct and load last session
     // Load blueprints
     {
         std::filesystem::path blueprints{ "blueprints" };
@@ -38,7 +38,7 @@ int main()
             try
             {
                 LoadBlueprint(filename.c_str(), bp);
-                Tab::Get().StoreBlueprint(&bp);
+                data.CurrentTab().StoreBlueprint(&bp);
             }
             catch (std::length_error e)
             {
@@ -62,9 +62,9 @@ int main()
         data.CheckHotkeys();
 
         // UI buttons
-        if (!data.ModeIsMenu() && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (data.GetModeType() != ModeType::Basic && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            if (data.CursorInUIBounds(IRect(data.ButtonWidth(), 0, data.ButtonWidth(), data.ButtonWidth() * _countof(data.sidebarGateOrder))))
+            if (data.CursorInUIBounds(IRect(Button::g_width, 0, Button::g_width, Button::g_width * _countof(data.sidebarGateOrder))))
             {
                 // todo
             }
@@ -82,28 +82,14 @@ int main()
         }
 
         // Input
-        switch (data.mode)
-        {
-            ASSERT_SPECIALIZATION(L"Simulation phase");
-            
-        // Basic
-        case Mode::PEN:         Update_Pen(data);               break;
-        case Mode::EDIT:        Update_Edit(data);              break;
-        case Mode::ERASE:       Update_Erase(data);             break;
-        case Mode::INTERACT:    Update_Interact(data);          break;
-
-        // Overlay
-        //case Mode::BUTTON:      Update_Overlay_Button(data);    break;
-        case Mode::PASTE:       Update_Overlay_Paste(data);     break;
-        case Mode::BP_SELECT:   Update_Menu_Blueprints(data);   break;
-        }
+        data.UpdateTool();
 
     EVAL:
         data.cursorPosPrev = data.cursorPos;
-        if (Tab::Get().IsOrderDirty())
+        if (data.CurrentTab().IsOrderDirty())
             data.tickThisFrame = !(data.tickFrame = 0);
         if (data.tickThisFrame)
-            Tab::Get().Evaluate();
+            data.CurrentTab().Evaluate();
 
         /******************************************
         *   Draw the frame
@@ -113,47 +99,31 @@ int main()
 
             ClearBackground(UIColor(UIColorID::UI_COLOR_BACKGROUND));
 
-            if (!data.ModeIsMenu())
+            if (data.GetModeType() != ModeType::Menu)
             {
                 BeginMode2D(data.camera);
 
                 data.DrawGrid();
 
-                Tab::Get().DrawGroups();
+                data.CurrentTab().DrawGroups();
             }
                 
 
             // Draw
-            switch (data.mode)
-            {
-                ASSERT_SPECIALIZATION(L"Basic draw phase");
+            data.DrawTool();
 
-                // Basic
-            case Mode::PEN:         Draw_Pen(data);             break;
-            case Mode::EDIT:        Draw_Edit(data);            break;
-            case Mode::ERASE:       Draw_Erase(data);           break;
-            case Mode::INTERACT:    Draw_Interact(data);        break;
-
-                // Overlay
-            case Mode::BUTTON:      Draw_Overlay_Button(data);  break;
-            case Mode::PASTE:       Draw_Overlay_Paste(data);   break;
-
-                // Menu
-            case Mode::BP_SELECT:   Draw_Menu_Blueprints(data); break;
-            }
-
-            if (!data.ModeIsMenu())
+            if (data.GetModeType() != ModeType::Menu)
             {
                 EndMode2D();
 
                 // UI
 
                 // Sidebars
-                DrawRectangleIRect(IRect(data.ButtonWidth() * 2, data.windowHeight), UIColor(UIColorID::UI_COLOR_BACKGROUND1));
-                //DrawLine(data.ButtonWidth() * 2 + 1, 0, data.ButtonWidth() * 2 + 1, data.windowHeight, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+                DrawRectangleIRect(IRect(Button::g_width * 2, data.windowHeight), UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+                //DrawLine(Button::g_width * 2 + 1, 0, Button::g_width * 2 + 1, data.windowHeight, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
                 //DrawRectangleIRect(Window::ButtonBound_Parameter(), data.ExtraParamColor());
 
-                const IVec2 tooltipNameOffset = IVec2(data.ButtonWidth()) + IVec2(data.FontSize() / 2, data.FontSize() / 8);
+                const IVec2 tooltipNameOffset = IVec2(Button::g_width) + IVec2(data.FontSize() / 2, data.FontSize() / 8);
                 const IVec2 tooltipSeprOffset = tooltipNameOffset + Height(data.FontSize() + data.FontSize() / 2);
                 const IVec2 tooltipDescOffset = tooltipNameOffset + Height(data.FontSize() + data.FontSize());
 
@@ -205,7 +175,7 @@ int main()
                     DrawRectangleIRect(Window::ButtonBound_Clipboard(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
                     // Tooltip
                     DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", Window::ButtonBound_Clipboard().xy + tooltipNameOffset, data.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                    const IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(data.ButtonWidth());
+                    const IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(Button::g_width);
                     // Clipboard preview
                     if (data.IsClipboardValid())
                         data.clipboard->DrawSelectionPreview(

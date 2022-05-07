@@ -2,13 +2,15 @@
 #include <unordered_set>
 #include <fstream>
 #include "HUtility.h"
-#include "NodeWorld.h"
+#include "Tab.h"
 #include "Blueprint.h"
 
 extern Blueprint nativeBlueprints[10];
 
-Tab::Tab()
+Tab::Tab(const char* name)
 {
+    name = name;
+    blueprints.reserve(_countof(nativeBlueprints));
     for (const Blueprint& bp : nativeBlueprints)
     {
         blueprints.push_back(new Blueprint(bp));
