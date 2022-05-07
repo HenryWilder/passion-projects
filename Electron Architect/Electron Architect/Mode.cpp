@@ -14,7 +14,7 @@
 #include "Window.h"
 #include "Mode.h"
 
-PenTool::PenTool() {}
+PenTool::PenTool() { memset(this, 0, sizeof(PenTool)); }
 PenTool::~PenTool() {}
 ModeType PenTool::GetModeType() const { return ModeType::Basic; }
 Mode PenTool::GetMode() const { return Mode::PEN; }
@@ -189,7 +189,7 @@ void PenTool::Draw(Window& window)
     }
 }
 
-EditTool::EditTool() {}
+EditTool::EditTool() { memset(this, 0, sizeof(EditTool)); }
 EditTool::~EditTool() {}
 ModeType EditTool::GetModeType() const { return ModeType::Basic; }
 Mode EditTool::GetMode() const { return Mode::EDIT; }
@@ -1014,7 +1014,7 @@ void PasteOverlay::Draw(Window& window)
     window.clipboard->DrawSelectionPreview(window.cursorPos - IVec2(g_gridSize), ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND2), 0.5f), UIColor(UIColorID::UI_COLOR_FOREGROUND2), UIColor(UIColorID::UI_COLOR_BACKGROUND2), UIColor(UIColorID::UI_COLOR_FOREGROUND3), window.pastePreviewLOD);
 }
 
-BlueprintMenu::BlueprintMenu() {}
+BlueprintMenu::BlueprintMenu() { hovering = nullptr; }
 BlueprintMenu::~BlueprintMenu() {}
 ModeType BlueprintMenu::GetModeType() const { return ModeType::Menu; }
 Mode BlueprintMenu::GetMode() const { return Mode::BP_SELECT; }
@@ -1099,24 +1099,4 @@ void BlueprintMenu::Draw(Window& window)
     }
     if (!!hovering)
         window.DrawTooltipAtCursor_Shadowed(hovering->name.c_str(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-}
-
-Tool* NewToolOfMode(Mode mode)
-{
-    switch (mode)
-    {
-    default:
-        _ASSERT_EXPR(false, L"Missing specialization for creating mode");
-        return nullptr;
-
-    case Mode::PEN:         return new PenTool;
-    case Mode::EDIT:        return new EditTool;
-    case Mode::ERASE:       return new EraseTool;
-    case Mode::INTERACT:    return new InteractTool;
-
-        //case Mode::BUTTON:      return new ButtonOverlay;
-    case Mode::PASTE:       return new PasteOverlay;
-
-    case Mode::BP_SELECT:   return new BlueprintMenu;
-    }
 }

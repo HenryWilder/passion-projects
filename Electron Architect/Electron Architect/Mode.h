@@ -168,5 +168,3 @@ struct BlueprintMenu : public Tool
 
     Blueprint* hovering;
 };
-
-Tool* NewToolOfMode(Mode mode);

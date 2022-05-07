@@ -174,6 +174,9 @@ clipboardButton(
     activeTab = 0;
     tabs.push_back(new Tab);
 
+    base = nullptr;
+    overlay = nullptr;
+
     SetMode(Mode::PEN);
     SetGate(Gate::OR);
     ReloadConfig();
@@ -187,6 +190,11 @@ Window::~Window()
         tab->Export("render.svg");
         delete tab;
     }
+
+    if (!!base) [[likely]]
+        delete base;
+    if (!!overlay)
+        delete overlay;
 
     UnloadTexture(blueprintIcon16x);
     UnloadTexture(blueprintIcon32x);
@@ -253,7 +261,24 @@ void Window::SetMode(Mode newMode)
             delete overlay;
 
         if (TypeOfMode(newMode) != ModeType::Basic)
-            overlay = NewToolOfMode(newMode);
+        {
+            switch (newMode)
+            {
+            default:
+                _ASSERT_EXPR(false, L"Missing specialization for creating mode");
+                overlay = nullptr;
+                break;
+
+            case Mode::PEN:         overlay = new PenTool; break;
+            case Mode::EDIT:        overlay = new EditTool; break;
+            case Mode::ERASE:       overlay = new EraseTool; break;
+            case Mode::INTERACT:    overlay = new InteractTool; break;
+
+            case Mode::PASTE:       overlay = new PasteOverlay; break;
+
+            case Mode::BP_SELECT:   overlay = new BlueprintMenu; break;
+            }
+        }
         else // Mode is basic; no overlay
             overlay = nullptr;
     }
@@ -264,7 +289,22 @@ void Window::SetMode(Mode newMode)
         if (!!base) [[likely]] // There should only be one point in the program where base is nullptr. Namely, the start.
             delete base;
 
-        base = NewToolOfMode(newMode);
+        switch (newMode)
+        {
+        default:
+            _ASSERT_EXPR(false, L"Missing specialization for creating mode");
+            base = nullptr;
+            break;
+
+        case Mode::PEN:         base = new PenTool; break;
+        case Mode::EDIT:        base = new EditTool; break;
+        case Mode::ERASE:       base = new EraseTool; break;
+        case Mode::INTERACT:    base = new InteractTool; break;
+
+        case Mode::PASTE:       base = new PasteOverlay; break;
+
+        case Mode::BP_SELECT:   base = new BlueprintMenu; break;
+        }
     }
 }
 
