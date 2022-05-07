@@ -995,9 +995,12 @@ void Window::PushPropertySection_Selection(const char* name, const std::vector<N
 }
 void Window::PushPropertySection_Group(const char* name, Group* value)
 {
-    PushPropertySubtitle(name);
-    PushProperty_ptr("Pointer", value);
-    PushProperty_str("Label", value->GetLabel());
+    if (!!value)
+    {
+        PushPropertySubtitle(name);
+        PushProperty_ptr("Pointer", value);
+        PushProperty_str("Label", value->GetLabel());
+    }
 }
 void Window::DrawToolProperties()
 {
