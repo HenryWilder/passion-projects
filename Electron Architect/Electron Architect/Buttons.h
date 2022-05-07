@@ -4,7 +4,11 @@
 
 struct Button
 {
-    Button(IVec2 relativePos, const char* tooltip, const char* description, std::function<void()> clickCallback);
+    Button(
+        IVec2 relativePos,
+        const char* tooltip,
+        const char* description,
+        std::function<void()> clickCallback);
 
     static int g_width;
 
@@ -20,7 +24,13 @@ int Button::g_width = 16;
 
 struct IconButton : Button
 {
-    IconButton(IVec2 relativePos, const char* tooltip, const char* description, std::function<void()> clickCallback, IVec2 textureSheetPos, const Texture2D* textureSheet);
+    IconButton(
+        IVec2 relativePos,
+        const char* tooltip,
+        const char* description,
+        std::function<void()> clickCallback,
+        IVec2 textureSheetPos,
+        const Texture2D* textureSheet);
 
     IVec2 textureSheetPos;
     const Texture2D* textureSheet;
@@ -28,7 +38,13 @@ struct IconButton : Button
 
 struct TextButton : Button
 {
-    TextButton(IVec2 relativePos, const char* tooltip, const char* description, std::function<void()> clickCallback, const char* buttonText, int width = 1);
+    TextButton(
+        IVec2 relativePos,
+        const char* tooltip,
+        const char* description,
+        std::function<void()> clickCallback,
+        const char* buttonText,
+        int width = 1);
 
     // Divided by g_width
     int width;

@@ -5,7 +5,7 @@
 #include "Group.h"
 #include "Blueprint.h"
 
-class NodeWorld
+class Tab
 {
 private:
     bool orderDirty = false;
@@ -15,9 +15,6 @@ private:
     std::vector<Wire*> wires; // Inputs/outputs don't exist here
     std::vector<Blueprint*> blueprints;
     std::vector<Group*> groups;
-
-    NodeWorld();
-    ~NodeWorld();
 
 private: // Internal
     void _Free();
@@ -32,7 +29,9 @@ private: // Internal
     void _DestroyWire(Wire* wire);
 
 public:
-    static NodeWorld& Get();
+
+    Tab();
+    ~Tab();
 
     bool IsOrderDirty() const;
 

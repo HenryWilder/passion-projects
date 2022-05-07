@@ -24,8 +24,8 @@ public:
     IVec2 GetPosition() const;
     // Moves the node without updating its collision
     void SetPosition_Temporary(IVec2 position);
-    // Sets the position of the node and updates its collision in NodeWorld
-    // NOTE: NodeWorld collision is currently a saved-for-later feature
+    // Sets the position of the node and updates its collision in Tab
+    // NOTE: Tab collision is currently a saved-for-later feature
     void SetPosition(IVec2 position);
     int GetX() const;
     void SetX(int x);
@@ -65,11 +65,11 @@ public:
     bool WireIsInput(Wire* wire) const;
     bool WireIsOutput(Wire* wire) const;
 
-    // Only NodeWorld can play with a node's wires/state
-    friend class NodeWorld;
+    // Only Tab can play with a node's wires/state
+    friend class Tab;
     friend class Component;
 
-private: // Helpers usable only by NodeWorld
+private: // Helpers usable only by Tab
 
     std::deque<Wire*>::iterator FindWireIter_Expected(Wire* wire);
     std::deque<Wire*>::iterator FindWireIter(Wire* wire);
@@ -92,7 +92,7 @@ private: // Helpers usable only by NodeWorld
     // Converts an existing wire
     void MakeWireOutput(Wire* wire);
 
-private: // Accessible by NodeWorld
+private: // Accessible by Tab
     Node() : m_position(), m_gate(), m_state(), m_inputs(), m_ntd() {}
     Node(IVec2 position, Gate gate);
     // It is entirely safe to pass in an extra param even if the node cannot use it!

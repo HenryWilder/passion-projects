@@ -7,19 +7,19 @@
 
 extern Blueprint nativeBlueprints[10];
 
-NodeWorld::NodeWorld()
+Tab::Tab()
 {
     for (const Blueprint& bp : nativeBlueprints)
     {
         blueprints.push_back(new Blueprint(bp));
     }
 }
-NodeWorld::~NodeWorld()
+Tab::~Tab()
 {
     _Free();
 }
 
-void NodeWorld::_Free()
+void Tab::_Free()
 {
     for (Node* node : nodes)
     {
@@ -39,19 +39,19 @@ void NodeWorld::_Free()
     }
 }
 
-void NodeWorld::_Clear()
+void Tab::_Clear()
 {
     _Free();
 }
 
-Node* NodeWorld::_CreateNode(Node&& base)
+Node* Tab::_CreateNode(Node&& base)
 {
     Node* node = new Node(base);
     nodes.insert(nodes.begin(), node);
     startNodes.push_back(node);
     return node;
 }
-void NodeWorld::_ClearNodeReferences(Node* node)
+void Tab::_ClearNodeReferences(Node* node)
 {
     for (Wire* input : node->GetInputs())
     {
@@ -65,7 +65,7 @@ void NodeWorld::_ClearNodeReferences(Node* node)
     }
     orderDirty = true;
 }
-void NodeWorld::_DestroyNode(Node* node)
+void Tab::_DestroyNode(Node* node)
 {
     FindAndErase_ExpectExisting(nodes, node);
     FindAndErase(startNodes, node);
@@ -73,13 +73,13 @@ void NodeWorld::_DestroyNode(Node* node)
     orderDirty = true;
 }
 
-Wire* NodeWorld::_CreateWire(Wire&& base)
+Wire* Tab::_CreateWire(Wire&& base)
 {
     Wire* wire = new Wire(base);
     wires.push_back(wire);
     return wire;
 }
-void NodeWorld::_ClearWireReferences(Wire* wire)
+void Tab::_ClearWireReferences(Wire* wire)
 {
     wire->start->RemoveWire_Expected(wire);
     wire->end->RemoveWire_Expected(wire);
@@ -88,7 +88,7 @@ void NodeWorld::_ClearWireReferences(Wire* wire)
         startNodes.push_back(wire->end);
     orderDirty = true;
 }
-void NodeWorld::_DestroyWire(Wire* wire)
+void Tab::_DestroyWire(Wire* wire)
 {
     FindAndErase_ExpectExisting(wires, wire);
     delete wire;
@@ -96,18 +96,18 @@ void NodeWorld::_DestroyWire(Wire* wire)
 }
 
 
-NodeWorld& NodeWorld::Get()
+Tab& Tab::Get()
 {
-    static NodeWorld g_only;
+    static Tab g_only;
     return g_only;
 }
 
-bool NodeWorld::IsOrderDirty() const
+bool Tab::IsOrderDirty() const
 {
     return orderDirty;
 }
 
-const decltype(NodeWorld::startNodes)& NodeWorld::GetStartNodes() const
+const decltype(Tab::startNodes)& Tab::GetStartNodes() const
 {
     return startNodes;
 }
@@ -115,29 +115,29 @@ const decltype(NodeWorld::startNodes)& NodeWorld::GetStartNodes() const
 // Node functions
 
 /// <summary>CreateNode does not insert at the end of the <see cref="nodes"/>.</summary>
-Node* NodeWorld::CreateNode(IVec2 position, Gate gate, uint8_t extendedParam)
+Node* Tab::CreateNode(IVec2 position, Gate gate, uint8_t extendedParam)
 {
     // The order is not dirty at this time due to the node having no connections yet
     return _CreateNode(Node(position, gate, extendedParam));
 }
-void NodeWorld::DestroyNode(Node* node)
+void Tab::DestroyNode(Node* node)
 {
     _ClearNodeReferences(node);
     _DestroyNode(node);
     orderDirty = true;
 }
 
-size_t NodeWorld::NodeID(Node* node)
+size_t Tab::NodeID(Node* node)
 {
     return std::find(nodes.begin(), nodes.end(), node) - nodes.begin();
 }
 
-size_t NodeWorld::StartNodeID(Node* node)
+size_t Tab::StartNodeID(Node* node)
 {
     return std::find(startNodes.begin(), startNodes.end(), node) - startNodes.begin();
 }
 
-void NodeWorld::DestroyNodes(std::vector<Node*>& removeList)
+void Tab::DestroyNodes(std::vector<Node*>& removeList)
 {
     // Todo...
 #if 0
@@ -221,7 +221,7 @@ void NodeWorld::DestroyNodes(std::vector<Node*>& removeList)
     orderDirty = true;
 }
 
-void NodeWorld::BypassNode(Node* node)
+void Tab::BypassNode(Node* node)
 {
     _ASSERT_EXPR(node->IsSpecialErasable(), L"Must be bypassable");
     // Multiple outputs, one input
@@ -245,7 +245,7 @@ void NodeWorld::BypassNode(Node* node)
     DestroyNode(node);
 }
 
-void NodeWorld::BypassNode_Complex(Node* node)
+void Tab::BypassNode_Complex(Node* node)
 {
     _ASSERT_EXPR(node->IsComplexBipassable(), L"Must be complex bypassable");
     for (Wire* input : node->GetInputs())
@@ -258,7 +258,7 @@ void NodeWorld::BypassNode_Complex(Node* node)
     DestroyNode(node);
 }
 
-Node* NodeWorld::MergeNodes(Node* depricating, Node* overriding)
+Node* Tab::MergeNodes(Node* depricating, Node* overriding)
 {
     _ASSERT_EXPR(!!depricating && !!overriding, L"Tried to merge a nullptr");
     _ASSERT_EXPR(depricating != overriding, L"Tried to merge a node with itself");
@@ -294,7 +294,7 @@ Node* NodeWorld::MergeNodes(Node* depricating, Node* overriding)
 // Wire functions
 
 // CreateWire can affect the positions of parameter `end` in `nodes`
-Wire* NodeWorld::CreateWire(Node* start, Node* end)
+Wire* Tab::CreateWire(Node* start, Node* end)
 {
     _ASSERT_EXPR(start != nullptr && end != nullptr, L"Tried to create a wire to nullptr");
     _ASSERT_EXPR(start != end, L"Cannot create self-reference wire");
@@ -324,7 +324,7 @@ Wire* NodeWorld::CreateWire(Node* start, Node* end)
     return wire;
 }
 // CreateWire can affect the positions of parameter `end` in `nodes`
-Wire* NodeWorld::CreateWire(Node* start, Node* end, ElbowConfig elbowConfig)
+Wire* Tab::CreateWire(Node* start, Node* end, ElbowConfig elbowConfig)
 {
     _ASSERT_EXPR(start != nullptr && end != nullptr, L"Tried to create a wire to nullptr");
     _ASSERT_EXPR(start != end, L"Cannot create self-reference wire");
@@ -353,19 +353,19 @@ Wire* NodeWorld::CreateWire(Node* start, Node* end, ElbowConfig elbowConfig)
     orderDirty = true;
     return wire;
 }
-void NodeWorld::DestroyWire(Wire* wire)
+void Tab::DestroyWire(Wire* wire)
 {
     _ClearWireReferences(wire);
     _DestroyWire(wire);
 
     orderDirty = true;
 }
-void NodeWorld::SwapNodes(Node* a, Node* b)
+void Tab::SwapNodes(Node* a, Node* b)
 {
     std::swap(a->m_gate, b->m_gate);
 }
 // Invalidates input wire!
-Wire* NodeWorld::ReverseWire(Wire* wire)
+Wire* Tab::ReverseWire(Wire* wire)
 {
     _ASSERT_EXPR(wire != nullptr, L"Cannot reverse null wire");
     _ASSERT_EXPR(wire->start != nullptr && wire->end != nullptr, L"Malformed wire");
@@ -380,7 +380,7 @@ Wire* NodeWorld::ReverseWire(Wire* wire)
     return wire;
 }
 // Invalidates input wire! (obviously; it's being split in two)
-std::pair<Wire*, Wire*> NodeWorld::BisectWire(Wire* wire, Node* bisector)
+std::pair<Wire*, Wire*> Tab::BisectWire(Wire* wire, Node* bisector)
 {
     std::pair<Wire*, Wire*> newWire;
 
@@ -396,18 +396,18 @@ std::pair<Wire*, Wire*> NodeWorld::BisectWire(Wire* wire, Node* bisector)
     return newWire;
 }
 
-Group* NodeWorld::CreateGroup(IRect rec)
+Group* Tab::CreateGroup(IRect rec)
 {
     Group* group = new Group(rec, WIPBLUE, "Label");
     groups.push_back(group);
     return group;
 }
-void NodeWorld::DestroyGroup(Group* group)
+void Tab::DestroyGroup(Group* group)
 {
     FindAndErase_ExpectExisting(groups, group);
     delete group;
 }
-Group* NodeWorld::FindGroupAtPos(IVec2 pos) const
+Group* Tab::FindGroupAtPos(IVec2 pos) const
 {
     for (Group* group : groups)
     {
@@ -416,7 +416,7 @@ Group* NodeWorld::FindGroupAtPos(IVec2 pos) const
     }
     return nullptr;
 }
-GroupCorner NodeWorld::FindGroupCornerAtPos(IVec2 pos) const
+GroupCorner Tab::FindGroupCornerAtPos(IVec2 pos) const
 {
     for (Group* g : groups)
     {
@@ -432,14 +432,14 @@ GroupCorner NodeWorld::FindGroupCornerAtPos(IVec2 pos) const
     }
     return { nullptr, 0 };
 }
-void NodeWorld::FindNodesInGroup(std::vector<Node*>& result, Group* group) const
+void Tab::FindNodesInGroup(std::vector<Node*>& result, Group* group) const
 {
     FindNodesInRect(result, group->captureBounds);
 }
 
 
 // Uses BFS
-void NodeWorld::Sort()
+void Tab::Sort()
 {
     decltype(nodes) sorted;
     sorted.reserve(nodes.size());
@@ -492,7 +492,7 @@ void NodeWorld::Sort()
     orderDirty = false;
 }
 
-void NodeWorld::EvaluateNode(Node* node)
+void Tab::EvaluateNode(Node* node)
 {
     switch (node->m_gate)
     {
@@ -577,7 +577,7 @@ void NodeWorld::EvaluateNode(Node* node)
     }
 }
 
-void NodeWorld::Evaluate()
+void Tab::Evaluate()
 {
     if (orderDirty)
     {
@@ -591,21 +591,21 @@ void NodeWorld::Evaluate()
     }
 }
 
-void NodeWorld::DrawWires(Color colorActive, Color colorInactive) const
+void Tab::DrawWires(Color colorActive, Color colorInactive) const
 {
     for (Wire* wire : wires)
     {
         wire->Draw(wire->start->GetState() ? colorActive : colorInactive);
     }
 }
-void NodeWorld::DrawNodes(Color colorActive, Color colorInactive) const
+void Tab::DrawNodes(Color colorActive, Color colorInactive) const
 {
     for (Node* node : nodes)
     {
         node->Draw(node->GetState() ? colorActive : colorInactive);
     }
 }
-void NodeWorld::DrawGroups() const
+void Tab::DrawGroups() const
 {
     for (Group* group : groups)
     {
@@ -613,7 +613,7 @@ void NodeWorld::DrawGroups() const
     }
 }
 
-Node* NodeWorld::FindNodeAtPos(IVec2 pos) const
+Node* Tab::FindNodeAtPos(IVec2 pos) const
 {
     for (Node* node : nodes)
     {
@@ -622,7 +622,7 @@ Node* NodeWorld::FindNodeAtPos(IVec2 pos) const
     }
     return nullptr;
 }
-Wire* NodeWorld::FindWireAtPos(IVec2 pos) const
+Wire* Tab::FindWireAtPos(IVec2 pos) const
 {
     for (Wire* wire : wires)
     {
@@ -634,7 +634,7 @@ Wire* NodeWorld::FindWireAtPos(IVec2 pos) const
     }
     return nullptr;
 }
-Wire* NodeWorld::FindWireElbowAtPos(IVec2 pos) const
+Wire* Tab::FindWireElbowAtPos(IVec2 pos) const
 {
     auto it = std::find_if(wires.begin(), wires.end(), [&pos](Wire* wire) { return wire->elbow == pos; });
     if (it != wires.end())
@@ -642,7 +642,7 @@ Wire* NodeWorld::FindWireElbowAtPos(IVec2 pos) const
     return nullptr;
 }
 
-void NodeWorld::FindNodesInRect(std::vector<Node*>& result, IRect rec) const
+void Tab::FindNodesInRect(std::vector<Node*>& result, IRect rec) const
 {
     // Exclusive bounds
     IRect bounds = ShrinkIRect(rec);
@@ -654,7 +654,7 @@ void NodeWorld::FindNodesInRect(std::vector<Node*>& result, IRect rec) const
 }
 
 
-void NodeWorld::StoreBlueprint(Blueprint* bp)
+void Tab::StoreBlueprint(Blueprint* bp)
 {
     Blueprint* copy = new Blueprint(*bp);
     for (Blueprint* existing : blueprints)
@@ -666,7 +666,7 @@ void NodeWorld::StoreBlueprint(Blueprint* bp)
     }
     blueprints.push_back(copy);
 }
-void NodeWorld::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
+void Tab::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
 {
     std::unordered_map<size_t, Node*> nodeID;
     nodes.reserve(nodes.size() + bp->nodes.size());
@@ -694,12 +694,12 @@ void NodeWorld::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
     }
 }
 
-const std::vector<Blueprint*>& NodeWorld::GetBlueprints() const
+const std::vector<Blueprint*>& Tab::GetBlueprints() const
 {
     return blueprints;
 }
 
-void NodeWorld::Save(const char* filename) const
+void Tab::Save(const char* filename) const
 {
     auto prepNodeIDs = [](std::unordered_map<Node*, size_t>& nodeIDs, const std::vector<Node*>& nodes)
     {
@@ -764,7 +764,7 @@ void NodeWorld::Save(const char* filename) const
     file.close();
 }
 
-void NodeWorld::Load(const char* filename)
+void Tab::Load(const char* filename)
 {
     // HACK: Does not conform to standard _CreateNode/Wire functions!!
     auto allocNodes = [](std::vector<Node*>& nodes, size_t nodeCount)
@@ -894,7 +894,7 @@ void NodeWorld::Load(const char* filename)
     file.close();
 }
 
-void NodeWorld::Export(const char* filename) const
+void Tab::Export(const char* filename) const
 {
     if (nodes.empty())
         return;
