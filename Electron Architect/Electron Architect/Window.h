@@ -175,7 +175,7 @@ public:
     IconButton clipboardButton =
         IconButton(
             IVec2(2, 1),
-            "Clipboard",
+            "Clipboard (ctrl+c to copy, ctrl+v to paste)",
             "@TODO",
             [this]() { if (this->IsClipboardValid()) SetMode(Mode::PASTE); },
             IVec2::Zero(),
@@ -191,6 +191,8 @@ private:
 public:
 
     int FontSize() const;
+
+    void DrawWindowIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint) const;
 
     Mode GetBaseMode();
     Mode GetMode();

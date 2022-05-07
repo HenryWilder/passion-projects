@@ -77,6 +77,15 @@ int Window::FontSize() const
     }
 }
 
+void Window::DrawWindowIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint) const
+{
+    switch (uiScale)
+    {
+    case 1: DrawIcon<16>(iconSheet, iconColRow, pos, tint); break;
+    case 2: DrawIcon<32>(iconSheet, iconColRow, pos, tint); break;
+    }
+}
+
 Mode Window::GetBaseMode()
 {
     return base->GetMode();

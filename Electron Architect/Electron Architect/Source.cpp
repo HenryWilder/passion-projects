@@ -47,8 +47,20 @@ int main()
         }
     }
 
-    std::vector<const Button&> allButtons;
-    allButtons.reserve();
+    std::vector<Button*> allButtons;
+    {
+        allButtons.reserve(window.modeButtons.size() + window.gateButtons.size() + 2);
+        for (Button& b : window.modeButtons)
+        {
+            allButtons.push_back(&b);
+        }
+        for (Button& b : window.gateButtons)
+        {
+            allButtons.push_back(&b);
+        }
+        allButtons.push_back(&window.blueprintsButton);
+        allButtons.push_back(&window.clipboardButton);
+    }
 
     while (!WindowShouldClose())
     {
@@ -67,31 +79,13 @@ int main()
         // UI buttons
         if (window.GetModeType() == ModeType::Basic && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            for (const Button& b : window.modeButtons)
+            for (const Button* const b : allButtons)
             {
-                if (window.CursorInUIBounds(b.Bounds()))
+                if (window.CursorInUIBounds(b->Bounds()))
                 {
-                    b.OnClick();
+                    b->OnClick();
                     goto EVAL; // Skip button sim this frame
                 }
-            }
-            for (const Button& b : window.gateButtons)
-            {
-                if (window.CursorInUIBounds(b.Bounds()))
-                {
-                    b.OnClick();
-                    goto EVAL; // Skip button sim this frame
-                }
-            }
-            if (window.CursorInUIBounds(window.blueprintsButton.Bounds()))
-            {
-                window.blueprintsButton.OnClick();
-                goto EVAL; // Skip button sim this frame
-            }
-            if (window.CursorInUIBounds(window.clipboardButton.Bounds()))
-            {
-                window.clipboardButton.OnClick();
-                goto EVAL; // Skip button sim this frame
             }
         }
 
@@ -131,90 +125,49 @@ int main()
 
                 // UI
 
-                // Sidebars
-                for ()
-
+                // Panels
+                // Todo: Make these collapsable
                 DrawRectangleIRect(IRect(Button::g_width * 2, window.windowHeight), UIColor(UIColorID::UI_COLOR_BACKGROUND1));
-                //DrawLine(Button::g_width * 2 + 1, 0, Button::g_width * 2 + 1, window.windowHeight, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-                //DrawRectangleIRect(Window::ButtonBound_Parameter(), window.ExtraParamColor());
 
-                const IVec2 tooltipNameOffset = IVec2(Button::g_width) + IVec2(window.FontSize() / 2, window.FontSize() / 8);
-                const IVec2 tooltipSeprOffset = tooltipNameOffset + Height(window.FontSize() + window.FontSize() / 2);
-                const IVec2 tooltipDescOffset = tooltipNameOffset + Height(window.FontSize() + window.FontSize());
-
-                // Mode
-                if (window.CursorInUIBounds(Window::ButtonBound_Mode()))
+                for (const Button* const b : allButtons)
                 {
-                    DrawRectangleIRect(Window::ButtonBound_Mode(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
-                    // Tooltip
-                    const char* name = window.GetModeTooltipName(window.baseMode);
-                    DrawTextIV(name, Window::ButtonBound_Mode().xy + tooltipNameOffset, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                    Width separatorWidth(MeasureText(name, window.FontSize()));
-                    DrawLineIV(Window::ButtonBound_Mode().xy + tooltipSeprOffset, separatorWidth, UIColor(UIColorID::UI_COLOR_FOREGROUND)); // Separator
-                    DrawTextIV(window.GetModeTooltipDescription(window.baseMode), Window::ButtonBound_Mode().xy + tooltipDescOffset, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                }
-                // Gate
-                else if (window.CursorInUIBounds(Window::ButtonBound_Gate()))
-                {
-                    DrawRectangleIRect(Window::ButtonBound_Gate(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
-                    // Tooltip
-                    const char* name = window.GetGateTooltipName(window.gatePick);
-                    DrawTextIV(name, Window::ButtonBound_Gate().xy + tooltipNameOffset, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                    Width separatorWidth(MeasureText(name, window.FontSize()));
-                    DrawLineIV(Window::ButtonBound_Gate().xy + tooltipSeprOffset, separatorWidth, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                    DrawTextIV(window.GetGateTooltipDescription(window.gatePick), Window::ButtonBound_Gate().xy + tooltipDescOffset, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                }
-                // Extra param
-                else if (window.CursorInUIBounds(Window::ButtonBound_Parameter()))
-                {
-                    DrawRectangleIRect(Window::ButtonBound_Parameter(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
-                    DrawRectangleIRect(ShrinkIRect(Window::ButtonBound_Parameter(), 2), window.ExtraParamColor());
-                    // Tooltip
-                    const char* text;
-                    if (window.gatePick == Gate::LED)
-                        text = TextFormat(window.deviceParameterTextFmt, Node::GetColorName(window.storedExtraParam));
-                    else
-                        text = TextFormat(window.deviceParameterTextFmt, window.storedExtraParam);
-                    DrawTextIV(text, Window::ButtonBound_Parameter().xy + tooltipNameOffset, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                }
-                // Blueprints
-                else if (window.CursorInUIBounds(Window::ButtonBound_Blueprints()))
-                {
-                    DrawRectangleIRect(Window::ButtonBound_Blueprints(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
-                    // Tooltip
-                    DrawTextIV("Blueprints", Window::ButtonBound_Blueprints().xy + tooltipNameOffset, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                }
-                // Clipboard
-                else if (window.CursorInUIBounds(Window::ButtonBound_Clipboard()))
-                {
-                    DrawRectangleIRect(Window::ButtonBound_Clipboard(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
-                    // Tooltip
-                    DrawTextIV("Clipboard (ctrl+c to copy, ctrl+v to paste)", Window::ButtonBound_Clipboard().xy + tooltipNameOffset, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                    const IVec2 clipboardPreviewOffset = tooltipNameOffset + Height(Button::g_width);
-                    // Clipboard preview
-                    if (window.IsClipboardValid())
-                        window.clipboard->DrawSelectionPreview(
-                            Window::ButtonBound_Clipboard().xy + clipboardPreviewOffset,
-                            UIColor(UIColorID::UI_COLOR_BACKGROUND1),
-                            UIColor(UIColorID::UI_COLOR_FOREGROUND3),
-                            UIColor(UIColorID::UI_COLOR_BACKGROUND2),
-                            ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND3), 0.25f),
-                            window.clipboardPreviewLOD);
-                }
-
-                window.DrawModeIcon(window.baseMode, Window::ButtonBound_Mode().xy, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                window.DrawGateIcon(window.gatePick, Window::ButtonBound_Gate().xy, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                
-                for (IVec2 offset = IVec2(-1); offset.y <= 1; ++offset.y)
-                {
-                    for (offset.x = -1; offset.x <= 1; ++offset.x)
+                    if (window.CursorInUIBounds(b->Bounds())) [[unlikely]]
                     {
-                        DrawTextIV(TextFormat("%i", window.storedExtraParam), Window::ButtonBound_Parameter().xy + IVec2(2, 1) + offset, window.FontSize(), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+                        DrawRectangleIRect(b->Bounds(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
+                        DrawTextIV(b->tooltip, b->Bounds().BR() + IVec2(window.FontSize() / 2), window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+
+                        // Clipboard preview
+                        if (b == &window.clipboardButton && window.IsClipboardValid()) [[unlikely]]
+                        {
+                            window.clipboard->DrawSelectionPreview(
+                                b->Bounds().BR() + (IVec2(window.FontSize() / 2) * Height(3)),
+                                UIColor(UIColorID::UI_COLOR_BACKGROUND1),
+                                UIColor(UIColorID::UI_COLOR_FOREGROUND3),
+                                UIColor(UIColorID::UI_COLOR_BACKGROUND2),
+                                ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND3), 0.25f),
+                                window.clipboardPreviewLOD);
+                        }
+                        break;
                     }
                 }
-                DrawTextIV(TextFormat("%i", window.storedExtraParam), Window::ButtonBound_Parameter().xy + IVec2(2,1), window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                DrawTextureIV(window.GetBlueprintIcon(), Window::ButtonBound_Blueprints().xy, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                DrawTextureIV(window.GetClipboardIcon(), Window::ButtonBound_Clipboard().xy, window.IsClipboardValid() ? UIColor(UIColorID::UI_COLOR_FOREGROUND) : ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND), 0.25f));
+
+                for (const Button* const b : allButtons)
+                {
+                    if (const IconButton* ib = dynamic_cast<const IconButton*>(b))
+                    {
+                        switch (window.uiScale)
+                        {
+                        case 1:
+                            DrawIcon<16>(*ib->textureSheet, ib->textureSheetPos, ib->Bounds().xy, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                        case 2:
+                            DrawIcon<32>(*ib->textureSheet, ib->textureSheetPos, ib->Bounds().xy, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                        }
+                    }
+                    else if (const TextButton* tb = dynamic_cast<const TextButton*>(b))
+                    {
+                        DrawTextIV(tb->buttonText, tb->Bounds().xy, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                    }
+                }
             }
 
         } EndDrawing();
