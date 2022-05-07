@@ -502,13 +502,15 @@ public:
         case Gate::XOR:
             return "Gate: Xor [4]";
         case Gate::RESISTOR:
-            return "Device: Resistor [5]";
+            return "Element: Resistor [5]";
         case Gate::CAPACITOR:
-            return "Device: Capacitor [6]";
+            return "Element: Capacitor [6]";
         case Gate::LED:
-            return "Device: LED [7]";
+            return "Element: LED [7]";
         case Gate::DELAY:
-            return "Device: Delay [8]";
+            return "Element: Delay [8]";
+        case Gate::BATTERY:
+            return "Element: Battery [9]";
 
         default:
             _ASSERT_EXPR(false, L"Missing tooltip for selected gate");
@@ -558,6 +560,9 @@ public:
                 "Treats I/O the same as an OR gate.\n"
                 "Outputs with a 1-tick delay.\n"
                 "Sequntial delay devices are recommended for delay greater than 1 tick.";
+        case Gate::BATTERY:
+            return
+                "Always outputs true, regardless of inputs.";
 
         default:
             _ASSERT_EXPR(false, L"Missing tooltip description for selected gate");
@@ -1245,6 +1250,7 @@ void Draw_Pen(ProgramData& data)
             case Gate::CAPACITOR: gateName = "capacitor"; break;
             case Gate::LED:       gateName = "LED";       break;
             case Gate::DELAY:     gateName = "delay";     break;
+            case Gate::BATTERY:   gateName = "battery";   break;
             default:
                 _ASSERT_EXPR(false, L"Missing specialization for gate name");
                 gateName = "ERROR";
@@ -1616,6 +1622,7 @@ void Draw_Edit(ProgramData& data)
             unsigned CAPs = 0;
             unsigned LEDs = 0;
             unsigned DELs = 0;
+            unsigned BATs = 0;
 
             for (Node* node : data.selection)
             {
@@ -1629,9 +1636,11 @@ void Draw_Edit(ProgramData& data)
                 case Gate::CAPACITOR: ++CAPs; break;
                 case Gate::LED:       ++LEDs; break;
                 case Gate::DELAY:     ++DELs; break;
+                case Gate::BATTERY:   ++BATs; break;
                 }
             }
 
+            if (DELs) DrawText(TextFormat("\t\tbattery: %i", BATs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             if (DELs) DrawText(TextFormat("\t\tdelay: %i", DELs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             if (LEDs) DrawText(TextFormat("\t\tLED: %i", LEDs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
             if (CAPs) DrawText(TextFormat("\t\tcapacitor: %i", CAPs), 2, data.windowHeight - (++i * 12), 8, uiColors[UI_COLOR_FOREGROUND2]);
@@ -1659,6 +1668,7 @@ void Draw_Edit(ProgramData& data)
             case Gate::CAPACITOR: gateName = "capacitor"; break;
             case Gate::LED:       gateName = "LED";       break;
             case Gate::DELAY:     gateName = "delay";     break;
+            case Gate::BATTERY:   gateName = "battery";   break;
             default:
                 _ASSERT_EXPR(false, L"Missing specialization for gate name");
                 gateName = "ERROR";
