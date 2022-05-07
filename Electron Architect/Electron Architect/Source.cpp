@@ -152,14 +152,34 @@ int main()
                     }
                 }
 
+                const Button* buttonsToHighlight[] = {
+                    static_cast<const Button*>(& window.ButtonFromMode(window.GetMode())),
+                    static_cast<const Button*>(& window.ButtonFromGate(window.gatePick)),
+                };
+
                 for (const Button* const b : allButtons)
                 {
+                    Color color;
+                    bool shouldHighlight = false;
+                    for (const Button* hb : buttonsToHighlight)
+                    {
+                        if (b == hb)
+                        {
+                            shouldHighlight = true;
+                            break;
+                        }
+                    }
+                    if (shouldHighlight || window.CursorInUIBounds(b->Bounds())) [[unlikely]]
+                        color = UIColor(UIColorID::UI_COLOR_FOREGROUND);
+                    else [[likely]]
+                        color = UIColor(UIColorID::UI_COLOR_FOREGROUND2);
+
                     // Icon buttons
                     if (const IconButton* ib = dynamic_cast<const IconButton*>(b))
-                        window.DrawUIIcon(*ib->textureSheet, ib->textureSheetPos, ib->Bounds().xy, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                        window.DrawUIIcon(*ib->textureSheet, ib->textureSheetPos, ib->Bounds().xy, color);
                     // Text buttons
                     else if (const TextButton* tb = dynamic_cast<const TextButton*>(b))
-                        DrawTextIV(tb->buttonText, tb->Bounds().xy, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                        DrawTextIV(tb->buttonText, tb->Bounds().xy, window.FontSize(), color);
                 }
             }
 

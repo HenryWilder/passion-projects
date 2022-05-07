@@ -216,6 +216,37 @@ Tab& Window::CurrentTab()
     return *tabs[activeTab];
 }
 
+const IconButton& Window::ButtonFromMode(Mode mode) const
+{
+    switch (mode)
+    {
+    default: throw(std::exception("Missing specialization"));
+    case Mode::PEN:         return modeButtons[0];
+    case Mode::EDIT:        return modeButtons[1];
+    case Mode::ERASE:       return modeButtons[2];
+    case Mode::INTERACT:    return modeButtons[3];
+    case Mode::BUTTON:      return modeButtons[4];
+    case Mode::PASTE:       return modeButtons[5];
+    case Mode::BP_SELECT:   return modeButtons[6];
+    }
+}
+const IconButton& Window::ButtonFromGate(Gate gate) const
+{
+    switch (gate)
+    {
+    default: throw(std::exception("Missing specialization"));
+    case Gate::OR:          return gateButtons[0];
+    case Gate::AND:         return gateButtons[1];
+    case Gate::NOR:         return gateButtons[2];
+    case Gate::XOR:         return gateButtons[3];
+    case Gate::RESISTOR:    return gateButtons[4];
+    case Gate::CAPACITOR:   return gateButtons[5];
+    case Gate::LED:         return gateButtons[6];
+    case Gate::DELAY:       return gateButtons[7];
+    case Gate::BATTERY:     return gateButtons[8];
+    }
+}
+
 int Window::FontSize() const
 {
     switch (uiScale)
