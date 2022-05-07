@@ -168,6 +168,9 @@ void PenTool::DrawProperties(Window& window)
     // Node hover stats
     if (!!window.hoveredNode)
     {
+        window.PushPropertySubtitle("hovered node");
+        window.PushProperty_ptr("ptr", window.hoveredNode);
+
         const char* gateName = GateName(window.hoveredNode->GetGate());
         DrawText(StateName(window.hoveredNode->GetState()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
         DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));

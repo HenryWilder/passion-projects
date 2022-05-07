@@ -852,20 +852,58 @@ void Window::DrawTool()
     else
         base->Draw(*this);
 }
-void Window::PushProperty()
+void Window::PushProperty(const char* name, const char* value)
 {
-
+    const int propHeight = FontSize() * 2;
+    const IVec2 padding(FontSize() / 2);
+    IRect box(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
+    DrawRectangleLines(box.x, box.y, box.w, box.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    const int propertiesPaneMiddle = propertiesPaneRec.w / 2;
+    const int propertiesPaneMiddleAbs = propertiesPaneRec.x + propertiesPaneMiddle;
+    DrawLine(propertiesPaneMiddleAbs, box.y, propertiesPaneMiddleAbs, box.Bottom(), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    DrawTextIV(name, box.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(value, box.xy + Width(propertiesPaneMiddle) + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    propertyNumber++;
+}
+void Window::PushProperty_int(const char* name, int value)
+{
+    PushProperty(name, TextFormat("%i", value));
+}
+void Window::PushProperty_ptr(const char* name, void* value)
+{
+    PushProperty(name, TextFormat("%p", value));
+}
+void Window::PushProperty_str(const char* name, const std::string& value)
+{
+    PushProperty(name, value.c_str());
+}
+void Window::PushProperty_bool(const char* name, bool value)
+{
+    PushProperty(name, value ? "true" : "false");
+}
+void Window::PushPropertyTitle(const char* title)
+{
+    const int propHeight = FontSize() * 2;
+    const IVec2 padding(FontSize() / 2);
+    IRect box(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
+    DrawRectangleIRect(ShrinkIRect(box), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    DrawTextIV(title, box.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    propertyNumber++;
+}
+void Window::PushPropertySubtitle(const char* title)
+{
+    const int propHeight = FontSize() * 2;
+    const IVec2 padding(FontSize() / 2);
+    IVec2 pos(propertiesPaneRec.x, propHeight * propertyNumber);
+    DrawTextIV(title, pos + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber++;
 }
 void Window::DrawToolProperties()
 {
     EndMode2D(); // In case
     DrawRectangleIRect(propertiesPaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
-    IRect titleBox = propertiesPaneRec;
-    titleBox.h = FontSize() * 2;
-    DrawRectangleIRect(titleBox, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-    DrawTextIV("Properties", propertiesPaneRec.xy + IVec2(FontSize() / 2), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber = 0;
+    PushPropertyTitle("Properties");
     if (!!overlay)
         overlay->DrawProperties(*this);
     else
