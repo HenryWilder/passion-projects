@@ -587,18 +587,18 @@ void NodeWorld::Evaluate()
     }
 }
 
-void NodeWorld::DrawWires() const
+void NodeWorld::DrawWires(Color colorActive, Color colorInactive) const
 {
     for (Wire* wire : wires)
     {
-        wire->Draw(wire->start->GetState() ? Wire::g_wireColorActive : Wire::g_wireColorInactive);
+        wire->Draw(wire->start->GetState() ? colorActive : colorInactive);
     }
 }
-void NodeWorld::DrawNodes() const
+void NodeWorld::DrawNodes(Color colorActive, Color colorInactive) const
 {
     for (Node* node : nodes)
     {
-        node->Draw(node->GetState() ? node->g_nodeColorActive : node->g_nodeColorInactive);
+        node->Draw(node->GetState() ? colorActive : colorInactive);
     }
 }
 void NodeWorld::DrawGroups() const

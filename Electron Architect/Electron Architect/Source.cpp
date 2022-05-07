@@ -1173,7 +1173,7 @@ void Update_Pen(ProgramData& data)
 }
 void Draw_Pen(ProgramData& data)
 {
-    NodeWorld::Get().DrawWires();
+    NodeWorld::Get().DrawWires(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND3]);
 
     if (!!data.Pen_CurrentWireStart())
     {
@@ -1208,7 +1208,7 @@ void Draw_Pen(ProgramData& data)
         }
     }
 
-    NodeWorld::Get().DrawNodes();
+    NodeWorld::Get().DrawNodes(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND]);
 
     if (!!data.hoveredWire)
     {
@@ -1542,7 +1542,7 @@ void Draw_Edit(ProgramData& data)
     DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(uiColors[UI_COLOR_BACKGROUND1], 0.5));
     DrawRectangleLines(data.Edit_SelectionRec().x, data.Edit_SelectionRec().y, data.Edit_SelectionRec().w, data.Edit_SelectionRec().h, uiColors[UI_COLOR_BACKGROUND2]);
 
-    NodeWorld::Get().DrawWires();
+    NodeWorld::Get().DrawWires(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND3]);
 
     for (Node* node : data.selection)
     {
@@ -1574,7 +1574,7 @@ void Draw_Edit(ProgramData& data)
         data.hoveredWire->DrawElbow(elbowColor);
     }
 
-    NodeWorld::Get().DrawNodes();
+    NodeWorld::Get().DrawNodes(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND]);
 
     if (!!data.hoveredNode)
     {
@@ -1768,7 +1768,7 @@ void Draw_Erase(ProgramData& data)
         DrawLineEx({ (float)rec.x, (float)rec.Bottom() }, { (float)rec.x + (float)rec.h, (float)rec.y }, 3, uiColors[UI_COLOR_DESTRUCTIVE]);
     }
 
-    NodeWorld::Get().DrawWires();
+    NodeWorld::Get().DrawWires(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND3]);
 
     if (!!data.hoveredWire)
     {
@@ -1796,7 +1796,7 @@ void Draw_Erase(ProgramData& data)
         }
     }
 
-    NodeWorld::Get().DrawNodes();
+    NodeWorld::Get().DrawNodes(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND]);
 
     if (!!data.hoveredNode)
     {
@@ -1868,8 +1868,8 @@ void Update_Interact(ProgramData& data)
 }
 void Draw_Interact(ProgramData& data)
 {
-    NodeWorld::Get().DrawWires();
-    NodeWorld::Get().DrawNodes();
+    NodeWorld::Get().DrawWires(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND3]);
+    NodeWorld::Get().DrawNodes(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND]);
 
     for (const Node* node : NodeWorld::Get().GetStartNodes())
     {
@@ -1991,8 +1991,8 @@ void Update_Overlay_Button(ProgramData& data)
 }
 void Draw_Overlay_Button(ProgramData& data)
 {
-    NodeWorld::Get().DrawWires();
-    NodeWorld::Get().DrawNodes();
+    NodeWorld::Get().DrawWires(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND3]);
+    NodeWorld::Get().DrawNodes(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND]);
 
     EndMode2D();
 
@@ -2081,8 +2081,8 @@ void Update_Overlay_Paste(ProgramData& data)
 }
 void Draw_Overlay_Paste(ProgramData& data)
 {
-    NodeWorld::Get().DrawWires();
-    NodeWorld::Get().DrawNodes();
+    NodeWorld::Get().DrawWires(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND3]);
+    NodeWorld::Get().DrawNodes(uiColors[UI_COLOR_ACTIVE], uiColors[UI_COLOR_FOREGROUND]);
 
     data.clipboard->DrawSelectionPreview(data.cursorPos - IVec2(g_gridSize), ColorAlpha(uiColors[UI_COLOR_BACKGROUND2], 0.5f), uiColors[UI_COLOR_FOREGROUND2], uiColors[UI_COLOR_BACKGROUND2], uiColors[UI_COLOR_FOREGROUND3], data.pastePreviewLOD);
 }

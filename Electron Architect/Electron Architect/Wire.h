@@ -22,8 +22,6 @@ struct Wire
     Wire(Node* start, Node* end);
     Wire(Node* start, Node* end, ElbowConfig elbowConfig);
 
-    static constexpr Color g_wireColorActive = REDSTONE;
-    static constexpr Color g_wireColorInactive = DEADCABLE;
     static constexpr float g_elbowRadius = 2.0f;
 
     IVec2 elbow;

@@ -90,8 +90,8 @@ public:
 
     // Draw functions
     
-    void DrawWires() const;
-    void DrawNodes() const;
+    void DrawWires(Color colorActive, Color colorInactive) const;
+    void DrawNodes(Color colorActive, Color colorInactive) const;
     void DrawGroups() const;
 
     // Search functions

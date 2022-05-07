@@ -14,6 +14,8 @@ enum class Gate : char
     CAPACITOR = '=',
     LED = '@',
     DELAY = ';',
+
+    BATTERY = '#',
 };
 
 class Node
@@ -97,8 +99,6 @@ private: // Accessible by NodeWorld
     Node(IVec2 position, Gate gate, uint8_t extraParam);
 
 public:
-    static constexpr Color g_nodeColorActive = RED;
-    static constexpr Color g_nodeColorInactive = LIGHTGRAY;
     static constexpr Color g_resistanceBands[] = {
         { 0,0,0, 255 },
         { 126,63,0, 255 },

@@ -57,7 +57,7 @@ Blueprint nativeBlueprints[] =
             NodeBP(false, Gate::OR,  IVec2(3,1) * g_gridSize),
 
             NodeBP(false, Gate::NOR, IVec2(4,0) * g_gridSize),
-            NodeBP(false, Gate::NOR, IVec2(4,1) * g_gridSize),
+            NodeBP(true,  Gate::NOR, IVec2(4,1) * g_gridSize),
         },
         // Wires
         {
@@ -94,11 +94,11 @@ Blueprint nativeBlueprints[] =
         "Half-Subtractor",
         // Nodes
         {
-            NodeBP(true, Gate::OR,  IVec2(0,0) * g_gridSize), // A
-            NodeBP(true, Gate::OR,  IVec2(0,1) * g_gridSize), // B
-            NodeBP(true, Gate::NOR, IVec2(1,1) * g_gridSize),
-            NodeBP(true, Gate::XOR, IVec2(2,0) * g_gridSize), // Difference
-            NodeBP(true, Gate::AND, IVec2(2,1) * g_gridSize), // Borrow
+            NodeBP(true,  Gate::OR,  IVec2(0,0) * g_gridSize), // A
+            NodeBP(true,  Gate::OR,  IVec2(0,1) * g_gridSize), // B
+            NodeBP(false, Gate::NOR, IVec2(1,1) * g_gridSize),
+            NodeBP(true,  Gate::XOR, IVec2(2,0) * g_gridSize), // Difference
+            NodeBP(true,  Gate::AND, IVec2(2,1) * g_gridSize), // Borrow
         },
         // Wires
         {
@@ -138,16 +138,16 @@ Blueprint nativeBlueprints[] =
         "Full-Subtractor",
         // Nodes
         {
-            NodeBP(true, Gate::OR,  IVec2(0,0) * g_gridSize),
-            NodeBP(true, Gate::OR,  IVec2(0,1) * g_gridSize),
-            NodeBP(true, Gate::OR,  IVec2(0,2) * g_gridSize),
-            NodeBP(true, Gate::NOR, IVec2(1,1) * g_gridSize),
-            NodeBP(true, Gate::XOR, IVec2(2,0) * g_gridSize),
-            NodeBP(true, Gate::AND, IVec2(2,1) * g_gridSize),
-            NodeBP(true, Gate::XOR, IVec2(4,0) * g_gridSize),
-            NodeBP(true, Gate::AND, IVec2(3,1) * g_gridSize),
-            NodeBP(true, Gate::NOR, IVec2(3,0) * g_gridSize),
-            NodeBP(true, Gate::OR,  IVec2(4,1) * g_gridSize),
+            NodeBP(true,  Gate::OR,  IVec2(0,0) * g_gridSize),
+            NodeBP(true,  Gate::OR,  IVec2(0,1) * g_gridSize),
+            NodeBP(true,  Gate::OR,  IVec2(1,0) * g_gridSize),
+            NodeBP(false, Gate::NOR, IVec2(1,1) * g_gridSize),
+            NodeBP(false, Gate::XOR, IVec2(2,0) * g_gridSize),
+            NodeBP(false, Gate::AND, IVec2(2,1) * g_gridSize),
+            NodeBP(true,  Gate::XOR, IVec2(4,0) * g_gridSize),
+            NodeBP(false, Gate::AND, IVec2(3,1) * g_gridSize),
+            NodeBP(false, Gate::NOR, IVec2(3,0) * g_gridSize),
+            NodeBP(true,  Gate::OR,  IVec2(4,1) * g_gridSize),
         },
         // Wires
         {
