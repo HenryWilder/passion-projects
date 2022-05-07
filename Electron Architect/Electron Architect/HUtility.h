@@ -17,25 +17,7 @@
 #endif
 #define ASSERT_SPECIALIZATION(being_specialized) default: _ASSERT_EXPR(false, L"Missing " being_specialized L" specialization for encountered case"); break
 
-#pragma region Constants
-
-// Custom colors
-#define SPACEGRAY CLITERAL(Color){ 28, 26, 41, 255 }
-#define LIFELESSNEBULA CLITERAL(Color){ 75, 78, 94, 255 }
-#define HAUNTINGWHITE CLITERAL(Color){ 148, 150, 166, 255 }
-#define GLEEFULDUST CLITERAL(Color){ 116, 125, 237, 255 }
-#define INTERFERENCEGRAY CLITERAL(Color){ 232, 234, 255, 255 }
-#define REDSTONE CLITERAL(Color){ 212, 25, 25, 255 }
-#define DESTRUCTIVERED CLITERAL(Color){ 219, 18, 18, 255 }
-#define DEADCABLE CLITERAL(Color){ 122, 118, 118, 255 }
-#define INPUTLAVENDER CLITERAL(Color){ 128, 106, 217, 255 }
-#define OUTPUTAPRICOT CLITERAL(Color){ 207, 107, 35, 255 }
-#define WIPBLUE CLITERAL(Color){ 26, 68, 161, 255 }
-#define CAUTIONYELLOW CLITERAL(Color){ 250, 222, 37, 255 }
-
 constexpr int g_gridSize = 8;
-
-#pragma endregion
 
 template <class Iter>
 class Range {

@@ -45,6 +45,12 @@
     <ClCompile Include="NativeBlueprints.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Buttons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UIColors.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icons_mode16x.png">
@@ -101,6 +107,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Component.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Buttons.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UIColors.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -9,6 +9,8 @@
 #include "Blueprint.h"
 #include "Group.h"
 #include "NodeWorld.h"
+#include "Buttons.h"
+#include "UIColors.h"
 
 enum class Mode
 {
@@ -24,55 +26,6 @@ enum class Mode
 };
 
 Blueprint g_clipboardBP; // Reusable address so clipboard doesn't have to delete
-
-#pragma region UI Colors
-
-Color uiColors[18];
-enum UIColorLocs : unsigned
-{
-    UI_COLOR_BACKGROUND, // BLACK
-    UI_COLOR_BACKGROUND1, // SPACEGRAY
-    UI_COLOR_BACKGROUND2, // LIFELESSNEBULA
-    UI_COLOR_BACKGROUND3, // GLEEFULDUST
-    UI_COLOR_FOREGROUND3, // DEADCABLE
-    UI_COLOR_FOREGROUND2, // HAUNTINGWHITE
-    UI_COLOR_FOREGROUND1, // INTERFERENCEGRAY
-    UI_COLOR_FOREGROUND, // WHITE
-    UI_COLOR_INPUT, // INPUTLAVENDER
-    UI_COLOR_OUTPUT, // OUTPUTAPRICOT
-    UI_COLOR_AVAILABLE, // WIPBLUE
-    UI_COLOR_INTERACT, // YELLOW
-    UI_COLOR_ACTIVE, // REDSTONE
-    UI_COLOR_ERROR, // MAGENTA
-    UI_COLOR_DESTRUCTIVE, // DESTRUCTIVERED
-    UI_COLOR_SPECIAL, // VIOLET
-    UI_COLOR_CAUTION, // CAUTIONYELLOW
-    UI_COLOR_BLUEPRINTS_BACKGROUND, // (literal)
-};
-
-#pragma endregion
-
-#pragma region Buttons
-
-struct Button
-{
-    Button(IVec2 offset, const char* tooltip, const char* description, IVec2 textureSheetPos, const Texture2D* textureSheet, std::function<void()> clickCallback) :
-        offset(offset), tooltipName(tooltip), textureSheetPos(textureSheetPos), textureSheet(textureSheet), OnClick(clickCallback) {}
-
-    static int g_width;
-
-    IVec2 offset;
-    const char* tooltipName;
-    const char* tooltipDesc;
-    IVec2 textureSheetPos;
-    const Texture2D* textureSheet;
-    std::function<void()> OnClick;
-
-    IRect Bounds() const { return IRect(offset * g_width, g_width); }
-};
-int Button::g_width = 16;
-
-#pragma endregion
 
 struct ProgramData
 {
@@ -192,27 +145,27 @@ private:
     void SetMode_Pen() { SetMode(Mode::PEN); }
 public:
 
-    std::vector<Button> modeButtons
+    std::vector<IconButton> modeButtons
     {
-        Button(IVec2(0,0), "Mode: Draw [b]",        IVec2(0,0), &modeIcons16x, [this]() { SetMode(Mode::PEN); }),
-        Button(IVec2(0,1), "Mode: Edit [v]",        IVec2(1,0), &modeIcons16x, [this]() { SetMode(Mode::EDIT); }),
-        Button(IVec2(0,2), "Mode: Erase [x]",       IVec2(0,1), &modeIcons16x, [this]() { SetMode(Mode::ERASE); }),
-        Button(IVec2(0,3), "Mode: Interact [f]",    IVec2(1,1), &modeIcons16x, [this]() { SetMode(Mode::INTERACT); }),
+        IconButton(IVec2(0,0), "Mode: Draw [b]",        IVec2(0,0), &modeIcons16x, [this]() { SetMode(Mode::PEN); }),
+        IconButton(IVec2(0,1), "Mode: Edit [v]",        IVec2(1,0), &modeIcons16x, [this]() { SetMode(Mode::EDIT); }),
+        IconButton(IVec2(0,2), "Mode: Erase [x]",       IVec2(0,1), &modeIcons16x, [this]() { SetMode(Mode::ERASE); }),
+        IconButton(IVec2(0,3), "Mode: Interact [f]",    IVec2(1,1), &modeIcons16x, [this]() { SetMode(Mode::INTERACT); }),
     };
-    std::vector<Button> gateButtons
+    std::vector<IconButton> gateButtons
     {
-        Button(IVec2(1,0), "Gate: Or [1]",          IVec2(0,0), &gateIcons16x, [this]() { SetGate(Gate::OR); }),
-        Button(IVec2(1,1), "Gate: And [2]",         IVec2(1,0), &gateIcons16x, [this]() { SetGate(Gate::AND); }),
-        Button(IVec2(1,2), "Gate: Nor [3]",         IVec2(0,1), &gateIcons16x, [this]() { SetGate(Gate::NOR); }),
-        Button(IVec2(1,3), "Gate: Xor [4]",         IVec2(1,1), &gateIcons16x, [this]() { SetGate(Gate::XOR); }),
-        Button(IVec2(1,4), "Element: Resistor [5]", IVec2(0,2), &gateIcons16x, [this]() { SetGate(Gate::RESISTOR); }),
-        Button(IVec2(1,5), "Element: Capacitor [6]",IVec2(1,2), &gateIcons16x, [this]() { SetGate(Gate::CAPACITOR); }),
-        Button(IVec2(1,6), "Element: LED [7]",      IVec2(0,3), &gateIcons16x, [this]() { SetGate(Gate::LED); }),
-        Button(IVec2(1,7), "Element: Delay [8]",    IVec2(1,3), &gateIcons16x, [this]() { SetGate(Gate::DELAY); }),
-        Button(IVec2(1,8), "Element: Battery [9]",  IVec2(0,4), &gateIcons16x, [this]() { SetGate(Gate::BATTERY); }),
+        IconButton(IVec2(1,0), "Gate: Or [1]",          IVec2(0,0), &gateIcons16x, [this]() { SetGate(Gate::OR); }),
+        IconButton(IVec2(1,1), "Gate: And [2]",         IVec2(1,0), &gateIcons16x, [this]() { SetGate(Gate::AND); }),
+        IconButton(IVec2(1,2), "Gate: Nor [3]",         IVec2(0,1), &gateIcons16x, [this]() { SetGate(Gate::NOR); }),
+        IconButton(IVec2(1,3), "Gate: Xor [4]",         IVec2(1,1), &gateIcons16x, [this]() { SetGate(Gate::XOR); }),
+        IconButton(IVec2(1,4), "Element: Resistor [5]", IVec2(0,2), &gateIcons16x, [this]() { SetGate(Gate::RESISTOR); }),
+        IconButton(IVec2(1,5), "Element: Capacitor [6]",IVec2(1,2), &gateIcons16x, [this]() { SetGate(Gate::CAPACITOR); }),
+        IconButton(IVec2(1,6), "Element: LED [7]",      IVec2(0,3), &gateIcons16x, [this]() { SetGate(Gate::LED); }),
+        IconButton(IVec2(1,7), "Element: Delay [8]",    IVec2(1,3), &gateIcons16x, [this]() { SetGate(Gate::DELAY); }),
+        IconButton(IVec2(1,8), "Element: Battery [9]",  IVec2(0,4), &gateIcons16x, [this]() { SetGate(Gate::BATTERY); }),
     };
-    Button blueprintsButton = Button(IVec2(2, 0), "Blueprints", IVec2::Zero(), &blueprintIcon16x, [this]() { SetMode(Mode::BP_SELECT); });
-    Button clipboardButton = Button(IVec2(2,1), "Clipboard", IVec2::Zero(), &clipboardIcon16x, [this]() { SetMode(Mode::PASTE); });
+    IconButton blueprintsButton = IconButton(IVec2(2, 0), "Blueprints", IVec2::Zero(), &blueprintIcon16x, [this]() { SetMode(Mode::BP_SELECT); });
+    IconButton clipboardButton = IconButton(IVec2(2,1), "Clipboard", IVec2::Zero(), &clipboardIcon16x, [this]() { SetMode(Mode::PASTE); });
 
 #if _DEBUG
 private:
@@ -1032,17 +985,17 @@ public:
         if (uiScale <= 1)
             uiScale = 1;
 
-        Button::g_width = 16 * uiScale;
+        IconButton::g_width = 16 * uiScale;
         switch (uiScale)
         {
         default:
             break;
         case 1:
-            for (Button& b : modeButtons)
+            for (IconButton& b : modeButtons)
             {
                 b.textureSheet = &modeIcons16x;
             }
-            for (Button& b : gateButtons)
+            for (IconButton& b : gateButtons)
             {
                 b.textureSheet = &gateIcons16x;
             }
@@ -1050,11 +1003,11 @@ public:
             clipboardButton.textureSheet = &clipboardIcon16x;
             break;
         case 2:
-            for (Button& b : modeButtons)
+            for (IconButton& b : modeButtons)
             {
                 b.textureSheet = &modeIcons32x;
             }
-            for (Button& b : gateButtons)
+            for (IconButton& b : gateButtons)
             {
                 b.textureSheet = &gateIcons32x;
             }

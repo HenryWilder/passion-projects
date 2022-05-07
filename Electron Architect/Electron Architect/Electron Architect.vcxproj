@@ -216,6 +216,7 @@ copy /b "$(ProjectDir)icons_mode32x.png" "$(OutDir)";</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Blueprint.cpp" />
+    <ClCompile Include="Buttons.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="Group.cpp" />
     <ClCompile Include="HUtility.cpp" />
@@ -224,6 +225,7 @@ copy /b "$(ProjectDir)icons_mode32x.png" "$(OutDir)";</Command>
     <ClCompile Include="NodeWorld.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="UIColors.cpp" />
     <ClCompile Include="Wire.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -239,6 +241,7 @@ copy /b "$(ProjectDir)icons_mode32x.png" "$(OutDir)";</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Blueprint.h" />
+    <ClInclude Include="Buttons.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="Group.h" />
     <ClInclude Include="HUtility.h" />
@@ -246,6 +249,7 @@ copy /b "$(ProjectDir)icons_mode32x.png" "$(OutDir)";</Command>
     <ClInclude Include="NodeWorld.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="UIColors.h" />
     <ClInclude Include="Wire.h" />
   </ItemGroup>
   <ItemGroup>
