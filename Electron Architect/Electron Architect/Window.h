@@ -56,6 +56,7 @@ public:
     Group* hoveredGroup = nullptr;
 
     Blueprint* clipboard = nullptr;
+    // Todo: make selection tab-specific instead of across the window
     std::vector<Node*> selection;
 
     std::vector<IconButton> modeButtons

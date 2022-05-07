@@ -259,13 +259,13 @@ bool Window::SelectionExists() const
 void Window::ClearSelection()
 {
     selection.clear();
-    if (mode == Mode::EDIT)
-        Edit_SelectionRec() = IRect(0);
+    if (EditTool* edit = dynamic_cast<EditTool*>(base))
+        edit->selectionRec = IRect(0);
 }
 
 void Window::DestroySelection()
 {
-    Tab::Get().DestroyNodes(selection);
+    CurrentTab().DestroyNodes(selection);
     ClearSelection();
 }
 
@@ -294,7 +294,7 @@ void Window::CheckHotkeys()
         }
 
         // Copy
-        if (IsKeyPressed(KEY_C) && mode == Mode::EDIT)
+        if (IsKeyPressed(KEY_C) && GetMode() == Mode::EDIT)
             CopySelectionToClipboard();
 
         // Paste
@@ -309,11 +309,11 @@ void Window::CheckHotkeys()
         if (IsKeyPressed(KEY_S))
         {
             // Save blueprint
-            if (mode == Mode::PASTE)
+            if (GetMode() == Mode::PASTE)
                 SaveBlueprint();
 
             // Save file
-            else Tab::Get().Save("save.cg");
+            else CurrentTab().Save(TextFormat("%s.cg", CurrentTab().GetName()));
         }
 
         return; // Don't miscommunicate to the user!!

@@ -35,6 +35,8 @@ public:
     Tab(const char* name = "Unnamed graph");
     ~Tab();
 
+    const char* GetName() const;
+
     bool IsOrderDirty() const;
 
     const decltype(startNodes)& GetStartNodes() const;
@@ -72,7 +74,7 @@ public:
 
     // Group functions
 
-    Group* CreateGroup(IRect rec);
+    Group* CreateGroup(IRect rec, Color color);
     void DestroyGroup(Group* group);
     void FindNodesInGroup(std::vector<Node*>& result, Group* group) const;
 

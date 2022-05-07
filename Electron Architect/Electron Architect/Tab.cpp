@@ -98,15 +98,14 @@ void Tab::_DestroyWire(Wire* wire)
 }
 
 
-Tab& Tab::Get()
-{
-    static Tab g_only;
-    return g_only;
-}
-
 bool Tab::IsOrderDirty() const
 {
     return orderDirty;
+}
+
+const char* Tab::GetName() const
+{
+    return name;
 }
 
 const decltype(Tab::startNodes)& Tab::GetStartNodes() const
@@ -398,9 +397,9 @@ std::pair<Wire*, Wire*> Tab::BisectWire(Wire* wire, Node* bisector)
     return newWire;
 }
 
-Group* Tab::CreateGroup(IRect rec)
+Group* Tab::CreateGroup(IRect rec, Color color)
 {
-    Group* group = new Group(rec, WIPBLUE, "Label");
+    Group* group = new Group(rec, color, "Label");
     groups.push_back(group);
     return group;
 }
