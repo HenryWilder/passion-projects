@@ -858,7 +858,7 @@ void Window::PushProperty(const char* name, const char* value)
     const IVec2 padding(FontSize() / 2);
     IRect box(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
     DrawRectangleLines(box.x, box.y, box.w, box.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-    const int propertiesPaneMiddle = propertiesPaneRec.w / 2;
+    const int propertiesPaneMiddle = propertiesPaneRec.w / 3;
     const int propertiesPaneMiddleAbs = propertiesPaneRec.x + propertiesPaneMiddle;
     DrawLine(propertiesPaneMiddleAbs, box.y, propertiesPaneMiddleAbs, box.Bottom(), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
     DrawTextIV(name, box.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
@@ -868,6 +868,10 @@ void Window::PushProperty(const char* name, const char* value)
 void Window::PushProperty_int(const char* name, int value)
 {
     PushProperty(name, TextFormat("%i", value));
+}
+void Window::PushProperty_uint(const char* name, int value)
+{
+    PushProperty(name, TextFormat("%u", value));
 }
 void Window::PushProperty_ptr(const char* name, void* value)
 {
@@ -890,13 +894,110 @@ void Window::PushPropertyTitle(const char* title)
     DrawTextIV(title, box.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber++;
 }
-void Window::PushPropertySubtitle(const char* title)
+void Window::PushPropertySubtitle(const char* title, Color color)
 {
     const int propHeight = FontSize() * 2;
     const IVec2 padding(FontSize() / 2);
     IVec2 pos(propertiesPaneRec.x, propHeight * propertyNumber);
-    DrawTextIV(title, pos + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(title, pos + padding, FontSize(), color);
     propertyNumber++;
+}
+void Window::PushPropertySection_Node(const char* name, Node* value)
+{
+    if (!!value)
+    {
+        PushPropertySubtitle(name);
+        PushProperty_ptr("Pointer", value);
+        PushProperty_uint("Serial", CurrentTab().NodeID(value));
+        PushProperty("Type", GateName(value->GetGate()));
+        switch (value->GetGate())
+        {
+        case Gate::RESISTOR:  PushProperty_uint("Resistance", value->GetResistance());  break;
+        case Gate::CAPACITOR: PushProperty_uint("Capacity", value->GetCapacity());      break;
+        case Gate::LED:       PushProperty_uint("Color index", value->GetColorIndex()); break;
+        default: break;
+        }
+        PushPropertySubtitle("Inputs", UIColor(UIColorID::UI_COLOR_INPUT));
+        PushProperty_uint("Count", value->GetInputCount());
+        if (value->GetInputCount() == 0)
+            PushProperty("Note", "Available for interaction");
+
+        for (const Wire* wire : value->GetInputsConst())
+        {
+            PushProperty_ptr("\tPointer", wire->start);
+            PushProperty("\tState", StateName(wire->GetState()));
+        }
+        PushPropertySubtitle("Outputs", UIColor(UIColorID::UI_COLOR_OUTPUT));
+        PushProperty("State", StateName(value->GetState()));
+        PushProperty_uint("Count", value->GetOutputCount());
+        for (const Wire* wire : value->GetOutputsConst())
+        {
+            PushProperty_ptr("\tPointer", wire->end);
+        }
+    }
+}
+void Window::PushPropertySection_Wire(const char* name, Wire* value)
+{
+    if (!!value)
+    {
+        PushPropertySubtitle(name);
+        PushProperty_ptr("Pointer", value);
+        PushProperty("Joint config", ElbowConfigName(value->elbowConfig));
+        PushProperty("State", StateName(value->GetState()));
+        PushPropertySubtitle("Input", UIColor(UIColorID::UI_COLOR_INPUT));
+        PushProperty_uint("Serial", CurrentTab().NodeID(value->start));
+        PushProperty_ptr("Pointer", value->start);
+        PushPropertySubtitle("Output", UIColor(UIColorID::UI_COLOR_OUTPUT));
+        PushProperty_uint("Serial", CurrentTab().NodeID(value->end));
+        PushProperty_ptr("Pointer", value->end);
+    }
+}
+void Window::PushPropertySection_Selection(const char* name, const std::vector<Node*>& value)
+{
+    PushPropertySubtitle(name);
+
+    unsigned ORs = 0;
+    unsigned ANDs = 0;
+    unsigned NORs = 0;
+    unsigned XORs = 0;
+    unsigned RESs = 0;
+    unsigned CAPs = 0;
+    unsigned LEDs = 0;
+    unsigned DELs = 0;
+    unsigned BATs = 0;
+
+    for (Node* node : value)
+    {
+        switch (node->GetGate())
+        {
+        case Gate::OR:        ++ORs;  break;
+        case Gate::AND:       ++ANDs; break;
+        case Gate::NOR:       ++NORs; break;
+        case Gate::XOR:       ++XORs; break;
+        case Gate::RESISTOR:  ++RESs; break;
+        case Gate::CAPACITOR: ++CAPs; break;
+        case Gate::LED:       ++LEDs; break;
+        case Gate::DELAY:     ++DELs; break;
+        case Gate::BATTERY:   ++BATs; break;
+        }
+    }
+
+    PushProperty_uint("Total", value.size());
+    if (ORs)  PushProperty_uint("OR gates", ORs);
+    if (ANDs) PushProperty_uint("AND gates", ANDs);
+    if (NORs) PushProperty_uint("NOR gates", NORs);
+    if (XORs) PushProperty_uint("XOR gates", XORs);
+    if (RESs) PushProperty_uint("Resistors", RESs);
+    if (CAPs) PushProperty_uint("Capacitors", CAPs);
+    if (LEDs) PushProperty_uint("LEDs", LEDs);
+    if (DELs) PushProperty_uint("Delays", DELs);
+    if (BATs) PushProperty_uint("Batteries", BATs);
+}
+void Window::PushPropertySection_Group(const char* name, Group* value)
+{
+    PushPropertySubtitle(name);
+    PushProperty_ptr("Pointer", value);
+    PushProperty_str("Label", value->GetLabel());
 }
 void Window::DrawToolProperties()
 {

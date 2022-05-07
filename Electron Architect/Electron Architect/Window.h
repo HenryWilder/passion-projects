@@ -78,6 +78,8 @@ private:
     Tool* base;
     Tool* overlay; // Menu modes are stored in here
 
+    int propertyNumber; // For the "PushProperty" functions
+
 public:
 
     int FontSize() const;
@@ -167,13 +169,18 @@ public:
 
     void UpdateTool();
     void DrawTool();
-    int propertyNumber;
+
     void PushProperty(const char* name, const char* value);
     void PushProperty_int(const char* name, int value);
+    void PushProperty_uint(const char* name, int value);
     void PushProperty_ptr(const char* name, void* value);
     void PushProperty_str(const char* name, const std::string& value);
     void PushProperty_bool(const char* name, bool value);
     void PushPropertyTitle(const char* title);
-    void PushPropertySubtitle(const char* title);
+    void PushPropertySubtitle(const char* title, Color color = UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    void PushPropertySection_Node(const char* name, Node* value);
+    void PushPropertySection_Wire(const char* name, Wire* value);
+    void PushPropertySection_Selection(const char* name, const std::vector<Node*>& value);
+    void PushPropertySection_Group(const char* name, Group* value);
     void DrawToolProperties();
 };

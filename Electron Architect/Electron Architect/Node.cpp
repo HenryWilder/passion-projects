@@ -395,11 +395,11 @@ const std::deque<Wire*>& Node::GetWires() const
 {
     return m_wires;
 }
-Range<std::deque<Wire*>::const_iterator> Node::GetInputs() const
+Range<std::deque<Wire*>::const_iterator> Node::GetInputsConst() const
 {
     return MakeRange<std::deque<Wire*>>(m_wires, 0, m_inputs);
 }
-Range<std::deque<Wire*>::const_iterator> Node::GetOutputs() const
+Range<std::deque<Wire*>::const_iterator> Node::GetOutputsConst() const
 {
     return MakeRange<std::deque<Wire*>>(m_wires, m_inputs, m_wires.size());
 }

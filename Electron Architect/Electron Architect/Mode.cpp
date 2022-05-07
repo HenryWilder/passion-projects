@@ -35,9 +35,9 @@ const char* GateName(Gate gate)
 const char* StateName(bool state)
 {
     if (state)
-        return "\tactive";
+        return "active";
     else
-        return "\tinactive";
+        return "inactive";
 }
 const char* ElbowConfigName(ElbowConfig elbow)
 {
@@ -163,36 +163,10 @@ void PenTool::Draw(Window& window)
 }
 void PenTool::DrawProperties(Window& window)
 {
-    int i = 0;
-
     // Node hover stats
-    if (!!window.hoveredNode)
-    {
-        window.PushPropertySubtitle("hovered node");
-        window.PushProperty_ptr("ptr", window.hoveredNode);
-
-        const char* gateName = GateName(window.hoveredNode->GetGate());
-        DrawText(StateName(window.hoveredNode->GetState()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-        DrawText(TextFormat("\tinputs: %i", window.hoveredNode->GetInputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
-        DrawText(TextFormat("\ttype: %s", gateName), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText("hovered node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    }
+    window.PushPropertySection_Node("Hovered node", window.hoveredNode);
     // Wire hover stats
-    else if (!!window.hoveredWire)
-    {
-        DrawText(TextFormat("\t\tptr: %p", window.hoveredWire->end), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\t\tserial: %u", window.CurrentTab().NodeID(window.hoveredWire->end)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText("\toutput", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-        DrawText(TextFormat("\t\tptr: %p", window.hoveredWire->start), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\t\tserial: %u", window.CurrentTab().NodeID(window.hoveredWire->start)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText("\tinput", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
-        DrawText(StateName(window.hoveredWire->GetState()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\tptr: %p", window.hoveredWire), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText("hovered wire", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    }
+    window.PushPropertySection_Wire("Hovered wire", window.hoveredWire);
 }
 
 EditTool::EditTool() :
@@ -526,77 +500,15 @@ void EditTool::Draw(Window& window)
 }
 void EditTool::DrawProperties(Window& window)
 {
-    int i = 0;
-
     // Selection stats
-    /*
     if (window.SelectionExists())
-    {
-        unsigned ORs = 0;
-        unsigned ANDs = 0;
-        unsigned NORs = 0;
-        unsigned XORs = 0;
-        unsigned RESs = 0;
-        unsigned CAPs = 0;
-        unsigned LEDs = 0;
-        unsigned DELs = 0;
-        unsigned BATs = 0;
-
-        for (Node* node : window.selection)
-        {
-            switch (node->GetGate())
-            {
-            case Gate::OR:        ++ORs;  break;
-            case Gate::AND:       ++ANDs; break;
-            case Gate::NOR:       ++NORs; break;
-            case Gate::XOR:       ++XORs; break;
-            case Gate::RESISTOR:  ++RESs; break;
-            case Gate::CAPACITOR: ++CAPs; break;
-            case Gate::LED:       ++LEDs; break;
-            case Gate::DELAY:     ++DELs; break;
-            case Gate::BATTERY:   ++BATs; break;
-            }
-        }
-
-        if (DELs) DrawText(TextFormat("\t\tbattery: %i", BATs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        if (DELs) DrawText(TextFormat("\t\tdelay: %i", DELs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        if (LEDs) DrawText(TextFormat("\t\tLED: %i", LEDs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        if (CAPs) DrawText(TextFormat("\t\tcapacitor: %i", CAPs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        if (RESs) DrawText(TextFormat("\t\tresistor: %i", RESs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        if (XORs) DrawText(TextFormat("\t\txor: %i", XORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        if (NORs) DrawText(TextFormat("\t\tnor: %i", NORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        if (ANDs) DrawText(TextFormat("\t\tand: %i", ANDs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        if (ORs)  DrawText(TextFormat("\t\tor: %i", ORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\ttotal: %i", window.selection.size()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND1));
-        DrawText("selection", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    }
-    */
-
+        window.PushPropertySection_Selection("Selection", window.selection);
     // Node hover stats
-    if (!!window.hoveredNode)
-    {
-        DrawText(StateName(window.hoveredNode->GetState()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-        DrawText(TextFormat("\tinputs: %i", window.hoveredNode->GetInputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
-        DrawText(TextFormat("\ttype: %s", GateName(window.hoveredNode->GetGate())), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText("hovered node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    }
+    window.PushPropertySection_Node("Hovered node", window.hoveredNode);
     // Joint hover stats
-    else if (!!window.hoveredWire)
-    {
-        DrawText(TextFormat("\tconfiguration: %s", ElbowConfigName(window.hoveredWire->elbowConfig)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\twire ptr: %p", window.hoveredWire), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText("hovered wire-joint", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    }
+    window.PushPropertySection_Wire("Hovered wire joint", window.hoveredWire);
     // Group hover stats
-    else if (!!window.hoveredGroup)
-    {
-        DrawText(TextFormat("\tlabel: %s", window.hoveredGroup->GetLabel().c_str()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\tptr: %p", window.hoveredGroup), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText("hovered group", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    }
+    window.PushPropertySection_Group("Hovered group", window.hoveredGroup);
 }
 
 EraseTool::EraseTool() {}

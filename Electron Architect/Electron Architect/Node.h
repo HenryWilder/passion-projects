@@ -153,8 +153,8 @@ private:
 
 public:
     const std::deque<Wire*>& GetWires() const;
-    Range<std::deque<Wire*>::const_iterator> GetInputs() const;
-    Range<std::deque<Wire*>::const_iterator> GetOutputs() const;
+    Range<std::deque<Wire*>::const_iterator> GetInputsConst() const;
+    Range<std::deque<Wire*>::const_iterator> GetOutputsConst() const;
 
     bool IsValidConnection(std::deque<Wire*>::const_iterator it) const;
 };

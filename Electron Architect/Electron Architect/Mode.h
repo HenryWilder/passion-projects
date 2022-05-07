@@ -9,6 +9,7 @@ struct Wire;
 class Group;
 struct GroupCorner;
 
+
 enum class ModeType
 {
     Basic,
@@ -30,6 +31,10 @@ enum class Mode
     // Menu
     BP_SELECT,
 };
+
+const char* GateName(Gate gate);
+const char* StateName(bool state);
+const char* ElbowConfigName(ElbowConfig elbow);
 
 constexpr ModeType TypeOfMode(Mode mode)
 {
