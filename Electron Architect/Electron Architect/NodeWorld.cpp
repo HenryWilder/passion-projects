@@ -5,7 +5,7 @@
 #include "NodeWorld.h"
 #include "Blueprint.h"
 
-extern Blueprint nativeBlueprints[8];
+extern Blueprint nativeBlueprints[10];
 
 NodeWorld::NodeWorld()
 {
