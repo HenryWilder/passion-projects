@@ -121,11 +121,10 @@ int main()
             {
                 EndMode2D(); // Just in case
 
-                // UI
-
                 // Panels
                 // Todo: Make these collapsable
                 DrawRectangleIRect(IRect(Button::g_width * 2, window.windowHeight), UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+                window.DrawToolProperties();
 
                 for (const Button* const b : allButtons)
                 {

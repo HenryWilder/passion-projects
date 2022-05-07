@@ -17,6 +17,7 @@
 Blueprint g_clipboardBP;
 
 Window::Window(int windowWidth, int windowHeight) : windowWidth(windowWidth), windowHeight(windowHeight),
+propertiesPaneRec(windowWidth - 256, 0, 256, windowHeight),
 modeButtons{
     IconButton(
         IVec2(0, 0),
@@ -850,4 +851,14 @@ void Window::DrawTool()
         overlay->Draw(*this);
     else
         base->Draw(*this);
+}
+void Window::DrawToolProperties()
+{
+    EndMode2D(); // In case
+    DrawRectangleIRect(propertiesPaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+
+    if (!!overlay)
+        overlay->DrawProperties(*this);
+    else
+        base->DrawProperties(*this);
 }

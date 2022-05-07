@@ -123,73 +123,70 @@ void PenTool::Draw(Window& window)
     {
         window.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
+}
+void PenTool::DrawProperties(Window& window)
+{
+    int i = 0;
+    // Cursor stats
+    DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
-    EndMode2D();
-
-    // Stats
+    // Node hover stats
+    if (!!window.hoveredNode)
     {
-        int i = 0;
-        // Cursor stats
-        DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-        DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-
-        // Node hover stats
-        if (!!window.hoveredNode)
+        const char* gateName;
+        switch (window.hoveredNode->GetGate())
         {
-            const char* gateName;
-            switch (window.hoveredNode->GetGate())
-            {
-            case Gate::OR:        gateName = "or";        break;
-            case Gate::AND:       gateName = "and";       break;
-            case Gate::NOR:       gateName = "nor";       break;
-            case Gate::XOR:       gateName = "xor";       break;
-            case Gate::RESISTOR:  gateName = "resistor";  break;
-            case Gate::CAPACITOR: gateName = "capacitor"; break;
-            case Gate::LED:       gateName = "LED";       break;
-            case Gate::DELAY:     gateName = "delay";     break;
-            case Gate::BATTERY:   gateName = "battery";   break;
-            default:
-                _ASSERT_EXPR(false, L"Missing specialization for gate name");
-                gateName = "ERROR";
-                break;
-            }
-            // State
-            {
-                const char* stateName;
-                if (window.hoveredNode->GetState())
-                    stateName = "\tactive";
-                else
-                    stateName = "\tinactive";
-                DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            }
-            DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-            DrawText(TextFormat("\tinputs: %i", window.hoveredNode->GetInputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
-            DrawText(TextFormat("\ttype: %s", gateName), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        case Gate::OR:        gateName = "or";        break;
+        case Gate::AND:       gateName = "and";       break;
+        case Gate::NOR:       gateName = "nor";       break;
+        case Gate::XOR:       gateName = "xor";       break;
+        case Gate::RESISTOR:  gateName = "resistor";  break;
+        case Gate::CAPACITOR: gateName = "capacitor"; break;
+        case Gate::LED:       gateName = "LED";       break;
+        case Gate::DELAY:     gateName = "delay";     break;
+        case Gate::BATTERY:   gateName = "battery";   break;
+        default:
+            _ASSERT_EXPR(false, L"Missing specialization for gate name");
+            gateName = "ERROR";
+            break;
         }
-        // Wire hover stats
-        else if (!!window.hoveredWire)
+        // State
         {
-            DrawText(TextFormat("\t\tptr: %p", window.hoveredWire->end), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\t\tserial: %u", window.CurrentTab().NodeID(window.hoveredWire->end)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("\toutput", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-            DrawText(TextFormat("\t\tptr: %p", window.hoveredWire->start), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\t\tserial: %u", window.CurrentTab().NodeID(window.hoveredWire->start)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("\tinput", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
-            // State
-            {
-                const char* stateName;
-                if (window.hoveredWire->GetState())
-                    stateName = "\tactive";
-                else
-                    stateName = "\tinactive";
-                DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            }
-            DrawText(TextFormat("\tptr: %p", window.hoveredWire), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered wire", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+            const char* stateName;
+            if (window.hoveredNode->GetState())
+                stateName = "\tactive";
+            else
+                stateName = "\tinactive";
+            DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
         }
+        DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
+        DrawText(TextFormat("\tinputs: %i", window.hoveredNode->GetInputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
+        DrawText(TextFormat("\ttype: %s", gateName), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText("hovered node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    }
+    // Wire hover stats
+    else if (!!window.hoveredWire)
+    {
+        DrawText(TextFormat("\t\tptr: %p", window.hoveredWire->end), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText(TextFormat("\t\tserial: %u", window.CurrentTab().NodeID(window.hoveredWire->end)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText("\toutput", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
+        DrawText(TextFormat("\t\tptr: %p", window.hoveredWire->start), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText(TextFormat("\t\tserial: %u", window.CurrentTab().NodeID(window.hoveredWire->start)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText("\tinput", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
+        // State
+        {
+            const char* stateName;
+            if (window.hoveredWire->GetState())
+                stateName = "\tactive";
+            else
+                stateName = "\tinactive";
+            DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        }
+        DrawText(TextFormat("\tptr: %p", window.hoveredWire), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText("hovered wire", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
     }
 }
 
@@ -512,118 +509,115 @@ void EditTool::Draw(Window& window)
             "Hold [shift] to merge on release.\n"
             "Otherwise, nodes will only be swapped.", UIColor(UIColorID::UI_COLOR_SPECIAL));
     }
+}
+void EditTool::DrawProperties(Window& window)
+{
+    int i = 0;
+    // Cursor stats
+    DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
-    EndMode2D();
-
-    // Stats
+    // Selection stats
+    if (window.SelectionExists())
     {
-        int i = 0;
-        // Cursor stats
-        DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-        DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        unsigned ORs = 0;
+        unsigned ANDs = 0;
+        unsigned NORs = 0;
+        unsigned XORs = 0;
+        unsigned RESs = 0;
+        unsigned CAPs = 0;
+        unsigned LEDs = 0;
+        unsigned DELs = 0;
+        unsigned BATs = 0;
 
-        // Selection stats
-        if (window.SelectionExists())
+        for (Node* node : window.selection)
         {
-            unsigned ORs = 0;
-            unsigned ANDs = 0;
-            unsigned NORs = 0;
-            unsigned XORs = 0;
-            unsigned RESs = 0;
-            unsigned CAPs = 0;
-            unsigned LEDs = 0;
-            unsigned DELs = 0;
-            unsigned BATs = 0;
-
-            for (Node* node : window.selection)
+            switch (node->GetGate())
             {
-                switch (node->GetGate())
-                {
-                case Gate::OR:        ++ORs;  break;
-                case Gate::AND:       ++ANDs; break;
-                case Gate::NOR:       ++NORs; break;
-                case Gate::XOR:       ++XORs; break;
-                case Gate::RESISTOR:  ++RESs; break;
-                case Gate::CAPACITOR: ++CAPs; break;
-                case Gate::LED:       ++LEDs; break;
-                case Gate::DELAY:     ++DELs; break;
-                case Gate::BATTERY:   ++BATs; break;
-                }
+            case Gate::OR:        ++ORs;  break;
+            case Gate::AND:       ++ANDs; break;
+            case Gate::NOR:       ++NORs; break;
+            case Gate::XOR:       ++XORs; break;
+            case Gate::RESISTOR:  ++RESs; break;
+            case Gate::CAPACITOR: ++CAPs; break;
+            case Gate::LED:       ++LEDs; break;
+            case Gate::DELAY:     ++DELs; break;
+            case Gate::BATTERY:   ++BATs; break;
             }
-
-            if (DELs) DrawText(TextFormat("\t\tbattery: %i", BATs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (DELs) DrawText(TextFormat("\t\tdelay: %i", DELs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (LEDs) DrawText(TextFormat("\t\tLED: %i", LEDs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (CAPs) DrawText(TextFormat("\t\tcapacitor: %i", CAPs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (RESs) DrawText(TextFormat("\t\tresistor: %i", RESs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (XORs) DrawText(TextFormat("\t\txor: %i", XORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (NORs) DrawText(TextFormat("\t\tnor: %i", NORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (ANDs) DrawText(TextFormat("\t\tand: %i", ANDs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (ORs)  DrawText(TextFormat("\t\tor: %i", ORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\ttotal: %i", window.selection.size()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND1));
-            DrawText("selection", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
         }
 
+        if (DELs) DrawText(TextFormat("\t\tbattery: %i", BATs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        if (DELs) DrawText(TextFormat("\t\tdelay: %i", DELs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        if (LEDs) DrawText(TextFormat("\t\tLED: %i", LEDs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        if (CAPs) DrawText(TextFormat("\t\tcapacitor: %i", CAPs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        if (RESs) DrawText(TextFormat("\t\tresistor: %i", RESs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        if (XORs) DrawText(TextFormat("\t\txor: %i", XORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        if (NORs) DrawText(TextFormat("\t\tnor: %i", NORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        if (ANDs) DrawText(TextFormat("\t\tand: %i", ANDs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        if (ORs)  DrawText(TextFormat("\t\tor: %i", ORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText(TextFormat("\ttotal: %i", window.selection.size()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND1));
+        DrawText("selection", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    }
 
-        // Node hover stats
-        if (!!window.hoveredNode)
+
+    // Node hover stats
+    if (!!window.hoveredNode)
+    {
+        const char* gateName;
+        switch (window.hoveredNode->GetGate())
         {
-            const char* gateName;
-            switch (window.hoveredNode->GetGate())
-            {
-            case Gate::OR:        gateName = "or";        break;
-            case Gate::AND:       gateName = "and";       break;
-            case Gate::NOR:       gateName = "nor";       break;
-            case Gate::XOR:       gateName = "xor";       break;
-            case Gate::RESISTOR:  gateName = "resistor";  break;
-            case Gate::CAPACITOR: gateName = "capacitor"; break;
-            case Gate::LED:       gateName = "LED";       break;
-            case Gate::DELAY:     gateName = "delay";     break;
-            case Gate::BATTERY:   gateName = "battery";   break;
-            default:
-                _ASSERT_EXPR(false, L"Missing specialization for gate name");
-                gateName = "ERROR";
-                break;
-            }
-            // State
-            {
-                const char* stateName;
-                if (window.hoveredNode->GetState())
-                    stateName = "\tactive";
-                else
-                    stateName = "\tinactive";
-                DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            }
-            DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-            DrawText(TextFormat("\tinputs: %i", window.hoveredNode->GetInputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
-            DrawText(TextFormat("\ttype: %s", gateName), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        case Gate::OR:        gateName = "or";        break;
+        case Gate::AND:       gateName = "and";       break;
+        case Gate::NOR:       gateName = "nor";       break;
+        case Gate::XOR:       gateName = "xor";       break;
+        case Gate::RESISTOR:  gateName = "resistor";  break;
+        case Gate::CAPACITOR: gateName = "capacitor"; break;
+        case Gate::LED:       gateName = "LED";       break;
+        case Gate::DELAY:     gateName = "delay";     break;
+        case Gate::BATTERY:   gateName = "battery";   break;
+        default:
+            _ASSERT_EXPR(false, L"Missing specialization for gate name");
+            gateName = "ERROR";
+            break;
         }
-        // Joint hover stats
-        else if (!!window.hoveredWire)
+        // State
         {
-            const char* configurationName;
-            switch (window.hoveredWire->elbowConfig)
-            {
-            case ElbowConfig::horizontal: configurationName = "horizontal"; break;
-            case ElbowConfig::diagonalA: configurationName = "diagonal from input"; break;
-            case ElbowConfig::vertical: configurationName = "vertical"; break;
-            case ElbowConfig::diagonalB: configurationName = "diagonal from output"; break;
-            default: configurationName = "ERROR"; break;
-            }
-            DrawText(TextFormat("\tconfiguration: %s", configurationName), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\twire ptr: %p", window.hoveredWire), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered wire-joint", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+            const char* stateName;
+            if (window.hoveredNode->GetState())
+                stateName = "\tactive";
+            else
+                stateName = "\tinactive";
+            DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
         }
-        // Group hover stats
-        else if (!!window.hoveredGroup)
+        DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
+        DrawText(TextFormat("\tinputs: %i", window.hoveredNode->GetInputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
+        DrawText(TextFormat("\ttype: %s", gateName), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText("hovered node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    }
+    // Joint hover stats
+    else if (!!window.hoveredWire)
+    {
+        const char* configurationName;
+        switch (window.hoveredWire->elbowConfig)
         {
-            DrawText(TextFormat("\tlabel: %s", window.hoveredGroup->GetLabel().c_str()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tptr: %p", window.hoveredGroup), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered group", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        case ElbowConfig::horizontal: configurationName = "horizontal"; break;
+        case ElbowConfig::diagonalA: configurationName = "diagonal from input"; break;
+        case ElbowConfig::vertical: configurationName = "vertical"; break;
+        case ElbowConfig::diagonalB: configurationName = "diagonal from output"; break;
+        default: configurationName = "ERROR"; break;
         }
+        DrawText(TextFormat("\tconfiguration: %s", configurationName), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText(TextFormat("\twire ptr: %p", window.hoveredWire), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText("hovered wire-joint", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    }
+    // Group hover stats
+    else if (!!window.hoveredGroup)
+    {
+        DrawText(TextFormat("\tlabel: %s", window.hoveredGroup->GetLabel().c_str()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText(TextFormat("\tptr: %p", window.hoveredGroup), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText("hovered group", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
     }
 }
 
@@ -783,6 +777,10 @@ void EraseTool::Draw(Window& window)
         }
     }
 }
+void EraseTool::DrawProperties(Window& window)
+{
+    // Todo
+}
 
 InteractTool::InteractTool() {}
 InteractTool::~InteractTool() {}
@@ -811,34 +809,31 @@ void InteractTool::Draw(Window& window)
     {
         window.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_CAUTION));
     }
+}
+void InteractTool::DrawProperties(Window& window)
+{
+    int i = 0;
+    // Cursor stats
+    DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
-    EndMode2D();
-
-    // Stats
+    // Node hover stats
+    if (!!window.hoveredNode)
     {
-        int i = 0;
-        // Cursor stats
-        DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-        DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-
-        // Node hover stats
-        if (!!window.hoveredNode)
+        // State
         {
-            // State
-            {
-                const char* stateName;
-                if (window.hoveredNode->GetState())
-                    stateName = "\tactive";
-                else
-                    stateName = "\tinactive";
-                DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            }
-            DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-            DrawText(TextFormat("\tinteraction serial: %u", window.CurrentTab().StartNodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered interactable node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+            const char* stateName;
+            if (window.hoveredNode->GetState())
+                stateName = "\tactive";
+            else
+                stateName = "\tinactive";
+            DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
         }
+        DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
+        DrawText(TextFormat("\tinteraction serial: %u", window.CurrentTab().StartNodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+        DrawText("hovered interactable node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
     }
 }
 
@@ -1027,8 +1022,13 @@ void PasteOverlay::Draw(Window& window)
 
     window.clipboard->DrawSelectionPreview(window.cursorPos - IVec2(g_gridSize), ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND2), 0.5f), UIColor(UIColorID::UI_COLOR_FOREGROUND2), UIColor(UIColorID::UI_COLOR_BACKGROUND2), UIColor(UIColorID::UI_COLOR_FOREGROUND3), window.pastePreviewLOD);
 }
+void PasteOverlay::DrawProperties(Window& window)
+{
+    // Todo
+}
 
-BlueprintMenu::BlueprintMenu() : hovering(nullptr) {}
+BlueprintMenu::BlueprintMenu() :
+    hovering(nullptr) {}
 BlueprintMenu::~BlueprintMenu() {}
 ModeType BlueprintMenu::GetModeType() const { return ModeType::Menu; }
 Mode BlueprintMenu::GetMode() const { return Mode::BP_SELECT; }
@@ -1113,4 +1113,8 @@ void BlueprintMenu::Draw(Window& window)
     }
     if (!!hovering)
         window.DrawTooltipAtCursor_Shadowed(hovering->name.c_str(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+}
+void BlueprintMenu::DrawProperties(Window& window)
+{
+    // Todo
 }

@@ -61,6 +61,7 @@ struct Tool
 
     virtual void Update(Window& window) = 0;
     virtual void Draw(Window& window) = 0;
+    virtual void DrawProperties(Window& window) = 0;
 };
 
 struct PenTool : public Tool
@@ -73,6 +74,7 @@ struct PenTool : public Tool
 
     void Update(Window& window) final;
     void Draw(Window& window) final;
+    void DrawProperties(Window& window) final;
 
     IVec2 dragStart;
     ElbowConfig currentWireElbowConfig;
@@ -90,6 +92,7 @@ struct EditTool : public Tool
 
     void Update(Window& window) final;
     void Draw(Window& window) final;
+    void DrawProperties(Window& window) final;
 
     IVec2 fallbackPos;
     bool selectionWIP;
@@ -113,6 +116,7 @@ struct EraseTool : public Tool
 
     void Update(Window& window) final;
     void Draw(Window& window) final;
+    void DrawProperties(Window& window) final;
 };
 
 struct InteractTool : public Tool
@@ -125,23 +129,8 @@ struct InteractTool : public Tool
 
     void Update(Window& window) final;
     void Draw(Window& window) final;
+    void DrawProperties(Window& window) final;
 };
-
-#if 0
-struct ButtonOverlay : public Tool
-{
-    ButtonOverlay();
-    ~ButtonOverlay();
-
-    ModeType GetModeType() const final;
-    Mode GetMode() const final;
-
-    void Update(Window& window) final;
-    void Draw(Window& window) final;
-
-    int dropdownActive;
-};
-#endif
 
 struct PasteOverlay : public Tool
 {
@@ -153,6 +142,7 @@ struct PasteOverlay : public Tool
 
     void Update(Window& window) final;
     void Draw(Window& window) final;
+    void DrawProperties(Window& window) final;
 };
 
 struct BlueprintMenu : public Tool
@@ -165,6 +155,7 @@ struct BlueprintMenu : public Tool
 
     void Update(Window& window) final;
     void Draw(Window& window) final;
+    void DrawProperties(Window& window) final;
 
     Blueprint* hovering;
 };

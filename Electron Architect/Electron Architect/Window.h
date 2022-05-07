@@ -64,6 +64,8 @@ public:
     // Todo: make selection tab-specific instead of across the window
     std::vector<Node*> selection;
 
+    IRect propertiesPaneRec;
+
     std::vector<IconButton> modeButtons;
     std::vector<IconButton> gateButtons;
     IconButton blueprintsButton;
@@ -165,4 +167,5 @@ public:
 
     void UpdateTool();
     void DrawTool();
+    void DrawToolProperties();
 };
