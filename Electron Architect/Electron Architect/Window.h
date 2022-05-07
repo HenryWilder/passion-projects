@@ -167,5 +167,7 @@ public:
 
     void UpdateTool();
     void DrawTool();
+    int propertyNumber;
+    void PushProperty();
     void DrawToolProperties();
 };

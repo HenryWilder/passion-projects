@@ -852,11 +852,20 @@ void Window::DrawTool()
     else
         base->Draw(*this);
 }
+void Window::PushProperty()
+{
+
+    propertyNumber++;
+}
 void Window::DrawToolProperties()
 {
     EndMode2D(); // In case
     DrawRectangleIRect(propertiesPaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
-
+    IRect titleBox = propertiesPaneRec;
+    titleBox.h = FontSize() * 2;
+    DrawRectangleIRect(titleBox, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    DrawTextIV("Properties", propertiesPaneRec.xy + IVec2(FontSize() / 2), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    propertyNumber = 0;
     if (!!overlay)
         overlay->DrawProperties(*this);
     else
