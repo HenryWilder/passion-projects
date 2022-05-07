@@ -73,8 +73,8 @@ public:
 private:
 #endif
 
-    Tool* base = nullptr;
-    Tool* overlay = nullptr; // Menu modes are stored in here
+    Tool* base;
+    Tool* overlay; // Menu modes are stored in here
 
 public:
 

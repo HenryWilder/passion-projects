@@ -14,7 +14,11 @@
 #include "Window.h"
 #include "Mode.h"
 
-PenTool::PenTool() { memset(this, 0, sizeof(PenTool)); }
+PenTool::PenTool() :
+    dragStart(0),
+    currentWireElbowConfig(ElbowConfig::horizontal),
+    previousWireStart(nullptr),
+    currentWireStart(nullptr) {}
 PenTool::~PenTool() {}
 ModeType PenTool::GetModeType() const { return ModeType::Basic; }
 Mode PenTool::GetMode() const { return Mode::PEN; }
@@ -189,7 +193,17 @@ void PenTool::Draw(Window& window)
     }
 }
 
-EditTool::EditTool() { memset(this, 0, sizeof(EditTool)); }
+EditTool::EditTool() :
+    fallbackPos(0),
+    selectionWIP(false),
+    selectionStart(0),
+    selectionRec(0),
+    draggingGroup(false),
+    draggingGroupCorner(false),
+    groupCorner(),
+    hoveringMergable(nullptr),
+    nodeBeingDragged(nullptr),
+    wireBeingDragged(nullptr) {}
 EditTool::~EditTool() {}
 ModeType EditTool::GetModeType() const { return ModeType::Basic; }
 Mode EditTool::GetMode() const { return Mode::EDIT; }
@@ -1014,7 +1028,7 @@ void PasteOverlay::Draw(Window& window)
     window.clipboard->DrawSelectionPreview(window.cursorPos - IVec2(g_gridSize), ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND2), 0.5f), UIColor(UIColorID::UI_COLOR_FOREGROUND2), UIColor(UIColorID::UI_COLOR_BACKGROUND2), UIColor(UIColorID::UI_COLOR_FOREGROUND3), window.pastePreviewLOD);
 }
 
-BlueprintMenu::BlueprintMenu() { hovering = nullptr; }
+BlueprintMenu::BlueprintMenu() : hovering(nullptr) {}
 BlueprintMenu::~BlueprintMenu() {}
 ModeType BlueprintMenu::GetModeType() const { return ModeType::Menu; }
 Mode BlueprintMenu::GetMode() const { return Mode::BP_SELECT; }

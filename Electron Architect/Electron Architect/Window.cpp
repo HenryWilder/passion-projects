@@ -236,6 +236,7 @@ void Window::DrawUIIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color 
 
 Mode Window::GetBaseMode()
 {
+    _ASSERT_EXPR(!!base, L"Base was not initialized");
     return base->GetMode();
 }
 Mode Window::GetMode()
@@ -248,6 +249,7 @@ ModeType Window::GetModeType()
 {
     if (!!overlay)
         return overlay->GetModeType();
+    _ASSERT_EXPR(!!base, L"Base was not initialized");
     return base->GetModeType();
 }
 
@@ -306,6 +308,7 @@ void Window::SetMode(Mode newMode)
         case Mode::BP_SELECT:   base = new BlueprintMenu; break;
         }
     }
+    _ASSERT_EXPR(!!base, L"Base was not initialized");
 }
 
 void Window::SetGate(Gate newGate)
