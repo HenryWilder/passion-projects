@@ -47,7 +47,7 @@ enum UIColorLocs : unsigned
     UI_COLOR_DESTRUCTIVE, // DESTRUCTIVERED
     UI_COLOR_SPECIAL, // VIOLET
     UI_COLOR_CAUTION, // CAUTIONYELLOW
-    UI_COLOR_BLUEPRINTS_BACKGROUND,
+    UI_COLOR_BLUEPRINTS_BACKGROUND, // (literal)
 };
 
 #pragma endregion
@@ -1001,52 +1001,30 @@ public:
             std::string value = line.substr(line.find('=') + 1);
 
             // Colors
-            if (attribute == "background_color")
-                uiColors[UI_COLOR_BACKGROUND] = ConfigStrToColor(value);
-            else if (attribute == "background1_color")
-                uiColors[UI_COLOR_BACKGROUND1] = ConfigStrToColor(value);
-            else if (attribute == "background2_color")
-                uiColors[UI_COLOR_BACKGROUND2] = ConfigStrToColor(value);
-            else if (attribute == "background3_color")
-                uiColors[UI_COLOR_BACKGROUND3] = ConfigStrToColor(value);
-            else if (attribute == "foreground3_color")
-                uiColors[UI_COLOR_FOREGROUND3] = ConfigStrToColor(value);
-            else if (attribute == "foreground2_color")
-                uiColors[UI_COLOR_FOREGROUND2] = ConfigStrToColor(value);
-            else if (attribute == "foreground1_color")
-                uiColors[UI_COLOR_FOREGROUND1] = ConfigStrToColor(value);
-            else if (attribute == "foreground_color")
-                uiColors[UI_COLOR_FOREGROUND] = ConfigStrToColor(value);
-            else if (attribute == "input_color")
-                uiColors[UI_COLOR_INPUT] = ConfigStrToColor(value);
-            else if (attribute == "output_color")
-                uiColors[UI_COLOR_OUTPUT] = ConfigStrToColor(value);
-            else if (attribute == "available_color")
-                uiColors[UI_COLOR_AVAILABLE] = ConfigStrToColor(value);
-            else if (attribute == "interact_color")
-                uiColors[UI_COLOR_INTERACT] = ConfigStrToColor(value);
-            else if (attribute == "active_color")
-                uiColors[UI_COLOR_ACTIVE] = ConfigStrToColor(value);
-            else if (attribute == "error_color")
-                uiColors[UI_COLOR_ERROR] = ConfigStrToColor(value);
-            else if (attribute == "destruction_color")
-                uiColors[UI_COLOR_DESTRUCTIVE] = ConfigStrToColor(value);
-            else if (attribute == "caution_color")
-                uiColors[UI_COLOR_CAUTION] = ConfigStrToColor(value);
+            if      (attribute == "background_color")   uiColors[UI_COLOR_BACKGROUND]   = ConfigStrToColor(value);
+            else if (attribute == "background1_color")  uiColors[UI_COLOR_BACKGROUND1]  = ConfigStrToColor(value);
+            else if (attribute == "background2_color")  uiColors[UI_COLOR_BACKGROUND2]  = ConfigStrToColor(value);
+            else if (attribute == "background3_color")  uiColors[UI_COLOR_BACKGROUND3]  = ConfigStrToColor(value);
+            else if (attribute == "foreground3_color")  uiColors[UI_COLOR_FOREGROUND3]  = ConfigStrToColor(value);
+            else if (attribute == "foreground2_color")  uiColors[UI_COLOR_FOREGROUND2]  = ConfigStrToColor(value);
+            else if (attribute == "foreground1_color")  uiColors[UI_COLOR_FOREGROUND1]  = ConfigStrToColor(value);
+            else if (attribute == "foreground_color")   uiColors[UI_COLOR_FOREGROUND]   = ConfigStrToColor(value);
+            else if (attribute == "input_color")        uiColors[UI_COLOR_INPUT]        = ConfigStrToColor(value);
+            else if (attribute == "output_color")       uiColors[UI_COLOR_OUTPUT]       = ConfigStrToColor(value);
+            else if (attribute == "available_color")    uiColors[UI_COLOR_AVAILABLE]    = ConfigStrToColor(value);
+            else if (attribute == "interact_color")     uiColors[UI_COLOR_INTERACT]     = ConfigStrToColor(value);
+            else if (attribute == "active_color")       uiColors[UI_COLOR_ACTIVE]       = ConfigStrToColor(value);
+            else if (attribute == "error_color")        uiColors[UI_COLOR_ERROR]        = ConfigStrToColor(value);
+            else if (attribute == "destruction_color")  uiColors[UI_COLOR_DESTRUCTIVE]  = ConfigStrToColor(value);
+            else if (attribute == "caution_color")      uiColors[UI_COLOR_CAUTION]      = ConfigStrToColor(value);
 
             // Integers
-            else if (attribute == "blueprint_menu_lod")
-                blueprintLOD = std::stoi(value);
-            else if (attribute == "clipboard_preview_lod")
-                clipboardPreviewLOD = std::stoi(value);
-            else if (attribute == "paste_preview_lod")
-                pastePreviewLOD = std::stoi(value);
-            else if (attribute == "paste_preview_lod")
-                pastePreviewLOD = std::stoi(value);
-            else if (attribute == "frames_per_tick")
-                framesPerTick = std::stoi(value);
-            else if (attribute == "ui_scale")
-                uiScale = std::stoi(value);
+            else if (attribute == "blueprint_menu_lod")     blueprintLOD        = std::stoi(value);
+            else if (attribute == "clipboard_preview_lod")  clipboardPreviewLOD = std::stoi(value);
+            else if (attribute == "paste_preview_lod")      pastePreviewLOD     = std::stoi(value);
+            else if (attribute == "paste_preview_lod")      pastePreviewLOD     = std::stoi(value);
+            else if (attribute == "frames_per_tick")        framesPerTick       = std::stoi(value);
+            else if (attribute == "ui_scale")               uiScale             = std::stoi(value);
         }
 
         if (uiScale >= 2)
