@@ -153,20 +153,12 @@ int main()
 
                 for (const Button* const b : allButtons)
                 {
+                    // Icon buttons
                     if (const IconButton* ib = dynamic_cast<const IconButton*>(b))
-                    {
-                        switch (window.uiScale)
-                        {
-                        case 1:
-                            DrawIcon<16>(*ib->textureSheet, ib->textureSheetPos, ib->Bounds().xy, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                        case 2:
-                            DrawIcon<32>(*ib->textureSheet, ib->textureSheetPos, ib->Bounds().xy, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                        }
-                    }
+                        window.DrawUIIcon(*ib->textureSheet, ib->textureSheetPos, ib->Bounds().xy, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                    // Text buttons
                     else if (const TextButton* tb = dynamic_cast<const TextButton*>(b))
-                    {
                         DrawTextIV(tb->buttonText, tb->Bounds().xy, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                    }
                 }
             }
 

@@ -192,7 +192,7 @@ public:
 
     int FontSize() const;
 
-    void DrawWindowIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint) const;
+    void DrawUIIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint) const;
 
     Mode GetBaseMode();
     Mode GetMode();
