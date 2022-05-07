@@ -127,6 +127,7 @@ void PenTool::Draw(Window& window)
 void PenTool::DrawProperties(Window& window)
 {
     int i = 0;
+
     // Node hover stats
     if (!!window.hoveredNode)
     {
@@ -509,9 +510,6 @@ void EditTool::Draw(Window& window)
 void EditTool::DrawProperties(Window& window)
 {
     int i = 0;
-    // Cursor stats
-    DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     // Selection stats
     if (window.SelectionExists())
@@ -809,9 +807,6 @@ void InteractTool::Draw(Window& window)
 void InteractTool::DrawProperties(Window& window)
 {
     int i = 0;
-    // Cursor stats
-    DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     // Node hover stats
     if (!!window.hoveredNode)
