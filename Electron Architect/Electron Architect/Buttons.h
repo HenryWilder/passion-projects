@@ -7,7 +7,8 @@ struct Button
     Button(
         IVec2 relativePos,
         const char* tooltip,
-        const char* description);
+        const char* description,
+        std::function<void()> clickCallback);
 
     static int g_width;
 
@@ -15,6 +16,7 @@ struct Button
     IVec2 relativePos;
     const char* tooltip;
     const char* description;
+    std::function<void()> OnClick;
 
     virtual IRect Bounds() const;
 };
@@ -26,6 +28,7 @@ struct IconButton : Button
         IVec2 relativePos,
         const char* tooltip,
         const char* description,
+        std::function<void()> clickCallback,
         IVec2 textureSheetPos,
         const Texture2D* textureSheet);
 
@@ -39,6 +42,7 @@ struct TextButton : Button
         IVec2 relativePos,
         const char* tooltip,
         const char* description,
+        std::function<void()> clickCallback,
         const char* buttonText,
         int width = 1);
 
