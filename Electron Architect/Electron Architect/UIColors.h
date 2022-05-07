@@ -1,18 +1,21 @@
 #pragma once
 #include <raylib.h>
 
-#define SPACEGRAY CLITERAL(Color){ 28, 26, 41, 255 }
-#define LIFELESSNEBULA CLITERAL(Color){ 75, 78, 94, 255 }
-#define HAUNTINGWHITE CLITERAL(Color){ 148, 150, 166, 255 }
-#define GLEEFULDUST CLITERAL(Color){ 116, 125, 237, 255 }
-#define INTERFERENCEGRAY CLITERAL(Color){ 232, 234, 255, 255 }
-#define REDSTONE CLITERAL(Color){ 212, 25, 25, 255 }
-#define DESTRUCTIVERED CLITERAL(Color){ 219, 18, 18, 255 }
-#define DEADCABLE CLITERAL(Color){ 122, 118, 118, 255 }
-#define INPUTLAVENDER CLITERAL(Color){ 128, 106, 217, 255 }
-#define OUTPUTAPRICOT CLITERAL(Color){ 207, 107, 35, 255 }
-#define WIPBLUE CLITERAL(Color){ 26, 68, 161, 255 }
-#define CAUTIONYELLOW CLITERAL(Color){ 250, 222, 37, 255 }
+namespace ui_color
+{
+    constexpr Color SPACEGRAY{ 28, 26, 41, 255 };
+    constexpr Color LIFELESSNEBULA{ 75, 78, 94, 255 };
+    constexpr Color HAUNTINGWHITE{ 148, 150, 166, 255 };
+    constexpr Color GLEEFULDUST{ 116, 125, 237, 255 };
+    constexpr Color INTERFERENCEGRAY{ 232, 234, 255, 255 };
+    constexpr Color REDSTONE{ 212, 25, 25, 255 };
+    constexpr Color DESTRUCTIVERED{ 219, 18, 18, 255 };
+    constexpr Color DEADCABLE{ 122, 118, 118, 255 };
+    constexpr Color INPUTLAVENDER{ 128, 106, 217, 255 };
+    constexpr Color OUTPUTAPRICOT{ 207, 107, 35, 255 };
+    constexpr Color WIPBLUE{ 26, 68, 161, 255 };
+    constexpr Color CAUTIONYELLOW{ 250, 222, 37, 255 };
+}
 
 extern Color uiColors[18];
 enum class UIColorID : unsigned
