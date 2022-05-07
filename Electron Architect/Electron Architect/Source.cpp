@@ -357,6 +357,8 @@ public:
         case Gate::CAPACITOR: offset = IVec2(1, 2); break;
         case Gate::LED:       offset = IVec2(0, 3); break;
         case Gate::DELAY:     offset = IVec2(1, 3); break;
+
+        case Gate::BATTERY:   offset = IVec2(0, 4); break;
         default: return;
         }
         switch (uiScale)
