@@ -1,5 +1,8 @@
 #include "Buttons.h"
 
+int Button::g_width = 16;
+
+
 Button::Button(IVec2 relativePos, const char* tooltip, const char* description, std::function<void()> clickCallback) :
     relativePos(relativePos), tooltip(tooltip), description(description), OnClick(clickCallback) {}
 

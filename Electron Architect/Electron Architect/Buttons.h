@@ -20,7 +20,6 @@ struct Button
 
     virtual IRect Bounds() const;
 };
-int Button::g_width = 16;
 
 struct IconButton : Button
 {

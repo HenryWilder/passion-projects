@@ -6,7 +6,7 @@ struct Window;
 enum class ElbowConfig : uint8_t;
 class Node;
 struct Wire;
-struct Group;
+class Group;
 struct GroupCorner;
 
 enum class ModeType
@@ -59,8 +59,8 @@ struct Tool
     virtual ModeType GetModeType() const = 0;
     virtual Mode GetMode() const = 0;
 
-    virtual void Update(Window& data) = 0;
-    virtual void Draw(Window& data) = 0;
+    virtual void Update(Window& window) = 0;
+    virtual void Draw(Window& window) = 0;
 };
 
 struct PenTool : public Tool
@@ -71,8 +71,8 @@ struct PenTool : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& data) final;
-    void Draw(Window& data) final;
+    void Update(Window& window) final;
+    void Draw(Window& window) final;
 
     IVec2 dragStart;
     ElbowConfig currentWireElbowConfig;
@@ -88,8 +88,8 @@ struct EditTool : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& data) final;
-    void Draw(Window& data) final;
+    void Update(Window& window) final;
+    void Draw(Window& window) final;
 
     IVec2 fallbackPos;
     bool selectionWIP;
@@ -111,8 +111,8 @@ struct EraseTool : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& data) final;
-    void Draw(Window& data) final;
+    void Update(Window& window) final;
+    void Draw(Window& window) final;
 };
 
 struct InteractTool : public Tool
@@ -123,10 +123,11 @@ struct InteractTool : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& data) final;
-    void Draw(Window& data) final;
+    void Update(Window& window) final;
+    void Draw(Window& window) final;
 };
 
+#if 0
 struct ButtonOverlay : public Tool
 {
     ButtonOverlay();
@@ -135,11 +136,12 @@ struct ButtonOverlay : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& data) final;
-    void Draw(Window& data) final;
+    void Update(Window& window) final;
+    void Draw(Window& window) final;
 
     int dropdownActive;
 };
+#endif
 
 struct PasteOverlay : public Tool
 {
@@ -149,8 +151,8 @@ struct PasteOverlay : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& data) final;
-    void Draw(Window& data) final;
+    void Update(Window& window) final;
+    void Draw(Window& window) final;
 };
 
 struct BlueprintMenu : public Tool
@@ -161,26 +163,10 @@ struct BlueprintMenu : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& data) final;
-    void Draw(Window& data) final;
+    void Update(Window& window) final;
+    void Draw(Window& window) final;
 
     Blueprint* hovering;
 };
 
-Tool* NewToolOfMode(Mode mode)
-{
-    switch (mode)
-    {
-        ASSERT_SPECIALIZATION(L"Mode generation");
-
-    case Mode::PEN:         return new PenTool;         break;
-    case Mode::EDIT:        return new EditTool;        break;
-    case Mode::ERASE:       return new EraseTool;       break;
-    case Mode::INTERACT:    return new InteractTool;    break;
-
-    case Mode::BUTTON:      return new ButtonOverlay;   break;
-    case Mode::PASTE:       return new PasteOverlay;    break;
-
-    case Mode::BP_SELECT:   return new BlueprintMenu;   break;
-    }
-}
+Tool* NewToolOfMode(Mode mode);

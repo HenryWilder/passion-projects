@@ -11,94 +11,95 @@
 #include "Tab.h"
 #include "Buttons.h"
 #include "UIColors.h"
+#include "Window.h"
 #include "Mode.h"
 
 PenTool::PenTool() {}
 PenTool::~PenTool() {}
 ModeType PenTool::GetModeType() const { return ModeType::Basic; }
 Mode PenTool::GetMode() const { return Mode::PEN; }
-void PenTool::Update(Window& data)
+void PenTool::Update(Window& window)
 {
-    if (data.b_cursorMoved) // On move
+    if (window.b_cursorMoved) // On move
     {
-        data.hoveredWire = nullptr;
-        data.hoveredNode = Tab::Get().FindNodeAtPos(data.cursorPos);
-        if (!data.hoveredNode)
-            data.hoveredWire = Tab::Get().FindWireAtPos(data.cursorPos);
+        window.hoveredWire = nullptr;
+        window.hoveredNode = window.CurrentTab().FindNodeAtPos(window.cursorPos);
+        if (!window.hoveredNode)
+            window.hoveredWire = window.CurrentTab().FindWireAtPos(window.cursorPos);
     }
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        Node* newNode = data.hoveredNode;
+        Node* newNode = window.hoveredNode;
         if (!newNode)
         {
-            newNode = Tab::Get().CreateNode(data.cursorPos, data.gatePick, data.storedExtraParam);
-            if (!!data.hoveredWire)
+            newNode = window.CurrentTab().CreateNode(window.cursorPos, window.gatePick, window.storedExtraParam);
+            if (!!window.hoveredWire)
             {
-                Tab::Get().BisectWire(data.hoveredWire, newNode);
-                data.hoveredWire = nullptr;
+                window.CurrentTab().BisectWire(window.hoveredWire, newNode);
+                window.hoveredWire = nullptr;
             }
         }
         // Do not create a new node/wire if already hovering the start node
-        if (!!data.Pen_CurrentWireStart() && newNode != data.Pen_CurrentWireStart())
+        if (!!currentWireStart && newNode != currentWireStart)
         {
             Node* oldNode;
-            if (!!data.Pen_PreviousWireStart() && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
-                oldNode = data.Pen_PreviousWireStart();
+            if (!!previousWireStart && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
+                oldNode = previousWireStart;
             else
-                oldNode = data.Pen_CurrentWireStart();
+                oldNode = currentWireStart;
 
             if (oldNode != newNode)
             {
-                Wire* wire = Tab::Get().CreateWire(oldNode, newNode);
-                wire->elbowConfig = data.Pen_CurrentWireElbowConfig();
+                Wire* wire = window.CurrentTab().CreateWire(oldNode, newNode);
+                wire->elbowConfig = currentWireElbowConfig;
                 wire->UpdateElbowToLegal();
-                data.Pen_PreviousWireStart() = oldNode;
+                previousWireStart = oldNode;
             }
         }
-        data.Pen_CurrentWireStart() = newNode;
+        currentWireStart = newNode;
     }
     else if (IsKeyPressed(KEY_R))
     {
         if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
-            --data.Pen_CurrentWireElbowConfig();
+            --currentWireElbowConfig;
         else
-            ++data.Pen_CurrentWireElbowConfig();
+            ++currentWireElbowConfig;
     }
     else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
-        data.Pen_PreviousWireStart() = data.Pen_CurrentWireStart() = nullptr;
+        previousWireStart = currentWireStart = nullptr;
     }
 }
-void PenTool::Draw(Window& data)
+void PenTool::Draw(Window& window)
 {
-    Tab::Get().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
-    if (!!data.Pen_CurrentWireStart())
+    if (!!currentWireStart)
     {
         IVec2 start;
-        if (!!data.Pen_PreviousWireStart() && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
-            start = data.Pen_PreviousWireStart()->GetPosition();
+        if (!!previousWireStart && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
+            start = previousWireStart->GetPosition();
         else
-            start = data.Pen_CurrentWireStart()->GetPosition();
+            start = currentWireStart->GetPosition();
         IVec2 elbow;
-        IVec2 end = data.cursorPos;
-        elbow = Wire::GetLegalElbowPosition(start, end, data.Pen_CurrentWireElbowConfig());
+        IVec2 end = window.cursorPos;
+        elbow = Wire::GetLegalElbowPosition(start, end, currentWireElbowConfig);
         Wire::Draw(start, elbow, end, UIColor(UIColorID::UI_COLOR_AVAILABLE));
-        Node::Draw(end, data.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE));
+        Node::Draw(end, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
 
-    if (!!data.hoveredWire)
+    if (!!window.hoveredWire)
     {
-        data.hoveredWire->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
+        window.hoveredWire->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
-    else if (!!data.hoveredNode)
+    else if (!!window.hoveredNode)
     {
         // Todo: Can this please be based on the input and output ranges and not a test being run on an already partitioned vector?...
-        for (const Wire* wire : data.hoveredNode->GetWires())
+        for (const Wire* wire : window.hoveredNode->GetWires())
         {
             Color color;
-            if (wire->start == data.hoveredNode)
+            if (wire->start == window.hoveredNode)
                 color = UIColor(UIColorID::UI_COLOR_OUTPUT); // Output
             else
                 color = UIColor(UIColorID::UI_COLOR_INPUT); // Input
@@ -107,16 +108,16 @@ void PenTool::Draw(Window& data)
         }
     }
 
-    Tab::Get().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
-    if (!!data.hoveredWire)
+    if (!!window.hoveredWire)
     {
-        data.hoveredWire->start->Draw(UIColor(UIColorID::UI_COLOR_INPUT));
-        data.hoveredWire->end->Draw(UIColor(UIColorID::UI_COLOR_OUTPUT));
+        window.hoveredWire->start->Draw(UIColor(UIColorID::UI_COLOR_INPUT));
+        window.hoveredWire->end->Draw(UIColor(UIColorID::UI_COLOR_OUTPUT));
     }
-    else if (!!data.hoveredNode)
+    else if (!!window.hoveredNode)
     {
-        data.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
+        window.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
 
     EndMode2D();
@@ -125,14 +126,14 @@ void PenTool::Draw(Window& data)
     {
         int i = 0;
         // Cursor stats
-        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
         // Node hover stats
-        if (!!data.hoveredNode)
+        if (!!window.hoveredNode)
         {
             const char* gateName;
-            switch (data.hoveredNode->GetGate())
+            switch (window.hoveredNode->GetGate())
             {
             case Gate::OR:        gateName = "or";        break;
             case Gate::AND:       gateName = "and";       break;
@@ -151,39 +152,39 @@ void PenTool::Draw(Window& data)
             // State
             {
                 const char* stateName;
-                if (data.hoveredNode->GetState())
+                if (window.hoveredNode->GetState())
                     stateName = "\tactive";
                 else
                     stateName = "\tinactive";
-                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+                DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
             }
-            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
-            DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tserial: %u", Tab::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered node", 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+            DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
+            DrawText(TextFormat("\tinputs: %i", window.hoveredNode->GetInputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
+            DrawText(TextFormat("\ttype: %s", gateName), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText("hovered node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
         }
         // Wire hover stats
-        else if (!!data.hoveredWire)
+        else if (!!window.hoveredWire)
         {
-            DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->end), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\t\tserial: %u", Tab::Get().NodeID(data.hoveredWire->end)), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("\toutput", 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-            DrawText(TextFormat("\t\tptr: %p", data.hoveredWire->start), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\t\tserial: %u", Tab::Get().NodeID(data.hoveredWire->start)), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("\tinput", 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
+            DrawText(TextFormat("\t\tptr: %p", window.hoveredWire->end), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText(TextFormat("\t\tserial: %u", window.CurrentTab().NodeID(window.hoveredWire->end)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText("\toutput", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
+            DrawText(TextFormat("\t\tptr: %p", window.hoveredWire->start), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText(TextFormat("\t\tserial: %u", window.CurrentTab().NodeID(window.hoveredWire->start)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText("\tinput", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
             // State
             {
                 const char* stateName;
-                if (data.hoveredWire->GetState())
+                if (window.hoveredWire->GetState())
                     stateName = "\tactive";
                 else
                     stateName = "\tinactive";
-                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+                DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
             }
-            DrawText(TextFormat("\tptr: %p", data.hoveredWire), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered wire", 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+            DrawText(TextFormat("\tptr: %p", window.hoveredWire), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText("hovered wire", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
         }
     }
 }
@@ -192,149 +193,149 @@ EditTool::EditTool() {}
 EditTool::~EditTool() {}
 ModeType EditTool::GetModeType() const { return ModeType::Basic; }
 Mode EditTool::GetMode() const { return Mode::EDIT; }
-void EditTool::Update(Window& data)
+void EditTool::Update(Window& window)
 {
     // Todo: fix bug with canceling multiple-drag (And update group dragging to match!!)
 
-    if (data.b_cursorMoved && !data.Edit_SelectionWIP())
+    if (window.b_cursorMoved && !selectionWIP)
     {
-        if (!data.Edit_NodeBeingDragged() &&
-            !data.Edit_WireBeingDragged() &&
-            !data.Edit_DraggingGroup() &&
-            !data.Edit_DraggingGroupCorner())
+        if (!nodeBeingDragged &&
+            !wireBeingDragged &&
+            !draggingGroup &&
+            !draggingGroupCorner)
         {
-            data.Edit_GroupCorner().group = nullptr;
-            data.hoveredGroup = nullptr;
-            data.hoveredWire = nullptr;
-            data.hoveredNode = Tab::Get().FindNodeAtPos(data.cursorPos);
-            if (!data.hoveredNode)
+            groupCorner.group = nullptr;
+            window.hoveredGroup = nullptr;
+            window.hoveredWire = nullptr;
+            window.hoveredNode = window.CurrentTab().FindNodeAtPos(window.cursorPos);
+            if (!window.hoveredNode)
             {
-                data.hoveredWire = Tab::Get().FindWireElbowAtPos(data.cursorPos);
-                if (!data.hoveredWire)
+                window.hoveredWire = window.CurrentTab().FindWireElbowAtPos(window.cursorPos);
+                if (!window.hoveredWire)
                 {
-                    data.hoveredGroup = Tab::Get().FindGroupAtPos(data.cursorPos);
-                    if (!data.hoveredGroup)
+                    window.hoveredGroup = window.CurrentTab().FindGroupAtPos(window.cursorPos);
+                    if (!window.hoveredGroup)
                     {
-                        data.Edit_GroupCorner() = Tab::Get().FindGroupCornerAtPos(data.cursorPos);
+                        groupCorner = window.CurrentTab().FindGroupCornerAtPos(window.cursorPos);
                     }
                 }
             }
         }
-        else if (data.Edit_NodeBeingDragged() && !data.SelectionExists())
+        else if (nodeBeingDragged && !window.SelectionExists())
         {
-            data.Edit_HoveringMergable() = Tab::Get().FindNodeAtPos(data.cursorPos); // This will come before updating the position of the dragged node
+            hoveringMergable = window.CurrentTab().FindNodeAtPos(window.cursorPos); // This will come before updating the position of the dragged node
         }
     }
 
     // Press
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (!data.selection.empty() && !!data.hoveredNode) // There is a selection, and a node has been pressed (move selected)
+        if (!window.selection.empty() && !!window.hoveredNode) // There is a selection, and a node has been pressed (move selected)
         {
-            data.Edit_NodeBeingDragged() = data.hoveredNode;
-            data.Edit_WireBeingDragged() = nullptr;
-            data.Edit_SelectionRec() = data.GetSelectionBounds();
+            nodeBeingDragged = window.hoveredNode;
+            wireBeingDragged = nullptr;
+            selectionRec = window.GetSelectionBounds();
         }
-        else if (data.IsSelectionRectValid() && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
+        else if (window.IsSelectionRectValid() && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
         {
-            data.selection.clear();
-            data.Edit_SelectionWIP() = true;
+            window.selection.clear();
+            selectionWIP = true;
         }
         else
         {
-            data.selection.clear();
-            data.Edit_NodeBeingDragged() = data.hoveredNode;
-            data.Edit_WireBeingDragged() = data.hoveredWire;
+            window.selection.clear();
+            nodeBeingDragged = window.hoveredNode;
+            wireBeingDragged = window.hoveredWire;
 
             // selectionStart being used as an offset here
-            if (data.Edit_DraggingGroup() = !!data.hoveredGroup)
+            if (draggingGroup = !!window.hoveredGroup)
             {
-                Tab::Get().FindNodesInGroup(data.selection, data.hoveredGroup);
-                data.Edit_SelectionStart() = (data.cursorPos - (data.Edit_FallbackPos() = data.hoveredGroup->GetPosition()));
+                window.CurrentTab().FindNodesInGroup(window.selection, window.hoveredGroup);
+                selectionStart = (window.cursorPos - (fallbackPos = window.hoveredGroup->GetPosition()));
             }
-            else if (data.Edit_DraggingGroupCorner() = data.Edit_GroupCorner().Valid())
-            {
-                // Todo
-            }
+            //else if (dragginggroupCorner = groupCorner.Valid())
+            //{
+            //    // Todo
+            //}
 
-            data.Edit_FallbackPos() = data.cursorPos;
-            if (data.Edit_SelectionWIP() = !(data.Edit_NodeBeingDragged() || data.Edit_WireBeingDragged() || data.Edit_DraggingGroup() || data.Edit_DraggingGroupCorner()))
-                data.Edit_SelectionStart() = data.cursorPos;
+            fallbackPos = window.cursorPos;
+            if (selectionWIP = !(nodeBeingDragged || wireBeingDragged || draggingGroup || draggingGroupCorner))
+                selectionStart = window.cursorPos;
         }
     }
 
     // Selection
-    if (data.Edit_SelectionWIP())
+    if (selectionWIP)
     {
-        auto [minx, maxx] = std::minmax(data.cursorPos.x, data.Edit_SelectionStart().x);
-        auto [miny, maxy] = std::minmax(data.cursorPos.y, data.Edit_SelectionStart().y);
-        data.Edit_SelectionRec().w = maxx - (data.Edit_SelectionRec().x = minx);
-        data.Edit_SelectionRec().h = maxy - (data.Edit_SelectionRec().y = miny);
+        auto [minx, maxx] = std::minmax(window.cursorPos.x, selectionStart.x);
+        auto [miny, maxy] = std::minmax(window.cursorPos.y, selectionStart.y);
+        selectionRec.w = maxx - (selectionRec.x = minx);
+        selectionRec.h = maxy - (selectionRec.y = miny);
     }
     // Node
-    else if (!!data.Edit_NodeBeingDragged())
+    else if (!!nodeBeingDragged)
     {
         // Multiple selection
-        if (!data.selection.empty())
+        if (!window.selection.empty())
         {
-            const IVec2 offset = data.GetCursorDelta();
-            for (Node* node : data.selection)
+            const IVec2 offset = window.GetCursorDelta();
+            for (Node* node : window.selection)
             {
                 node->SetPosition_Temporary(node->GetPosition() + offset);
             }
-            data.Edit_SelectionRec().position += offset;
+            selectionRec.position += offset;
         }
         else
-            data.Edit_NodeBeingDragged()->SetPosition_Temporary(data.cursorPos);
+            nodeBeingDragged->SetPosition_Temporary(window.cursorPos);
     }
     // Wire
-    else if (!!data.Edit_WireBeingDragged())
+    else if (!!wireBeingDragged)
     {
-        data.Edit_WireBeingDragged()->SnapElbowToLegal(data.cursorPos);
+        wireBeingDragged->SnapElbowToLegal(window.cursorPos);
     }
     // Group
-    else if (data.Edit_DraggingGroup())
+    else if (draggingGroup)
     {
-        data.hoveredGroup->SetPosition(data.cursorPos - data.Edit_SelectionStart());
-        for (Node* node : data.selection)
+        window.hoveredGroup->SetPosition(window.cursorPos - selectionStart);
+        for (Node* node : window.selection)
         {
-            const IVec2 offset = data.GetCursorDelta();
+            const IVec2 offset = window.GetCursorDelta();
             node->SetPosition_Temporary(node->GetPosition() + offset);
         }
     }
     // Resize group
-    else if (data.Edit_DraggingGroupCorner())
+    else if (draggingGroupCorner)
     {
-        _ASSERT_EXPR(data.Edit_GroupCorner().cornerIndex < 4, L"Index out of range");
+        _ASSERT_EXPR(groupCorner.cornerIndex < 4, L"Index out of range");
         constexpr int minWidth = g_gridSize * 2;
-        IRect captureBounds = data.Edit_GroupCorner().group->GetCaptureBounds();
+        IRect captureBounds = groupCorner.group->GetCaptureBounds();
         IVec2 cursorEnd;
         IVec2 otherEnd;
-        switch (data.Edit_GroupCorner().cornerIndex)
+        switch (groupCorner.cornerIndex)
         {
         case 0:
-            cursorEnd.x = std::min(data.cursorPos.x, captureBounds.Right() - minWidth);
-            cursorEnd.y = std::min(data.cursorPos.y, captureBounds.Bottom() - minWidth);
+            cursorEnd.x = std::min(window.cursorPos.x, captureBounds.Right() - minWidth);
+            cursorEnd.y = std::min(window.cursorPos.y, captureBounds.Bottom() - minWidth);
             otherEnd = captureBounds.BR();
             break;
         case 1:
-            cursorEnd.x = std::max(data.cursorPos.x, captureBounds.x + minWidth);
-            cursorEnd.y = std::min(data.cursorPos.y, captureBounds.Bottom() - minWidth);
+            cursorEnd.x = std::max(window.cursorPos.x, captureBounds.x + minWidth);
+            cursorEnd.y = std::min(window.cursorPos.y, captureBounds.Bottom() - minWidth);
             otherEnd = captureBounds.BL();
             break;
         case 2:
-            cursorEnd.x = std::min(data.cursorPos.x, captureBounds.Right() - minWidth);
-            cursorEnd.y = std::max(data.cursorPos.y, captureBounds.y + minWidth);
+            cursorEnd.x = std::min(window.cursorPos.x, captureBounds.Right() - minWidth);
+            cursorEnd.y = std::max(window.cursorPos.y, captureBounds.y + minWidth);
             otherEnd = captureBounds.TR();
             break;
         case 3:
-            cursorEnd.x = std::max(data.cursorPos.x, captureBounds.x + minWidth);
-            cursorEnd.y = std::max(data.cursorPos.y, captureBounds.y + minWidth);
+            cursorEnd.x = std::max(window.cursorPos.x, captureBounds.x + minWidth);
+            cursorEnd.y = std::max(window.cursorPos.y, captureBounds.y + minWidth);
             otherEnd = captureBounds.TL();
             break;
         }
         captureBounds = IRectFromTwoPoints(cursorEnd, otherEnd);
-        data.Edit_GroupCorner().group->SetCaptureBounds(captureBounds);
+        groupCorner.group->SetCaptureBounds(captureBounds);
     }
 
     // Release
@@ -343,117 +344,117 @@ void EditTool::Update(Window& data)
         // Cancel
         if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
         {
-            if (!!data.Edit_NodeBeingDragged())
+            if (!!nodeBeingDragged)
             {
-                data.Edit_NodeBeingDragged()->SetPosition(data.Edit_FallbackPos());
+                nodeBeingDragged->SetPosition(fallbackPos);
             }
-            else if (data.Edit_DraggingGroup())
+            else if (draggingGroup)
             {
-                data.hoveredGroup->SetPosition(data.Edit_FallbackPos());
-                for (Node* node : data.selection)
+                window.hoveredGroup->SetPosition(fallbackPos);
+                for (Node* node : window.selection)
                 {
-                    IVec2 offset = (data.Edit_FallbackPos() + data.Edit_SelectionStart()) - data.cursorPos;
+                    IVec2 offset = (fallbackPos + selectionStart) - window.cursorPos;
                     node->SetPosition_Temporary(node->GetPosition() + offset);
                 }
             }
-            else if (data.Edit_DraggingGroupCorner())
+            else if (draggingGroupCorner)
             {
                 // Todo
             }
-            else if (data.Edit_SelectionWIP())
+            else if (selectionWIP)
             {
-                data.Edit_SelectionRec() = IRect(0);
+                selectionRec = IRect(0);
             }
         }
         // Finalize
         else
         {
-            if (!!data.Edit_NodeBeingDragged())
+            if (!!nodeBeingDragged)
             {
-                _ASSERT_EXPR(data.Edit_HoveringMergable() != data.Edit_NodeBeingDragged(), L"Node being dragged is trying to merge with itself");
-                if (!!data.Edit_HoveringMergable())
+                _ASSERT_EXPR(hoveringMergable != nodeBeingDragged, L"Node being dragged is trying to merge with itself");
+                if (!!hoveringMergable)
                 {
                     if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
                     {
-                        data.hoveredNode = Tab::Get().MergeNodes(data.Edit_HoveringMergable(), data.Edit_NodeBeingDragged());
-                        data.Edit_HoveringMergable() = data.Edit_NodeBeingDragged() = nullptr;
+                        window.hoveredNode = window.CurrentTab().MergeNodes(hoveringMergable, nodeBeingDragged);
+                        hoveringMergable = nodeBeingDragged = nullptr;
                     }
                     else
                     {
-                        Tab::Get().SwapNodes(data.Edit_HoveringMergable(), data.Edit_NodeBeingDragged());
-                        data.Edit_NodeBeingDragged()->SetPosition(data.Edit_FallbackPos());
+                        window.CurrentTab().SwapNodes(hoveringMergable, nodeBeingDragged);
+                        nodeBeingDragged->SetPosition(fallbackPos);
                     }
                 }
                 else
-                    data.Edit_NodeBeingDragged()->SetPosition(data.cursorPos);
+                    nodeBeingDragged->SetPosition(window.cursorPos);
             }
-            else if (data.Edit_DraggingGroup())
+            else if (draggingGroup)
             {
-                for (Node* node : data.selection)
+                for (Node* node : window.selection)
                 {
                     node->SetPosition(node->GetPosition());
                 }
             }
-            else if (data.Edit_DraggingGroupCorner())
+            else if (draggingGroupCorner)
             {
                 // Todo
             }
-            else if (data.Edit_SelectionWIP())
+            else if (selectionWIP)
             {
-                data.Edit_SelectionWIP() = false;
-                if (data.IsSelectionRectValid())
-                    Tab::Get().FindNodesInRect(data.selection, data.Edit_SelectionRec());
+                selectionWIP = false;
+                if (window.IsSelectionRectValid())
+                    window.CurrentTab().FindNodesInRect(window.selection, selectionRec);
                 else
-                    data.Edit_SelectionRec() = IRect(0);
+                    selectionRec = IRect(0);
             }
         }
-        if (data.Edit_DraggingGroup())
-            data.ClearSelection();
-        data.Edit_NodeBeingDragged() = nullptr;
-        data.Edit_SelectionWIP() = false;
-        data.Edit_DraggingGroup() = false;
-        data.Edit_DraggingGroupCorner() = false;
-        data.Edit_WireBeingDragged() = nullptr;
+        if (draggingGroup)
+            window.ClearSelection();
+        nodeBeingDragged = nullptr;
+        selectionWIP = false;
+        draggingGroup = false;
+        draggingGroupCorner = false;
+        wireBeingDragged = nullptr;
     }
     // Right click
-    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!data.hoveredNode)
+    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!window.hoveredNode)
     {
-        data.hoveredNode->SetGate(data.gatePick);
-        switch (data.hoveredNode->GetGate())
+        window.hoveredNode->SetGate(window.gatePick);
+        switch (window.hoveredNode->GetGate())
         {
-        case Gate::RESISTOR:  data.hoveredNode->SetResistance(data.storedExtraParam); break;
-        case Gate::LED:       data.hoveredNode->SetColorIndex(data.storedExtraParam); break;
-        case Gate::CAPACITOR: data.hoveredNode->SetCapacity(data.storedExtraParam);   break;
+        case Gate::RESISTOR:  window.hoveredNode->SetResistance(window.storedExtraParam); break;
+        case Gate::LED:       window.hoveredNode->SetColorIndex(window.storedExtraParam); break;
+        case Gate::CAPACITOR: window.hoveredNode->SetCapacity(window.storedExtraParam);   break;
         }
     }
 }
-void EditTool::Draw(Window& data)
+void EditTool::Draw(Window& window)
 {
-    if (!!data.hoveredGroup)
+    if (!!window.hoveredGroup)
     {
-        data.hoveredGroup->Highlight(UIColor(UIColorID::UI_COLOR_FOREGROUND1));
+        window.hoveredGroup->Highlight(UIColor(UIColorID::UI_COLOR_FOREGROUND1));
     }
-    else if (data.Edit_GroupCorner().Valid())
+    else if (groupCorner.Valid())
     {
         Color color;
-        if (data.Edit_DraggingGroupCorner())
+        if (draggingGroupCorner)
             color = UIColor(UIColorID::UI_COLOR_FOREGROUND1);
         else
-            color = data.Edit_GroupCorner().group->GetColor();
-        DrawRectangleIRect(data.Edit_GroupCorner().GetCollisionRect(), color);
+            color = groupCorner.group->GetColor();
+        DrawRectangleIRect(groupCorner.GetCollisionRect(), color);
     }
 
-    DrawRectangleIRect(data.Edit_SelectionRec(), ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5));
-    DrawRectangleLines(data.Edit_SelectionRec().x, data.Edit_SelectionRec().y, data.Edit_SelectionRec().w, data.Edit_SelectionRec().h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    DrawRectangleIRect(selectionRec, ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5));
+    DrawRectangleLines(selectionRec.x, selectionRec.y, selectionRec.w, selectionRec.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
 
-    Tab::Get().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
-    for (Node* node : data.selection)
+    for (Node* node : window.selection)
     {
         DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
 
-    if (!!data.hoveredWire)
+    if (!!window.hoveredWire)
     {
         constexpr ElbowConfig configOrder[] =
         {
@@ -464,36 +465,36 @@ void EditTool::Draw(Window& data)
         };
         for (int i = 0; i < _countof(configOrder); ++i)
         {
-            IVec2 p = data.hoveredWire->GetLegalElbowPosition(configOrder[i]);
-            Wire::Draw(data.hoveredWire->GetStartPos(), p, data.hoveredWire->GetEndPos(), ColorAlpha(UIColor(UIColorID::UI_COLOR_AVAILABLE), 0.25f));
+            IVec2 p = window.hoveredWire->GetLegalElbowPosition(configOrder[i]);
+            Wire::Draw(window.hoveredWire->GetStartPos(), p, window.hoveredWire->GetEndPos(), ColorAlpha(UIColor(UIColorID::UI_COLOR_AVAILABLE), 0.25f));
             DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(UIColor(UIColorID::UI_COLOR_AVAILABLE), 0.5f));
         }
 
-        data.hoveredWire->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
+        window.hoveredWire->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
         Color elbowColor;
-        if (!!data.Edit_WireBeingDragged())
+        if (!!wireBeingDragged)
             elbowColor = UIColor(UIColorID::UI_COLOR_AVAILABLE);
         else
             elbowColor = UIColor(UIColorID::UI_COLOR_CAUTION);
-        data.hoveredWire->DrawElbow(elbowColor);
+        window.hoveredWire->DrawElbow(elbowColor);
     }
 
-    Tab::Get().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
-    if (!!data.hoveredNode)
+    if (!!window.hoveredNode)
     {
-        data.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_CAUTION));
+        window.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_CAUTION));
     }
-    if (!!data.hoveredWire)
+    if (!!window.hoveredWire)
     {
-        data.hoveredWire->start->Draw(UIColor(UIColorID::UI_COLOR_INPUT));
-        data.hoveredWire->end->Draw(UIColor(UIColorID::UI_COLOR_OUTPUT));
+        window.hoveredWire->start->Draw(UIColor(UIColorID::UI_COLOR_INPUT));
+        window.hoveredWire->end->Draw(UIColor(UIColorID::UI_COLOR_OUTPUT));
     }
 
-    if (!!data.Edit_NodeBeingDragged() && data.Edit_HoveringMergable())
+    if (!!nodeBeingDragged && hoveringMergable)
     {
-        DrawCircleIV(data.Edit_NodeBeingDragged()->GetPosition(), Node::g_nodeRadius * 2.0f, UIColor(UIColorID::UI_COLOR_SPECIAL));
-        data.DrawTooltipAtCursor(
+        DrawCircleIV(nodeBeingDragged->GetPosition(), Node::g_nodeRadius * 2.0f, UIColor(UIColorID::UI_COLOR_SPECIAL));
+        window.DrawTooltipAtCursor(
             "Hold [shift] to merge on release.\n"
             "Otherwise, nodes will only be swapped.", UIColor(UIColorID::UI_COLOR_SPECIAL));
     }
@@ -504,11 +505,11 @@ void EditTool::Draw(Window& data)
     {
         int i = 0;
         // Cursor stats
-        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
         // Selection stats
-        if (data.SelectionExists())
+        if (window.SelectionExists())
         {
             unsigned ORs = 0;
             unsigned ANDs = 0;
@@ -520,7 +521,7 @@ void EditTool::Draw(Window& data)
             unsigned DELs = 0;
             unsigned BATs = 0;
 
-            for (Node* node : data.selection)
+            for (Node* node : window.selection)
             {
                 switch (node->GetGate())
                 {
@@ -536,25 +537,25 @@ void EditTool::Draw(Window& data)
                 }
             }
 
-            if (DELs) DrawText(TextFormat("\t\tbattery: %i", BATs), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (DELs) DrawText(TextFormat("\t\tdelay: %i", DELs), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (LEDs) DrawText(TextFormat("\t\tLED: %i", LEDs), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (CAPs) DrawText(TextFormat("\t\tcapacitor: %i", CAPs), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (RESs) DrawText(TextFormat("\t\tresistor: %i", RESs), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (XORs) DrawText(TextFormat("\t\txor: %i", XORs), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (NORs) DrawText(TextFormat("\t\tnor: %i", NORs), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (ANDs) DrawText(TextFormat("\t\tand: %i", ANDs), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            if (ORs)  DrawText(TextFormat("\t\tor: %i", ORs), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\ttotal: %i", data.selection.size()), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND1));
-            DrawText("selection", 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+            if (DELs) DrawText(TextFormat("\t\tbattery: %i", BATs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            if (DELs) DrawText(TextFormat("\t\tdelay: %i", DELs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            if (LEDs) DrawText(TextFormat("\t\tLED: %i", LEDs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            if (CAPs) DrawText(TextFormat("\t\tcapacitor: %i", CAPs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            if (RESs) DrawText(TextFormat("\t\tresistor: %i", RESs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            if (XORs) DrawText(TextFormat("\t\txor: %i", XORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            if (NORs) DrawText(TextFormat("\t\tnor: %i", NORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            if (ANDs) DrawText(TextFormat("\t\tand: %i", ANDs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            if (ORs)  DrawText(TextFormat("\t\tor: %i", ORs), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText(TextFormat("\ttotal: %i", window.selection.size()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND1));
+            DrawText("selection", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
         }
 
 
         // Node hover stats
-        if (!!data.hoveredNode)
+        if (!!window.hoveredNode)
         {
             const char* gateName;
-            switch (data.hoveredNode->GetGate())
+            switch (window.hoveredNode->GetGate())
             {
             case Gate::OR:        gateName = "or";        break;
             case Gate::AND:       gateName = "and";       break;
@@ -573,24 +574,24 @@ void EditTool::Draw(Window& data)
             // State
             {
                 const char* stateName;
-                if (data.hoveredNode->GetState())
+                if (window.hoveredNode->GetState())
                     stateName = "\tactive";
                 else
                     stateName = "\tinactive";
-                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+                DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
             }
-            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-            DrawText(TextFormat("\tinputs: %i", data.hoveredNode->GetInputCount()), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
-            DrawText(TextFormat("\ttype: %s", gateName), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tserial: %u", Tab::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered node", 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+            DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
+            DrawText(TextFormat("\tinputs: %i", window.hoveredNode->GetInputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_INPUT));
+            DrawText(TextFormat("\ttype: %s", gateName), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText("hovered node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
         }
         // Joint hover stats
-        else if (!!data.hoveredWire)
+        else if (!!window.hoveredWire)
         {
             const char* configurationName;
-            switch (data.hoveredWire->elbowConfig)
+            switch (window.hoveredWire->elbowConfig)
             {
             case ElbowConfig::horizontal: configurationName = "horizontal"; break;
             case ElbowConfig::diagonalA: configurationName = "diagonal from input"; break;
@@ -598,16 +599,16 @@ void EditTool::Draw(Window& data)
             case ElbowConfig::diagonalB: configurationName = "diagonal from output"; break;
             default: configurationName = "ERROR"; break;
             }
-            DrawText(TextFormat("\tconfiguration: %s", configurationName), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\twire ptr: %p", data.hoveredWire), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered wire-joint", 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+            DrawText(TextFormat("\tconfiguration: %s", configurationName), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText(TextFormat("\twire ptr: %p", window.hoveredWire), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText("hovered wire-joint", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
         }
         // Group hover stats
-        else if (!!data.hoveredGroup)
+        else if (!!window.hoveredGroup)
         {
-            DrawText(TextFormat("\tlabel: %s", data.hoveredGroup->GetLabel().c_str()), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tptr: %p", data.hoveredGroup), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered group", 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+            DrawText(TextFormat("\tlabel: %s", window.hoveredGroup->GetLabel().c_str()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText(TextFormat("\tptr: %p", window.hoveredGroup), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText("hovered group", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
         }
     }
 }
@@ -616,48 +617,48 @@ EraseTool::EraseTool() {}
 EraseTool::~EraseTool() {}
 ModeType EraseTool::GetModeType() const { return ModeType::Basic; }
 Mode EraseTool::GetMode() const { return Mode::ERASE; }
-void EraseTool::Update(Window& data)
+void EraseTool::Update(Window& window)
 {
-    if (data.b_cursorMoved)
+    if (window.b_cursorMoved)
     {
-        data.hoveredWire = nullptr;
-        data.hoveredNode = Tab::Get().FindNodeAtPos(data.cursorPos);
-        if (!data.hoveredNode)
+        window.hoveredWire = nullptr;
+        window.hoveredNode = window.CurrentTab().FindNodeAtPos(window.cursorPos);
+        if (!window.hoveredNode)
         {
-            data.hoveredWire = Tab::Get().FindWireAtPos(data.cursorPos);
-            if (!data.hoveredWire)
-                data.hoveredGroup = Tab::Get().FindGroupAtPos(data.cursorPos);
+            window.hoveredWire = window.CurrentTab().FindWireAtPos(window.cursorPos);
+            if (!window.hoveredWire)
+                window.hoveredGroup = window.CurrentTab().FindGroupAtPos(window.cursorPos);
         }
     }
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (!!data.hoveredNode)
+        if (!!window.hoveredNode)
         {
             // Special erase
             if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
-                data.hoveredNode->IsSpecialErasable())
-                Tab::Get().BypassNode(data.hoveredNode);
+                window.hoveredNode->IsSpecialErasable())
+                window.CurrentTab().BypassNode(window.hoveredNode);
             // Complex bipass
             else if (
                 (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
                 (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) &&
-                data.hoveredNode->IsComplexBipassable())
-                Tab::Get().BypassNode_Complex(data.hoveredNode);
+                window.hoveredNode->IsComplexBipassable())
+                window.CurrentTab().BypassNode_Complex(window.hoveredNode);
             else
-                Tab::Get().DestroyNode(data.hoveredNode);
+                window.CurrentTab().DestroyNode(window.hoveredNode);
         }
-        else if (!!data.hoveredWire)
-            Tab::Get().DestroyWire(data.hoveredWire);
-        else if (!!data.hoveredGroup)
-            Tab::Get().DestroyGroup(data.hoveredGroup);
+        else if (!!window.hoveredWire)
+            window.CurrentTab().DestroyWire(window.hoveredWire);
+        else if (!!window.hoveredGroup)
+            window.CurrentTab().DestroyGroup(window.hoveredGroup);
 
-        data.hoveredNode = nullptr;
-        data.hoveredWire = nullptr;
-        data.hoveredGroup = nullptr;
+        window.hoveredNode = nullptr;
+        window.hoveredWire = nullptr;
+        window.hoveredGroup = nullptr;
     }
 }
-void EraseTool::Draw(Window& data)
+void EraseTool::Draw(Window& window)
 {
     auto DrawCross = [](IVec2 center, Color color)
     {
@@ -672,29 +673,29 @@ void EraseTool::Draw(Window& data)
             color);
     };
 
-    if (!!data.hoveredGroup)
+    if (!!window.hoveredGroup)
     {
-        IRect rec = data.hoveredGroup->GetLabelBounds();
-        data.hoveredGroup->Highlight(UIColor(UIColorID::UI_COLOR_ERROR));
+        IRect rec = window.hoveredGroup->GetLabelBounds();
+        window.hoveredGroup->Highlight(UIColor(UIColorID::UI_COLOR_ERROR));
         DrawLineEx({ (float)rec.x, (float)rec.y }, { (float)rec.x + (float)rec.h, (float)rec.Bottom() }, 3, UIColor(UIColorID::UI_COLOR_DESTRUCTIVE));
         DrawLineEx({ (float)rec.x, (float)rec.Bottom() }, { (float)rec.x + (float)rec.h, (float)rec.y }, 3, UIColor(UIColorID::UI_COLOR_DESTRUCTIVE));
     }
 
-    Tab::Get().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
-    if (!!data.hoveredWire)
+    if (!!window.hoveredWire)
     {
-        data.hoveredWire->Draw(UIColor(UIColorID::UI_COLOR_ERROR));
-        DrawCross(data.cursorPos, UIColor(UIColorID::UI_COLOR_DESTRUCTIVE));
+        window.hoveredWire->Draw(UIColor(UIColorID::UI_COLOR_ERROR));
+        DrawCross(window.cursorPos, UIColor(UIColorID::UI_COLOR_DESTRUCTIVE));
     }
-    else if (!!data.hoveredNode)
+    else if (!!window.hoveredNode)
     {
         Color color;
         if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
         {
-            if (data.hoveredNode->IsSpecialErasable())
+            if (window.hoveredNode->IsSpecialErasable())
                 color = UIColor(UIColorID::UI_COLOR_AVAILABLE);
-            else if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
+            else if (window.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
                 color = UIColor(UIColorID::UI_COLOR_SPECIAL);
             else
                 color = UIColor(UIColorID::UI_COLOR_DESTRUCTIVE);
@@ -702,29 +703,29 @@ void EraseTool::Draw(Window& data)
         else
             color = UIColor(UIColorID::UI_COLOR_ERROR);
 
-        for (Wire* wire : data.hoveredNode->GetWires())
+        for (Wire* wire : window.hoveredNode->GetWires())
         {
             wire->Draw(color);
         }
     }
 
-    Tab::Get().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
-    if (!!data.hoveredNode)
+    if (!!window.hoveredNode)
     {
-        data.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_BACKGROUND));
-        DrawCross(data.hoveredNode->GetPosition(), UIColor(UIColorID::UI_COLOR_DESTRUCTIVE));
+        window.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        DrawCross(window.hoveredNode->GetPosition(), UIColor(UIColorID::UI_COLOR_DESTRUCTIVE));
 
         if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
         {
             const char* text;
             Color color;
-            if (data.hoveredNode->IsSpecialErasable())
+            if (window.hoveredNode->IsSpecialErasable())
             {
                 color = UIColor(UIColorID::UI_COLOR_AVAILABLE);
                 text = "Simple bipass";
             }
-            else if (data.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
+            else if (window.hoveredNode->IsComplexBipassable() && (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
             {
                 color = UIColor(UIColorID::UI_COLOR_SPECIAL);
                 text = "Complex bipass";
@@ -732,8 +733,8 @@ void EraseTool::Draw(Window& data)
             else
             {
                 color = UIColor(UIColorID::UI_COLOR_DESTRUCTIVE);
-                size_t iCount = data.hoveredNode->GetInputCount();
-                size_t oCount = data.hoveredNode->GetOutputCount();
+                size_t iCount = window.hoveredNode->GetInputCount();
+                size_t oCount = window.hoveredNode->GetOutputCount();
 
                 if (iCount == 0 && oCount == 0)
                     text =
@@ -764,7 +765,7 @@ void EraseTool::Draw(Window& data)
                         "\"Special erase error: i=%i, o=%i\"", iCount, oCount);
 
             }
-            data.DrawTooltipAtCursor_Shadowed(text, color);
+            window.DrawTooltipAtCursor_Shadowed(text, color);
         }
     }
 }
@@ -773,28 +774,28 @@ InteractTool::InteractTool() {}
 InteractTool::~InteractTool() {}
 ModeType InteractTool::GetModeType() const { return ModeType::Basic; }
 Mode InteractTool::GetMode() const { return Mode::INTERACT; }
-void InteractTool::Update(Window& data)
+void InteractTool::Update(Window& window)
 {
-    data.hoveredNode = Tab::Get().FindNodeAtPos(data.cursorPos);
-    if (!!data.hoveredNode && !data.hoveredNode->IsOutputOnly())
-        data.hoveredNode = nullptr;
+    window.hoveredNode = window.CurrentTab().FindNodeAtPos(window.cursorPos);
+    if (!!window.hoveredNode && !window.hoveredNode->IsOutputOnly())
+        window.hoveredNode = nullptr;
 
-    if (!!data.hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-        data.hoveredNode->SetGate(data.hoveredNode->GetGate() == Gate::NOR ? Gate::OR : Gate::NOR);
+    if (!!window.hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        window.hoveredNode->SetGate(window.hoveredNode->GetGate() == Gate::NOR ? Gate::OR : Gate::NOR);
 }
-void InteractTool::Draw(Window& data)
+void InteractTool::Draw(Window& window)
 {
-    Tab::Get().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
-    Tab::Get().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
-    for (const Node* node : Tab::Get().GetStartNodes())
+    for (const Node* node : window.CurrentTab().GetStartNodes())
     {
         node->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
 
-    if (!!data.hoveredNode)
+    if (!!window.hoveredNode)
     {
-        data.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_CAUTION));
+        window.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_CAUTION));
     }
 
     EndMode2D();
@@ -803,59 +804,60 @@ void InteractTool::Draw(Window& data)
     {
         int i = 0;
         // Cursor stats
-        DrawText(TextFormat("y: %i", data.cursorPos.y / g_gridSize), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-        DrawText(TextFormat("x: %i", data.cursorPos.x / g_gridSize), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
         // Node hover stats
-        if (!!data.hoveredNode)
+        if (!!window.hoveredNode)
         {
             // State
             {
                 const char* stateName;
-                if (data.hoveredNode->GetState())
+                if (window.hoveredNode->GetState())
                     stateName = "\tactive";
                 else
                     stateName = "\tinactive";
-                DrawText(stateName, 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+                DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
             }
-            DrawText(TextFormat("\toutputs: %i", data.hoveredNode->GetOutputCount()), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-            DrawText(TextFormat("\tinteraction serial: %u", Tab::Get().StartNodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tserial: %u", Tab::Get().NodeID(data.hoveredNode)), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText(TextFormat("\tptr: %p", data.hoveredNode), 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-            DrawText("hovered interactable node", 2, data.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+            DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
+            DrawText(TextFormat("\tinteraction serial: %u", window.CurrentTab().StartNodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
+            DrawText("hovered interactable node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
         }
     }
 }
 
+#if 0
 ButtonOverlay::ButtonOverlay() {}
 ButtonOverlay::~ButtonOverlay() {}
 ModeType ButtonOverlay::GetModeType() const { return ModeType::Overlay; }
 Mode ButtonOverlay::GetMode() const { return Mode::BUTTON; }
-void ButtonOverlay::Update(Window& data)
+void ButtonOverlay::Update(Window& window)
 {
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        IRect rec = Window::dropdownBounds[data.Button_DropdownActive()];
-        if (data.CursorInUIBounds(rec))
+        IRect rec = Window::dropdownBounds[DropdownActive];
+        if (window.CursorInUIBounds(rec))
         {
-            rec.h = data.ButtonWidth();
+            rec.h = Button::g_width;
 
-            switch (data.Button_DropdownActive())
+            switch (DropdownActive)
             {
             case 0: // Mode
             {
                 for (Mode m : Window::sidebarModeOrder)
                 {
-                    if (m == data.baseMode)
+                    if (m == window.baseMode)
                         continue;
 
-                    if (data.CursorInUIBounds(rec))
+                    if (window.CursorInUIBounds(rec))
                     {
-                        data.SetMode(m);
+                        window.SetMode(m);
                         break;
                     }
 
-                    rec.y += data.ButtonWidth();
+                    rec.y += Button::g_width;
                 }
             }
             break;
@@ -864,19 +866,19 @@ void ButtonOverlay::Update(Window& data)
             {
                 for (Gate g : Window::sidebarGateOrder)
                 {
-                    if (g == data.gatePick)
+                    if (g == window.gatePick)
                         continue;
 
-                    if (data.CursorInUIBounds(rec))
+                    if (window.CursorInUIBounds(rec))
                     {
-                        data.SetGate(g);
+                        window.SetGate(g);
                         break;
                     }
 
-                    rec.y += data.ButtonWidth();
+                    rec.y += Button::g_width;
                 }
 
-                data.ClearOverlayMode();
+                window.ClearOverlayMode();
             }
             break;
 
@@ -884,60 +886,60 @@ void ButtonOverlay::Update(Window& data)
             {
                 for (uint8_t v = 0; v < _countof(Node::g_resistanceBands); ++v)
                 {
-                    if (v == data.storedExtraParam)
+                    if (v == window.storedExtraParam)
                         continue;
 
-                    if (data.CursorInUIBounds(rec))
+                    if (window.CursorInUIBounds(rec))
                     {
-                        data.storedExtraParam = v;
+                        window.storedExtraParam = v;
                         break;
                     }
 
-                    rec.y += data.ButtonWidth();
+                    rec.y += Button::g_width;
                 }
 
-                data.ClearOverlayMode();
+                window.ClearOverlayMode();
             }
             break;
             }
         }
         else
-            data.ClearOverlayMode();
+            window.ClearOverlayMode();
     }
     else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
-        data.ClearOverlayMode();
+        window.ClearOverlayMode();
     }
 }
-void ButtonOverlay::Draw(Window& data)
+void ButtonOverlay::Draw(Window& window)
 {
-    Tab::Get().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
-    Tab::Get().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     EndMode2D();
 
-    IRect rec = data.dropdownBounds[data.Button_DropdownActive()];
+    IRect rec = window.dropdownBounds[DropdownActive];
     DrawRectangleIRect(rec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
-    rec.h = data.ButtonWidth();
+    rec.h = Button::g_width;
 
-    switch (data.Button_DropdownActive())
+    switch (DropdownActive)
     {
     case 0: // Mode
     {
         for (Mode m : Window::sidebarModeOrder)
         {
-            if (m == data.baseMode)
+            if (m == window.baseMode)
                 continue;
             Color color;
-            if (InBoundingBox(rec, data.cursorUIPos))
+            if (InBoundingBox(rec, window.cursorUIPos))
             {
                 color = UIColor(UIColorID::UI_COLOR_FOREGROUND);
-                DrawText(Window::GetModeTooltipName(m), data.ButtonWidth() + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                DrawText(Window::GetModeTooltipName(m), Button::g_width + (window.FontSize() / 2), Button::g_width + (window.FontSize() / 8) + rec.y, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
             }
             else
                 color = UIColor(UIColorID::UI_COLOR_FOREGROUND3);
-            data.DrawModeIcon(m, rec.xy, color);
-            rec.y += data.ButtonWidth();
+            window.DrawModeIcon(m, rec.xy, color);
+            rec.y += Button::g_width;
         }
     }
     break;
@@ -946,18 +948,18 @@ void ButtonOverlay::Draw(Window& data)
     {
         for (Gate g : Window::sidebarGateOrder)
         {
-            if (g == data.gatePick)
+            if (g == window.gatePick)
                 continue;
             Color color;
-            if (InBoundingBox(rec, data.cursorUIPos))
+            if (InBoundingBox(rec, window.cursorUIPos))
             {
                 color = UIColor(UIColorID::UI_COLOR_FOREGROUND);
-                DrawText(Window::GetGateTooltipName(g), data.ButtonWidth() * 2 + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                DrawText(Window::GetGateTooltipName(g), Button::g_width * 2 + (window.FontSize() / 2), Button::g_width + (window.FontSize() / 8) + rec.y, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
             }
             else
                 color = UIColor(UIColorID::UI_COLOR_FOREGROUND3);
-            data.DrawGateIcon(g, rec.xy, color);
-            rec.y += data.ButtonWidth();
+            window.DrawGateIcon(g, rec.xy, color);
+            rec.y += Button::g_width;
         }
     }
     break;
@@ -966,107 +968,108 @@ void ButtonOverlay::Draw(Window& data)
     {
         for (uint8_t v = 0; v < _countof(Node::g_resistanceBands); ++v)
         {
-            if (v == data.storedExtraParam)
+            if (v == window.storedExtraParam)
                 continue;
             Color color = Node::g_resistanceBands[v];
-            if (InBoundingBox(rec, data.cursorUIPos))
+            if (InBoundingBox(rec, window.cursorUIPos))
             {
                 DrawRectangleIRect(rec, UIColor(UIColorID::UI_COLOR_AVAILABLE));
                 DrawRectangleIRect(ExpandIRect(rec, -2), color);
                 const char* text;
-                if (data.gatePick == Gate::LED)
-                    text = TextFormat(data.deviceParameterTextFmt, Node::GetColorName(v));
+                if (window.gatePick == Gate::LED)
+                    text = TextFormat(window.deviceParameterTextFmt, Node::GetColorName(v));
                 else
-                    text = TextFormat(data.deviceParameterTextFmt, v);
-                DrawText(text, data.ButtonWidth() * 3 + (data.FontSize() / 2), data.ButtonWidth() + (data.FontSize() / 8) + rec.y, data.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                    text = TextFormat(window.deviceParameterTextFmt, v);
+                DrawText(text, Button::g_width * 3 + (window.FontSize() / 2), Button::g_width + (window.FontSize() / 8) + rec.y, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
             }
             else
                 DrawRectangleIRect(rec, color);
-            rec.y += data.ButtonWidth();
+            rec.y += Button::g_width;
         }
     }
     break;
     }
 }
+#endif
 
 PasteOverlay::PasteOverlay() {}
 PasteOverlay::~PasteOverlay() {}
 ModeType PasteOverlay::GetModeType() const { return ModeType::Overlay; }
 Mode PasteOverlay::GetMode() const { return Mode::PASTE; }
-void PasteOverlay::Update(Window& data)
+void PasteOverlay::Update(Window& window)
 {
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            Tab::Get().SpawnBlueprint(data.clipboard, data.cursorPos);
-        data.ClearSelection();
-        data.ClearOverlayMode();
+            window.CurrentTab().SpawnBlueprint(window.clipboard, window.cursorPos);
+        window.ClearSelection();
+        window.ClearOverlayMode();
     }
 }
-void PasteOverlay::Draw(Window& data)
+void PasteOverlay::Draw(Window& window)
 {
-    Tab::Get().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
-    Tab::Get().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
-    data.clipboard->DrawSelectionPreview(data.cursorPos - IVec2(g_gridSize), ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND2), 0.5f), UIColor(UIColorID::UI_COLOR_FOREGROUND2), UIColor(UIColorID::UI_COLOR_BACKGROUND2), UIColor(UIColorID::UI_COLOR_FOREGROUND3), data.pastePreviewLOD);
+    window.clipboard->DrawSelectionPreview(window.cursorPos - IVec2(g_gridSize), ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND2), 0.5f), UIColor(UIColorID::UI_COLOR_FOREGROUND2), UIColor(UIColorID::UI_COLOR_BACKGROUND2), UIColor(UIColorID::UI_COLOR_FOREGROUND3), window.pastePreviewLOD);
 }
 
 BlueprintMenu::BlueprintMenu() {}
 BlueprintMenu::~BlueprintMenu() {}
 ModeType BlueprintMenu::GetModeType() const { return ModeType::Menu; }
 Mode BlueprintMenu::GetMode() const { return Mode::BP_SELECT; }
-void BlueprintMenu::Update(Window& data)
+void BlueprintMenu::Update(Window& window)
 {
     constexpr int halfGrid = g_gridSize / 2;
-    if (data.b_cursorMoved)
+    if (window.b_cursorMoved)
     {
-        IVec2 pos(0, data.ButtonWidth());
+        IVec2 pos(0, Button::g_width);
         int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
-        data.BPSelect_Hovering() = nullptr;
-        for (Blueprint* bp : Tab::Get().GetBlueprints())
+        hovering = nullptr;
+        for (Blueprint* bp : window.CurrentTab().GetBlueprints())
         {
             IRect rec = bp->GetSelectionPreviewRect(pos);
-            if (rec.Right() > data.windowWidth)
+            if (rec.Right() > window.windowWidth)
             {
                 pos = IVec2(0, maxY);
                 rec = bp->GetSelectionPreviewRect(pos);
             }
 
-            if (data.CursorInUIBounds(rec))
-                data.BPSelect_Hovering() = bp;
+            if (window.CursorInUIBounds(rec))
+                hovering = bp;
 
             pos += rec.width;
             int recBottom = rec.y + rec.h;
             maxY = std::max(maxY, recBottom);
         }
     }
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !!data.BPSelect_Hovering())
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !!hovering)
     {
-        data.clipboard = data.BPSelect_Hovering();
-        data.SetMode(Mode::PASTE);
+        window.clipboard = hovering;
+        window.SetMode(Mode::PASTE);
     }
 }
-void BlueprintMenu::Draw(Window& data)
+void BlueprintMenu::Draw(Window& window)
 {
     constexpr int halfGrid = g_gridSize / 2;
-    IVec2 pos(0, data.ButtonWidth());
+    IVec2 pos(0, Button::g_width);
     int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
     ClearBackground(UIColor(UIColorID::UI_COLOR_BLUEPRINTS_BACKGROUND));
-    for (int y = 0; y < data.windowHeight; y += g_gridSize)
+    for (int y = 0; y < window.windowHeight; y += g_gridSize)
     {
-        DrawLine(0, y, data.windowWidth, y, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+        DrawLine(0, y, window.windowWidth, y, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
     }
-    for (int x = 0; x < data.windowWidth; x += g_gridSize)
+    for (int x = 0; x < window.windowWidth; x += g_gridSize)
     {
-        DrawLine(x, 0, x, data.windowHeight, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+        DrawLine(x, 0, x, window.windowHeight, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
     }
-    DrawRectangle(0, 0, data.windowWidth, data.ButtonWidth(), UIColor(UIColorID::UI_COLOR_BACKGROUND1));
-    const int padding = data.ButtonWidth() / 2 - (data.FontSize() / 2);
-    DrawText("Blueprints", padding, padding, data.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    for (Blueprint* bp : Tab::Get().GetBlueprints())
+    DrawRectangle(0, 0, window.windowWidth, Button::g_width, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+    const int padding = Button::g_width / 2 - (window.FontSize() / 2);
+    DrawText("Blueprints", padding, padding, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    for (Blueprint* bp : window.CurrentTab().GetBlueprints())
     {
         IRect rec = bp->GetSelectionPreviewRect(pos);
-        if (rec.Right() > data.windowWidth)
+        if (rec.Right() > window.windowWidth)
         {
             pos = IVec2(0, maxY);
             rec = bp->GetSelectionPreviewRect(pos);
@@ -1075,7 +1078,7 @@ void BlueprintMenu::Draw(Window& data)
         Color background;
         Color foreground;
         Color foregroundIO;
-        if (!!data.BPSelect_Hovering() && bp == data.BPSelect_Hovering()) [[unlikely]]
+        if (!!hovering && bp == hovering) [[unlikely]]
         {
             background = UIColor(UIColorID::UI_COLOR_AVAILABLE);
             foreground = UIColor(UIColorID::UI_COLOR_FOREGROUND1);
@@ -1088,12 +1091,30 @@ void BlueprintMenu::Draw(Window& data)
             foregroundIO = UIColor(UIColorID::UI_COLOR_BACKGROUND2);
         }
 
-        bp->DrawSelectionPreview(pos, background, foreground, foregroundIO, ColorAlpha(foreground, 0.25f), data.blueprintLOD);
+        bp->DrawSelectionPreview(pos, background, foreground, foregroundIO, ColorAlpha(foreground, 0.25f), window.blueprintLOD);
         DrawRectangleLines(rec.x, rec.y, rec.w, rec.h, foreground);
 
         pos += rec.width;
         maxY = std::max(maxY, rec.Bottom());
     }
-    if (!!data.BPSelect_Hovering())
-        data.DrawTooltipAtCursor_Shadowed(data.BPSelect_Hovering()->name.c_str(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    if (!!hovering)
+        window.DrawTooltipAtCursor_Shadowed(hovering->name.c_str(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+}
+
+Tool* NewToolOfMode(Mode mode)
+{
+    switch (mode)
+    {
+        ASSERT_SPECIALIZATION(L"Mode generation");
+
+    case Mode::PEN:         return new PenTool;         break;
+    case Mode::EDIT:        return new EditTool;        break;
+    case Mode::ERASE:       return new EraseTool;       break;
+    case Mode::INTERACT:    return new InteractTool;    break;
+
+        //case Mode::BUTTON:      return new ButtonOverlay;   break;
+    case Mode::PASTE:       return new PasteOverlay;    break;
+
+    case Mode::BP_SELECT:   return new BlueprintMenu;   break;
+    }
 }

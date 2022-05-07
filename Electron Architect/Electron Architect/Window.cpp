@@ -16,7 +16,147 @@
 
 Blueprint g_clipboardBP;
 
-Window::Window(int windowWidth, int windowHeight) : windowWidth(windowWidth), windowHeight(windowHeight)
+Window::Window(int windowWidth, int windowHeight) : windowWidth(windowWidth), windowHeight(windowHeight),
+modeButtons{
+    IconButton(
+        IVec2(0, 0),
+        "Mode: Draw [b]",
+        "Left click to create a new node and start a wire from it, or to start a wire from an existing node.\n"
+        "Left click again to connect the wire to a new node or an existing one, and start a new wire from there.\n"
+        "Right click while creating a wire to cancel it.",
+        [this]() { SetMode(Mode::PEN); },
+        IVec2(0, 0),
+        &modeIcons16x),
+
+        IconButton(
+            IVec2(0, 1),
+            "Mode: Edit [v]",
+            "Left click and drag nodes to move them around.\n"
+            "Left click and drag wire elbows to snap them to a preferred angle.\n"
+            "Right click nodes to apply the currently selected gate/settings to them.",
+            [this]() { SetMode(Mode::EDIT); },
+            IVec2(1, 0),
+            &modeIcons16x),
+
+        IconButton(
+            IVec2(0, 2),
+            "Mode: Erase [x]",
+            "Left click a node to erase it and all wires directly connected to it (collateral will render in MAGENTA).\n"
+            "Left click a wire to erase only that wire, disconnecting the nodes without erasing them.",
+            [this]() { SetMode(Mode::ERASE); },
+            IVec2(0, 1),
+            &modeIcons16x),
+
+        IconButton(
+            IVec2(0, 3),
+            "Mode: Interact [f]",
+            "Left click a node without any inputs (such nodes will render in \"available_color\" (blue by default)) to toggle it between outputting true and false.",
+            [this]() { SetMode(Mode::INTERACT); },
+            IVec2(1, 1),
+            &modeIcons16x),
+},
+gateButtons{
+    IconButton(
+        IVec2(1,0),
+        "Gate: Or [1]",
+        "Outputs true if any input is true,\n"
+        "Outputs false otherwise.",
+        [this]() { SetGate(Gate::OR); },
+        IVec2(0,0),
+        &gateIcons16x),
+
+    IconButton(
+        IVec2(1,1),
+        "Gate: And [2]",
+        "Outputs true if all inputs are true,\n"
+        "Outputs false otherwise.",
+        [this]() { SetGate(Gate::AND); },
+        IVec2(1,0),
+        &gateIcons16x),
+
+    IconButton(
+        IVec2(1,2),
+        "Gate: Nor [3]",
+        "Outputs false if any input is true.\n"
+        "Outputs true otherwise.",
+        [this]() { SetGate(Gate::NOR); },
+        IVec2(0,1),
+        &gateIcons16x),
+
+    IconButton(
+        IVec2(1,3),
+        "Gate: Xor [4]",
+        "Outputs true if exactly 1 input is true,\n"
+        "Outputs false otherwise.\n"
+        "Order of inputs does not matter.",
+        [this]() { SetGate(Gate::XOR); },
+        IVec2(1,1),
+        &gateIcons16x),
+
+    IconButton(
+        IVec2(1,4),
+        "Element: Resistor [5]",
+        "Outputs true if greater than [resistance] inputs are true,\n"
+        "Outputs false otherwise.\n"
+        "Order of inputs does not matter.",
+        [this]() { SetGate(Gate::RESISTOR); },
+        IVec2(0,2),
+        &gateIcons16x),
+
+    IconButton(
+        IVec2(1,5),
+        "Element: Capacitor [6]",
+        "Stores charge while any input is true.\n"
+        "Stops charging once charge equals [capacity].\n"
+        "Drains charge while no input is true.\n"
+        "Outputs true while charge is greater than zero,\n"
+        "Outputs true while any input is true,\n"
+        "Outputs false otherwise.",
+        [this]() { SetGate(Gate::CAPACITOR); },
+        IVec2(1,2),
+        &gateIcons16x),
+
+    IconButton(
+        IVec2(1,6),
+        "Element: LED [7]",
+        "Treats I/O the same as an OR gate.\n"
+        "Lights up with the selected color when powered.",
+        [this]() { SetGate(Gate::LED); },
+        IVec2(0,3),
+        &gateIcons16x),
+
+    IconButton(
+        IVec2(1,7),
+        "Element: Delay [8]",
+         "Treats I/O the same as an OR gate.\n"
+        "Outputs with a 1-tick delay.\n"
+        "Sequntial delay devices are recommended for delay greater than 1 tick.",
+        [this]() { SetGate(Gate::DELAY); },
+        IVec2(1,3),
+        &gateIcons16x),
+
+    IconButton(
+        IVec2(1,8),
+        "Element: Battery [9]",
+        "Always outputs true, regardless of inputs.",
+        [this]() { SetGate(Gate::BATTERY); },
+        IVec2(0,4),
+        &gateIcons16x),
+},
+blueprintsButton(
+    IVec2(2, 0),
+    "Blueprints",
+    "@TODO",
+    [this]() { SetMode(Mode::BP_SELECT); },
+    IVec2::Zero(),
+    &blueprintIcon16x),
+clipboardButton(
+        IVec2(2, 1),
+        "Clipboard (ctrl+c to copy, ctrl+v to paste)",
+        "@TODO",
+        [this]() { if (this->IsClipboardValid()) SetMode(Mode::PASTE); },
+        IVec2::Zero(),
+        &clipboardIcon16x)
 {
     InitWindow(windowWidth, windowHeight, "Electron Architect");
     SetExitKey(0);
@@ -222,7 +362,7 @@ void Window::MakeGroupFromSelection()
 {
     _ASSERT_EXPR(base->GetMode() == Mode::EDIT, L"Group from selection shouldn't be possible outside of edit mode");
     EditTool* edit = dynamic_cast<EditTool*>(base);
-    CurrentTab().CreateGroup(edit->selectionRec);
+    CurrentTab().CreateGroup(edit->selectionRec, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     edit->selectionRec = IRect(0);
     selection.clear();
 }
@@ -337,9 +477,9 @@ void Window::CheckHotkeys()
     }
 
     // Gate hotkeys
-    if (ModeIsBasic())
+    if (GetModeType() == ModeType::Basic)
     {
-        if (IsKeyPressed(KEY_ONE))   SetGate(Gate::OR);
+        if      (IsKeyPressed(KEY_ONE))   SetGate(Gate::OR);
         else if (IsKeyPressed(KEY_TWO))   SetGate(Gate::AND);
         else if (IsKeyPressed(KEY_THREE)) SetGate(Gate::NOR);
         else if (IsKeyPressed(KEY_FOUR))  SetGate(Gate::XOR);
@@ -363,7 +503,7 @@ void Window::CheckHotkeys()
         // In order of priority!
 
         // Exit overlay mode
-        if (!ModeIsBasic())
+        if (GetModeType() != ModeType::Basic)
             ClearOverlayMode();
 
         // Clear selection
