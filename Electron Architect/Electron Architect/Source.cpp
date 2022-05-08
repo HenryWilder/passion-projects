@@ -130,26 +130,11 @@ int main()
                 DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), Button::g_width * 2 + 2, window.windowHeight - 12, 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
                 DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), Button::g_width * 2 + 2, window.windowHeight - 24, 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
+                // Background
                 for (const Button* const b : allButtons)
                 {
                     if (window.CursorInUIBounds(b->Bounds())) [[unlikely]]
-                    {
                         DrawRectangleIRect(b->Bounds(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
-                        DrawTextIV(b->tooltip, b->Bounds().BR() + IVec2(window.FontSize() / 2), window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-
-                        // Clipboard preview
-                        if (b == &window.clipboardButton && window.IsClipboardValid()) [[unlikely]]
-                        {
-                            window.clipboard->DrawSelectionPreview(
-                                b->Bounds().BR() + (IVec2(window.FontSize() / 2) * Height(3)),
-                                UIColor(UIColorID::UI_COLOR_BACKGROUND1),
-                                UIColor(UIColorID::UI_COLOR_FOREGROUND3),
-                                UIColor(UIColorID::UI_COLOR_BACKGROUND2),
-                                ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND3), 0.25f),
-                                window.clipboardPreviewLOD);
-                        }
-                        break;
-                    }
                 }
 
                 const Button* buttonsToHighlight[] = {
@@ -180,6 +165,28 @@ int main()
                     // Text buttons
                     else if (const TextButton* tb = dynamic_cast<const TextButton*>(b))
                         DrawTextIV(tb->buttonText, tb->Bounds().xy, window.FontSize(), color);
+                }
+
+                // Tooltips
+                for (const Button* const b : allButtons)
+                {
+                    if (window.CursorInUIBounds(b->Bounds())) [[unlikely]]
+                    {
+                        DrawTextIV(b->tooltip, b->Bounds().BR() + IVec2(window.FontSize() / 2), window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+
+                        // Clipboard preview
+                        if (b == &window.clipboardButton && window.IsClipboardValid()) [[unlikely]]
+                        {
+                            window.clipboard->DrawSelectionPreview(
+                                b->Bounds().BR() + (IVec2(window.FontSize() / 2) * Height(5)),
+                                UIColor(UIColorID::UI_COLOR_BACKGROUND1),
+                                UIColor(UIColorID::UI_COLOR_FOREGROUND3),
+                                UIColor(UIColorID::UI_COLOR_BACKGROUND2),
+                                ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND3), 0.25f),
+                                window.clipboardPreviewLOD);
+                        }
+                        break;
+                    }
                 }
             }
 

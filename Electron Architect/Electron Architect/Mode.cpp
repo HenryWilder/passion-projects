@@ -501,8 +501,10 @@ void EditTool::Draw(Window& window)
 void EditTool::DrawProperties(Window& window)
 {
     // Selection stats
-    if (window.SelectionExists())
+    if (window.SelectionExists() && window.selection.size() > 1)
         window.PushPropertySection_Selection("Selection", window.selection);
+    else if (window.selection.size() == 1)
+        window.PushPropertySection_Node("Selected node", window.selection[0]);
     // Node hover stats
     window.PushPropertySection_Node("Hovered node", window.hoveredNode);
     // Joint hover stats
@@ -702,26 +704,8 @@ void InteractTool::Draw(Window& window)
 }
 void InteractTool::DrawProperties(Window& window)
 {
-    int i = 0;
-
     // Node hover stats
-    if (!!window.hoveredNode)
-    {
-        // State
-        {
-            const char* stateName;
-            if (window.hoveredNode->GetState())
-                stateName = "\tactive";
-            else
-                stateName = "\tinactive";
-            DrawText(stateName, 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        }
-        DrawText(TextFormat("\toutputs: %i", window.hoveredNode->GetOutputCount()), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_OUTPUT));
-        DrawText(TextFormat("\tinteraction serial: %u", window.CurrentTab().StartNodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\tserial: %u", window.CurrentTab().NodeID(window.hoveredNode)), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText(TextFormat("\tptr: %p", window.hoveredNode), 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND2));
-        DrawText("hovered interactable node", 2, window.windowHeight - (++i * 12), 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    }
+    window.PushPropertySection_Node("Hovered interactable node", window.hoveredNode);
 }
 
 #if 0
