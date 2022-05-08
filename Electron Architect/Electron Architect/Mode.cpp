@@ -291,7 +291,7 @@ void EditTool::Update(Window& window)
     else if (!!nodeBeingDragged)
     {
         // Multiple selection
-        if (!window.CurrentTab().SelectionExists())
+        if (window.CurrentTab().SelectionExists())
         {
             const IVec2 offset = window.GetCursorDelta();
             for (Node* node : window.CurrentTab().selection)
@@ -420,6 +420,13 @@ void EditTool::Update(Window& window)
             else if (selectionWIP)
             {
                 selectionWIP = false;
+                if (!!window.CurrentTab().GetLastSelectionRec() &&
+                    (window.CurrentTab().GetLastSelectionRec()->w == 0 ||
+                    window.CurrentTab().GetLastSelectionRec()->h == 0))
+                {
+                    window.CurrentTab().selectionRecs.pop_back();
+                }
+                window.CurrentTab().selection.clear();
                 if (window.IsSelectionRectValid())
                 {
                     for (IRect rec : window.CurrentTab().selectionRecs)
@@ -427,8 +434,9 @@ void EditTool::Update(Window& window)
                         window.CurrentTab().graph->FindNodesInRect(window.CurrentTab().selection, rec);
                     }
                 }
-                //else
-                //    window.CurrentTab().selectionRecs.clear();
+                std::unordered_set<Node*> selectionUnique(window.CurrentTab().selection.begin(), window.CurrentTab().selection.end());
+                window.CurrentTab().selection.clear();
+                window.CurrentTab().selection = std::vector<Node*>(selectionUnique.begin(), selectionUnique.end());
             }
         }
         if (draggingGroup)
