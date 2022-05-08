@@ -17,6 +17,18 @@
 
 Blueprint g_clipboardBP;
 
+void DrawTextShadowedIV(const char* text, IVec2 pos, int fontSize, Color color, Color shadow)
+{
+    for (int y = -1; y <= 1; ++y)
+    {
+        for (int x = -1; x <= 1; ++x)
+        {
+            DrawTextIV(text, pos + IVec2(x,y), fontSize, shadow);
+        }
+    }
+    DrawTextIV(text, pos, fontSize, color);
+}
+
 Window::Window(int windowWidth, int windowHeight) :
     windowWidth(windowWidth),
     windowHeight(windowHeight),
@@ -374,6 +386,10 @@ const IconButton* Window::ButtonFromGate(Gate gate) const
     case Gate::DELAY:       return &gateButtons[7];
     case Gate::BATTERY:     return &gateButtons[8];
     }
+}
+const ColorButton* Window::ButtonFromParameter(uint8_t param) const
+{
+    return &paramButtons[param];
 }
 
 int Window::FontSize() const
@@ -838,7 +854,7 @@ Color Window::ExtraParamColor() const
 void Window::DrawTooltipAtCursor(const char* text, Color color)
 {
     EndMode2D();
-    DrawTextIV(text, cursorUIPos + IVec2(16), 8, color);
+    DrawTextIV(text, cursorUIPos + IVec2(16), FontSize(), color);
     if (!tabs.empty())
         BeginMode2D(CurrentTab().camera);
 }
@@ -846,17 +862,7 @@ void Window::DrawTooltipAtCursor(const char* text, Color color)
 void Window::DrawTooltipAtCursor_Shadowed(const char* text, Color color)
 {
     EndMode2D();
-    IVec2 offset;
-    for (offset.y = 16 - 1; offset.y <= 16 + 1; ++offset.y)
-    {
-        for (offset.x = 16 - 1; offset.x <= 16 + 1; ++offset.x)
-        {
-            if (offset == IVec2(16)) [[unlikely]]
-                continue;
-            DrawTextIV(text, cursorUIPos + offset, 8, UIColor(UIColorID::UI_COLOR_BACKGROUND));
-        }
-    }
-    DrawTextIV(text, cursorUIPos + IVec2(16), 8, color);
+    DrawTextShadowedIV(text, cursorUIPos + IVec2(16), FontSize(), color, UIColor(UIColorID::UI_COLOR_BACKGROUND));
     if (!tabs.empty())
         BeginMode2D(CurrentTab().camera);
 }
@@ -1254,7 +1260,8 @@ void Window::DrawToolPane()
     {
         bool shouldHighlight =
             (b == ButtonFromMode(GetBaseMode())) ||
-            (b == ButtonFromGate(gatePick));
+            (b == ButtonFromGate(gatePick)) ||
+            (b == ButtonFromParameter(storedExtraParam));
 
         Color color;
         if (shouldHighlight || CursorInUIBounds(b->Bounds())) [[unlikely]]
@@ -1273,8 +1280,14 @@ void Window::DrawToolPane()
         // Color buttons
         else if (const ColorButton* cb = dynamic_cast<const ColorButton*>(b))
         {
-            DrawRectangleIRect(cb->Bounds(), cb->color);
-            DrawTextIV(cb->buttonText, cb->Bounds().xy + FontPadding(), FontSize(), color);
+            IRect rec;
+            if (shouldHighlight)
+                rec = cb->Bounds();
+            else
+                rec = ShrinkIRect(cb->Bounds(), 2);
+            DrawRectangleIRect(rec, cb->color);
+            IVec2 textCenter = cb->Bounds().xy + Height(FontPadding().y) + Width((Button::g_width - MeasureText(cb->buttonText, FontSize())) / 2);
+            DrawTextShadowedIV(cb->buttonText, textCenter, FontSize(), color, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
         }
     }
 

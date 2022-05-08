@@ -151,6 +151,13 @@ int main()
                     {
                         window.PushPropertySubtitle("Element");
                         window.PushProperty("Name", GateName(window.gatePick));
+                        switch (window.gatePick)
+                        {
+                        case Gate::RESISTOR:  window.PushProperty_uint("Resistance", window.storedExtraParam); break;
+                        case Gate::CAPACITOR: window.PushProperty_uint("Capacity",   window.storedExtraParam); break;
+                        case Gate::LED:       window.PushProperty_uint("Color ID",   window.storedExtraParam); break;
+                        default: break;
+                        }
                         window.PushProperty_longStr("Description", window.ButtonFromGate(window.gatePick)->description);
                         window.PushPropertySpacer();
                     }
