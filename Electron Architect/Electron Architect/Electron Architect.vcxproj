@@ -232,6 +232,7 @@ copy /b "$(ProjectDir)icons_mode32x.png" "$(OutDir)";</Command>
     <ClCompile Include="Wire.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="icon.bmp" />
     <Image Include="icons_blueprint16x.png" />
     <Image Include="icons_gate16x.png" />
     <Image Include="icons_mode16x.png" />

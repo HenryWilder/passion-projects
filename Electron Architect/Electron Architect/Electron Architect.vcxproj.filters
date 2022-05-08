@@ -89,6 +89,9 @@
     <Image Include="icon_clipboard32x.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="icon.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Node.h">
