@@ -84,7 +84,8 @@ int main()
         }
 
         // Input
-        if (!(window.CursorInUIBounds(window.toolPaneRec) || window.CursorInUIBounds(window.propertiesPaneRec) || window.CursorInUIBounds(window.consolePaneRec)))
+        if (window.GetModeType() == ModeType::Menu ||
+            !(window.CursorInUIBounds(window.toolPaneRec) || window.CursorInUIBounds(window.propertiesPaneRec) || window.CursorInUIBounds(window.consolePaneRec)))
             window.UpdateTool();
 
     EVAL:
