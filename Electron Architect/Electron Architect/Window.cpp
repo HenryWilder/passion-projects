@@ -1269,6 +1269,13 @@ void Window::DrawToolPane()
         // Text buttons
         else if (const TextButton* tb = dynamic_cast<const TextButton*>(b))
             DrawTextIV(tb->buttonText, tb->Bounds().xy, FontSize(), color);
+
+        // Color buttons
+        else if (const ColorButton* cb = dynamic_cast<const ColorButton*>(b))
+        {
+            DrawRectangleIRect(cb->Bounds(), cb->color);
+            DrawTextIV(cb->buttonText, cb->Bounds().xy + FontPadding(), FontSize(), color);
+        }
     }
 
     // Tooltips
