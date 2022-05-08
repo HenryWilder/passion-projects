@@ -125,7 +125,7 @@ int main()
                 EndMode2D(); // Just in case
 
                 const Button* buttonsToHighlight[] = {
-                    static_cast<const Button*>(window.ButtonFromMode(window.GetMode())),
+                    static_cast<const Button*>(window.ButtonFromMode(window.GetBaseMode())),
                     static_cast<const Button*>(window.ButtonFromGate(window.gatePick)),
                 };
 
@@ -199,18 +199,20 @@ int main()
                         DrawTextIV(tb->buttonText, tb->Bounds().xy, window.FontSize(), color);
                 }
 
+                const IVec2 padding = IVec2(window.FontSize() / 2);
+
                 // Tooltips
                 for (const Button* const b : allButtons)
                 {
                     if (window.CursorInUIBounds(b->Bounds())) [[unlikely]]
                     {
-                        DrawTextIV(b->tooltip, b->Bounds().BR() + IVec2(window.FontSize() / 2), window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                        DrawTextIV(b->tooltip, b->Bounds().TR() + padding, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
                         // Clipboard preview
                         if (b == &window.clipboardButton && window.IsClipboardValid()) [[unlikely]]
                         {
                             window.clipboard->DrawSelectionPreview(
-                                b->Bounds().BR() + (IVec2(window.FontSize() / 2) * Height(5)),
+                                b->Bounds().BR() + padding,
                                 UIColor(UIColorID::UI_COLOR_BACKGROUND1),
                                 UIColor(UIColorID::UI_COLOR_FOREGROUND3),
                                 UIColor(UIColorID::UI_COLOR_BACKGROUND2),
