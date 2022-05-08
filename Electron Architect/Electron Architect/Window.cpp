@@ -1137,6 +1137,16 @@ void Window::PushPropertySection_Group(const char* name, Group* value)
         PushPropertySpacer();
     }
 }
+void Window::DrawClipboardPreview() const
+{
+    clipboard->DrawSelectionPreview(
+        clipboardButton.Bounds().BR() + FontPadding(),
+        UIColor(UIColorID::UI_COLOR_BACKGROUND1),
+        UIColor(UIColorID::UI_COLOR_FOREGROUND3),
+        UIColor(UIColorID::UI_COLOR_BACKGROUND2),
+        ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND3), 0.25f),
+        clipboardPreviewLOD);
+}
 void Window::DrawToolPane()
 {
     DrawRectangleIRect(toolPaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
@@ -1171,25 +1181,22 @@ void Window::DrawToolPane()
     }
 
     // Tooltips
+    const Button* hoveredButton = nullptr;
     for (const Button* const b : allButtons)
     {
         if (CursorInUIBounds(b->Bounds())) [[unlikely]]
         {
-            DrawTextIV(b->tooltip, b->Bounds().TR() + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+            hoveredButton = b;
+            break;
+        }
+    }
+    if (!!hoveredButton) [[unlikely]]
+    {
+        DrawTextIV(hoveredButton->tooltip, hoveredButton->Bounds().TR() + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
         // Clipboard preview
-        if (b == &clipboardButton && IsClipboardValid()) [[unlikely]]
-        {
-            clipboard->DrawSelectionPreview(
-                b->Bounds().BR() + FontPadding(),
-                UIColor(UIColorID::UI_COLOR_BACKGROUND1),
-                UIColor(UIColorID::UI_COLOR_FOREGROUND3),
-                UIColor(UIColorID::UI_COLOR_BACKGROUND2),
-                ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND3), 0.25f),
-                clipboardPreviewLOD);
-        }
-        break;
-        }
+        if (hoveredButton == &clipboardButton && IsClipboardValid()) [[unlikely]]
+            DrawClipboardPreview();
     }
 }
 void Window::CleanConsolePane()

@@ -117,6 +117,7 @@ public:
 
     void SaveBlueprint();
 
+    void DrawClipboardPreview() const;
     bool IsClipboardValid() const;
     void ClearClipboard();
     bool SelectionExists() const;

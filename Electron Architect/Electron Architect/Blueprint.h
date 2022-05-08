@@ -58,8 +58,6 @@ public:
     std::vector<NodeBP> nodes;
     std::vector<WireBP> wires;
 
-    // Draws at a 50% scale
-    // Returns the containing rectangle
     void DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const;
     IRect GetSelectionPreviewRect(IVec2 pos) const;
 

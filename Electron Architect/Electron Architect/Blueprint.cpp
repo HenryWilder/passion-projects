@@ -125,7 +125,6 @@ Blueprint::Blueprint(const std::vector<Node*>& src)
     wireThread.join();
 }
 
-// Returns the containing rectangle
 void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const
 {
     IVec2 offset = pos + IVec2(g_gridSize);
