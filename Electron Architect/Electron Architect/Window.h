@@ -176,7 +176,7 @@ public:
 
     void PushProperty(const char* name, const char* value);
     void PushProperty_int(const char* name, int value);
-    void PushProperty_uint(const char* name, int value);
+    void PushProperty_uint(const char* name, size_t value);
     void PushProperty_ptr(const char* name, void* value);
     void PushProperty_str(const char* name, const std::string& value);
     void PushProperty_bool(const char* name, bool value);

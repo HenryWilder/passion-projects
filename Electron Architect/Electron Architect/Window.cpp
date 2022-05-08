@@ -901,7 +901,7 @@ void Window::PushProperty_int(const char* name, int value)
 {
     PushProperty(name, TextFormat("%i", value));
 }
-void Window::PushProperty_uint(const char* name, int value)
+void Window::PushProperty_uint(const char* name, size_t value)
 {
     PushProperty(name, TextFormat("%u", value));
 }
