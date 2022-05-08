@@ -124,14 +124,44 @@ int main()
             {
                 EndMode2D(); // Just in case
 
+                const Button* buttonsToHighlight[] = {
+                    static_cast<const Button*>(window.ButtonFromMode(window.GetMode())),
+                    static_cast<const Button*>(window.ButtonFromGate(window.gatePick)),
+                };
+
                 // Panels
                 // Todo: Make these collapsable
                 DrawRectangleIRect(IRect(Button::g_width, window.windowHeight), UIColor(UIColorID::UI_COLOR_BACKGROUND1));
-                window.DrawToolProperties();
+
+                // Initialize properties panel
+                window.CleanPropertiesPane();
 
                 // Cursor stats
-                DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), Button::g_width + 2, window.windowHeight - 12, 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), Button::g_width + 2, window.windowHeight - 24, 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                window.PushPropertySubtitle("Cursor");
+                window.PushProperty_int("X", window.cursorPos.x / g_gridSize);
+                window.PushProperty_int("Y", window.cursorPos.y / g_gridSize);
+                window.PushPropertySubtitle("");
+
+                window.PushPropertySubtitle("Tool");
+                const char* modeName;
+                switch (window.GetBaseMode())
+                {
+                case Mode::PEN:      modeName = "Draw";     break;
+                case Mode::EDIT:     modeName = "Edit";     break;
+                case Mode::ERASE:    modeName = "Erase";    break;
+                case Mode::INTERACT: modeName = "Interact"; break;
+                default: modeName = "ERROR"; break;
+                }
+                window.PushProperty("Name", modeName);
+                window.PushProperty_longStr("Description", buttonsToHighlight[0]->description);
+                window.PushPropertySubtitle("");
+
+                window.PushPropertySubtitle("Element");
+                window.PushProperty("Name", GateName(window.gatePick));
+                window.PushProperty_longStr("Description", buttonsToHighlight[1]->description);
+                window.PushPropertySubtitle("");
+
+                window.DrawToolProperties();
 
                 // Background
                 for (const Button* const b : allButtons)
@@ -139,11 +169,6 @@ int main()
                     if (window.CursorInUIBounds(b->Bounds())) [[unlikely]]
                         DrawRectangleIRect(b->Bounds(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
                 }
-
-                const Button* buttonsToHighlight[] = {
-                    static_cast<const Button*>(window.ButtonFromMode(window.GetMode())),
-                    static_cast<const Button*>(window.ButtonFromGate(window.gatePick)),
-                };
 
                 for (const Button* const b : allButtons)
                 {

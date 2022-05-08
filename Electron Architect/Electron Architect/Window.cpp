@@ -22,39 +22,45 @@ modeButtons{
     IconButton(
         IVec2(0, 3),
         "Mode: Draw [b]",
-        "Left click to create a new node and start a wire from it, or to start a wire from an existing node.\n"
-        "Left click again to connect the wire to a new node or an existing one, and start a new wire from there.\n"
-        "Right click while creating a wire to cancel it.",
+        "Left click to create a node and a wire.\n"
+        "Click an existing node to create a wire from it.\n"
+        "Left click again to connect it to another node.\n"
+        "Hold shift while creating a wire for parallel.\n"
+        "Right click to stop drawing.",
         [this]() { SetMode(Mode::PEN); },
         IVec2(0, 0),
         &modeIcons16x),
 
-        IconButton(
-            IVec2(0, 4),
-            "Mode: Edit [v]",
-            "Left click and drag nodes to move them around.\n"
-            "Left click and drag wire elbows to snap them to a preferred angle.\n"
-            "Right click nodes to apply the currently selected gate/settings to them.",
-            [this]() { SetMode(Mode::EDIT); },
-            IVec2(1, 0),
-            &modeIcons16x),
+    IconButton(
+        IVec2(0, 4),
+        "Mode: Edit [v]",
+        "Left click and drag nodes to move them around.\n"
+        "Marquee rectangles can be made with the mouse.\n"
+        "Hold ctrl to make additional marquees.\n"
+        "Drag wire joints with left click.\n"
+        "Wire joints snap to 45 degree angles.\n"
+        "Right click a node to apply current gate.",
+        [this]() { SetMode(Mode::EDIT); },
+        IVec2(1, 0),
+        &modeIcons16x),
 
-        IconButton(
-            IVec2(0, 5),
-            "Mode: Erase [x]",
-            "Left click a node to erase it and all wires directly connected to it (collateral will render in MAGENTA).\n"
-            "Left click a wire to erase only that wire, disconnecting the nodes without erasing them.",
-            [this]() { SetMode(Mode::ERASE); },
-            IVec2(0, 1),
-            &modeIcons16x),
+    IconButton(
+        IVec2(0, 5),
+        "Mode: Erase [x]",
+        "Left click a node, wire, or group to erase it.\n"
+        "Hold shift to bypass the node without erasing\n"
+        "the wires connected to it.",
+        [this]() { SetMode(Mode::ERASE); },
+        IVec2(0, 1),
+        &modeIcons16x),
 
-        IconButton(
-            IVec2(0, 6),
-            "Mode: Interact [f]",
-            "Left click a node without any inputs (such nodes will render in \"available_color\" (blue by default)) to toggle it between outputting true and false.",
-            [this]() { SetMode(Mode::INTERACT); },
-            IVec2(1, 1),
-            &modeIcons16x),
+    IconButton(
+        IVec2(0, 6),
+        "Mode: Interact [f]",
+        "Left click an inputless node to toggle it on/off.",
+        [this]() { SetMode(Mode::INTERACT); },
+        IVec2(1, 1),
+        &modeIcons16x),
 },
 gateButtons{
     IconButton(
@@ -97,7 +103,7 @@ gateButtons{
     IconButton(
         IVec2(0,12),
         "Element: Resistor [5]",
-        "Outputs true if greater than [resistance] inputs are true,\n"
+        "Outputs true if > resistance inputs are true,\n"
         "Outputs false otherwise.\n"
         "Order of inputs does not matter.",
         [this]() { SetGate(Gate::RESISTOR); },
@@ -108,9 +114,9 @@ gateButtons{
         IVec2(0,13),
         "Element: Capacitor [6]",
         "Stores charge while any input is true.\n"
-        "Stops charging once charge equals [capacity].\n"
+        "Stops charging once charge = capacity.\n"
         "Drains charge while no input is true.\n"
-        "Outputs true while charge is greater than zero,\n"
+        "Outputs true while charge > zero,\n"
         "Outputs true while any input is true,\n"
         "Outputs false otherwise.",
         [this]() { SetGate(Gate::CAPACITOR); },
@@ -131,7 +137,8 @@ gateButtons{
         "Element: Delay [8]",
          "Treats I/O the same as an OR gate.\n"
         "Outputs with a 1-tick delay.\n"
-        "Sequntial delay devices are recommended for delay greater than 1 tick.",
+        "Sequntial delay devices are recommended\n"
+        "for delay greater than 1 tick.",
         [this]() { SetGate(Gate::DELAY); },
         IVec2(1,3),
         &gateIcons16x),
@@ -925,6 +932,24 @@ void Window::PushProperty_str(const char* name, const std::string& value)
 {
     PushProperty(name, value.c_str());
 }
+void Window::PushProperty_longStr(const char* name, const char* value)
+{
+    const int propHeight = FontSize() * 2;
+    const IVec2 padding(FontSize() / 2);
+
+    IRect box1(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
+    DrawRectangleLines(box1.x, box1.y, box1.w, box1.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    DrawTextIV(name, box1.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    propertyNumber++;
+
+    // Size to text
+    std::string str = value;
+    size_t lineCount = std::count(str.begin(), str.end(), '\n') + 1;
+    IRect box2(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight * lineCount);
+    DrawRectangleLines(box2.x, box2.y, box2.w, box2.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    DrawTextIV(value, box2.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    propertyNumber += lineCount;
+}
 void Window::PushProperty_bool(const char* name, bool value)
 {
     PushProperty(name, value ? "true" : "false");
@@ -978,6 +1003,7 @@ void Window::PushPropertySection_Node(const char* name, Node* value)
         {
             PushProperty_ptr("\tPointer", wire->end);
         }
+        PushPropertySubtitle("");
     }
 }
 void Window::PushPropertySection_Wire(const char* name, Wire* value)
@@ -994,6 +1020,7 @@ void Window::PushPropertySection_Wire(const char* name, Wire* value)
         PushPropertySubtitle("Output", UIColor(UIColorID::UI_COLOR_OUTPUT));
         PushProperty_uint("Serial", CurrentTab().graph->NodeID(value->end));
         PushProperty_ptr("Pointer", value->end);
+        PushPropertySubtitle("");
     }
 }
 void Window::PushPropertySection_Selection(const char* name, const std::vector<Node*>& value)
@@ -1036,6 +1063,8 @@ void Window::PushPropertySection_Selection(const char* name, const std::vector<N
     if (LEDs) PushProperty_uint("LEDs", LEDs);
     if (DELs) PushProperty_uint("Delays", DELs);
     if (BATs) PushProperty_uint("Batteries", BATs);
+
+    PushPropertySubtitle("");
 }
 void Window::PushPropertySection_Group(const char* name, Group* value)
 {
@@ -1044,14 +1073,18 @@ void Window::PushPropertySection_Group(const char* name, Group* value)
         PushPropertySubtitle(name);
         PushProperty_ptr("Pointer", value);
         PushProperty_str("Label", value->GetLabel());
+        PushPropertySubtitle("");
     }
 }
-void Window::DrawToolProperties()
+void Window::CleanPropertiesPane()
 {
     EndMode2D(); // In case
     DrawRectangleIRect(propertiesPaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
     propertyNumber = 0;
     PushPropertyTitle("Properties");
+}
+void Window::DrawToolProperties()
+{
     if (!!overlay)
         overlay->DrawProperties(*this);
     else
