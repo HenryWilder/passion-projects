@@ -32,6 +32,10 @@ public:
     int GetY() const;
     void SetY(int y);
 
+    bool HasName() const;
+    const char* GetName() const;
+    void SetName(const char* name);
+
     Gate GetGate() const;
     void SetGate(Gate gate);
 
@@ -93,10 +97,12 @@ private: // Helpers usable only by Graph
     void MakeWireOutput(Wire* wire);
 
 private: // Accessible by Graph
-    Node() : m_position(), m_gate(), m_state(), m_inputs(), m_ntd() {}
+    Node() : m_position(), m_gate(), m_state(), m_inputs(), m_name(""), m_ntd() {}
     Node(IVec2 position, Gate gate);
     // It is entirely safe to pass in an extra param even if the node cannot use it!
     Node(IVec2 position, Gate gate, uint8_t extraParam);
+    // It is entirely safe to pass in an extra param even if the node cannot use it!
+    Node(const char* name, IVec2 position, Gate gate, uint8_t extraParam);
 
 public:
     static constexpr Color g_resistanceBands[] = {
@@ -118,6 +124,7 @@ private:
     Gate m_gate;
     bool m_state;
     size_t m_inputs;
+    const char* m_name; // Tooltip
     union NonTransistorData
     {
         struct ResistorData

@@ -812,7 +812,7 @@ void Graph::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
     nodes.reserve(nodes.size() + bp->nodes.size());
     for (size_t i = 0; i < bp->nodes.size(); ++i)
     {
-        Node* node = CreateNode(bp->nodes[i].relativePosition + topLeft, bp->nodes[i].gate, bp->nodes[i].extraParam);
+        Node* node = _CreateNode(Node(bp->nodes[i].name, bp->nodes[i].relativePosition + topLeft, bp->nodes[i].gate, bp->nodes[i].extraParam));
         nodeID.emplace(i, node);
     }
     wires.reserve(wires.size() + bp->wires.size());

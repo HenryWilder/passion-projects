@@ -38,6 +38,21 @@ void Node::SetY(int y)
     SetPosition(IVec2(GetX(), y));
 }
 
+bool Node::HasName() const
+{
+    return !!m_name && !!m_name[0];
+}
+
+const char* Node::GetName() const
+{
+    return m_name;
+}
+
+void Node::SetName(const char* name)
+{
+    m_name = name;
+}
+
 Gate Node::GetGate() const
 {
     return m_gate;
@@ -360,8 +375,23 @@ void Node::MakeWireOutput(Wire* wire)
 }
 
 
-Node::Node(IVec2 position, Gate gate) : m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_ntd() {}
-Node::Node(IVec2 position, Gate gate, uint8_t extraParam) : m_position(position), m_gate(gate), m_state(false), m_inputs(0)
+Node::Node(IVec2 position, Gate gate) :
+    m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_name(""), m_ntd() {}
+Node::Node(IVec2 position, Gate gate, uint8_t extraParam) :
+    m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_name("")
+{
+    if (gate == Gate::RESISTOR)
+        m_ntd.r.resistance = extraParam;
+    else if (gate == Gate::LED)
+        m_ntd.l.colorIndex = extraParam;
+    else if (gate == Gate::CAPACITOR)
+    {
+        m_ntd.c.capacity = extraParam;
+        m_ntd.c.charge = 0;
+    }
+}
+Node::Node(const char* name, IVec2 position, Gate gate, uint8_t extraParam) :
+    m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_name(name)
 {
     if (gate == Gate::RESISTOR)
         m_ntd.r.resistance = extraParam;

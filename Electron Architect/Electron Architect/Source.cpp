@@ -171,6 +171,9 @@ int main()
                     window.DrawToolProperties();
                 }
 
+                if (!!window.hoveredNode && window.hoveredNode->HasName())
+                    window.DrawTooltipAtCursor_Shadowed(window.hoveredNode->GetName(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+
                 // Mode/gate
                 {
                     window.DrawToolPane();

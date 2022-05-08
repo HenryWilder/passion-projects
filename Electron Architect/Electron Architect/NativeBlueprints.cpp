@@ -94,11 +94,11 @@ Blueprint nativeBlueprints[] =
         "Half-Subtractor",
         // Nodes
         {
-            NodeBP(true,  Gate::OR,  IVec2(0,0) * g_gridSize), // A
-            NodeBP(true,  Gate::OR,  IVec2(0,1) * g_gridSize), // B
+            NodeBP("A", true,  Gate::OR,  IVec2(0,0)* g_gridSize), // A
+            NodeBP("B", true,  Gate::OR,  IVec2(0,1)* g_gridSize), // B
             NodeBP(false, Gate::NOR, IVec2(1,1) * g_gridSize),
-            NodeBP(true,  Gate::XOR, IVec2(2,0) * g_gridSize), // Difference
-            NodeBP(true,  Gate::AND, IVec2(2,1) * g_gridSize), // Borrow
+            NodeBP("Difference", true,  Gate::XOR, IVec2(2,0) * g_gridSize), // Difference
+            NodeBP("Borrow", true,  Gate::AND, IVec2(2,1) * g_gridSize), // Borrow
         },
         // Wires
         {

@@ -1159,6 +1159,8 @@ void Window::PushPropertySection_Node(const char* name, Node* value)
     if (!!value)
     {
         PushPropertySubtitle(name);
+        if (value->HasName())
+            PushProperty("Name", value->GetName());
         PushProperty_ptr("Pointer", value);
         PushProperty_uint("Serial", CurrentTab().graph->NodeID(value));
         PushProperty("Type", GateName(value->GetGate()));

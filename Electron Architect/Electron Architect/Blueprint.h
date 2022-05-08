@@ -9,16 +9,21 @@
 
 struct NodeBP
 {
-    NodeBP() = default;
+    NodeBP() : b_io(), gate(), extraParam(), relativePosition(), name("") {}
     constexpr NodeBP(bool b_io, Gate gate, IVec2 relativePosition) :
-        b_io(b_io), gate(gate), extraParam(0), relativePosition(relativePosition) {}
+        b_io(b_io), gate(gate), extraParam(0), relativePosition(relativePosition), name() {}
     constexpr NodeBP(bool b_io, Gate gate, uint8_t extraParam, IVec2 relativePosition) :
-        b_io(b_io), gate(gate), extraParam(extraParam), relativePosition(relativePosition) {}
+        b_io(b_io), gate(gate), extraParam(extraParam), relativePosition(relativePosition), name() {}
+    constexpr NodeBP(const char* name, bool b_io, Gate gate, IVec2 relativePosition) :
+        b_io(b_io), gate(gate), extraParam(0), relativePosition(relativePosition), name(name) {}
+    constexpr NodeBP(const char* name, bool b_io, Gate gate, uint8_t extraParam, IVec2 relativePosition) :
+        b_io(b_io), gate(gate), extraParam(extraParam), relativePosition(relativePosition), name(name) {}
 
     bool b_io; // Whether the node is an input/output to the entire system (Should it be shown on the paste preview?)
     Gate gate;
     uint8_t extraParam;
     IVec2 relativePosition;
+    const char* name;
 };
 
 struct WireBP
@@ -44,7 +49,7 @@ public:
         name(name), nodes(std::begin(nodes), std::end(nodes)), wires(std::begin(wires), std::end(wires))
     {
         extents = IVec2::Zero();
-        for (NodeBP node_bp : nodes)
+        for (const NodeBP& node_bp : nodes)
         {
             if (node_bp.relativePosition.x > extents.x)
                 extents.x = node_bp.relativePosition.x;
