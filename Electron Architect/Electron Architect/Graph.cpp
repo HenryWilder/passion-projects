@@ -9,7 +9,7 @@ extern Blueprint nativeBlueprints[10];
 
 Graph::Graph(const char* name)
 {
-    name = name;
+    this->name = name;
     blueprints.reserve(_countof(nativeBlueprints));
     for (const Blueprint& bp : nativeBlueprints)
     {
