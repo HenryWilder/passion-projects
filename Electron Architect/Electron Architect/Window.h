@@ -67,9 +67,9 @@ public:
     IRect propertiesPaneRec;
 
     std::vector<IconButton> modeButtons;
-    const IconButton& ButtonFromMode(Mode mode) const;
+    const IconButton* ButtonFromMode(Mode mode) const;
     std::vector<IconButton> gateButtons;
-    const IconButton& ButtonFromGate(Gate gate) const;
+    const IconButton* ButtonFromGate(Gate gate) const;
     IconButton blueprintsButton;
     IconButton clipboardButton;
 

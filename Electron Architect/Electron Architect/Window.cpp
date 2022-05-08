@@ -18,7 +18,6 @@
 Blueprint g_clipboardBP;
 
 Window::Window(int windowWidth, int windowHeight) : windowWidth(windowWidth), windowHeight(windowHeight),
-propertiesPaneRec(windowWidth - 256, 0, 256, windowHeight),
 modeButtons{
     IconButton(
         IVec2(0, 3),
@@ -223,34 +222,38 @@ const Tab& Window::CurrentTab() const
     return *tabs[activeTab];
 }
 
-const IconButton& Window::ButtonFromMode(Mode mode) const
+const IconButton* Window::ButtonFromMode(Mode mode) const
 {
     switch (mode)
     {
-    default: throw(std::exception("Missing specialization"));
-    case Mode::PEN:         return modeButtons[0];
-    case Mode::EDIT:        return modeButtons[1];
-    case Mode::ERASE:       return modeButtons[2];
-    case Mode::INTERACT:    return modeButtons[3];
-    case Mode::BUTTON:      return modeButtons[4];
-    case Mode::PASTE:       return modeButtons[5];
-    case Mode::BP_SELECT:   return modeButtons[6];
+    default:
+        // Only basic modes need buttons
+        _ASSERT_EXPR(TypeOfMode(mode) != ModeType::Basic, "Missing specialization");
+        return nullptr;
+
+    case Mode::PEN:         return &modeButtons[0];
+    case Mode::EDIT:        return &modeButtons[1];
+    case Mode::ERASE:       return &modeButtons[2];
+    case Mode::INTERACT:    return &modeButtons[3];
     }
 }
-const IconButton& Window::ButtonFromGate(Gate gate) const
+const IconButton* Window::ButtonFromGate(Gate gate) const
 {
     switch (gate)
     {
-    default: throw(std::exception("Missing specialization"));
-    case Gate::OR:          return gateButtons[0];
-    case Gate::AND:         return gateButtons[1];
-    case Gate::NOR:         return gateButtons[2];
-    case Gate::XOR:         return gateButtons[3];
-    case Gate::RESISTOR:    return gateButtons[4];
-    case Gate::CAPACITOR:   return gateButtons[5];
-    case Gate::LED:         return gateButtons[6];
-    case Gate::DELAY:       return gateButtons[7];
-    case Gate::BATTERY:     return gateButtons[8];
+    default: 
+        _ASSERT_EXPR(false, "Missing specialization");
+        return nullptr;
+
+    case Gate::OR:          return &gateButtons[0];
+    case Gate::AND:         return &gateButtons[1];
+    case Gate::NOR:         return &gateButtons[2];
+    case Gate::XOR:         return &gateButtons[3];
+    case Gate::RESISTOR:    return &gateButtons[4];
+    case Gate::CAPACITOR:   return &gateButtons[5];
+    case Gate::LED:         return &gateButtons[6];
+    case Gate::DELAY:       return &gateButtons[7];
+    case Gate::BATTERY:     return &gateButtons[8];
     }
 }
 
@@ -841,6 +844,8 @@ void Window::ReloadConfig()
         uiScale = 1;
 
     IconButton::g_width = 16 * uiScale;
+    propertiesPaneRec.y = 0;
+    propertiesPaneRec.h = windowHeight;
     switch (uiScale)
     {
     default:
@@ -856,6 +861,7 @@ void Window::ReloadConfig()
         }
         blueprintsButton.textureSheet = &blueprintIcon16x;
         clipboardButton.textureSheet = &clipboardIcon16x;
+        propertiesPaneRec.w = 256;
         break;
     case 2:
         for (IconButton& b : modeButtons)
@@ -868,8 +874,10 @@ void Window::ReloadConfig()
         }
         blueprintsButton.textureSheet = &blueprintIcon32x;
         clipboardButton.textureSheet = &clipboardIcon32x;
+        propertiesPaneRec.w = 512;
         break;
     }
+    propertiesPaneRec.x = windowWidth - propertiesPaneRec.w;
 
     file.close();
 }
@@ -911,7 +919,7 @@ void Window::PushProperty_uint(const char* name, size_t value)
 }
 void Window::PushProperty_ptr(const char* name, void* value)
 {
-    PushProperty(name, TextFormat("%p", value));
+    PushProperty(name, TextFormat("0x%p", value));
 }
 void Window::PushProperty_str(const char* name, const std::string& value)
 {

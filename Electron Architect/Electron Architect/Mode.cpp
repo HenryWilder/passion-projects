@@ -266,10 +266,6 @@ void EditTool::Update(Window& window)
                 window.CurrentTab().graph->FindNodesInGroup(window.CurrentTab().selection, window.hoveredGroup);
                 selectionStart = (window.cursorPos - (fallbackPos = window.hoveredGroup->GetPosition()));
             }
-            //else if (dragginggroupCorner = groupCorner.Valid())
-            //{
-            //    // Todo
-            //}
 
             fallbackPos = window.cursorPos;
             if (selectionWIP = !(nodeBeingDragged || wireBeingDragged || draggingGroup || draggingGroupCorner))

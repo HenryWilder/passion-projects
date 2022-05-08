@@ -124,12 +124,12 @@ int main()
 
                 // Panels
                 // Todo: Make these collapsable
-                DrawRectangleIRect(IRect(Button::g_width * 2, window.windowHeight), UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+                DrawRectangleIRect(IRect(Button::g_width, window.windowHeight), UIColor(UIColorID::UI_COLOR_BACKGROUND1));
                 window.DrawToolProperties();
 
                 // Cursor stats
-                DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), Button::g_width * 2 + 2, window.windowHeight - 12, 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
-                DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), Button::g_width * 2 + 2, window.windowHeight - 24, 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                DrawText(TextFormat("y: %i", window.cursorPos.y / g_gridSize), Button::g_width + 2, window.windowHeight - 12, 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                DrawText(TextFormat("x: %i", window.cursorPos.x / g_gridSize), Button::g_width + 2, window.windowHeight - 24, 8, UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
                 // Background
                 for (const Button* const b : allButtons)
@@ -139,8 +139,8 @@ int main()
                 }
 
                 const Button* buttonsToHighlight[] = {
-                    static_cast<const Button*>(& window.ButtonFromMode(window.GetMode())),
-                    static_cast<const Button*>(& window.ButtonFromGate(window.gatePick)),
+                    static_cast<const Button*>(window.ButtonFromMode(window.GetMode())),
+                    static_cast<const Button*>(window.ButtonFromGate(window.gatePick)),
                 };
 
                 for (const Button* const b : allButtons)
