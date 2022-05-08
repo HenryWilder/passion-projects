@@ -24,23 +24,23 @@ Graph::~Graph()
 
 void Graph::Log(const char* what) const
 {
-    owningTab->owningWindow->Log(what);
+    owningTab->owningWindow->Log(TextFormat("[Graph] %s", what));
 }
 void Graph::LogMessage(const char* what) const
 {
-    owningTab->owningWindow->LogMessage(what);
+    owningTab->owningWindow->LogMessage(TextFormat("[Graph] %s", what));
 }
 void Graph::LogAttempt(const char* what) const
 {
-    owningTab->owningWindow->LogAttempt(what);
+    owningTab->owningWindow->LogAttempt(TextFormat("[Graph] %s", what));
 }
 void Graph::LogError(const char* what) const
 {
-    owningTab->owningWindow->LogError(what);
+    owningTab->owningWindow->LogError(TextFormat("[Graph] %s", what));
 }
 void Graph::LogSuccess(const char* what) const
 {
-    owningTab->owningWindow->LogSuccess(what);
+    owningTab->owningWindow->LogSuccess(TextFormat("[Graph] %s", what));
 }
 
 void Graph::_Free()
