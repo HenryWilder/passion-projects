@@ -72,12 +72,14 @@ public:
     std::string consoleOutput[6];
     IRect consolePaneRec;
 
-    std::vector<IconButton> modeButtons;
+    IconButton modeButtons[4];
     const IconButton* ButtonFromMode(Mode mode) const;
-    std::vector<IconButton> gateButtons;
+    IconButton gateButtons[9];
     const IconButton* ButtonFromGate(Gate gate) const;
     IconButton blueprintsButton;
     IconButton clipboardButton;
+    Button* const allButtons[15];
+    IRect toolPaneRec;
 
 private:
 
@@ -87,6 +89,7 @@ private:
 public:
 
     int FontSize() const;
+    IVec2 FontPadding() const;
 
     void DrawUIIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint) const;
 
@@ -174,6 +177,8 @@ public:
 
     void UpdateTool();
     void DrawTool();
+
+    void DrawToolPane();
 
     void CleanConsolePane();
     void DrawConsoleOutput();

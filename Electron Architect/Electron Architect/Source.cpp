@@ -56,21 +56,6 @@ int main()
         window.LogSuccess("Blueprints loaded.");
     }
 
-    std::vector<Button*> allButtons;
-    {
-        allButtons.reserve(window.modeButtons.size() + window.gateButtons.size() + 2);
-        for (Button& b : window.modeButtons)
-        {
-            allButtons.push_back(&b);
-        }
-        for (Button& b : window.gateButtons)
-        {
-            allButtons.push_back(&b);
-        }
-        allButtons.push_back(&window.blueprintsButton);
-        allButtons.push_back(&window.clipboardButton);
-    }
-
     while (!WindowShouldClose())
     {
         /******************************************
@@ -88,7 +73,7 @@ int main()
         // UI buttons
         if (window.GetModeType() == ModeType::Basic && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            for (const Button* const b : allButtons)
+            for (const Button* const b : window.allButtons)
             {
                 if (window.CursorInUIBounds(b->Bounds()))
                 {
@@ -134,11 +119,6 @@ int main()
             {
                 EndMode2D(); // Just in case
 
-                const Button* buttonsToHighlight[] = {
-                    static_cast<const Button*>(window.ButtonFromMode(window.GetBaseMode())),
-                    static_cast<const Button*>(window.ButtonFromGate(window.gatePick)),
-                };
-
                 // Panels
 
                 // Properties
@@ -163,7 +143,7 @@ int main()
                     default: modeName = "ERROR"; break;
                     }
                     window.PushProperty("Name", modeName);
-                    window.PushProperty_longStr("Description", buttonsToHighlight[0]->description);
+                    window.PushProperty_longStr("Description", window.ButtonFromMode(window.GetBaseMode())->description);
                     window.PushPropertySpacer();
 
                     // Show element properties in pen/edit mode
@@ -171,7 +151,7 @@ int main()
                     {
                         window.PushPropertySubtitle("Element");
                         window.PushProperty("Name", GateName(window.gatePick));
-                        window.PushProperty_longStr("Description", buttonsToHighlight[1]->description);
+                        window.PushProperty_longStr("Description", window.ButtonFromGate(window.gatePick)->description);
                         window.PushPropertySpacer();
                     }
 
@@ -180,64 +160,7 @@ int main()
 
                 // Mode/gate
                 {
-                    DrawRectangleIRect(IRect(Button::g_width, window.windowHeight), UIColor(UIColorID::UI_COLOR_BACKGROUND1));
-                    DrawRectangleLinesIRect(ExpandIRect(IRect(Button::g_width, window.windowHeight)), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-
-                    // Background
-                    for (const Button* const b : allButtons)
-                    {
-                        if (window.CursorInUIBounds(b->Bounds())) [[unlikely]]
-                            DrawRectangleIRect(b->Bounds(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
-                    }
-
-                    for (const Button* const b : allButtons)
-                    {
-                        Color color;
-                        bool shouldHighlight = false;
-                        for (const Button* hb : buttonsToHighlight)
-                        {
-                            if (b == hb)
-                            {
-                                shouldHighlight = true;
-                                break;
-                            }
-                        }
-                        if (shouldHighlight || window.CursorInUIBounds(b->Bounds())) [[unlikely]]
-                            color = UIColor(UIColorID::UI_COLOR_FOREGROUND);
-                        else [[likely]]
-                            color = UIColor(UIColorID::UI_COLOR_FOREGROUND2);
-
-                        // Icon buttons
-                        if (const IconButton* ib = dynamic_cast<const IconButton*>(b))
-                            window.DrawUIIcon(*ib->textureSheet, ib->textureSheetPos, ib->Bounds().xy, color);
-                        // Text buttons
-                        else if (const TextButton* tb = dynamic_cast<const TextButton*>(b))
-                            DrawTextIV(tb->buttonText, tb->Bounds().xy, window.FontSize(), color);
-                    }
-
-                    const IVec2 padding = IVec2(window.FontSize() / 2);
-
-                    // Tooltips
-                    for (const Button* const b : allButtons)
-                    {
-                        if (window.CursorInUIBounds(b->Bounds())) [[unlikely]]
-                        {
-                            DrawTextIV(b->tooltip, b->Bounds().TR() + padding, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-
-                        // Clipboard preview
-                        if (b == &window.clipboardButton && window.IsClipboardValid()) [[unlikely]]
-                        {
-                            window.clipboard->DrawSelectionPreview(
-                                b->Bounds().BR() + padding,
-                                UIColor(UIColorID::UI_COLOR_BACKGROUND1),
-                                UIColor(UIColorID::UI_COLOR_FOREGROUND3),
-                                UIColor(UIColorID::UI_COLOR_BACKGROUND2),
-                                ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND3), 0.25f),
-                                window.clipboardPreviewLOD);
-                        }
-                        break;
-                        }
-                    }
+                    window.DrawToolPane();
                 }
 
                 // Console

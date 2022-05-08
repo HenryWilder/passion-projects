@@ -167,7 +167,24 @@ Window::Window(int windowWidth, int windowHeight) :
             "@TODO",
             [this]() { if (this->IsClipboardValid()) SetMode(Mode::PASTE); },
             IVec2::Zero(),
-            &clipboardIcon16x)
+            &clipboardIcon16x),
+    allButtons{
+        &modeButtons[0],
+        &modeButtons[1],
+        &modeButtons[2],
+        &modeButtons[3],
+        &gateButtons[0],
+        &gateButtons[1],
+        &gateButtons[2],
+        &gateButtons[3],
+        &gateButtons[4],
+        &gateButtons[5],
+        &gateButtons[6],
+        &gateButtons[7],
+        &gateButtons[8],
+        &blueprintsButton,
+        &clipboardButton,
+    }
 {
     ClearLog();
     InitWindow(windowWidth, windowHeight, "Electron Architect");
@@ -275,6 +292,15 @@ int Window::FontSize() const
     default:
     case 1: return 8;
     case 2: return 20;
+    }
+}
+IVec2 Window::FontPadding() const
+{
+    switch (uiScale)
+    {
+    default:
+    case 1: return IVec2(4);
+    case 2: return IVec2(10);
     }
 }
 
@@ -919,6 +945,8 @@ void Window::ReloadConfig()
     consolePaneRec.y = windowHeight - consolePaneRec.h;
     propertiesPaneRec.x = windowWidth - propertiesPaneRec.w;
 
+    toolPaneRec = IRect(Button::g_width, windowHeight);
+
     file.close();
 }
 
@@ -939,14 +967,13 @@ void Window::DrawTool()
 void Window::PushProperty(const char* name, const char* value)
 {
     const int propHeight = FontSize() * 2;
-    const IVec2 padding(FontSize() / 2);
     IRect box(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
     DrawRectangleLinesIRect(box, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
     const int propertiesPaneMiddle = propertiesPaneRec.w / 3;
     const int propertiesPaneMiddleAbs = propertiesPaneRec.x + propertiesPaneMiddle;
     DrawLine(propertiesPaneMiddleAbs, box.y, propertiesPaneMiddleAbs, box.Bottom(), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-    DrawTextIV(name, box.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    DrawTextIV(value, box.xy + Width(propertiesPaneMiddle) + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(name, box.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(value, box.xy + Width(propertiesPaneMiddle) + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber++;
 }
 void Window::PushProperty_int(const char* name, int value)
@@ -968,11 +995,10 @@ void Window::PushProperty_str(const char* name, const std::string& value)
 void Window::PushProperty_longStr(const char* name, const char* value)
 {
     const int propHeight = FontSize() * 2;
-    const IVec2 padding(FontSize() / 2);
 
     IRect box1(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
     DrawRectangleLinesIRect(box1, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-    DrawTextIV(name, box1.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(name, box1.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber++;
 
     // Size to text
@@ -980,7 +1006,7 @@ void Window::PushProperty_longStr(const char* name, const char* value)
     int lineCount = (int)std::count(str.begin(), str.end(), '\n') + 1;
     IRect box2(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight * lineCount);
     DrawRectangleLinesIRect(box2, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-    DrawTextIV(value, box2.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(value, box2.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber += lineCount;
 }
 void Window::PushProperty_bool(const char* name, bool value)
@@ -990,18 +1016,16 @@ void Window::PushProperty_bool(const char* name, bool value)
 void Window::PushPropertyTitle(const char* title)
 {
     const int propHeight = FontSize() * 2;
-    const IVec2 padding(FontSize() / 2);
     IRect box(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
     DrawRectangleIRect(ShrinkIRect(box), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-    DrawTextIV(title, box.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(title, box.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber++;
 }
 void Window::PushPropertySubtitle(const char* title, Color color)
 {
     const int propHeight = FontSize() * 2;
-    const IVec2 padding(FontSize() / 2);
     IVec2 pos(propertiesPaneRec.x, propHeight * propertyNumber);
-    DrawTextIV(title, pos + padding, FontSize(), color);
+    DrawTextIV(title, pos + FontPadding(), FontSize(), color);
     propertyNumber++;
 }
 void Window::PushPropertySpacer()
@@ -1113,23 +1137,76 @@ void Window::PushPropertySection_Group(const char* name, Group* value)
         PushPropertySpacer();
     }
 }
+void Window::DrawToolPane()
+{
+    DrawRectangleIRect(toolPaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+    DrawRectangleLinesIRect(ExpandIRect(toolPaneRec), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+
+    // Background
+    for (const Button* const b : allButtons)
+    {
+        if (CursorInUIBounds(b->Bounds())) [[unlikely]]
+            DrawRectangleIRect(b->Bounds(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
+    }
+
+    for (const Button* const b : allButtons)
+    {
+        bool shouldHighlight =
+            (b == ButtonFromMode(GetBaseMode())) ||
+            (b == ButtonFromGate(gatePick));
+
+        Color color;
+        if (shouldHighlight || CursorInUIBounds(b->Bounds())) [[unlikely]]
+            color = UIColor(UIColorID::UI_COLOR_FOREGROUND);
+        else [[likely]]
+            color = UIColor(UIColorID::UI_COLOR_FOREGROUND2);
+
+        // Icon buttons
+        if (const IconButton* ib = dynamic_cast<const IconButton*>(b))
+            DrawUIIcon(*ib->textureSheet, ib->textureSheetPos, ib->Bounds().xy, color);
+
+        // Text buttons
+        else if (const TextButton* tb = dynamic_cast<const TextButton*>(b))
+            DrawTextIV(tb->buttonText, tb->Bounds().xy, FontSize(), color);
+    }
+
+    // Tooltips
+    for (const Button* const b : allButtons)
+    {
+        if (CursorInUIBounds(b->Bounds())) [[unlikely]]
+        {
+            DrawTextIV(b->tooltip, b->Bounds().TR() + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+
+        // Clipboard preview
+        if (b == &clipboardButton && IsClipboardValid()) [[unlikely]]
+        {
+            clipboard->DrawSelectionPreview(
+                b->Bounds().BR() + FontPadding(),
+                UIColor(UIColorID::UI_COLOR_BACKGROUND1),
+                UIColor(UIColorID::UI_COLOR_FOREGROUND3),
+                UIColor(UIColorID::UI_COLOR_BACKGROUND2),
+                ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND3), 0.25f),
+                clipboardPreviewLOD);
+        }
+        break;
+        }
+    }
+}
 void Window::CleanConsolePane()
 {
     EndMode2D(); // In case
     DrawRectangleIRect(consolePaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
     const int titleHeight = FontSize() * 2;
-    const IVec2 padding(FontSize() / 2);
     IRect box(consolePaneRec.x, consolePaneRec.y, consolePaneRec.w, titleHeight);
     DrawRectangleIRect(ShrinkIRect(box), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
     DrawRectangleLinesIRect(consolePaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-    DrawTextIV("Console", box.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV("Console", box.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 }
 void Window::DrawConsoleOutput()
 {
-    const IVec2 padding(FontSize() / 2);
     for (int i = 0; i < _countof(consoleOutput); ++i)
     {
-        DrawTextIV(consoleOutput[i].c_str(), consolePaneRec.xy + Height(FontSize() * 2 * (i + 1)) + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        DrawTextIV(consoleOutput[i].c_str(), consolePaneRec.xy + Height(FontSize() * 2 * (i + 1)) + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     }
 }
 void Window::Log(const char* output)
