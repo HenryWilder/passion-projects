@@ -18,10 +18,12 @@ private:
     std::vector<Node*> nodes;
     std::vector<Node*> startNodes;
     std::vector<Wire*> wires; // Inputs/outputs don't exist here
-    std::vector<Blueprint*> blueprints;
+    std::vector<Blueprint*> blueprints; // Todo: move this to window scope
     std::vector<Group*> groups;
 
 private: // Internal
+    void Log(const char* what);
+
     void _Free();
     // Already calls _Free!
     void _Clear();

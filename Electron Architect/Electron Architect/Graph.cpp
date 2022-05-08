@@ -2,8 +2,10 @@
 #include <unordered_set>
 #include <fstream>
 #include "HUtility.h"
-#include "Graph.h"
 #include "Blueprint.h"
+#include "Graph.h"
+#include "Tab.h"
+#include "Window.h"
 
 extern Blueprint nativeBlueprints[10];
 
@@ -20,8 +22,14 @@ Graph::~Graph()
     _Free();
 }
 
+void Graph::Log(const char* what)
+{
+    owningTab->owningWindow->Log(what);
+}
+
 void Graph::_Free()
 {
+    Log(TextFormat("Freed graph %p \"%s\"", this, name));
     for (Node* node : nodes)
     {
         delete node;

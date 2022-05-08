@@ -2,6 +2,8 @@
 #include <raylib.h>
 #include <vector>
 #include "IVec.h"
+#include "UIColors.h"
+#include "Buttons.h"
 
 class Group;
 class Graph;

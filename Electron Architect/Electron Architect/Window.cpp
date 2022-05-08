@@ -952,7 +952,7 @@ void Window::PushProperty_longStr(const char* name, const char* value)
 
     // Size to text
     std::string str = value;
-    size_t lineCount = std::count(str.begin(), str.end(), '\n') + 1;
+    int lineCount = (int)std::count(str.begin(), str.end(), '\n') + 1;
     IRect box2(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight * lineCount);
     DrawRectangleLinesIRect(box2, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
     DrawTextIV(value, box2.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
@@ -1102,7 +1102,7 @@ void Window::CleanConsolePane()
 void Window::DrawConsoleOutput()
 {
     const IVec2 padding(FontSize() / 2);
-    for (size_t i = 0; i < _countof(consoleOutput); ++i)
+    for (int i = 0; i < _countof(consoleOutput); ++i)
     {
         DrawTextIV(consoleOutput[i].c_str(), consolePaneRec.xy + Height(FontSize() * 2 * (i + 1)) + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     }
