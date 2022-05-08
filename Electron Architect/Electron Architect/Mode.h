@@ -102,7 +102,6 @@ struct EditTool : public Tool
     IVec2 fallbackPos;
     bool selectionWIP;
     IVec2 selectionStart;
-    IRect selectionRec;
     bool draggingGroup;
     bool draggingGroupCorner;
     GroupCorner groupCorner;

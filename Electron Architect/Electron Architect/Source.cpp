@@ -108,7 +108,7 @@ int main()
 
             if (window.GetModeType() != ModeType::Menu)
             {
-                BeginMode2D(window.camera);
+                BeginMode2D(window.CurrentTab().camera);
 
                 window.DrawGrid();
 

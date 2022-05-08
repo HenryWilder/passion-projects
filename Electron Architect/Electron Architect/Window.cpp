@@ -216,6 +216,12 @@ Tab& Window::CurrentTab()
     _ASSERT_EXPR(!!tabs[activeTab], L"Current tab is nullptr");
     return *tabs[activeTab];
 }
+const Tab& Window::CurrentTab() const
+{
+    _ASSERT_EXPR(activeTab < tabs.size(), L"Subscript out of range");
+    _ASSERT_EXPR(!!tabs[activeTab], L"Current tab is nullptr");
+    return *tabs[activeTab];
+}
 
 const IconButton& Window::ButtonFromMode(Mode mode) const
 {
@@ -388,11 +394,16 @@ void Window::IncrementTick()
 void Window::UpdateCursorPos()
 {
     cursorUIPos = IVec2(GetMouseX(), GetMouseY());
+    if (!tabs.empty())
+    {
+        cursorPos = IVec2(
+            (int)(GetMouseX() / CurrentTab().camera.zoom) + (int)CurrentTab().camera.target.x,
+            (int)(GetMouseY() / CurrentTab().camera.zoom) + (int)CurrentTab().camera.target.y
+        );
+    }
+    else
+        cursorPos = IVec2(GetMouseX(), GetMouseY());
 
-    cursorPos = IVec2(
-        (int)(GetMouseX() / camera.zoom) + (int)camera.target.x,
-        (int)(GetMouseY() / camera.zoom) + (int)camera.target.y
-    );
     cursorPos /= g_gridSize;
     cursorPos *= g_gridSize;
     {
@@ -411,42 +422,30 @@ void Window::UpdateCursorPos()
 void Window::UpdateCamera()
 {
     if (GetModeType() != ModeType::Menu)
-    {
-        if (GetMouseWheelMove() > 0 && camera.zoom < 2.0f)
-            camera.zoom *= 2;
-
-        else if (GetMouseWheelMove() < 0 && camera.zoom > 0.125f)
-            camera.zoom /= 2;
-
-        camera.target.x += (float)(((int)IsKeyDown(KEY_RIGHT) - (int)IsKeyDown(KEY_LEFT)) * g_gridSize);
-        camera.target.y += (float)(((int)IsKeyDown(KEY_DOWN)  - (int)IsKeyDown(KEY_UP))   * g_gridSize);
-    }
+        CurrentTab().UpdateCamera();
 }
 
 void Window::CopySelectionToClipboard()
 {
-    if (selection.empty())
+    if (CurrentTab().selection.empty()) // Clear selection
         clipboard = nullptr;
-    else
-    {
-        g_clipboardBP = Blueprint(selection);
-        clipboard = &g_clipboardBP;
-    }
+    else // Copy selection
+        clipboard = &(g_clipboardBP = Blueprint(CurrentTab().selection));
 }
 
 void Window::MakeGroupFromSelection()
 {
-    _ASSERT_EXPR(base->GetMode() == Mode::EDIT, L"Group from selection shouldn't be possible outside of edit mode");
-    EditTool* edit = dynamic_cast<EditTool*>(base);
-    CurrentTab().graph->CreateGroup(edit->selectionRec, UIColor(UIColorID::UI_COLOR_AVAILABLE));
-    edit->selectionRec = IRect(0);
-    selection.clear();
+    if (!CurrentTab().GetLastSelectionRec())
+        return;
+    CurrentTab().graph->CreateGroup(*CurrentTab().GetLastSelectionRec(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
+    CurrentTab().selectionRecs.clear();
+    CurrentTab().selection.clear();
 }
 
 bool Window::IsSelectionRectValid() const
 {
     EditTool* edit = dynamic_cast<EditTool*>(base);
-    return !!edit && !edit->selectionWIP && edit->selectionRec.w > 0 && edit->selectionRec.h > 0;
+    return !!edit && !edit->selectionWIP && CurrentTab().SelectionRectExists();
 }
 
 void Window::SaveBlueprint()
@@ -469,19 +468,18 @@ void Window::ClearClipboard()
 
 bool Window::SelectionExists() const
 {
-    return !selection.empty();
+    return CurrentTab().SelectionExists();
 }
 
 void Window::ClearSelection()
 {
-    selection.clear();
-    if (EditTool* edit = dynamic_cast<EditTool*>(base))
-        edit->selectionRec = IRect(0);
+    CurrentTab().selection.clear();
+    CurrentTab().selectionRecs.clear();
 }
 
 void Window::DestroySelection()
 {
-    CurrentTab().graph->DestroyNodes(selection);
+    CurrentTab().graph->DestroyNodes(CurrentTab().selection);
     ClearSelection();
 }
 
@@ -621,12 +619,13 @@ bool Window::CursorInUIBounds(IRect uiBounds) const
 void Window::DrawGrid(int gridSize) const
 {
     // Grid
+    if (!tabs.empty())
     {
-        IVec2 extents((int)((float)windowWidth / camera.zoom), (int)((float)windowHeight / camera.zoom));
-        IRect bounds(IVec2(camera.target), extents);
+        IVec2 extents((int)((float)windowWidth / CurrentTab().camera.zoom), (int)((float)windowHeight / CurrentTab().camera.zoom));
+        IRect bounds(IVec2(CurrentTab().camera.target), extents);
 
         // "If the number of world pixels compacted into a single screen pixel equal or exceed the pixels between gridlines"
-        if ((int)(1.0f / camera.zoom) >= gridSize)
+        if ((int)(1.0f / CurrentTab().camera.zoom) >= gridSize)
         {
             DrawRectangleIRect(bounds, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
         }
@@ -663,7 +662,8 @@ IRect Window::GetSelectionBounds(const std::vector<Node*>& vec) const
 
 IRect Window::GetSelectionBounds() const
 {
-    return GetSelectionBounds(selection);
+    if (!tabs.empty())
+    return GetSelectionBounds(CurrentTab().selection);
 }
 
 Color Window::ResistanceBandColor(uint8_t index)
@@ -681,7 +681,8 @@ void Window::DrawTooltipAtCursor(const char* text, Color color)
 {
     EndMode2D();
     DrawTextIV(text, cursorUIPos + IVec2(16), 8, color);
-    BeginMode2D(camera);
+    if (!tabs.empty())
+        BeginMode2D(CurrentTab().camera);
 }
 
 void Window::DrawTooltipAtCursor_Shadowed(const char* text, Color color)
@@ -698,7 +699,8 @@ void Window::DrawTooltipAtCursor_Shadowed(const char* text, Color color)
         }
     }
     DrawTextIV(text, cursorUIPos + IVec2(16), 8, color);
-    BeginMode2D(camera);
+    if (!tabs.empty())
+        BeginMode2D(CurrentTab().camera);
 }
 
 Color ConfigStrToColor(const std::string& str)

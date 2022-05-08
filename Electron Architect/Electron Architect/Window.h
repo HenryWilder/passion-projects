@@ -35,6 +35,7 @@ public:
     size_t activeTab;
     std::vector<Tab*> tabs;
     Tab& CurrentTab();
+    const Tab& CurrentTab() const;
 
     uint8_t blueprintLOD = 0;
     uint8_t clipboardPreviewLOD = 0;
@@ -54,8 +55,6 @@ public:
     Gate lastGate = Gate::OR;
     uint8_t storedExtraParam = 0;
 
-    Camera2D camera{ .offset{ 0,0 }, .target{ 0,0 }, .rotation{ 0 }, .zoom{ 1 } };
-
     const char* deviceParameterTextFmt = "";
 
     Node* hoveredNode = nullptr;
@@ -63,9 +62,8 @@ public:
     Group* hoveredGroup = nullptr;
 
     Blueprint* clipboard = nullptr;
-    // Todo: make selection tab-specific instead of across the window
-    std::vector<Node*> selection;
 
+    int propertyNumber; // For the "PushProperty" functions
     IRect propertiesPaneRec;
 
     std::vector<IconButton> modeButtons;
@@ -75,14 +73,10 @@ public:
     IconButton blueprintsButton;
     IconButton clipboardButton;
 
-#if _DEBUG
 private:
-#endif
 
     Tool* base;
     Tool* overlay; // Menu modes are stored in here
-
-    int propertyNumber; // For the "PushProperty" functions
 
 public:
 
@@ -131,13 +125,14 @@ public:
     void DrawGrid() const
     {
         // Grid
+        if (!tabs.empty())
         {
-            IVec2 extents((int)((float)windowWidth / camera.zoom), (int)((float)windowHeight / camera.zoom));
-            IRect bounds(IVec2(camera.target), extents);
+            IVec2 extents((int)((float)windowWidth / CurrentTab().camera.zoom), (int)((float)windowHeight / CurrentTab().camera.zoom));
+            IRect bounds(IVec2(CurrentTab().camera.target), extents);
 
             constexpr float gridSpaceFrac = 1.0f / gridSize;
             // "If the fraction of a screen pixel in a grid space equals or exceeds the fraction of a screen pixel in a world pixel"
-            if (camera.zoom <= gridSpaceFrac)
+            if (CurrentTab().camera.zoom <= gridSpaceFrac)
             {
                 DrawRectangleIRect(bounds, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
             }

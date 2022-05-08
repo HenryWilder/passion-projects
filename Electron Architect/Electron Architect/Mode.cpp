@@ -174,7 +174,6 @@ EditTool::EditTool() :
     fallbackPos(0),
     selectionWIP(false),
     selectionStart(0),
-    selectionRec(0),
     draggingGroup(false),
     draggingGroupCorner(false),
     groupCorner(),
@@ -222,35 +221,35 @@ void EditTool::Update(Window& window)
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
         // There is a selection, and a node inside it has been pressed (move selected)
-        if (!!window.hoveredNode && std::find(window.selection.begin(), window.selection.end(), window.hoveredNode) != window.selection.end())
+        if (!!window.hoveredNode && std::find(window.CurrentTab().selection.begin(), window.CurrentTab().selection.end(), window.hoveredNode) != window.CurrentTab().selection.end())
         {
             nodeBeingDragged = window.hoveredNode;
             wireBeingDragged = nullptr;
-            selectionRec = window.GetSelectionBounds();
+            *window.CurrentTab().GetLastSelectionRec() = window.GetSelectionBounds();
         }
         // A node outside of the selection has been pressed (select exclusively it)
         else if (!!window.hoveredNode)
         {
-            window.selection.clear();
-            window.selection.push_back(window.hoveredNode);
+            window.CurrentTab().selection.clear();
+            window.CurrentTab().selection.push_back(window.hoveredNode);
             nodeBeingDragged = window.hoveredNode;
             wireBeingDragged = nullptr;
         }
         else if (window.IsSelectionRectValid() && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
         {
-            window.selection.clear();
+            window.CurrentTab().selection.clear();
             selectionWIP = true;
         }
         else
         {
-            window.selection.clear();
+            window.CurrentTab().selection.clear();
             nodeBeingDragged = window.hoveredNode;
             wireBeingDragged = window.hoveredWire;
 
             // selectionStart being used as an offset here
             if (draggingGroup = !!window.hoveredGroup)
             {
-                window.CurrentTab().graph->FindNodesInGroup(window.selection, window.hoveredGroup);
+                window.CurrentTab().graph->FindNodesInGroup(window.CurrentTab().selection, window.hoveredGroup);
                 selectionStart = (window.cursorPos - (fallbackPos = window.hoveredGroup->GetPosition()));
             }
             //else if (dragginggroupCorner = groupCorner.Valid())
@@ -269,21 +268,21 @@ void EditTool::Update(Window& window)
     {
         auto [minx, maxx] = std::minmax(window.cursorPos.x, selectionStart.x);
         auto [miny, maxy] = std::minmax(window.cursorPos.y, selectionStart.y);
-        selectionRec.w = maxx - (selectionRec.x = minx);
-        selectionRec.h = maxy - (selectionRec.y = miny);
+        window.CurrentTab().GetLastSelectionRec()->w = maxx - (window.CurrentTab().GetLastSelectionRec()->x = minx);
+        window.CurrentTab().GetLastSelectionRec()->h = maxy - (window.CurrentTab().GetLastSelectionRec()->y = miny);
     }
     // Node
     else if (!!nodeBeingDragged)
     {
         // Multiple selection
-        if (!window.selection.empty())
+        if (!window.CurrentTab().SelectionExists())
         {
             const IVec2 offset = window.GetCursorDelta();
-            for (Node* node : window.selection)
+            for (Node* node : window.CurrentTab().selection)
             {
                 node->SetPosition_Temporary(node->GetPosition() + offset);
             }
-            selectionRec.position += offset;
+            window.CurrentTab().GetLastSelectionRec()->xy += offset;
         }
         else
             nodeBeingDragged->SetPosition_Temporary(window.cursorPos);
@@ -297,7 +296,7 @@ void EditTool::Update(Window& window)
     else if (draggingGroup)
     {
         window.hoveredGroup->SetPosition(window.cursorPos - selectionStart);
-        for (Node* node : window.selection)
+        for (Node* node : window.CurrentTab().selection)
         {
             const IVec2 offset = window.GetCursorDelta();
             node->SetPosition_Temporary(node->GetPosition() + offset);
@@ -351,7 +350,7 @@ void EditTool::Update(Window& window)
             else if (draggingGroup)
             {
                 window.hoveredGroup->SetPosition(fallbackPos);
-                for (Node* node : window.selection)
+                for (Node* node : window.CurrentTab().selection)
                 {
                     IVec2 offset = (fallbackPos + selectionStart) - window.cursorPos;
                     node->SetPosition_Temporary(node->GetPosition() + offset);
@@ -363,7 +362,7 @@ void EditTool::Update(Window& window)
             }
             else if (selectionWIP)
             {
-                selectionRec = IRect(0);
+                window.CurrentTab().selectionRecs.clear();
             }
         }
         // Finalize
@@ -390,7 +389,7 @@ void EditTool::Update(Window& window)
             }
             else if (draggingGroup)
             {
-                for (Node* node : window.selection)
+                for (Node* node : window.CurrentTab().selection)
                 {
                     node->SetPosition(node->GetPosition());
                 }
@@ -403,9 +402,14 @@ void EditTool::Update(Window& window)
             {
                 selectionWIP = false;
                 if (window.IsSelectionRectValid())
-                    window.CurrentTab().graph->FindNodesInRect(window.selection, selectionRec);
+                {
+                    for (IRect rec : window.CurrentTab().selectionRecs)
+                    {
+                        window.CurrentTab().graph->FindNodesInRect(window.CurrentTab().selection, rec);
+                    }
+                }
                 else
-                    selectionRec = IRect(0);
+                    window.CurrentTab().selectionRecs.clear();
             }
         }
         if (draggingGroup)
@@ -444,12 +448,14 @@ void EditTool::Draw(Window& window)
         DrawRectangleIRect(groupCorner.GetCollisionRect(), color);
     }
 
-    DrawRectangleIRect(selectionRec, ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5));
-    DrawRectangleLines(selectionRec.x, selectionRec.y, selectionRec.w, selectionRec.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-
+    for (IRect rec : window.CurrentTab().selectionRecs)
+    {
+        DrawRectangleIRect(rec, ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5));
+        DrawRectangleLines(rec.x, rec.y, rec.w, rec.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    }
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
-    for (Node* node : window.selection)
+    for (Node* node : window.CurrentTab().selection)
     {
         DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
@@ -502,10 +508,10 @@ void EditTool::Draw(Window& window)
 void EditTool::DrawProperties(Window& window)
 {
     // Selection stats
-    if (window.SelectionExists() && window.selection.size() > 1)
-        window.PushPropertySection_Selection("Selection", window.selection);
-    else if (window.selection.size() == 1)
-        window.PushPropertySection_Node("Selected node", window.selection[0]);
+    if (window.SelectionExists() && window.CurrentTab().SelectionSize() > 1)
+        window.PushPropertySection_Selection("Selection", window.CurrentTab().selection);
+    else if (window.CurrentTab().SelectionSize() == 1)
+        window.PushPropertySection_Node("Selected node", window.CurrentTab().selection[0]);
     // Node hover stats
     window.PushPropertySection_Node("Hovered node", window.hoveredNode);
     // Joint hover stats
