@@ -26,24 +26,34 @@ int main()
     window.CurrentTab().graph->Load("session.cg"); // Construct and load last session
     // Load blueprints
     {
+        window.LogAttempt("Loading blueprints");
         std::filesystem::path blueprints{ "blueprints" };
         std::filesystem::create_directories(blueprints);
-        for (auto const& dir_entry : std::filesystem::directory_iterator{ blueprints })
+        std::filesystem::directory_iterator directory{ blueprints };
+        if (directory._At_end())
+            window.LogMessage("No blueprints found.");
+        else
         {
-            std::string filename = dir_entry.path().string();
-            if (filename.substr(filename.size() - 3, filename.size()) == ".bp")
-            printf("Loading blueprint \"%s\"\n", filename.c_str());
-            Blueprint bp;
-            try
+            for (auto const& dir_entry : directory)
             {
-                LoadBlueprint(filename.c_str(), bp);
-                window.CurrentTab().graph->StoreBlueprint(&bp);
-            }
-            catch (std::length_error e)
-            {
-                printf("File corrupt. Encountered \"%s\" error\n", e.what());
+                std::string filename = dir_entry.path().string();
+                window.LogMessage(TextFormat("Located file \"%s\"", filename.c_str()));
+                if (filename.substr(filename.size() - 3, filename.size()) == ".bp")
+                    window.LogAttempt(TextFormat("Loading blueprint \"%s\"", filename.c_str()));
+                Blueprint bp;
+                try
+                {
+                    LoadBlueprint(filename.c_str(), bp);
+                    window.CurrentTab().graph->StoreBlueprint(&bp);
+                    window.LogSuccess(TextFormat("Blueprint \"%s\" loaded.", filename.c_str()));
+                }
+                catch (std::length_error e)
+                {
+                    window.LogError("File corrupt.");
+                }
             }
         }
+        window.LogSuccess("Blueprints loaded.");
     }
 
     std::vector<Button*> allButtons;

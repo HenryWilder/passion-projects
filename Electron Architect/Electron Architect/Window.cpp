@@ -315,7 +315,7 @@ void Window::SetMode(Mode newMode)
 
     b_cursorMoved = true;
 
-    if (!!overlay ? newMode != overlay->GetMode() : true)
+    if (!!overlay ? newMode != overlay->GetMode() : TypeOfMode(newMode) != ModeType::Basic)
     {
         if (!!overlay)
         {
