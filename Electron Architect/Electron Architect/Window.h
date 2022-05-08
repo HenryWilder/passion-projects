@@ -179,6 +179,7 @@ public:
     void PushProperty_bool(const char* name, bool value);
     void PushPropertyTitle(const char* title);
     void PushPropertySubtitle(const char* title, Color color = UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    void PushPropertySpacer();
     void PushPropertySection_Node(const char* name, Node* value);
     void PushPropertySection_Wire(const char* name, Wire* value);
     void PushPropertySection_Selection(const char* name, const std::vector<Node*>& value);

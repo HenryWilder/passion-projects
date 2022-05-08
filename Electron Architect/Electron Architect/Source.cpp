@@ -140,7 +140,7 @@ int main()
                 window.PushPropertySubtitle("Cursor");
                 window.PushProperty_int("X", window.cursorPos.x / g_gridSize);
                 window.PushProperty_int("Y", window.cursorPos.y / g_gridSize);
-                window.PushPropertySubtitle("");
+                window.PushPropertySpacer();
 
                 window.PushPropertySubtitle("Mode");
                 const char* modeName;
@@ -154,7 +154,7 @@ int main()
                 }
                 window.PushProperty("Name", modeName);
                 window.PushProperty_longStr("Description", buttonsToHighlight[0]->description);
-                window.PushPropertySubtitle("");
+                window.PushPropertySpacer();
 
                 // Show element properties in pen/edit mode
                 if (window.GetBaseMode() == Mode::PEN || window.GetBaseMode() == Mode::EDIT)
@@ -162,7 +162,7 @@ int main()
                     window.PushPropertySubtitle("Element");
                     window.PushProperty("Name", GateName(window.gatePick));
                     window.PushProperty_longStr("Description", buttonsToHighlight[1]->description);
-                    window.PushPropertySubtitle("");
+                    window.PushPropertySpacer();
                 }
 
                 window.DrawToolProperties();

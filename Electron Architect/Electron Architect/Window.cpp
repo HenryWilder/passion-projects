@@ -971,6 +971,10 @@ void Window::PushPropertySubtitle(const char* title, Color color)
     DrawTextIV(title, pos + padding, FontSize(), color);
     propertyNumber++;
 }
+void Window::PushPropertySpacer()
+{
+    propertyNumber++;
+}
 void Window::PushPropertySection_Node(const char* name, Node* value)
 {
     if (!!value)
@@ -1003,7 +1007,7 @@ void Window::PushPropertySection_Node(const char* name, Node* value)
         {
             PushProperty_ptr("\tPointer", wire->end);
         }
-        PushPropertySubtitle("");
+        PushPropertySpacer();
     }
 }
 void Window::PushPropertySection_Wire(const char* name, Wire* value)
@@ -1020,7 +1024,7 @@ void Window::PushPropertySection_Wire(const char* name, Wire* value)
         PushPropertySubtitle("Output", UIColor(UIColorID::UI_COLOR_OUTPUT));
         PushProperty_uint("Serial", CurrentTab().graph->NodeID(value->end));
         PushProperty_ptr("Pointer", value->end);
-        PushPropertySubtitle("");
+        PushPropertySpacer();
     }
 }
 void Window::PushPropertySection_Selection(const char* name, const std::vector<Node*>& value)
@@ -1064,7 +1068,7 @@ void Window::PushPropertySection_Selection(const char* name, const std::vector<N
     if (DELs) PushProperty_uint("Delays", DELs);
     if (BATs) PushProperty_uint("Batteries", BATs);
 
-    PushPropertySubtitle("");
+    PushPropertySpacer();
 }
 void Window::PushPropertySection_Group(const char* name, Group* value)
 {
@@ -1073,7 +1077,7 @@ void Window::PushPropertySection_Group(const char* name, Group* value)
         PushPropertySubtitle(name);
         PushProperty_ptr("Pointer", value);
         PushProperty_str("Label", value->GetLabel());
-        PushPropertySubtitle("");
+        PushPropertySpacer();
     }
 }
 void Window::CleanPropertiesPane()
