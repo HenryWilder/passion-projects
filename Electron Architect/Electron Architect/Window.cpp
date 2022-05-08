@@ -1110,13 +1110,29 @@ void Window::DrawConsoleOutput()
 void Window::Log(const char* output)
 {
     std::ofstream logfile("session.log", std::ios_base::app);
-    logfile << output;
+    logfile << output << " - t+" << GetTime() << '\n';
     logfile.close();
     for (int i = 1; i < _countof(consoleOutput); ++i)
     {
         consoleOutput[i - 1] = consoleOutput[i];
     }
-    consoleOutput[_countof(consoleOutput) - 1] = output;
+    consoleOutput[_countof(consoleOutput) - 1] = TextFormat("%s - t+%f", output, GetTime());
+}
+void Window::LogMessage(const char* output)
+{
+    Log(TextFormat("[Info] %s", output));
+}
+void Window::LogAttempt(const char* output)
+{
+    Log(TextFormat("[Attempt] %s...", output));
+}
+void Window::LogError(const char* output)
+{
+    Log(TextFormat("[Error] %s", output));
+}
+void Window::LogSuccess(const char* output)
+{
+    Log(TextFormat("[Success] %s", output));
 }
 void Window::ClearLog()
 {

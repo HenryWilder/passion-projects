@@ -22,7 +22,11 @@ private:
     std::vector<Group*> groups;
 
 private: // Internal
-    void Log(const char* what);
+    void Log(const char* what) const;
+    void LogMessage(const char* what) const;
+    void LogAttempt(const char* what) const;
+    void LogError(const char* what) const;
+    void LogSuccess(const char* what) const;
 
     void _Free();
     // Already calls _Free!

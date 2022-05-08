@@ -178,6 +178,10 @@ public:
     void DrawConsoleOutput();
     // Push to the console and log file
     void Log(const char* output);
+    void LogMessage(const char* output);
+    void LogAttempt(const char* output);
+    void LogSuccess(const char* output);
+    void LogError(const char* output);
     void ClearLog();
 
     void CleanPropertiesPane();

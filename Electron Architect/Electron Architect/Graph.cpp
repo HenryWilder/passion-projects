@@ -22,14 +22,30 @@ Graph::~Graph()
     _Free();
 }
 
-void Graph::Log(const char* what)
+void Graph::Log(const char* what) const
 {
     owningTab->owningWindow->Log(what);
+}
+void Graph::LogMessage(const char* what) const
+{
+    owningTab->owningWindow->LogMessage(what);
+}
+void Graph::LogAttempt(const char* what) const
+{
+    owningTab->owningWindow->LogAttempt(what);
+}
+void Graph::LogError(const char* what) const
+{
+    owningTab->owningWindow->LogError(what);
+}
+void Graph::LogSuccess(const char* what) const
+{
+    owningTab->owningWindow->LogSuccess(what);
 }
 
 void Graph::_Free()
 {
-    Log(TextFormat("Freed graph %p \"%s\"", this, name));
+    LogMessage(TextFormat("Freed graph 0x%p \"%s\"", this, name));
     for (Node* node : nodes)
     {
         delete node;
@@ -58,6 +74,7 @@ Node* Graph::_CreateNode(Node&& base)
     Node* node = new Node(base);
     nodes.insert(nodes.begin(), node);
     startNodes.push_back(node);
+    LogMessage(TextFormat("Created new node 0x%p", node));
     return node;
 }
 void Graph::_ClearNodeReferences(Node* node)
@@ -72,6 +89,7 @@ void Graph::_ClearNodeReferences(Node* node)
         output->end->RemoveWire_Expected(output);
         _DestroyWire(output);
     }
+    LogMessage(TextFormat("Cleared references to node 0x%p", node));
     orderDirty = true;
 }
 void Graph::_DestroyNode(Node* node)
@@ -79,6 +97,7 @@ void Graph::_DestroyNode(Node* node)
     FindAndErase_ExpectExisting(nodes, node);
     FindAndErase(startNodes, node);
     delete node;
+    LogMessage(TextFormat("Deleted node 0x%p", node));
     orderDirty = true;
 }
 
@@ -86,6 +105,7 @@ Wire* Graph::_CreateWire(Wire&& base)
 {
     Wire* wire = new Wire(base);
     wires.push_back(wire);
+    LogMessage(TextFormat("Created wire 0x%p", wire));
     return wire;
 }
 void Graph::_ClearWireReferences(Wire* wire)
@@ -95,12 +115,14 @@ void Graph::_ClearWireReferences(Wire* wire)
     // Push end to start nodes if this has destroyed its last remaining input
     if (wire->end->IsOutputOnly())
         startNodes.push_back(wire->end);
+    LogMessage(TextFormat("Cleared references to wire 0x%p", wire));
     orderDirty = true;
 }
 void Graph::_DestroyWire(Wire* wire)
 {
     FindAndErase_ExpectExisting(wires, wire);
     delete wire;
+    LogMessage(TextFormat("Deleted wire 0x%p", wire));
     orderDirty = true;
 }
 
@@ -231,7 +253,12 @@ void Graph::DestroyNodes(std::vector<Node*>& removeList)
 
 void Graph::BypassNode(Node* node)
 {
-    _ASSERT_EXPR(node->IsSpecialErasable(), L"Must be bypassable");
+    LogAttempt(TextFormat("Simple bypass on node 0x%p", node));
+    if (!node->IsSpecialErasable())
+    {
+        LogError(TextFormat("Node 0x%p is not bypassable.", node));
+        return;
+    }
     // Multiple outputs, one input
     if (node->GetInputCount() == 1)
     {
@@ -251,11 +278,18 @@ void Graph::BypassNode(Node* node)
         }
     }
     DestroyNode(node);
+    LogSuccess(TextFormat("Simple bypassed node 0x%p", node));
 }
 
 void Graph::BypassNode_Complex(Node* node)
 {
-    _ASSERT_EXPR(node->IsComplexBipassable(), L"Must be complex bypassable");
+    LogAttempt(TextFormat("Complex bypass on node 0x%p", node));
+    if (!node->IsComplexBipassable())
+    {
+        LogError(TextFormat("Node 0x%p is not bypassable.", node));
+        return;
+    }
+
     for (Wire* input : node->GetInputs())
     {
         for (Wire* output : node->GetOutputs())
@@ -264,12 +298,28 @@ void Graph::BypassNode_Complex(Node* node)
         }
     }
     DestroyNode(node);
+    LogSuccess(TextFormat("Complex bypassed node 0x%p", node));
 }
 
 Node* Graph::MergeNodes(Node* depricating, Node* overriding)
 {
-    _ASSERT_EXPR(!!depricating && !!overriding, L"Tried to merge a nullptr");
-    _ASSERT_EXPR(depricating != overriding, L"Tried to merge a node with itself");
+    LogAttempt(TextFormat("Merge node 0x%p with 0x%p", depricating, overriding));
+    if (!depricating)
+    {
+        LogError(TextFormat("Cannot merge 0x%p with nullptr.", overriding));
+        exit(1);
+    }
+    if (!overriding)
+    {
+        LogError(TextFormat("Cannot merge 0x%p with nullptr.", depricating));
+        exit(1);
+    }
+    if (depricating == overriding)
+    {
+        LogError(TextFormat("Cannot merge 0x%p with itself.", depricating));
+        exit(1);
+    }
+
     Node* c = CreateNode(depricating->GetPosition(), overriding->GetGate(), overriding->m_ntd.r.resistance); // Generic ntd data
 
     for (Wire* wire : depricating->GetInputs())
@@ -296,6 +346,7 @@ Node* Graph::MergeNodes(Node* depricating, Node* overriding)
     DestroyNode(depricating);
     DestroyNode(overriding);
 
+    LogSuccess(TextFormat("Merged nodes 0x%p and 0x%p into node 0x%p", depricating, overriding, c));
     return c;
 }
 
@@ -304,8 +355,22 @@ Node* Graph::MergeNodes(Node* depricating, Node* overriding)
 // CreateWire can affect the positions of parameter `end` in `nodes`
 Wire* Graph::CreateWire(Node* start, Node* end)
 {
-    _ASSERT_EXPR(start != nullptr && end != nullptr, L"Tried to create a wire to nullptr");
-    _ASSERT_EXPR(start != end, L"Cannot create self-reference wire");
+    LogAttempt(TextFormat("Wire node 0x%p to node 0x%p...", start, end));
+    if (!start)
+    {
+        LogError(TextFormat("Wire failed. Cannot wire node 0x%p to nullptr.", end));
+        exit(1);
+    }
+    if (!end)
+    {
+        LogError(TextFormat("Cannot wire node 0x%p to nullptr.", start));
+        exit(1);
+    }
+    if (start == end)
+    {
+        LogError(TextFormat("Cannot wire node 0x%p to itself.", start));
+        exit(1);
+    }
 
     // Duplicate guard
     {
@@ -329,13 +394,28 @@ Wire* Graph::CreateWire(Node* start, Node* end)
     FindAndErase(startNodes, end);
 
     orderDirty = true;
+    LogSuccess(TextFormat("Wired node 0x%p to node 0x%p with wire 0x%p", start, end, wire));
     return wire;
 }
 // CreateWire can affect the positions of parameter `end` in `nodes`
 Wire* Graph::CreateWire(Node* start, Node* end, ElbowConfig elbowConfig)
 {
-    _ASSERT_EXPR(start != nullptr && end != nullptr, L"Tried to create a wire to nullptr");
-    _ASSERT_EXPR(start != end, L"Cannot create self-reference wire");
+    LogAttempt(TextFormat("Wire node 0x%p to node 0x%p", start, end));
+    if (!start)
+    {
+        LogError(TextFormat("Cannot wire node 0x%p to nullptr.", end));
+        exit(1);
+    }
+    if (!end)
+    {
+        LogError(TextFormat("Cannot wire node 0x%p to nullptr.", start));
+        exit(1);
+    }
+    if (start == end)
+    {
+        LogError(TextFormat("Cannot wire node 0x%p to itself.", start));
+        exit(1);
+    }
 
     // Duplicate guard
     {
@@ -359,6 +439,7 @@ Wire* Graph::CreateWire(Node* start, Node* end, ElbowConfig elbowConfig)
     FindAndErase(startNodes, end);
 
     orderDirty = true;
+    LogSuccess(TextFormat("Wired node 0x%p to node 0x%p with wire 0x%p", start, end, wire));
     return wire;
 }
 void Graph::DestroyWire(Wire* wire)
@@ -370,13 +451,29 @@ void Graph::DestroyWire(Wire* wire)
 }
 void Graph::SwapNodes(Node* a, Node* b)
 {
+    LogMessage(TextFormat("Swapped type of node 0x%p with node 0x%p", a, b));
     std::swap(a->m_gate, b->m_gate);
 }
 // Invalidates input wire!
 Wire* Graph::ReverseWire(Wire* wire)
 {
-    _ASSERT_EXPR(wire != nullptr, L"Cannot reverse null wire");
-    _ASSERT_EXPR(wire->start != nullptr && wire->end != nullptr, L"Malformed wire");
+    LogAttempt(TextFormat("Reverse wire 0x%p", wire));
+    if (!wire)
+    {
+        LogError("Cannot reverse nullptr.");
+        exit(1);
+    }
+    if (!wire->start)
+    {
+        LogError("Wire start was nullptr.");
+        exit(1);
+    }
+    if (!wire->end)
+    {
+        LogError("Wire end was nullptr.");
+        exit(1);
+    }
+
     // Swap
     Node* tbStart = wire->end;
     Node* tbEnd = wire->start;
@@ -385,11 +482,13 @@ Wire* Graph::ReverseWire(Wire* wire)
     wire = CreateWire(tbStart, tbEnd);
     wire->SnapElbowToLegal(elbow);
     orderDirty = true;
+    LogSuccess(TextFormat("Reversed wire 0x%p", wire));
     return wire;
 }
 // Invalidates input wire! (obviously; it's being split in two)
 std::pair<Wire*, Wire*> Graph::BisectWire(Wire* wire, Node* bisector)
 {
+    LogAttempt(TextFormat("Bisect wire 0x%p with node 0x%p", wire, bisector));
     std::pair<Wire*, Wire*> newWire;
 
     newWire.first = CreateWire(wire->start, bisector);
@@ -401,6 +500,7 @@ std::pair<Wire*, Wire*> Graph::BisectWire(Wire* wire, Node* bisector)
     newWire.second->UpdateElbowToLegal();
 
     DestroyWire(wire);
+    LogSuccess(TextFormat("Bisected wire 0x%p into the wires 0x%p and 0x%p", wire, newWire.first, newWire.second));
     return newWire;
 }
 
@@ -408,12 +508,14 @@ Group* Graph::CreateGroup(IRect rec, Color color)
 {
     Group* group = new Group(rec, color, "Label");
     groups.push_back(group);
+    LogMessage(TextFormat("Created new group 0x%p", group));
     return group;
 }
 void Graph::DestroyGroup(Group* group)
 {
     FindAndErase_ExpectExisting(groups, group);
     delete group;
+    LogMessage(TextFormat("Deleted group 0x%p", group));
 }
 Group* Graph::FindGroupAtPos(IVec2 pos) const
 {
@@ -449,6 +551,7 @@ void Graph::FindNodesInGroup(std::vector<Node*>& result, Group* group) const
 // Uses BFS
 void Graph::Sort()
 {
+    LogMessage(TextFormat("Sorting node graph 0x%p", this));
     decltype(nodes) sorted;
     sorted.reserve(nodes.size());
 
@@ -497,6 +600,7 @@ void Graph::Sort()
 
     nodes.swap(sorted);
 
+    LogSuccess("Sort finished");
     orderDirty = false;
 }
 
@@ -580,7 +684,8 @@ void Graph::EvaluateNode(Node* node)
         break;
 
     default:
-        _ASSERT_EXPR(false, L"No specialization for selected gate evaluation");
+        LogError("Missing specialization for selected gate evaluation");
+        exit(1);
         break;
     }
 }
@@ -673,9 +778,11 @@ void Graph::StoreBlueprint(Blueprint* bp)
         }
     }
     blueprints.push_back(copy);
+    LogMessage(TextFormat("Stored blueprint 0x%p \"%s\" to position 0x%p [index %u] (now \"%s\")", bp, bp->name, copy, blueprints.size() - 1, copy->name));
 }
 void Graph::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
 {
+    LogAttempt(TextFormat("Spawning blueprint 0x%p", bp));
     std::unordered_map<size_t, Node*> nodeID;
     nodes.reserve(nodes.size() + bp->nodes.size());
     for (size_t i = 0; i < bp->nodes.size(); ++i)
@@ -700,6 +807,7 @@ void Graph::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
         }
         Wire* wire = CreateWire(start, end, wire_bp.elbowConfig);
     }
+    LogSuccess(TextFormat("Spawned blueprint 0x%p", bp));
 }
 
 const std::vector<Blueprint*>& Graph::GetBlueprints() const
@@ -709,6 +817,7 @@ const std::vector<Blueprint*>& Graph::GetBlueprints() const
 
 void Graph::Save(const char* filename) const
 {
+    LogAttempt(TextFormat("Saving file \"%s\"", filename));
     auto prepNodeIDs = [](std::unordered_map<Node*, size_t>& nodeIDs, const std::vector<Node*>& nodes)
     {
         nodeIDs.reserve(nodes.size());
@@ -770,10 +879,13 @@ void Graph::Save(const char* filename) const
         }
     }
     file.close();
+    LogSuccess(TextFormat("Saved file \"%s\"", filename));
 }
 
 void Graph::Load(const char* filename)
 {
+    LogAttempt(TextFormat("Loading file \"%s\"", filename));
+
     // HACK: Does not conform to standard _CreateNode/Wire functions!!
     auto allocNodes = [](std::vector<Node*>& nodes, size_t nodeCount)
     {
@@ -900,12 +1012,19 @@ void Graph::Load(const char* filename)
         orderDirty = true;
     }
     file.close();
+
+    LogSuccess(TextFormat("Loaded file \"%s\"", filename));
 }
 
 void Graph::Export(const char* filename) const
 {
+    LogAttempt(TextFormat("Exporting SVG \"%s\"", filename));
+
     if (nodes.empty())
+    {
+        LogMessage("Nothing to export.");
         return;
+    }
 
     std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
     {
@@ -1085,4 +1204,6 @@ void Graph::Export(const char* filename) const
         file << "</svg>";
     }
     file.close();
+
+    LogSuccess(TextFormat("Exported SVG \"%s\"", filename));
 }
