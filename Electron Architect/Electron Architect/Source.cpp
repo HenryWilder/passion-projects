@@ -23,6 +23,10 @@ int main()
 
     Window window(1280, 720);
 
+    Texture2D iconTex = LoadTexture("icon.png");
+    Image icon = LoadImageFromTexture(iconTex);
+    SetWindowIcon(icon);
+
     window.CurrentTab().graph->Load("session.cg"); // Construct and load last session
     // Load blueprints
     {
@@ -185,6 +189,9 @@ int main()
     /******************************************
     *   Unload and free memory
     ******************************************/
+
+    UnloadImage(icon);
+    UnloadTexture(iconTex);
 
 	return 0;
 }
