@@ -225,7 +225,6 @@ void EditTool::Update(Window& window)
         {
             nodeBeingDragged = window.hoveredNode;
             wireBeingDragged = nullptr;
-            *window.CurrentTab().GetLastSelectionRec() = window.GetSelectionBounds();
         }
         // A node outside of the selection has been pressed (select exclusively it)
         else if (!!window.hoveredNode)
@@ -235,14 +234,29 @@ void EditTool::Update(Window& window)
             nodeBeingDragged = window.hoveredNode;
             wireBeingDragged = nullptr;
         }
+        // Modify the last selection rectangle
         else if (window.IsSelectionRectValid() && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
         {
             window.CurrentTab().selection.clear();
+            for (IRect rec : window.CurrentTab().selectionRecs)
+            {
+                window.CurrentTab().graph->FindNodesInRect(window.CurrentTab().selection, rec);
+            }
             selectionWIP = true;
         }
+        // Create a new selection rectangle
+        else if (window.IsSelectionRectValid() && (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)))
+        {
+            window.CurrentTab().CreateSelectionRec(IRect(window.cursorPos, 1));
+            fallbackPos = window.cursorPos;
+            if (selectionWIP = !(nodeBeingDragged || wireBeingDragged || draggingGroup || draggingGroupCorner))
+                selectionStart = window.cursorPos;
+        }
+        // Clear selection and start anew
         else
         {
             window.CurrentTab().selection.clear();
+            window.CurrentTab().selectionRecs.clear();
             nodeBeingDragged = window.hoveredNode;
             wireBeingDragged = window.hoveredWire;
 
@@ -268,6 +282,8 @@ void EditTool::Update(Window& window)
     {
         auto [minx, maxx] = std::minmax(window.cursorPos.x, selectionStart.x);
         auto [miny, maxy] = std::minmax(window.cursorPos.y, selectionStart.y);
+        if (!window.CurrentTab().GetLastSelectionRec())
+            window.CurrentTab().CreateSelectionRec(IRect(1));
         window.CurrentTab().GetLastSelectionRec()->w = maxx - (window.CurrentTab().GetLastSelectionRec()->x = minx);
         window.CurrentTab().GetLastSelectionRec()->h = maxy - (window.CurrentTab().GetLastSelectionRec()->y = miny);
     }
@@ -282,7 +298,10 @@ void EditTool::Update(Window& window)
             {
                 node->SetPosition_Temporary(node->GetPosition() + offset);
             }
-            window.CurrentTab().GetLastSelectionRec()->xy += offset;
+            for (IRect& rec : window.CurrentTab().selectionRecs)
+            {
+                rec.xy += offset;
+            }
         }
         else
             nodeBeingDragged->SetPosition_Temporary(window.cursorPos);
@@ -408,8 +427,8 @@ void EditTool::Update(Window& window)
                         window.CurrentTab().graph->FindNodesInRect(window.CurrentTab().selection, rec);
                     }
                 }
-                else
-                    window.CurrentTab().selectionRecs.clear();
+                //else
+                //    window.CurrentTab().selectionRecs.clear();
             }
         }
         if (draggingGroup)

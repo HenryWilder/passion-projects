@@ -2,6 +2,7 @@
 #ifndef RAYLIB_H
 #include <raylib.h>
 #endif
+#include <xhash>
 
 struct Width
 {

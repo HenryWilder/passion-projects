@@ -663,7 +663,9 @@ IRect Window::GetSelectionBounds(const std::vector<Node*>& vec) const
 IRect Window::GetSelectionBounds() const
 {
     if (!tabs.empty())
-    return GetSelectionBounds(CurrentTab().selection);
+        return GetSelectionBounds(CurrentTab().selection);
+    else
+        return IRect(0);
 }
 
 Color Window::ResistanceBandColor(uint8_t index)
