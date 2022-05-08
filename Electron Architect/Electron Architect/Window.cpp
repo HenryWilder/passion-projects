@@ -387,7 +387,6 @@ void Window::SetMode(Mode newMode)
 
 void Window::SetGate(Gate newGate)
 {
-    LogMessage(TextFormat("Changed gate from %s to %s", GateName(gatePick), GateName(newGate)));
     constexpr const char* parameterTextFmtOptions[] =
     {
         "Component parameter: %i",
@@ -412,6 +411,7 @@ void Window::SetGate(Gate newGate)
         deviceParameterTextFmt = parameterTextFmtOptions[3];
         break;
     }
+    LogMessage(TextFormat("Changed gate from %s to %s", GateName(gatePick), GateName(newGate)));
 }
 
 void Window::ClearOverlayMode()
