@@ -527,6 +527,7 @@ void Window::SetGate(Gate newGate)
         "Capacity: %i ticks",
         "Color: %s"
     };
+    LogMessage(TextFormat("Changed gate from %s to %s", GateName(gatePick), GateName(newGate)));
     gatePick = newGate;
     switch (newGate)
     {
@@ -544,7 +545,6 @@ void Window::SetGate(Gate newGate)
         deviceParameterTextFmt = parameterTextFmtOptions[3];
         break;
     }
-    LogMessage(TextFormat("Changed gate from %s to %s", GateName(gatePick), GateName(newGate)));
 }
 
 void Window::ClearOverlayMode()
