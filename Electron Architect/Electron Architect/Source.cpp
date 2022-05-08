@@ -142,7 +142,7 @@ int main()
                 window.PushProperty_int("Y", window.cursorPos.y / g_gridSize);
                 window.PushPropertySubtitle("");
 
-                window.PushPropertySubtitle("Tool");
+                window.PushPropertySubtitle("Mode");
                 const char* modeName;
                 switch (window.GetBaseMode())
                 {
