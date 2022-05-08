@@ -1118,15 +1118,15 @@ void Window::DrawConsoleOutput()
 void Window::Log(const char* output)
 {
     double logTime = GetTime();
-    std::ofstream logfile("session.log", std::ios_base::app);
-    logfile << output << " - t+" << logTime << '(' << (logTime - timeOfLastLog) * 1000.0 << "ms)\n";
-    logfile.close();
     for (int i = 1; i < _countof(consoleOutput); ++i)
     {
         consoleOutput[i - 1] = consoleOutput[i];
     }
     consoleOutput[_countof(consoleOutput) - 1] = TextFormat("%s - t+%.3f (%.2fms)", output, logTime, (logTime - timeOfLastLog) * 1000.0);
     timeOfLastLog = logTime;
+    std::ofstream logfile("session.log", std::ios_base::app);
+    logfile << consoleOutput[_countof(consoleOutput) - 1] << '\n';
+    logfile.close();
 }
 void Window::LogMessage(const char* output)
 {
