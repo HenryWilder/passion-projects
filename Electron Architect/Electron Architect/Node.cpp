@@ -255,12 +255,6 @@ void Node::Draw(Color color) const
 {
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
 
-    if (m_gate == Gate::LED && GetState())
-    {
-        DrawRectangle(GetX() - nodeRadius - 1, GetY() - nodeRadius - 1, nodeRadius * 2 + 2, nodeRadius * 2 + 2, g_resistanceBands[GetColorIndex()]);
-        return;
-    }
-
     Draw(m_position, m_gate, color);
 
     if (m_gate == Gate::RESISTOR)

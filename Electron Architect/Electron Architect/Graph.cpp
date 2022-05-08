@@ -5,6 +5,7 @@
 #include "Blueprint.h"
 #include "Graph.h"
 #include "Tab.h"
+#include "Mode.h"
 #include "Window.h"
 
 extern Blueprint nativeBlueprints[10];
@@ -715,7 +716,31 @@ void Graph::DrawNodes(Color colorActive, Color colorInactive) const
 {
     for (Node* node : nodes)
     {
-        node->Draw(node->GetState() ? colorActive : colorInactive);
+        if (node->GetGate() == Gate::LED && owningTab->owningWindow->GetBaseMode() == Mode::INTERACT) [[unlikely]]
+        {
+            if (node->GetState())
+            {
+                DrawRectangle(
+                    node->GetX() - Node::g_nodeRadius - 1,
+                    node->GetY() - Node::g_nodeRadius - 1,
+                    Node::g_nodeRadius * 2 + 2,
+                    Node::g_nodeRadius * 2 + 2,
+                    Node::g_resistanceBands[node->GetColorIndex()]
+                );
+            }
+            else
+            {
+                DrawRectangle(
+                    node->GetX() - Node::g_nodeRadius - 1,
+                    node->GetY() - Node::g_nodeRadius - 1,
+                    Node::g_nodeRadius * 2 + 2,
+                    Node::g_nodeRadius * 2 + 2,
+                    BLACK
+                );
+            }
+        }
+        else [[likely]]
+            node->Draw(node->GetState() ? colorActive : colorInactive);
     }
 }
 void Graph::DrawGroups() const
