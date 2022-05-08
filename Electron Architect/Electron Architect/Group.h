@@ -13,7 +13,7 @@ private:
     Color color;
     std::string label;
 
-    friend class Tab;
+    friend class Graph;
 
 public:
     Group() = default;

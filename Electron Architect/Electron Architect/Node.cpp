@@ -15,8 +15,8 @@ void Node::SetPosition_Temporary(IVec2 position)
         wire->UpdateElbowToLegal(); // Keep current configuration but move the elbow
     }
 }
-// Sets the position of the node and updates its collision in Tab
-// NOTE: Tab collision is currently a saved-for-later feature
+// Sets the position of the node and updates its collision in Graph
+// NOTE: Graph collision is currently a saved-for-later feature
 void Node::SetPosition(IVec2 position)
 {
     SetPosition_Temporary(position);

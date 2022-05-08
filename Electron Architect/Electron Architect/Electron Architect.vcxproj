@@ -223,9 +223,10 @@ copy /b "$(ProjectDir)icons_mode32x.png" "$(OutDir)";</Command>
     <ClCompile Include="IVec.cpp" />
     <ClCompile Include="Mode.cpp" />
     <ClCompile Include="NativeBlueprints.cpp" />
-    <ClCompile Include="Tab.cpp" />
+    <ClCompile Include="Graph.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="Tab.cpp" />
     <ClCompile Include="UIColors.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Wire.cpp" />
@@ -249,9 +250,10 @@ copy /b "$(ProjectDir)icons_mode32x.png" "$(OutDir)";</Command>
     <ClInclude Include="HUtility.h" />
     <ClInclude Include="IVec.h" />
     <ClInclude Include="Mode.h" />
-    <ClInclude Include="Tab.h" />
+    <ClInclude Include="Graph.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Tab.h" />
     <ClInclude Include="UIColors.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Wire.h" />

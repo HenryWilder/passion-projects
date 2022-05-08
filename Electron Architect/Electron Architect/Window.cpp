@@ -8,6 +8,7 @@
 #include "Wire.h"
 #include "Blueprint.h"
 #include "Group.h"
+#include "Graph.h"
 #include "Tab.h"
 #include "Buttons.h"
 #include "UIColors.h"
@@ -187,8 +188,8 @@ Window::~Window()
 {
     for (const Tab* tab : tabs)
     {
-        tab->Save("session.cg");
-        tab->Export("render.svg");
+        tab->graph->Save("session.cg");
+        tab->graph->Export("render.svg");
         delete tab;
     }
 
@@ -437,7 +438,7 @@ void Window::MakeGroupFromSelection()
 {
     _ASSERT_EXPR(base->GetMode() == Mode::EDIT, L"Group from selection shouldn't be possible outside of edit mode");
     EditTool* edit = dynamic_cast<EditTool*>(base);
-    CurrentTab().CreateGroup(edit->selectionRec, UIColor(UIColorID::UI_COLOR_AVAILABLE));
+    CurrentTab().graph->CreateGroup(edit->selectionRec, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     edit->selectionRec = IRect(0);
     selection.clear();
 }
@@ -452,7 +453,7 @@ void Window::SaveBlueprint()
 {
     if (!IsClipboardValid())
         return;
-    CurrentTab().StoreBlueprint(clipboard);
+    CurrentTab().graph->StoreBlueprint(clipboard);
     clipboard->Save();
 }
 
@@ -480,7 +481,7 @@ void Window::ClearSelection()
 
 void Window::DestroySelection()
 {
-    CurrentTab().DestroyNodes(selection);
+    CurrentTab().graph->DestroyNodes(selection);
     ClearSelection();
 }
 
@@ -528,7 +529,7 @@ void Window::CheckHotkeys()
                 SaveBlueprint();
 
             // Save file
-            else CurrentTab().Save(TextFormat("%s.cg", CurrentTab().GetName()));
+            else CurrentTab().graph->Save(TextFormat("%s.cg", CurrentTab().graph->GetName()));
         }
 
         return; // Don't miscommunicate to the user!!
@@ -939,7 +940,7 @@ void Window::PushPropertySection_Node(const char* name, Node* value)
     {
         PushPropertySubtitle(name);
         PushProperty_ptr("Pointer", value);
-        PushProperty_uint("Serial", CurrentTab().NodeID(value));
+        PushProperty_uint("Serial", CurrentTab().graph->NodeID(value));
         PushProperty("Type", GateName(value->GetGate()));
         switch (value->GetGate())
         {
@@ -976,10 +977,10 @@ void Window::PushPropertySection_Wire(const char* name, Wire* value)
         PushProperty("Joint config", ElbowConfigName(value->elbowConfig));
         PushProperty("State", StateName(value->GetState()));
         PushPropertySubtitle("Input", UIColor(UIColorID::UI_COLOR_INPUT));
-        PushProperty_uint("Serial", CurrentTab().NodeID(value->start));
+        PushProperty_uint("Serial", CurrentTab().graph->NodeID(value->start));
         PushProperty_ptr("Pointer", value->start);
         PushPropertySubtitle("Output", UIColor(UIColorID::UI_COLOR_OUTPUT));
-        PushProperty_uint("Serial", CurrentTab().NodeID(value->end));
+        PushProperty_uint("Serial", CurrentTab().graph->NodeID(value->end));
         PushProperty_ptr("Pointer", value->end);
     }
 }

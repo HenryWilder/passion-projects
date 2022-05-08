@@ -8,6 +8,7 @@
 #include "Wire.h"
 #include "Blueprint.h"
 #include "Group.h"
+#include "Graph.h"
 #include "Tab.h"
 #include "Buttons.h"
 #include "UIColors.h"
@@ -64,9 +65,9 @@ void PenTool::Update(Window& window)
     if (window.b_cursorMoved) // On move
     {
         window.hoveredWire = nullptr;
-        window.hoveredNode = window.CurrentTab().FindNodeAtPos(window.cursorPos);
+        window.hoveredNode = window.CurrentTab().graph->FindNodeAtPos(window.cursorPos);
         if (!window.hoveredNode)
-            window.hoveredWire = window.CurrentTab().FindWireAtPos(window.cursorPos);
+            window.hoveredWire = window.CurrentTab().graph->FindWireAtPos(window.cursorPos);
     }
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -74,10 +75,10 @@ void PenTool::Update(Window& window)
         Node* newNode = window.hoveredNode;
         if (!newNode)
         {
-            newNode = window.CurrentTab().CreateNode(window.cursorPos, window.gatePick, window.storedExtraParam);
+            newNode = window.CurrentTab().graph->CreateNode(window.cursorPos, window.gatePick, window.storedExtraParam);
             if (!!window.hoveredWire)
             {
-                window.CurrentTab().BisectWire(window.hoveredWire, newNode);
+                window.CurrentTab().graph->BisectWire(window.hoveredWire, newNode);
                 window.hoveredWire = nullptr;
             }
         }
@@ -92,7 +93,7 @@ void PenTool::Update(Window& window)
 
             if (oldNode != newNode)
             {
-                Wire* wire = window.CurrentTab().CreateWire(oldNode, newNode);
+                Wire* wire = window.CurrentTab().graph->CreateWire(oldNode, newNode);
                 wire->elbowConfig = currentWireElbowConfig;
                 wire->UpdateElbowToLegal();
                 previousWireStart = oldNode;
@@ -114,7 +115,7 @@ void PenTool::Update(Window& window)
 }
 void PenTool::Draw(Window& window)
 {
-    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
     if (!!currentWireStart)
     {
@@ -149,7 +150,7 @@ void PenTool::Draw(Window& window)
         }
     }
 
-    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     if (!!window.hoveredWire)
     {
@@ -197,23 +198,23 @@ void EditTool::Update(Window& window)
             groupCorner.group = nullptr;
             window.hoveredGroup = nullptr;
             window.hoveredWire = nullptr;
-            window.hoveredNode = window.CurrentTab().FindNodeAtPos(window.cursorPos);
+            window.hoveredNode = window.CurrentTab().graph->FindNodeAtPos(window.cursorPos);
             if (!window.hoveredNode)
             {
-                window.hoveredWire = window.CurrentTab().FindWireElbowAtPos(window.cursorPos);
+                window.hoveredWire = window.CurrentTab().graph->FindWireElbowAtPos(window.cursorPos);
                 if (!window.hoveredWire)
                 {
-                    window.hoveredGroup = window.CurrentTab().FindGroupAtPos(window.cursorPos);
+                    window.hoveredGroup = window.CurrentTab().graph->FindGroupAtPos(window.cursorPos);
                     if (!window.hoveredGroup)
                     {
-                        groupCorner = window.CurrentTab().FindGroupCornerAtPos(window.cursorPos);
+                        groupCorner = window.CurrentTab().graph->FindGroupCornerAtPos(window.cursorPos);
                     }
                 }
             }
         }
         else if (nodeBeingDragged && !window.SelectionExists())
         {
-            hoveringMergable = window.CurrentTab().FindNodeAtPos(window.cursorPos); // This will come before updating the position of the dragged node
+            hoveringMergable = window.CurrentTab().graph->FindNodeAtPos(window.cursorPos); // This will come before updating the position of the dragged node
         }
     }
 
@@ -249,7 +250,7 @@ void EditTool::Update(Window& window)
             // selectionStart being used as an offset here
             if (draggingGroup = !!window.hoveredGroup)
             {
-                window.CurrentTab().FindNodesInGroup(window.selection, window.hoveredGroup);
+                window.CurrentTab().graph->FindNodesInGroup(window.selection, window.hoveredGroup);
                 selectionStart = (window.cursorPos - (fallbackPos = window.hoveredGroup->GetPosition()));
             }
             //else if (dragginggroupCorner = groupCorner.Valid())
@@ -375,12 +376,12 @@ void EditTool::Update(Window& window)
                 {
                     if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
                     {
-                        window.hoveredNode = window.CurrentTab().MergeNodes(hoveringMergable, nodeBeingDragged);
+                        window.hoveredNode = window.CurrentTab().graph->MergeNodes(hoveringMergable, nodeBeingDragged);
                         hoveringMergable = nodeBeingDragged = nullptr;
                     }
                     else
                     {
-                        window.CurrentTab().SwapNodes(hoveringMergable, nodeBeingDragged);
+                        window.CurrentTab().graph->SwapNodes(hoveringMergable, nodeBeingDragged);
                         nodeBeingDragged->SetPosition(fallbackPos);
                     }
                 }
@@ -402,7 +403,7 @@ void EditTool::Update(Window& window)
             {
                 selectionWIP = false;
                 if (window.IsSelectionRectValid())
-                    window.CurrentTab().FindNodesInRect(window.selection, selectionRec);
+                    window.CurrentTab().graph->FindNodesInRect(window.selection, selectionRec);
                 else
                     selectionRec = IRect(0);
             }
@@ -446,7 +447,7 @@ void EditTool::Draw(Window& window)
     DrawRectangleIRect(selectionRec, ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5));
     DrawRectangleLines(selectionRec.x, selectionRec.y, selectionRec.w, selectionRec.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
 
-    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
     for (Node* node : window.selection)
     {
@@ -478,7 +479,7 @@ void EditTool::Draw(Window& window)
         window.hoveredWire->DrawElbow(elbowColor);
     }
 
-    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     if (!!window.hoveredNode)
     {
@@ -522,12 +523,12 @@ void EraseTool::Update(Window& window)
     if (window.b_cursorMoved)
     {
         window.hoveredWire = nullptr;
-        window.hoveredNode = window.CurrentTab().FindNodeAtPos(window.cursorPos);
+        window.hoveredNode = window.CurrentTab().graph->FindNodeAtPos(window.cursorPos);
         if (!window.hoveredNode)
         {
-            window.hoveredWire = window.CurrentTab().FindWireAtPos(window.cursorPos);
+            window.hoveredWire = window.CurrentTab().graph->FindWireAtPos(window.cursorPos);
             if (!window.hoveredWire)
-                window.hoveredGroup = window.CurrentTab().FindGroupAtPos(window.cursorPos);
+                window.hoveredGroup = window.CurrentTab().graph->FindGroupAtPos(window.cursorPos);
         }
     }
 
@@ -538,20 +539,20 @@ void EraseTool::Update(Window& window)
             // Special erase
             if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
                 window.hoveredNode->IsSpecialErasable())
-                window.CurrentTab().BypassNode(window.hoveredNode);
+                window.CurrentTab().graph->BypassNode(window.hoveredNode);
             // Complex bipass
             else if (
                 (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
                 (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) &&
                 window.hoveredNode->IsComplexBipassable())
-                window.CurrentTab().BypassNode_Complex(window.hoveredNode);
+                window.CurrentTab().graph->BypassNode_Complex(window.hoveredNode);
             else
-                window.CurrentTab().DestroyNode(window.hoveredNode);
+                window.CurrentTab().graph->DestroyNode(window.hoveredNode);
         }
         else if (!!window.hoveredWire)
-            window.CurrentTab().DestroyWire(window.hoveredWire);
+            window.CurrentTab().graph->DestroyWire(window.hoveredWire);
         else if (!!window.hoveredGroup)
-            window.CurrentTab().DestroyGroup(window.hoveredGroup);
+            window.CurrentTab().graph->DestroyGroup(window.hoveredGroup);
 
         window.hoveredNode = nullptr;
         window.hoveredWire = nullptr;
@@ -581,7 +582,7 @@ void EraseTool::Draw(Window& window)
         DrawLineEx({ (float)rec.x, (float)rec.Bottom() }, { (float)rec.x + (float)rec.h, (float)rec.y }, 3, UIColor(UIColorID::UI_COLOR_DESTRUCTIVE));
     }
 
-    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
     if (!!window.hoveredWire)
     {
@@ -609,7 +610,7 @@ void EraseTool::Draw(Window& window)
         }
     }
 
-    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     if (!!window.hoveredNode)
     {
@@ -680,7 +681,7 @@ ModeType InteractTool::GetModeType() const { return ModeType::Basic; }
 Mode InteractTool::GetMode() const { return Mode::INTERACT; }
 void InteractTool::Update(Window& window)
 {
-    window.hoveredNode = window.CurrentTab().FindNodeAtPos(window.cursorPos);
+    window.hoveredNode = window.CurrentTab().graph->FindNodeAtPos(window.cursorPos);
     if (!!window.hoveredNode && !window.hoveredNode->IsOutputOnly())
         window.hoveredNode = nullptr;
 
@@ -689,10 +690,10 @@ void InteractTool::Update(Window& window)
 }
 void InteractTool::Draw(Window& window)
 {
-    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
-    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
-    for (const Node* node : window.CurrentTab().GetStartNodes())
+    for (const Node* node : window.CurrentTab().graph->GetStartNodes())
     {
         node->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
@@ -793,8 +794,8 @@ void ButtonOverlay::Update(Window& window)
 }
 void ButtonOverlay::Draw(Window& window)
 {
-    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
-    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     EndMode2D();
 
@@ -881,15 +882,15 @@ void PasteOverlay::Update(Window& window)
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            window.CurrentTab().SpawnBlueprint(window.clipboard, window.cursorPos);
+            window.CurrentTab().graph->SpawnBlueprint(window.clipboard, window.cursorPos);
         window.ClearSelection();
         window.ClearOverlayMode();
     }
 }
 void PasteOverlay::Draw(Window& window)
 {
-    window.CurrentTab().DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
-    window.CurrentTab().DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
+    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     window.clipboard->DrawSelectionPreview(window.cursorPos - IVec2(g_gridSize), ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND2), 0.5f), UIColor(UIColorID::UI_COLOR_FOREGROUND2), UIColor(UIColorID::UI_COLOR_BACKGROUND2), UIColor(UIColorID::UI_COLOR_FOREGROUND3), window.pastePreviewLOD);
 }
@@ -911,7 +912,7 @@ void BlueprintMenu::Update(Window& window)
         IVec2 pos(0, Button::g_width);
         int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
         hovering = nullptr;
-        for (Blueprint* bp : window.CurrentTab().GetBlueprints())
+        for (Blueprint* bp : window.CurrentTab().graph->GetBlueprints())
         {
             IRect rec = bp->GetSelectionPreviewRect(pos);
             if (rec.Right() > window.windowWidth)
@@ -951,7 +952,7 @@ void BlueprintMenu::Draw(Window& window)
     DrawRectangle(0, 0, window.windowWidth, Button::g_width, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
     const int padding = Button::g_width / 2 - (window.FontSize() / 2);
     DrawText("Blueprints", padding, padding, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    for (Blueprint* bp : window.CurrentTab().GetBlueprints())
+    for (Blueprint* bp : window.CurrentTab().graph->GetBlueprints())
     {
         IRect rec = bp->GetSelectionPreviewRect(pos);
         if (rec.Right() > window.windowWidth)

@@ -4,6 +4,8 @@
 #include "IVec.h"
 
 class Group;
+class Graph;
+struct Tab;
 struct Tool;
 enum class Mode;
 enum class ModeType;

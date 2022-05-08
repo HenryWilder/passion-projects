@@ -8,6 +8,7 @@
 #include "Wire.h"
 #include "Blueprint.h"
 #include "Group.h"
+#include "Graph.h"
 #include "Tab.h"
 #include "Buttons.h"
 #include "UIColors.h"
@@ -22,7 +23,7 @@ int main()
 
     Window window(1280, 720);
 
-    window.CurrentTab().Load("session.cg"); // Construct and load last session
+    window.CurrentTab().graph->Load("session.cg"); // Construct and load last session
     // Load blueprints
     {
         std::filesystem::path blueprints{ "blueprints" };
@@ -36,7 +37,7 @@ int main()
             try
             {
                 LoadBlueprint(filename.c_str(), bp);
-                window.CurrentTab().StoreBlueprint(&bp);
+                window.CurrentTab().graph->StoreBlueprint(&bp);
             }
             catch (std::length_error e)
             {
@@ -92,10 +93,10 @@ int main()
 
     EVAL:
         window.cursorPosPrev = window.cursorPos;
-        if (window.CurrentTab().IsOrderDirty())
+        if (window.CurrentTab().graph->IsOrderDirty())
             window.tickThisFrame = !(window.tickFrame = 0);
         if (window.tickThisFrame)
-            window.CurrentTab().Evaluate();
+            window.CurrentTab().graph->Evaluate();
 
         /******************************************
         *   Draw the frame
@@ -111,7 +112,7 @@ int main()
 
                 window.DrawGrid();
 
-                window.CurrentTab().DrawGroups();
+                window.CurrentTab().graph->DrawGroups();
             }
 
             // Draw
@@ -214,7 +215,7 @@ int main()
 * -Menu screen (Open to file menu with "new" at the top)
 *
 * Refactors
-* -Refactor Tab to have a bulk destroy function to make bulk deletion more efficient
+* -Refactor Graph to have a bulk destroy function to make bulk deletion more efficient
 * -Refactor buttons to be classes/structs instead of freeform
 * 
 * Beyond v1.0.0
