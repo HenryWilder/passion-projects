@@ -170,6 +170,11 @@ void DrawRectangleIRect(IRect rec, Color color)
     DrawRectangle(rec.x, rec.y, rec.w, rec.h, color);
 }
 
+void DrawRectangleLinesIRect(IRect rec, Color color)
+{
+    DrawRectangleLines(rec.x, rec.y, rec.w, rec.h, color);
+}
+
 void BeginScissorMode(IRect area)
 {
     BeginScissorMode(area.x, area.y, area.w, area.h);

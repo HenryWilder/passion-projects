@@ -17,155 +17,159 @@
 
 Blueprint g_clipboardBP;
 
-Window::Window(int windowWidth, int windowHeight) : windowWidth(windowWidth), windowHeight(windowHeight),
-modeButtons{
-    IconButton(
-        IVec2(0, 3),
-        "Mode: Draw [b]",
-        "Left click to create a node and a wire.\n"
-        "Click an existing node to create a wire from it.\n"
-        "Left click again to connect it to another node.\n"
-        "Hold shift while creating a wire for parallel.\n"
-        "Right click to stop drawing.",
-        [this]() { SetMode(Mode::PEN); },
+Window::Window(int windowWidth, int windowHeight) :
+    windowWidth(windowWidth),
+    windowHeight(windowHeight),
+    consoleOutput{ "", "", "", "", "", "", },
+    modeButtons{
+        IconButton(
+            IVec2(0, 3),
+            "Mode: Draw [b]",
+            "Left click to create a node and a wire.\n"
+            "Click an existing node to create a wire from it.\n"
+            "Left click again to connect it to another node.\n"
+            "Hold shift while creating a wire for parallel.\n"
+            "Right click to stop drawing.",
+            [this]() { SetMode(Mode::PEN); },
+            IVec2(0, 0),
+            &modeIcons16x),
+
+        IconButton(
+            IVec2(0, 4),
+            "Mode: Edit [v]",
+            "Left click and drag nodes to move them around.\n"
+            "Marquee rectangles can be made with the mouse.\n"
+            "Hold ctrl to make additional marquees.\n"
+            "Drag wire joints with left click.\n"
+            "Wire joints snap to 45 degree angles.\n"
+            "Right click a node to apply current gate.",
+            [this]() { SetMode(Mode::EDIT); },
+            IVec2(1, 0),
+            &modeIcons16x),
+
+        IconButton(
+            IVec2(0, 5),
+            "Mode: Erase [x]",
+            "Left click a node, wire, or group to erase it.\n"
+            "Hold shift to bypass the node without erasing\n"
+            "the wires connected to it.",
+            [this]() { SetMode(Mode::ERASE); },
+            IVec2(0, 1),
+            &modeIcons16x),
+
+        IconButton(
+            IVec2(0, 6),
+            "Mode: Interact [f]",
+            "Left click an inputless node to toggle it on/off.",
+            [this]() { SetMode(Mode::INTERACT); },
+            IVec2(1, 1),
+            &modeIcons16x),
+    },
+    gateButtons{
+        IconButton(
+            IVec2(0,8),
+            "Gate: Or [1]",
+            "Outputs true if any input is true,\n"
+            "Outputs false otherwise.",
+            [this]() { SetGate(Gate::OR); },
+            IVec2(0,0),
+            &gateIcons16x),
+
+        IconButton(
+            IVec2(0,9),
+            "Gate: And [2]",
+            "Outputs true if all inputs are true,\n"
+            "Outputs false otherwise.",
+            [this]() { SetGate(Gate::AND); },
+            IVec2(1,0),
+            &gateIcons16x),
+
+        IconButton(
+            IVec2(0,10),
+            "Gate: Nor [3]",
+            "Outputs false if any input is true.\n"
+            "Outputs true otherwise.",
+            [this]() { SetGate(Gate::NOR); },
+            IVec2(0,1),
+            &gateIcons16x),
+
+        IconButton(
+            IVec2(0,11),
+            "Gate: Xor [4]",
+            "Outputs true if exactly 1 input is true,\n"
+            "Outputs false otherwise.\n"
+            "Order of inputs does not matter.",
+            [this]() { SetGate(Gate::XOR); },
+            IVec2(1,1),
+            &gateIcons16x),
+
+        IconButton(
+            IVec2(0,12),
+            "Element: Resistor [5]",
+            "Outputs true if > resistance inputs are true,\n"
+            "Outputs false otherwise.\n"
+            "Order of inputs does not matter.",
+            [this]() { SetGate(Gate::RESISTOR); },
+            IVec2(0,2),
+            &gateIcons16x),
+
+        IconButton(
+            IVec2(0,13),
+            "Element: Capacitor [6]",
+            "Stores charge while any input is true.\n"
+            "Stops charging once charge = capacity.\n"
+            "Drains charge while no input is true.\n"
+            "Outputs true while charge > zero,\n"
+            "Outputs true while any input is true,\n"
+            "Outputs false otherwise.",
+            [this]() { SetGate(Gate::CAPACITOR); },
+            IVec2(1,2),
+            &gateIcons16x),
+
+        IconButton(
+            IVec2(0,14),
+            "Element: LED [7]",
+            "Treats I/O the same as an OR gate.\n"
+            "Lights up with the selected color when powered.",
+            [this]() { SetGate(Gate::LED); },
+            IVec2(0,3),
+            &gateIcons16x),
+
+        IconButton(
+            IVec2(0,15),
+            "Element: Delay [8]",
+             "Treats I/O the same as an OR gate.\n"
+            "Outputs with a 1-tick delay.\n"
+            "Sequntial delay devices are recommended\n"
+            "for delay greater than 1 tick.",
+            [this]() { SetGate(Gate::DELAY); },
+            IVec2(1,3),
+            &gateIcons16x),
+
+        IconButton(
+            IVec2(0,16),
+            "Element: Battery [9]",
+            "Always outputs true, regardless of inputs.",
+            [this]() { SetGate(Gate::BATTERY); },
+            IVec2(0,4),
+            &gateIcons16x),
+    },
+    blueprintsButton(
         IVec2(0, 0),
-        &modeIcons16x),
-
-    IconButton(
-        IVec2(0, 4),
-        "Mode: Edit [v]",
-        "Left click and drag nodes to move them around.\n"
-        "Marquee rectangles can be made with the mouse.\n"
-        "Hold ctrl to make additional marquees.\n"
-        "Drag wire joints with left click.\n"
-        "Wire joints snap to 45 degree angles.\n"
-        "Right click a node to apply current gate.",
-        [this]() { SetMode(Mode::EDIT); },
-        IVec2(1, 0),
-        &modeIcons16x),
-
-    IconButton(
-        IVec2(0, 5),
-        "Mode: Erase [x]",
-        "Left click a node, wire, or group to erase it.\n"
-        "Hold shift to bypass the node without erasing\n"
-        "the wires connected to it.",
-        [this]() { SetMode(Mode::ERASE); },
-        IVec2(0, 1),
-        &modeIcons16x),
-
-    IconButton(
-        IVec2(0, 6),
-        "Mode: Interact [f]",
-        "Left click an inputless node to toggle it on/off.",
-        [this]() { SetMode(Mode::INTERACT); },
-        IVec2(1, 1),
-        &modeIcons16x),
-},
-gateButtons{
-    IconButton(
-        IVec2(0,8),
-        "Gate: Or [1]",
-        "Outputs true if any input is true,\n"
-        "Outputs false otherwise.",
-        [this]() { SetGate(Gate::OR); },
-        IVec2(0,0),
-        &gateIcons16x),
-
-    IconButton(
-        IVec2(0,9),
-        "Gate: And [2]",
-        "Outputs true if all inputs are true,\n"
-        "Outputs false otherwise.",
-        [this]() { SetGate(Gate::AND); },
-        IVec2(1,0),
-        &gateIcons16x),
-
-    IconButton(
-        IVec2(0,10),
-        "Gate: Nor [3]",
-        "Outputs false if any input is true.\n"
-        "Outputs true otherwise.",
-        [this]() { SetGate(Gate::NOR); },
-        IVec2(0,1),
-        &gateIcons16x),
-
-    IconButton(
-        IVec2(0,11),
-        "Gate: Xor [4]",
-        "Outputs true if exactly 1 input is true,\n"
-        "Outputs false otherwise.\n"
-        "Order of inputs does not matter.",
-        [this]() { SetGate(Gate::XOR); },
-        IVec2(1,1),
-        &gateIcons16x),
-
-    IconButton(
-        IVec2(0,12),
-        "Element: Resistor [5]",
-        "Outputs true if > resistance inputs are true,\n"
-        "Outputs false otherwise.\n"
-        "Order of inputs does not matter.",
-        [this]() { SetGate(Gate::RESISTOR); },
-        IVec2(0,2),
-        &gateIcons16x),
-
-    IconButton(
-        IVec2(0,13),
-        "Element: Capacitor [6]",
-        "Stores charge while any input is true.\n"
-        "Stops charging once charge = capacity.\n"
-        "Drains charge while no input is true.\n"
-        "Outputs true while charge > zero,\n"
-        "Outputs true while any input is true,\n"
-        "Outputs false otherwise.",
-        [this]() { SetGate(Gate::CAPACITOR); },
-        IVec2(1,2),
-        &gateIcons16x),
-
-    IconButton(
-        IVec2(0,14),
-        "Element: LED [7]",
-        "Treats I/O the same as an OR gate.\n"
-        "Lights up with the selected color when powered.",
-        [this]() { SetGate(Gate::LED); },
-        IVec2(0,3),
-        &gateIcons16x),
-
-    IconButton(
-        IVec2(0,15),
-        "Element: Delay [8]",
-         "Treats I/O the same as an OR gate.\n"
-        "Outputs with a 1-tick delay.\n"
-        "Sequntial delay devices are recommended\n"
-        "for delay greater than 1 tick.",
-        [this]() { SetGate(Gate::DELAY); },
-        IVec2(1,3),
-        &gateIcons16x),
-
-    IconButton(
-        IVec2(0,16),
-        "Element: Battery [9]",
-        "Always outputs true, regardless of inputs.",
-        [this]() { SetGate(Gate::BATTERY); },
-        IVec2(0,4),
-        &gateIcons16x),
-},
-blueprintsButton(
-    IVec2(0, 0),
-    "Blueprints",
-    "@TODO",
-    [this]() { SetMode(Mode::BP_SELECT); },
-    IVec2::Zero(),
-    &blueprintIcon16x),
-clipboardButton(
-        IVec2(0, 1),
-        "Clipboard (ctrl+c to copy, ctrl+v to paste)",
+        "Blueprints",
         "@TODO",
-        [this]() { if (this->IsClipboardValid()) SetMode(Mode::PASTE); },
+        [this]() { SetMode(Mode::BP_SELECT); },
         IVec2::Zero(),
-        &clipboardIcon16x)
+        &blueprintIcon16x),
+    clipboardButton(
+            IVec2(0, 1),
+            "Clipboard (ctrl+c to copy, ctrl+v to paste)",
+            "@TODO",
+            [this]() { if (this->IsClipboardValid()) SetMode(Mode::PASTE); },
+            IVec2::Zero(),
+            &clipboardIcon16x)
 {
+    ClearLog();
     InitWindow(windowWidth, windowHeight, "Electron Architect");
     SetExitKey(0);
     SetTargetFPS(60);
@@ -884,6 +888,10 @@ void Window::ReloadConfig()
         propertiesPaneRec.w = 512;
         break;
     }
+    consolePaneRec.x = Button::g_width;
+    consolePaneRec.w = windowWidth - propertiesPaneRec.w - consolePaneRec.x;
+    consolePaneRec.h = FontSize() * 7 * 2;
+    consolePaneRec.y = windowHeight - consolePaneRec.h;
     propertiesPaneRec.x = windowWidth - propertiesPaneRec.w;
 
     file.close();
@@ -908,7 +916,7 @@ void Window::PushProperty(const char* name, const char* value)
     const int propHeight = FontSize() * 2;
     const IVec2 padding(FontSize() / 2);
     IRect box(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
-    DrawRectangleLines(box.x, box.y, box.w, box.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    DrawRectangleLinesIRect(box, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
     const int propertiesPaneMiddle = propertiesPaneRec.w / 3;
     const int propertiesPaneMiddleAbs = propertiesPaneRec.x + propertiesPaneMiddle;
     DrawLine(propertiesPaneMiddleAbs, box.y, propertiesPaneMiddleAbs, box.Bottom(), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
@@ -938,7 +946,7 @@ void Window::PushProperty_longStr(const char* name, const char* value)
     const IVec2 padding(FontSize() / 2);
 
     IRect box1(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
-    DrawRectangleLines(box1.x, box1.y, box1.w, box1.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    DrawRectangleLinesIRect(box1, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
     DrawTextIV(name, box1.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber++;
 
@@ -946,7 +954,7 @@ void Window::PushProperty_longStr(const char* name, const char* value)
     std::string str = value;
     size_t lineCount = std::count(str.begin(), str.end(), '\n') + 1;
     IRect box2(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight * lineCount);
-    DrawRectangleLines(box2.x, box2.y, box2.w, box2.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    DrawRectangleLinesIRect(box2, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
     DrawTextIV(value, box2.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber += lineCount;
 }
@@ -1080,10 +1088,46 @@ void Window::PushPropertySection_Group(const char* name, Group* value)
         PushPropertySpacer();
     }
 }
+void Window::CleanConsolePane()
+{
+    EndMode2D(); // In case
+    DrawRectangleIRect(consolePaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+    const int titleHeight = FontSize() * 2;
+    const IVec2 padding(FontSize() / 2);
+    IRect box(consolePaneRec.x, consolePaneRec.y, consolePaneRec.w, titleHeight);
+    DrawRectangleIRect(ShrinkIRect(box), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    DrawRectangleLinesIRect(consolePaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+    DrawTextIV("Console", box.xy + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+}
+void Window::DrawConsoleOutput()
+{
+    const IVec2 padding(FontSize() / 2);
+    for (size_t i = 0; i < _countof(consoleOutput); ++i)
+    {
+        DrawTextIV(consoleOutput[i], consolePaneRec.xy + Height(FontSize() * 2 * (i + 1)) + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    }
+}
+void Window::Log(const char* output)
+{
+    std::ofstream logfile("session.log", std::ios_base::app);
+    logfile << output;
+    logfile.close();
+    for (int i = 1; i < _countof(consoleOutput); ++i)
+    {
+        consoleOutput[i - 1] = consoleOutput[i];
+    }
+    consoleOutput[_countof(consoleOutput) - 1] = output;
+}
+void Window::ClearLog()
+{
+    std::ofstream logfile("session.log", std::ios_base::trunc);
+    logfile.close();
+}
 void Window::CleanPropertiesPane()
 {
     EndMode2D(); // In case
     DrawRectangleIRect(propertiesPaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+    DrawRectangleLinesIRect(ExpandIRect(propertiesPaneRec), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
     propertyNumber = 0;
     PushPropertyTitle("Properties");
 }

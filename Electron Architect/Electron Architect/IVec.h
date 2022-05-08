@@ -215,6 +215,7 @@ inline constexpr IRect ShrinkIRect(IRect rec, int outline = 1)
 bool InBoundingBox(IRect bounds, IVec2 pt);
 
 void DrawRectangleIRect(IRect rec, Color color);
+void DrawRectangleLinesIRect(IRect rec, Color color);
 
 void BeginScissorMode(IRect area);
 

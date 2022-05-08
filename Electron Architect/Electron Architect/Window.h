@@ -66,6 +66,9 @@ public:
     int propertyNumber; // For the "PushProperty" functions
     IRect propertiesPaneRec;
 
+    const char* consoleOutput[6];
+    IRect consolePaneRec;
+
     std::vector<IconButton> modeButtons;
     const IconButton* ButtonFromMode(Mode mode) const;
     std::vector<IconButton> gateButtons;
@@ -168,6 +171,12 @@ public:
 
     void UpdateTool();
     void DrawTool();
+
+    void CleanConsolePane();
+    void DrawConsoleOutput();
+    // Push to the console and log file
+    void Log(const char* output);
+    void ClearLog();
 
     void CleanPropertiesPane();
     void PushProperty(const char* name, const char* value);
