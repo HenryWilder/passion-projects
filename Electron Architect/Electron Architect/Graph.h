@@ -5,11 +5,14 @@
 #include "Group.h"
 #include "Blueprint.h"
 
+struct Tab;
+
 class Graph
 {
 private:
     bool orderDirty = false;
 
+    Tab* owningTab;
     const char* name;
 
     std::vector<Node*> nodes;
@@ -32,7 +35,7 @@ private: // Internal
 
 public:
 
-    Graph(const char* name = "Unnamed graph");
+    Graph(Tab* owner, const char* name = "Unnamed graph");
     ~Graph();
 
     const char* GetName() const;

@@ -3,9 +3,10 @@
 #include "Graph.h"
 #include "Tab.h"
 
-Tab::Tab(const char* name) :
+Tab::Tab(Window* owner, const char* name) :
+	owningWindow(owner),
 	camera{ .offset{ 0,0 }, .target{ 0,0 }, .rotation{ 0 }, .zoom{ 1 } },
-	graph(new Graph(name)) {}
+	graph(new Graph(this, name)) {}
 
 Tab::~Tab()
 {

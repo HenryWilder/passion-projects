@@ -3,11 +3,15 @@
 struct IRect;
 class Node;
 class Graph;
+struct Window;
 
 struct Tab
 {
-	Tab(const char* name = "Unnamed graph");
+	Tab(Window* owner, const char* name = "Unnamed graph");
 	~Tab();
+
+	Window* owningWindow;
+
 	Camera2D camera;
 	Graph* graph;
 	std::vector<Node*> selection;

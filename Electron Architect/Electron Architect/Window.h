@@ -66,7 +66,7 @@ public:
     int propertyNumber; // For the "PushProperty" functions
     IRect propertiesPaneRec;
 
-    const char* consoleOutput[6];
+    std::string consoleOutput[6];
     IRect consolePaneRec;
 
     std::vector<IconButton> modeButtons;

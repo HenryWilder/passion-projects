@@ -7,9 +7,8 @@
 
 extern Blueprint nativeBlueprints[10];
 
-Graph::Graph(const char* name)
+Graph::Graph(Tab* owner, const char* name) : owningTab(owner), name(name)
 {
-    this->name = name;
     blueprints.reserve(_countof(nativeBlueprints));
     for (const Blueprint& bp : nativeBlueprints)
     {

@@ -184,7 +184,7 @@ Window::Window(int windowWidth, int windowHeight) :
     gateIcons32x = LoadTexture("icons_gate32x.png");
 
     activeTab = 0;
-    tabs.push_back(new Tab);
+    tabs.push_back(new Tab(this, "Unnamed graph"));
 
     base = nullptr;
     overlay = nullptr;
@@ -1104,7 +1104,7 @@ void Window::DrawConsoleOutput()
     const IVec2 padding(FontSize() / 2);
     for (size_t i = 0; i < _countof(consoleOutput); ++i)
     {
-        DrawTextIV(consoleOutput[i], consolePaneRec.xy + Height(FontSize() * 2 * (i + 1)) + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        DrawTextIV(consoleOutput[i].c_str(), consolePaneRec.xy + Height(FontSize() * 2 * (i + 1)) + padding, FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     }
 }
 void Window::Log(const char* output)
