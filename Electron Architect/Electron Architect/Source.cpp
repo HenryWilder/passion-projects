@@ -84,7 +84,8 @@ int main()
         }
 
         // Input
-        window.UpdateTool();
+        if (!(window.CursorInUIBounds(window.toolPaneRec) || window.CursorInUIBounds(window.propertiesPaneRec) || window.CursorInUIBounds(window.consolePaneRec)))
+            window.UpdateTool();
 
     EVAL:
         window.cursorPosPrev = window.cursorPos;

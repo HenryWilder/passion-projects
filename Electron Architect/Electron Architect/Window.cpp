@@ -763,9 +763,8 @@ void Window::CheckHotkeys()
     }
 
     // Mode hotkeys
-    if (IsKeyPressed(KEY_B)) SetMode(Mode::PEN);
+    if      (IsKeyPressed(KEY_B)) SetMode(Mode::PEN);
     else if (IsKeyPressed(KEY_V)) SetMode(Mode::EDIT);
-    //else if (IsKeyPressed(KEY_G)) SetMode(Mode::GATE); // TODO: Gate mode being depricated
     else if (IsKeyPressed(KEY_X)) SetMode(Mode::ERASE);
     else if (IsKeyPressed(KEY_F)) SetMode(Mode::INTERACT);
 
@@ -957,23 +956,23 @@ void Window::ReloadConfig()
 
         replacement <<
             "[Colors]"
-            "\nbackground_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND)) <<
-            "\nbackground1_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND1)) <<
-            "\nbackground2_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND2)) <<
-            "\nbackground3_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND3)) <<
-            "\nforeground3_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND3)) <<
-            "\nforeground2_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND2)) <<
-            "\nforeground1_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND1)) <<
-            "\nforeground_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND)) <<
-            "\ninput_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_INPUT)) <<
-            "\noutput_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_OUTPUT)) <<
-            "\navailable_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_AVAILABLE)) <<
-            "\ninteract_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_INTERACT)) <<
-            "\nactive_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_ACTIVE)) <<
-            "\nerror_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_ERROR)) <<
-            "\ndestruction_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_DESTRUCTIVE)) <<
-            "\naugment_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_SPECIAL)) <<
-            "\ncaution_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_CAUTION)) <<
+            "\nbackground_color="           << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND)) <<
+            "\nbackground1_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND1)) <<
+            "\nbackground2_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND2)) <<
+            "\nbackground3_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND3)) <<
+            "\nforeground3_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND3)) <<
+            "\nforeground2_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND2)) <<
+            "\nforeground1_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND1)) <<
+            "\nforeground_color="           << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND)) <<
+            "\ninput_color="                << ConfigColorToString(UIColor(UIColorID::UI_COLOR_INPUT)) <<
+            "\noutput_color="               << ConfigColorToString(UIColor(UIColorID::UI_COLOR_OUTPUT)) <<
+            "\navailable_color="            << ConfigColorToString(UIColor(UIColorID::UI_COLOR_AVAILABLE)) <<
+            "\ninteract_color="             << ConfigColorToString(UIColor(UIColorID::UI_COLOR_INTERACT)) <<
+            "\nactive_color="               << ConfigColorToString(UIColor(UIColorID::UI_COLOR_ACTIVE)) <<
+            "\nerror_color="                << ConfigColorToString(UIColor(UIColorID::UI_COLOR_ERROR)) <<
+            "\ndestruction_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_DESTRUCTIVE)) <<
+            "\naugment_color="              << ConfigColorToString(UIColor(UIColorID::UI_COLOR_SPECIAL)) <<
+            "\ncaution_color="              << ConfigColorToString(UIColor(UIColorID::UI_COLOR_CAUTION)) <<
             "\nblueprint_background_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BLUEPRINTS_BACKGROUND)) <<
             "\n\n[LOD]"
             "\nblueprint_menu_lod=1"
@@ -997,30 +996,30 @@ void Window::ReloadConfig()
         std::string value = line.substr(line.find('=') + 1);
 
         // Colors
-        if (attribute == "background_color")   UIColor(UIColorID::UI_COLOR_BACKGROUND) = ConfigStrToColor(value);
+        if      (attribute == "background_color")   UIColor(UIColorID::UI_COLOR_BACKGROUND)  = ConfigStrToColor(value);
         else if (attribute == "background1_color")  UIColor(UIColorID::UI_COLOR_BACKGROUND1) = ConfigStrToColor(value);
         else if (attribute == "background2_color")  UIColor(UIColorID::UI_COLOR_BACKGROUND2) = ConfigStrToColor(value);
         else if (attribute == "background3_color")  UIColor(UIColorID::UI_COLOR_BACKGROUND3) = ConfigStrToColor(value);
         else if (attribute == "foreground3_color")  UIColor(UIColorID::UI_COLOR_FOREGROUND3) = ConfigStrToColor(value);
         else if (attribute == "foreground2_color")  UIColor(UIColorID::UI_COLOR_FOREGROUND2) = ConfigStrToColor(value);
         else if (attribute == "foreground1_color")  UIColor(UIColorID::UI_COLOR_FOREGROUND1) = ConfigStrToColor(value);
-        else if (attribute == "foreground_color")   UIColor(UIColorID::UI_COLOR_FOREGROUND) = ConfigStrToColor(value);
-        else if (attribute == "input_color")        UIColor(UIColorID::UI_COLOR_INPUT) = ConfigStrToColor(value);
-        else if (attribute == "output_color")       UIColor(UIColorID::UI_COLOR_OUTPUT) = ConfigStrToColor(value);
-        else if (attribute == "available_color")    UIColor(UIColorID::UI_COLOR_AVAILABLE) = ConfigStrToColor(value);
-        else if (attribute == "interact_color")     UIColor(UIColorID::UI_COLOR_INTERACT) = ConfigStrToColor(value);
-        else if (attribute == "active_color")       UIColor(UIColorID::UI_COLOR_ACTIVE) = ConfigStrToColor(value);
-        else if (attribute == "error_color")        UIColor(UIColorID::UI_COLOR_ERROR) = ConfigStrToColor(value);
+        else if (attribute == "foreground_color")   UIColor(UIColorID::UI_COLOR_FOREGROUND)  = ConfigStrToColor(value);
+        else if (attribute == "input_color")        UIColor(UIColorID::UI_COLOR_INPUT)       = ConfigStrToColor(value);
+        else if (attribute == "output_color")       UIColor(UIColorID::UI_COLOR_OUTPUT)      = ConfigStrToColor(value);
+        else if (attribute == "available_color")    UIColor(UIColorID::UI_COLOR_AVAILABLE)   = ConfigStrToColor(value);
+        else if (attribute == "interact_color")     UIColor(UIColorID::UI_COLOR_INTERACT)    = ConfigStrToColor(value);
+        else if (attribute == "active_color")       UIColor(UIColorID::UI_COLOR_ACTIVE)      = ConfigStrToColor(value);
+        else if (attribute == "error_color")        UIColor(UIColorID::UI_COLOR_ERROR)       = ConfigStrToColor(value);
         else if (attribute == "destruction_color")  UIColor(UIColorID::UI_COLOR_DESTRUCTIVE) = ConfigStrToColor(value);
-        else if (attribute == "caution_color")      UIColor(UIColorID::UI_COLOR_CAUTION) = ConfigStrToColor(value);
+        else if (attribute == "caution_color")      UIColor(UIColorID::UI_COLOR_CAUTION)     = ConfigStrToColor(value);
 
         // Integers
-        else if (attribute == "blueprint_menu_lod")     blueprintLOD = std::stoi(value);
+        else if (attribute == "blueprint_menu_lod")     blueprintLOD        = std::stoi(value);
         else if (attribute == "clipboard_preview_lod")  clipboardPreviewLOD = std::stoi(value);
-        else if (attribute == "paste_preview_lod")      pastePreviewLOD = std::stoi(value);
-        else if (attribute == "paste_preview_lod")      pastePreviewLOD = std::stoi(value);
-        else if (attribute == "frames_per_tick")        framesPerTick = std::stoi(value);
-        else if (attribute == "ui_scale")               uiScale = std::stoi(value);
+        else if (attribute == "paste_preview_lod")      pastePreviewLOD     = std::stoi(value);
+        else if (attribute == "paste_preview_lod")      pastePreviewLOD     = std::stoi(value);
+        else if (attribute == "frames_per_tick")        framesPerTick       = std::stoi(value);
+        else if (attribute == "ui_scale")               uiScale             = std::stoi(value);
     }
 
     if (uiScale >= 2)
