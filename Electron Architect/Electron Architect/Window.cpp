@@ -679,6 +679,21 @@ void Window::CheckHotkeys()
             return; // Don't miscommunicate to the user!!
         }
 
+        // Parameter hotkeys
+        if (GetModeType() == ModeType::Basic)
+        {
+            if      (IsKeyPressed(KEY_ZERO))  storedExtraParam = 0;
+            else if (IsKeyPressed(KEY_ONE))   storedExtraParam = 1;
+            else if (IsKeyPressed(KEY_TWO))   storedExtraParam = 2;
+            else if (IsKeyPressed(KEY_THREE)) storedExtraParam = 3;
+            else if (IsKeyPressed(KEY_FOUR))  storedExtraParam = 4;
+            else if (IsKeyPressed(KEY_FIVE))  storedExtraParam = 5;
+            else if (IsKeyPressed(KEY_SIX))   storedExtraParam = 6;
+            else if (IsKeyPressed(KEY_SEVEN)) storedExtraParam = 7;
+            else if (IsKeyPressed(KEY_EIGHT)) storedExtraParam = 8;
+            else if (IsKeyPressed(KEY_NINE))  storedExtraParam = 9;
+        }
+
         // Copy
         if (IsKeyPressed(KEY_C) && GetMode() == Mode::EDIT)
             CopySelectionToClipboard();
@@ -734,6 +749,17 @@ void Window::CheckHotkeys()
         else if (IsKeyPressed(KEY_SEVEN)) SetGate(Gate::LED);
         else if (IsKeyPressed(KEY_EIGHT)) SetGate(Gate::DELAY);
         else if (IsKeyPressed(KEY_NINE))  SetGate(Gate::BATTERY);
+
+        if      (IsKeyPressed(KEY_KP_0)) storedExtraParam = 0;
+        else if (IsKeyPressed(KEY_KP_1)) storedExtraParam = 1;
+        else if (IsKeyPressed(KEY_KP_2)) storedExtraParam = 2;
+        else if (IsKeyPressed(KEY_KP_3)) storedExtraParam = 3;
+        else if (IsKeyPressed(KEY_KP_4)) storedExtraParam = 4;
+        else if (IsKeyPressed(KEY_KP_5)) storedExtraParam = 5;
+        else if (IsKeyPressed(KEY_KP_6)) storedExtraParam = 6;
+        else if (IsKeyPressed(KEY_KP_7)) storedExtraParam = 7;
+        else if (IsKeyPressed(KEY_KP_8)) storedExtraParam = 8;
+        else if (IsKeyPressed(KEY_KP_9)) storedExtraParam = 9;
     }
 
     // Mode hotkeys
