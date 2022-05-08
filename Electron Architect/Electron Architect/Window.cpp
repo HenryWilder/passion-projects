@@ -63,7 +63,7 @@ Window::Window(int windowWidth, int windowHeight) :
             "Left click an inputless node to toggle it on/off.",
             [this]() { SetMode(Mode::INTERACT); },
             IVec2(1, 1),
-            &modeIcons16x),
+            & modeIcons16x),
     },
     gateButtons{
         IconButton(
@@ -154,6 +154,87 @@ Window::Window(int windowWidth, int windowHeight) :
             IVec2(0,4),
             &gateIcons16x),
     },
+    paramButtons{
+        ColorButton(
+            IVec2(0,18),
+            "Parameter: 0",
+            "@TODO",
+            [this]() { storedExtraParam = 0; },
+            Node::g_resistanceBands[0],
+            "0"),
+
+        ColorButton(
+            IVec2(0,19),
+            "Parameter: 1",
+            "@TODO",
+            [this]() { storedExtraParam = 1; },
+            Node::g_resistanceBands[1],
+            "1"),
+
+        ColorButton(
+            IVec2(0,20),
+            "Parameter: 2",
+            "@TODO",
+            [this]() { storedExtraParam = 2; },
+            Node::g_resistanceBands[2],
+            "2"),
+
+        ColorButton(
+            IVec2(0,21),
+            "Parameter: 3",
+            "@TODO",
+            [this]() { storedExtraParam = 3; },
+            Node::g_resistanceBands[3],
+            "3"),
+
+        ColorButton(
+            IVec2(0,22),
+            "Parameter: 4",
+            "@TODO",
+            [this]() { storedExtraParam = 4; },
+            Node::g_resistanceBands[4],
+            "4"),
+
+        ColorButton(
+            IVec2(0,23),
+            "Parameter: 5",
+            "@TODO",
+            [this]() { storedExtraParam = 5; },
+            Node::g_resistanceBands[5],
+            "5"),
+
+        ColorButton(
+            IVec2(0,24),
+            "Parameter: 6",
+            "@TODO",
+            [this]() { storedExtraParam = 6; },
+            Node::g_resistanceBands[6],
+            "6"),
+
+        ColorButton(
+            IVec2(0,25),
+            "Parameter: 7",
+            "@TODO",
+            [this]() { storedExtraParam = 7; },
+            Node::g_resistanceBands[7],
+            "7"),
+
+        ColorButton(
+            IVec2(0,26),
+            "Parameter: 8",
+            "@TODO",
+            [this]() { storedExtraParam = 8; },
+            Node::g_resistanceBands[8],
+            "8"),
+
+        ColorButton(
+            IVec2(0,27),
+            "Parameter: 9",
+            "@TODO",
+            [this]() { storedExtraParam = 9; },
+            Node::g_resistanceBands[9],
+            "9"),
+    },
     blueprintsButton(
         IVec2(0, 0),
         "Blueprints",
@@ -182,6 +263,16 @@ Window::Window(int windowWidth, int windowHeight) :
         &gateButtons[6],
         &gateButtons[7],
         &gateButtons[8],
+        &paramButtons[0],
+        &paramButtons[1],
+        &paramButtons[2],
+        &paramButtons[3],
+        &paramButtons[4],
+        &paramButtons[5],
+        &paramButtons[6],
+        &paramButtons[7],
+        &paramButtons[8],
+        &paramButtons[9],
         &blueprintsButton,
         &clipboardButton,
     }

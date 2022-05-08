@@ -76,9 +76,11 @@ public:
     const IconButton* ButtonFromMode(Mode mode) const;
     IconButton gateButtons[9];
     const IconButton* ButtonFromGate(Gate gate) const;
+    ColorButton paramButtons[10];
+    const ColorButton* ButtonFromParameter(uint8_t param) const;
     IconButton blueprintsButton;
     IconButton clipboardButton;
-    Button* const allButtons[15];
+    Button* const allButtons[25];
     IRect toolPaneRec;
 
 private:

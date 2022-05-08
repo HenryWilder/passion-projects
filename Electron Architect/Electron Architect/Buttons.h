@@ -51,3 +51,17 @@ struct TextButton : Button
 
     IRect Bounds() const final;
 };
+
+struct ColorButton : Button
+{
+    ColorButton(
+        IVec2 relativePos,
+        const char* tooltip,
+        const char* description,
+        std::function<void()> clickCallback,
+        Color color,
+        const char* buttonText = "");
+
+    Color color;
+    const char* buttonText;
+};
