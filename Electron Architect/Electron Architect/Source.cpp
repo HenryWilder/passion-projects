@@ -114,7 +114,7 @@ int main()
 
                 window.CurrentTab().graph->DrawGroups();
 
-                DrawRectangleIRect(IRect(window.cursorPos - IVec2(g_gridSize / 2) - Width(1), g_gridSize + 1), UIColor(UIColorID::UI_COLOR_AVAILABLE));
+                //DrawRectangleIRect(IRect(window.cursorPos - IVec2(g_gridSize / 2) - Width(1), g_gridSize + 1), UIColor(UIColorID::UI_COLOR_AVAILABLE));
             }
 
             // Draw
