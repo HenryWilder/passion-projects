@@ -20,7 +20,7 @@ Window::Window(int windowWidth, int windowHeight) : windowWidth(windowWidth), wi
 propertiesPaneRec(windowWidth - 256, 0, 256, windowHeight),
 modeButtons{
     IconButton(
-        IVec2(0, 0),
+        IVec2(0, 3),
         "Mode: Draw [b]",
         "Left click to create a new node and start a wire from it, or to start a wire from an existing node.\n"
         "Left click again to connect the wire to a new node or an existing one, and start a new wire from there.\n"
@@ -30,7 +30,7 @@ modeButtons{
         &modeIcons16x),
 
         IconButton(
-            IVec2(0, 1),
+            IVec2(0, 4),
             "Mode: Edit [v]",
             "Left click and drag nodes to move them around.\n"
             "Left click and drag wire elbows to snap them to a preferred angle.\n"
@@ -40,7 +40,7 @@ modeButtons{
             &modeIcons16x),
 
         IconButton(
-            IVec2(0, 2),
+            IVec2(0, 5),
             "Mode: Erase [x]",
             "Left click a node to erase it and all wires directly connected to it (collateral will render in MAGENTA).\n"
             "Left click a wire to erase only that wire, disconnecting the nodes without erasing them.",
@@ -49,7 +49,7 @@ modeButtons{
             &modeIcons16x),
 
         IconButton(
-            IVec2(0, 3),
+            IVec2(0, 6),
             "Mode: Interact [f]",
             "Left click a node without any inputs (such nodes will render in \"available_color\" (blue by default)) to toggle it between outputting true and false.",
             [this]() { SetMode(Mode::INTERACT); },
@@ -58,7 +58,7 @@ modeButtons{
 },
 gateButtons{
     IconButton(
-        IVec2(1,0),
+        IVec2(0,8),
         "Gate: Or [1]",
         "Outputs true if any input is true,\n"
         "Outputs false otherwise.",
@@ -67,7 +67,7 @@ gateButtons{
         &gateIcons16x),
 
     IconButton(
-        IVec2(1,1),
+        IVec2(0,9),
         "Gate: And [2]",
         "Outputs true if all inputs are true,\n"
         "Outputs false otherwise.",
@@ -76,7 +76,7 @@ gateButtons{
         &gateIcons16x),
 
     IconButton(
-        IVec2(1,2),
+        IVec2(0,10),
         "Gate: Nor [3]",
         "Outputs false if any input is true.\n"
         "Outputs true otherwise.",
@@ -85,7 +85,7 @@ gateButtons{
         &gateIcons16x),
 
     IconButton(
-        IVec2(1,3),
+        IVec2(0,11),
         "Gate: Xor [4]",
         "Outputs true if exactly 1 input is true,\n"
         "Outputs false otherwise.\n"
@@ -95,7 +95,7 @@ gateButtons{
         &gateIcons16x),
 
     IconButton(
-        IVec2(1,4),
+        IVec2(0,12),
         "Element: Resistor [5]",
         "Outputs true if greater than [resistance] inputs are true,\n"
         "Outputs false otherwise.\n"
@@ -105,7 +105,7 @@ gateButtons{
         &gateIcons16x),
 
     IconButton(
-        IVec2(1,5),
+        IVec2(0,13),
         "Element: Capacitor [6]",
         "Stores charge while any input is true.\n"
         "Stops charging once charge equals [capacity].\n"
@@ -118,7 +118,7 @@ gateButtons{
         &gateIcons16x),
 
     IconButton(
-        IVec2(1,6),
+        IVec2(0,14),
         "Element: LED [7]",
         "Treats I/O the same as an OR gate.\n"
         "Lights up with the selected color when powered.",
@@ -127,7 +127,7 @@ gateButtons{
         &gateIcons16x),
 
     IconButton(
-        IVec2(1,7),
+        IVec2(0,15),
         "Element: Delay [8]",
          "Treats I/O the same as an OR gate.\n"
         "Outputs with a 1-tick delay.\n"
@@ -137,7 +137,7 @@ gateButtons{
         &gateIcons16x),
 
     IconButton(
-        IVec2(1,8),
+        IVec2(0,16),
         "Element: Battery [9]",
         "Always outputs true, regardless of inputs.",
         [this]() { SetGate(Gate::BATTERY); },
@@ -145,14 +145,14 @@ gateButtons{
         &gateIcons16x),
 },
 blueprintsButton(
-    IVec2(2, 0),
+    IVec2(0, 0),
     "Blueprints",
     "@TODO",
     [this]() { SetMode(Mode::BP_SELECT); },
     IVec2::Zero(),
     &blueprintIcon16x),
 clipboardButton(
-        IVec2(2, 1),
+        IVec2(0, 1),
         "Clipboard (ctrl+c to copy, ctrl+v to paste)",
         "@TODO",
         [this]() { if (this->IsClipboardValid()) SetMode(Mode::PASTE); },
