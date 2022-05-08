@@ -33,6 +33,22 @@ const char* GateName(Gate gate)
         return "ERROR";
     }
 }
+const char* ModeName(Mode mode)
+{
+    switch (mode)
+    {
+    case Mode::PEN: return "Pen";
+    case Mode::EDIT: return "Edit";
+    case Mode::ERASE: return "Erase";
+    case Mode::INTERACT: return "Interact";
+    case Mode::BUTTON: return "Button";
+    case Mode::PASTE: return "Paste";
+    case Mode::BP_SELECT: return "Blueprint Select";
+    default:
+        _ASSERT_EXPR(false, L"Missing specialization for mode name");
+        return "ERROR";
+    }
+}
 const char* StateName(bool state)
 {
     if (state)

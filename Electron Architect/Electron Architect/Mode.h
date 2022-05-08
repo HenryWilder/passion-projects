@@ -33,6 +33,7 @@ enum class Mode
 };
 
 const char* GateName(Gate gate);
+const char* ModeName(Mode mode);
 const char* StateName(bool state);
 const char* ElbowConfigName(ElbowConfig elbow);
 

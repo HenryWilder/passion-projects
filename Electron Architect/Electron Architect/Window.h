@@ -68,6 +68,7 @@ public:
     int propertyNumber; // For the "PushProperty" functions
     IRect propertiesPaneRec;
 
+    double timeOfLastLog = 0.0;
     std::string consoleOutput[6];
     IRect consolePaneRec;
 

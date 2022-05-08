@@ -308,6 +308,10 @@ ModeType Window::GetModeType()
 
 void Window::SetMode(Mode newMode)
 {
+    LogAttempt(TextFormat("Changing mode from { base: %s; overlay: %s } to %s",
+        (base ? ModeName(base->GetMode()) : "null"),
+        (overlay ? ModeName(overlay->GetMode()) : "null"),
+        ModeName(newMode)));
     b_cursorMoved = true;
 
     if (!!overlay ? newMode != overlay->GetMode() : true)
@@ -366,6 +370,7 @@ void Window::SetMode(Mode newMode)
 
 void Window::SetGate(Gate newGate)
 {
+    LogMessage(TextFormat("Changed gate from %s to %s", GateName(gatePick), GateName(newGate)));
     constexpr const char* parameterTextFmtOptions[] =
     {
         "Component parameter: %i",
@@ -394,6 +399,8 @@ void Window::SetGate(Gate newGate)
 
 void Window::ClearOverlayMode()
 {
+    LogMessage("Clearing overlay mode");
+    // Make this an error instead of an assertion
     _ASSERT_EXPR(!!base, L"Base mode was not initialized or got nullified");
     SetMode(base->GetMode());
 }
@@ -441,6 +448,7 @@ void Window::UpdateCamera()
 
 void Window::CopySelectionToClipboard()
 {
+    LogMessage("Copied selection to clipboard");
     if (CurrentTab().selection.empty()) // Clear selection
         clipboard = nullptr;
     else // Copy selection
@@ -1109,14 +1117,16 @@ void Window::DrawConsoleOutput()
 }
 void Window::Log(const char* output)
 {
+    double logTime = GetTime();
     std::ofstream logfile("session.log", std::ios_base::app);
-    logfile << output << " - t+" << GetTime() << '\n';
+    logfile << output << " - t+" << logTime << '(' << (logTime - timeOfLastLog) * 1000.0 << "ms)\n";
     logfile.close();
     for (int i = 1; i < _countof(consoleOutput); ++i)
     {
         consoleOutput[i - 1] = consoleOutput[i];
     }
-    consoleOutput[_countof(consoleOutput) - 1] = TextFormat("%s - t+%f", output, GetTime());
+    consoleOutput[_countof(consoleOutput) - 1] = TextFormat("%s - t+%.3f (%.2fms)", output, logTime, (logTime - timeOfLastLog) * 1000.0);
+    timeOfLastLog = logTime;
 }
 void Window::LogMessage(const char* output)
 {
@@ -1136,8 +1146,10 @@ void Window::LogSuccess(const char* output)
 }
 void Window::ClearLog()
 {
+    timeOfLastLog = GetTime();
     std::ofstream logfile("session.log", std::ios_base::trunc);
     logfile.close();
+    Log("Start of log");
 }
 void Window::CleanPropertiesPane()
 {
