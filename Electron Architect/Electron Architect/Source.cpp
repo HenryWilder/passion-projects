@@ -156,10 +156,14 @@ int main()
                 window.PushProperty_longStr("Description", buttonsToHighlight[0]->description);
                 window.PushPropertySubtitle("");
 
-                window.PushPropertySubtitle("Element");
-                window.PushProperty("Name", GateName(window.gatePick));
-                window.PushProperty_longStr("Description", buttonsToHighlight[1]->description);
-                window.PushPropertySubtitle("");
+                // Show element properties in pen/edit mode
+                if (window.GetBaseMode() == Mode::PEN || window.GetBaseMode() == Mode::EDIT)
+                {
+                    window.PushPropertySubtitle("Element");
+                    window.PushProperty("Name", GateName(window.gatePick));
+                    window.PushProperty_longStr("Description", buttonsToHighlight[1]->description);
+                    window.PushPropertySubtitle("");
+                }
 
                 window.DrawToolProperties();
 
