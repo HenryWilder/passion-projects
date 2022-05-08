@@ -1224,7 +1224,11 @@ void Graph::Export(const char* filename) const
             case Gate::BATTERY:   id = "#gate_bat"; break;
             default: _ASSERT_EXPR(false, L"No SVG export specialization for selected gate"); id = ""; break;
             }
-            file << "  <use href=\"" << id << "\" x=\"" << x <<"\" y=\"" << y << "\" />\n";
+            file << "  <use href=\"" << id << "\" x=\"" << x << "\" y=\"" << y << '\"';
+            if (node->HasName())
+                file << "><title>" << node->GetName() << "</title></use>\n";
+            else
+                file << "/>\n";
         }
         file << "</svg>";
     }
