@@ -312,19 +312,23 @@ void Window::SetMode(Mode newMode)
         (base ? ModeName(base->GetMode()) : "null"),
         (overlay ? ModeName(overlay->GetMode()) : "null"),
         ModeName(newMode)));
+
     b_cursorMoved = true;
 
     if (!!overlay ? newMode != overlay->GetMode() : true)
     {
         if (!!overlay)
+        {
             delete overlay;
+            LogMessage("Deleted overlay mode");
+        }
 
         if (TypeOfMode(newMode) != ModeType::Basic)
         {
             switch (newMode)
             {
             default:
-                _ASSERT_EXPR(false, L"Missing specialization for creating mode");
+                LogError(TextFormat("Missing overlay mode construct for mode %s. Defaulting to null", ModeName(newMode)));
                 overlay = nullptr;
                 break;
 
@@ -339,33 +343,46 @@ void Window::SetMode(Mode newMode)
             }
         }
         else // Mode is basic; no overlay
+        {
             overlay = nullptr;
+            LogMessage("Annulled overlay mode");
+        }
     }
 
     if (TypeOfMode(newMode) == ModeType::Basic &&
         (!!base ? newMode != base->GetMode() : true))
     {
         if (!!base) [[likely]] // There should only be one point in the program where base is nullptr. Namely, the start.
+        {
             delete base;
+            LogMessage("Deleted base mode");
+        }
 
         switch (newMode)
         {
         default:
-            _ASSERT_EXPR(false, L"Missing specialization for creating mode");
+            LogError(TextFormat("Missing base mode construct for mode %s. Defaulting to null", ModeName(newMode)));
             base = nullptr;
             break;
 
-        case Mode::PEN:         base = new PenTool; break;
-        case Mode::EDIT:        base = new EditTool; break;
-        case Mode::ERASE:       base = new EraseTool; break;
-        case Mode::INTERACT:    base = new InteractTool; break;
+        case Mode::PEN:         base = new PenTool;       break;
+        case Mode::EDIT:        base = new EditTool;      break;
+        case Mode::ERASE:       base = new EraseTool;     break;
+        case Mode::INTERACT:    base = new InteractTool;  break;
 
-        case Mode::PASTE:       base = new PasteOverlay; break;
+        case Mode::PASTE:       base = new PasteOverlay;  break;
 
         case Mode::BP_SELECT:   base = new BlueprintMenu; break;
         }
     }
-    _ASSERT_EXPR(!!base, L"Base was not initialized");
+    if (!base)
+    {
+        LogError("Base mode is null");
+        exit(1);
+    }
+    LogSuccess(TextFormat("Mode changed to { %s; %s }",
+        (base ? ModeName(base->GetMode()) : "null"),
+        (overlay ? ModeName(overlay->GetMode()) : "null")));
 }
 
 void Window::SetGate(Gate newGate)
