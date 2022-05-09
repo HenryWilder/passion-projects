@@ -129,6 +129,8 @@ public:
     // Zoom/pan
     void UpdateCamera();
 
+    void UpdateSize();
+
     void CopySelectionToClipboard();
 
     void MakeGroupFromSelection();

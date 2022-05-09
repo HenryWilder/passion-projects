@@ -20,8 +20,9 @@ int main()
     /******************************************
     *   Load textures, shaders, and meshes
     ******************************************/
-
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     Window window(1280, 720);
+    MaximizeWindow();
 
     Texture2D iconTex = LoadTexture("icon.png");
     Image icon = LoadImageFromTexture(iconTex);
@@ -67,6 +68,9 @@ int main()
         /******************************************
         *   Simulate frame and update variables
         ******************************************/
+
+        if (IsWindowResized())
+            window.UpdateSize();
 
         window.IncrementTick();
 
@@ -129,6 +133,12 @@ int main()
 
                 // Panels
 
+                // Console
+                {
+                    window.CleanConsolePane();
+                    window.DrawConsoleOutput();
+                }
+
                 // Properties
                 {
                     // Initialize properties panel
@@ -185,12 +195,6 @@ int main()
                 // Mode/gate
                 {
                     window.DrawToolPane();
-                }
-
-                // Console
-                {
-                    window.CleanConsolePane();
-                    window.DrawConsoleOutput();
                 }
             }
 

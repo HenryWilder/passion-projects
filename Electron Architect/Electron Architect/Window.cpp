@@ -601,6 +601,18 @@ void Window::UpdateCamera()
         CurrentTab().UpdateCamera();
 }
 
+void Window::UpdateSize()
+{
+    windowWidth = GetScreenWidth();
+    windowHeight = GetScreenHeight();
+    // Todo: Standardize these to match with ReloadConfig
+    toolPaneRec.h = windowHeight;
+    consolePaneRec.y = windowHeight - consolePaneRec.h;
+    consolePaneRec.w = windowWidth - toolPaneRec.w - propertiesPaneRec.w;
+    propertiesPaneRec.x = windowWidth - propertiesPaneRec.w;
+    propertiesPaneRec.h = windowHeight;
+}
+
 void Window::CopySelectionToClipboard()
 {
     // Todo: actually copy a csv to the user's clipboard
@@ -801,6 +813,15 @@ void Window::CheckHotkeys()
         DestroySelection();
         hoveredNode = nullptr;
         hoveredWire = nullptr;
+    }
+
+    if (IsKeyPressed(KEY_F11))
+    {
+        ToggleFullscreen();
+        windowWidth = GetScreenWidth();
+        windowHeight = GetScreenHeight();
+        Log(LogType::error, "Window width is now " + std::to_string(windowWidth));
+        Log(LogType::error, "Window height is now " + std::to_string(windowHeight));
     }
 }
 
