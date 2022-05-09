@@ -97,7 +97,7 @@ private: // Helpers usable only by Graph
     void MakeWireOutput(Wire* wire);
 
 private: // Accessible by Graph
-    Node() : m_position(), m_gate(), m_state(), m_inputs(), m_name(""), m_ntd() {}
+    Node() : m_name(""), m_position(), m_gate(), m_state(), m_inputs(), m_ntd() {}
     Node(IVec2 position, Gate gate);
     // It is entirely safe to pass in an extra param even if the node cannot use it!
     Node(IVec2 position, Gate gate, uint8_t extraParam);
@@ -120,11 +120,11 @@ public:
     static constexpr float g_nodeRadius = 3.0f;
 
 private:
+    std::string m_name; // Tooltip
     IVec2 m_position;
     Gate m_gate;
     bool m_state;
     size_t m_inputs;
-    const char* m_name; // Tooltip
     union NonTransistorData
     {
         struct ResistorData

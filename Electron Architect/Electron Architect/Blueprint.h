@@ -23,7 +23,7 @@ struct NodeBP
     Gate gate;
     uint8_t extraParam;
     IVec2 relativePosition;
-    const char* name;
+    std::string name;
 };
 
 struct WireBP

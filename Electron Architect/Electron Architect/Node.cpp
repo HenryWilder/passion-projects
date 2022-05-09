@@ -40,12 +40,12 @@ void Node::SetY(int y)
 
 bool Node::HasName() const
 {
-    return !!m_name && !!m_name[0];
+    return !m_name.empty();
 }
 
 const char* Node::GetName() const
 {
-    return m_name;
+    return m_name.c_str();
 }
 
 void Node::SetName(const char* name)
@@ -376,9 +376,9 @@ void Node::MakeWireOutput(Wire* wire)
 
 
 Node::Node(IVec2 position, Gate gate) :
-    m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_name(""), m_ntd() {}
+    m_name(""), m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_ntd() {}
 Node::Node(IVec2 position, Gate gate, uint8_t extraParam) :
-    m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_name("")
+    m_name(""), m_position(position), m_gate(gate), m_state(false), m_inputs(0)
 {
     if (gate == Gate::RESISTOR)
         m_ntd.r.resistance = extraParam;
@@ -391,7 +391,7 @@ Node::Node(IVec2 position, Gate gate, uint8_t extraParam) :
     }
 }
 Node::Node(const char* name, IVec2 position, Gate gate, uint8_t extraParam) :
-    m_position(position), m_gate(gate), m_state(false), m_inputs(0), m_name(name)
+    m_name(name), m_position(position), m_gate(gate), m_state(false), m_inputs(0)
 {
     if (gate == Gate::RESISTOR)
         m_ntd.r.resistance = extraParam;

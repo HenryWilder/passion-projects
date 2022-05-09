@@ -812,7 +812,7 @@ void Graph::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
     nodes.reserve(nodes.size() + bp->nodes.size());
     for (size_t i = 0; i < bp->nodes.size(); ++i)
     {
-        Node* node = _CreateNode(Node(bp->nodes[i].name, bp->nodes[i].relativePosition + topLeft, bp->nodes[i].gate, bp->nodes[i].extraParam));
+        Node* node = _CreateNode(Node(bp->nodes[i].name.c_str(), bp->nodes[i].relativePosition + topLeft, bp->nodes[i].gate, bp->nodes[i].extraParam));
         nodeID.emplace(i, node);
     }
     wires.reserve(wires.size() + bp->wires.size());
@@ -863,7 +863,7 @@ void Graph::Save(const char* filename) const
 
     std::ofstream file(filename, std::fstream::out | std::fstream::trunc);
     {
-        file << "1.2\n";
+        file << "1.3\n";
 
         std::unordered_map<Node*, size_t> nodeIDs;
         std::unordered_map<Wire*, size_t> wireIDs;
@@ -883,6 +883,8 @@ void Graph::Save(const char* filename) const
                 file << TextFormat(" %i", node->GetColorIndex());
             else if (node->GetGate() == Gate::CAPACITOR)
                 file << TextFormat(" %i", node->GetCapacity());
+            if (node->HasName())
+                file << ' ' << node->GetName();
             file << '\n';
         }
 
@@ -930,12 +932,12 @@ void Graph::Load(const char* filename)
         }
     };
 
-    struct FNodeData { char gate{}; IVec2 pos{}; int extra{}; };
+    struct FNodeData { char gate{}; IVec2 pos{}; int extra{}; std::string name{""}; };
     auto initNodes = [](std::vector<Node*>& nodes, const FNodeData* nodeData)
     {
         for (size_t i = 0; i < nodes.size(); ++i)
         {
-            *nodes[i] = Node(nodeData[i].pos, (Gate)nodeData[i].gate, (uint8_t)nodeData[i].extra);
+            *nodes[i] = Node(nodeData[i].name.c_str(), nodeData[i].pos, (Gate)nodeData[i].gate, (uint8_t)nodeData[i].extra);
         }
     };
 
@@ -952,7 +954,7 @@ void Graph::Load(const char* filename)
     {
         double version;
         file >> version;
-        if (version != 1.2 && version != 1.1)
+        if (version > 1.3 || version < 1.1)
             return;
 
         // Unload existing
@@ -979,6 +981,8 @@ void Graph::Load(const char* filename)
             file >> nodeData[i].gate >> nodeData[i].pos.x >> nodeData[i].pos.y;
             if ((Gate)nodeData[i].gate == Gate::RESISTOR || (Gate)nodeData[i].gate == Gate::LED || (Gate)nodeData[i].gate == Gate::CAPACITOR)
                 file >> nodeData[i].extra;
+            if (file.peek() != '\n')
+                file >> nodeData[i].name;
         }
 
         file.ignore(64, 'w');
@@ -992,7 +996,7 @@ void Graph::Load(const char* filename)
             file >> wireData[i].config >> wireData[i].startID >> wireData[i].endID;
         }
 
-        if (version == 1.2) // Version 1.2 feature
+        if (version >= 1.2) // Version 1.2 feature
         {
             file.ignore(64, 'g');
             size_t groupCount;
