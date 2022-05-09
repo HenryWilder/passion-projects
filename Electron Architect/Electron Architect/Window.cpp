@@ -985,7 +985,8 @@ void Window::ReloadConfig()
             "\nclipboard_preview_lod=0"
             "\npaste_preview_lod=4"
             "\nframes_per_tick=6"
-            "\nui_scale=1";
+            "\nui_scale=1"
+            "\nmin_log_level=3";
 
         replacement.close();
 
@@ -1026,6 +1027,7 @@ void Window::ReloadConfig()
         else if (attribute == "paste_preview_lod")      pastePreviewLOD     = std::stoi(value);
         else if (attribute == "frames_per_tick")        framesPerTick       = std::stoi(value);
         else if (attribute == "ui_scale")               uiScale             = std::stoi(value);
+        else if (attribute == "min_log_level")          SetMinLogLevel_User(LogType(std::min(std::max(0, std::stoi(value)), 4)));
     }
 
     if (uiScale >= 2)

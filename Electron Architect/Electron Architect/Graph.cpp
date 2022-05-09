@@ -17,7 +17,7 @@ Graph::Graph(Tab* owner, const std::string& name) : owningTab(owner), name(name)
     {
         blueprints.push_back(new Blueprint(bp));
     }
-    Log(LogType::info, "Freed graph " + name);
+    Log(LogType::info, "Constructed graph " + name);
 }
 Graph::~Graph()
 {
