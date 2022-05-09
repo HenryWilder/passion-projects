@@ -46,11 +46,23 @@ void Blueprint::PopulateNodes(const std::vector<Node*>& src)
         case Gate::CAPACITOR:   extraParam = node->GetCapacity();   break;
         case Gate::LED:         extraParam = node->GetColorIndex(); break;
         }
-        nodes.emplace_back(
-            isIO,
-            node->GetGate(),
-            extraParam,
-            node->GetPosition() - min);
+        if (node->HasName())
+        {
+            nodes.emplace_back(
+                node->GetName(),
+                isIO,
+                node->GetGate(),
+                extraParam,
+                node->GetPosition() - min);
+        }
+        else
+        {
+            nodes.emplace_back(
+                isIO,
+                node->GetGate(),
+                extraParam,
+                node->GetPosition() - min);
+        }
     }
 }
 void Blueprint::PopulateWires(const std::vector<Node*>& src)
@@ -212,7 +224,7 @@ void Blueprint::Save() const
         file << node.b_io << ' ' << (char)node.gate << ' ' << (unsigned)node.extraParam << ' '
             << node.relativePosition.x << ' ' << node.relativePosition.y;
         if (!node.name.empty())
-            file << node.name;
+            file << ' ' << node.name;
         file << '\n';
     }
     file << wires.size() << '\n';
@@ -262,8 +274,13 @@ void LoadBlueprint(const char* filename, Blueprint& dest)
         std::string name;
         file >> io >> gate >> ep >> pos.x >> pos.y;
         if (file.peek() != '\n')
+        {
             file >> name;
-        dest.nodes.emplace_back(io, (Gate)gate, ep, pos, name);
+            dest.nodes.emplace_back(name, io, (Gate)gate, ep, pos);
+        }
+        else
+            dest.nodes.emplace_back(io, (Gate)gate, ep, pos);
+
         extents.x = std::max(pos.x, extents.x);
         extents.y = std::max(pos.y, extents.y);
     }

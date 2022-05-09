@@ -14,9 +14,9 @@ struct NodeBP
         b_io(b_io), gate(gate), extraParam(0), relativePosition(relativePosition), name() {}
     constexpr NodeBP(bool b_io, Gate gate, uint8_t extraParam, IVec2 relativePosition) :
         b_io(b_io), gate(gate), extraParam(extraParam), relativePosition(relativePosition), name() {}
-    constexpr NodeBP(const char* name, bool b_io, Gate gate, IVec2 relativePosition) :
+    constexpr NodeBP(const std::string& name, bool b_io, Gate gate, IVec2 relativePosition) :
         b_io(b_io), gate(gate), extraParam(0), relativePosition(relativePosition), name(name) {}
-    constexpr NodeBP(const char* name, bool b_io, Gate gate, uint8_t extraParam, IVec2 relativePosition) :
+    constexpr NodeBP(const std::string& name, bool b_io, Gate gate, uint8_t extraParam, IVec2 relativePosition) :
         b_io(b_io), gate(gate), extraParam(extraParam), relativePosition(relativePosition), name(name) {}
 
     bool b_io; // Whether the node is an input/output to the entire system (Should it be shown on the paste preview?)

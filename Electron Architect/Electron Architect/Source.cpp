@@ -176,7 +176,7 @@ int main()
                 // Node tooltip
                 if (!!window.hoveredNode && window.hoveredNode->HasName())
                     DrawTextShadowedIV(
-                        window.hoveredNode->GetName().c_str(),
+                        window.hoveredNode->GetName(),
                         window.cursorUIPos + IVec2(16),
                         window.FontSize(),
                         UIColor(UIColorID::UI_COLOR_FOREGROUND),
