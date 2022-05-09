@@ -985,7 +985,7 @@ void Graph::Load(const char* filename)
             if ((Gate)nodeData[i].gate == Gate::RESISTOR || (Gate)nodeData[i].gate == Gate::LED || (Gate)nodeData[i].gate == Gate::CAPACITOR)
                 file >> nodeData[i].extra;
             if (file.peek() != '\n')
-                file >> nodeData[i].name;
+                std::getline(file, nodeData[i].name);
         }
 
         file.ignore(64, 'w');
