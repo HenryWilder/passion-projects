@@ -13,7 +13,7 @@ private:
     bool orderDirty = false;
 
     Tab* owningTab;
-    const char* name;
+    std::string name;
 
     std::vector<Node*> nodes;
     std::vector<Node*> startNodes;
@@ -22,11 +22,7 @@ private:
     std::vector<Group*> groups;
 
 private: // Internal
-    void Log(const char* what) const;
-    void LogMessage(const char* what) const;
-    void LogAttempt(const char* what) const;
-    void LogError(const char* what) const;
-    void LogSuccess(const char* what) const;
+    void Log(LogType type, const std::string& what) const;
 
     void _Free();
     // Already calls _Free!
@@ -41,10 +37,10 @@ private: // Internal
 
 public:
 
-    Graph(Tab* owner, const char* name = "Unnamed graph");
+    Graph(Tab* owner, const std::string& name = "Unnamed graph");
     ~Graph();
 
-    const char* GetName() const;
+    const std::string& GetName() const;
 
     bool IsOrderDirty() const;
 

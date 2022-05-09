@@ -10,43 +10,28 @@
 
 extern Blueprint nativeBlueprints[10];
 
-Graph::Graph(Tab* owner, const char* name) : owningTab(owner), name(name)
+Graph::Graph(Tab* owner, const std::string& name) : owningTab(owner), name(name)
 {
     blueprints.reserve(_countof(nativeBlueprints));
     for (const Blueprint& bp : nativeBlueprints)
     {
         blueprints.push_back(new Blueprint(bp));
     }
+    Log(LogType::info, "Freed graph " + name);
 }
 Graph::~Graph()
 {
     _Free();
 }
 
-void Graph::Log(const char* what) const
+void Graph::Log(LogType type, const std::string& what) const
 {
-    owningTab->owningWindow->Log(TextFormat("[Graph] %s", what));
-}
-void Graph::LogMessage(const char* what) const
-{
-    owningTab->owningWindow->LogMessage(TextFormat("[Graph] %s", what));
-}
-void Graph::LogAttempt(const char* what) const
-{
-    owningTab->owningWindow->LogAttempt(TextFormat("[Graph] %s", what));
-}
-void Graph::LogError(const char* what) const
-{
-    owningTab->owningWindow->LogError(TextFormat("[Graph] %s", what));
-}
-void Graph::LogSuccess(const char* what) const
-{
-    owningTab->owningWindow->LogSuccess(TextFormat("[Graph] %s", what));
+    owningTab->owningWindow->Log(type, TextFormat("[Graph] %s", what));
 }
 
 void Graph::_Free()
 {
-    LogMessage(TextFormat("Freed graph 0x%p \"%s\"", this, name));
+    Log(LogType::info, "Freed graph " + name);
     for (Node* node : nodes)
     {
         delete node;
@@ -75,7 +60,7 @@ Node* Graph::_CreateNode(Node&& base)
     Node* node = new Node(base);
     nodes.insert(nodes.begin(), node);
     startNodes.push_back(node);
-    LogMessage(TextFormat("Created new node 0x%p", node));
+    Log(LogType::info, "Created new node");
     return node;
 }
 void Graph::_ClearNodeReferences(Node* node)
@@ -90,7 +75,7 @@ void Graph::_ClearNodeReferences(Node* node)
         output->end->RemoveWire_Expected(output);
         _DestroyWire(output);
     }
-    LogMessage(TextFormat("Cleared references to node 0x%p", node));
+    Log(LogType::info, "Cleared references to node");
     orderDirty = true;
 }
 void Graph::_DestroyNode(Node* node)
@@ -98,7 +83,7 @@ void Graph::_DestroyNode(Node* node)
     FindAndErase_ExpectExisting(nodes, node);
     FindAndErase(startNodes, node);
     delete node;
-    LogMessage(TextFormat("Deleted node 0x%p", node));
+    Log(LogType::info, "Destroyed node");
     orderDirty = true;
 }
 
@@ -106,7 +91,7 @@ Wire* Graph::_CreateWire(Wire&& base)
 {
     Wire* wire = new Wire(base);
     wires.push_back(wire);
-    LogMessage(TextFormat("Created wire 0x%p", wire));
+    Log(LogType::info, "Created wire");
     return wire;
 }
 void Graph::_ClearWireReferences(Wire* wire)
@@ -116,14 +101,14 @@ void Graph::_ClearWireReferences(Wire* wire)
     // Push end to start nodes if this has destroyed its last remaining input
     if (wire->end->IsOutputOnly())
         startNodes.push_back(wire->end);
-    LogMessage(TextFormat("Cleared references to wire 0x%p", wire));
+    Log(LogType::info, "Cleared references to wire");
     orderDirty = true;
 }
 void Graph::_DestroyWire(Wire* wire)
 {
     FindAndErase_ExpectExisting(wires, wire);
     delete wire;
-    LogMessage(TextFormat("Deleted wire 0x%p", wire));
+    Log(LogType::info, "Destroyed wire");
     orderDirty = true;
 }
 
@@ -133,7 +118,7 @@ bool Graph::IsOrderDirty() const
     return orderDirty;
 }
 
-const char* Graph::GetName() const
+const std::string& Graph::GetName() const
 {
     return name;
 }
@@ -145,7 +130,6 @@ const decltype(Graph::startNodes)& Graph::GetStartNodes() const
 
 // Node functions
 
-/// <summary>CreateNode does not insert at the end of the <see cref="nodes"/>.</summary>
 Node* Graph::CreateNode(IVec2 position, Gate gate, uint8_t extendedParam)
 {
     // The order is not dirty at this time due to the node having no connections yet
@@ -254,10 +238,10 @@ void Graph::DestroyNodes(std::vector<Node*>& removeList)
 
 void Graph::BypassNode(Node* node)
 {
-    LogAttempt(TextFormat("Simple bypass on node 0x%p", node));
+    Log(LogType::attempt, "Simple bypass");
     if (!node->IsSpecialErasable())
     {
-        LogError(TextFormat("Node 0x%p is not bypassable.", node));
+        Log(LogType::warning, "Node not bypassable");
         return;
     }
     // Multiple outputs, one input
@@ -279,15 +263,15 @@ void Graph::BypassNode(Node* node)
         }
     }
     DestroyNode(node);
-    LogSuccess(TextFormat("Simple bypassed node 0x%p", node));
+    Log(LogType::success, "Simple bypass complete");
 }
 
 void Graph::BypassNode_Complex(Node* node)
 {
-    LogAttempt(TextFormat("Complex bypass on node 0x%p", node));
+    Log(LogType::attempt, "Complex bypass");
     if (!node->IsComplexBipassable())
     {
-        LogError(TextFormat("Node 0x%p is not bypassable.", node));
+        Log(LogType::error, "Node is not complex bypassable");
         return;
     }
 
@@ -299,12 +283,12 @@ void Graph::BypassNode_Complex(Node* node)
         }
     }
     DestroyNode(node);
-    LogSuccess(TextFormat("Complex bypassed node 0x%p", node));
+    Log(LogType::success, "Complex bypass complete");
 }
 
 Node* Graph::MergeNodes(Node* depricating, Node* overriding)
 {
-    LogAttempt(TextFormat("Merge node 0x%p with 0x%p", depricating, overriding));
+    Log(LogType::attempt, "Node merge");
     if (!depricating)
     {
         LogError(TextFormat("Cannot merge 0x%p with nullptr.", overriding));

@@ -19,11 +19,16 @@ void DrawTextShadowedIV(const char* text, IVec2 pos, int fontSize, Color color, 
 
 enum class LogType
 {
-    info,
-    attempt,
-    success,
-    warning,
-    error,
+    // Just FYI
+    info = 0,
+    // Upcoming might not be successful
+    attempt = 1,
+    // Successful
+    success = 2,
+    // Unsuccessful, can still continue
+    warning = 3,
+    // Cannot continue
+    error = 4,
 };
 
 struct Window
@@ -202,7 +207,7 @@ public:
     // Only to be used by config
     void SetMinLogLevel_User(int level);
     void SetMinLogLevel(int level);
-    void Log(int level, LogType type, const std::string& output);
+    void Log(LogType type, const std::string& output);
     void LogMessage(const char* output);
     void LogAttempt(const char* output);
     void LogSuccess(const char* output);

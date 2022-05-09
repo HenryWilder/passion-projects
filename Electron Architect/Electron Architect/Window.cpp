@@ -1353,7 +1353,23 @@ void Window::DrawConsoleOutput()
 {
     for (int i = 0; i < _countof(consoleOutput); ++i)
     {
-        DrawTextIV(consoleOutput[i].c_str(), consolePaneRec.xy + Height(FontSize() * 2 * (i + 1)) + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        if (consoleOutput[i].size() < 2) // ""
+            continue;
+
+        Color color;
+        switch (consoleOutput[i][1])
+        {
+        case 'I': color = UIColor(UIColorID::UI_COLOR_FOREGROUND);  break;
+        case 'A': color = UIColor(UIColorID::UI_COLOR_SPECIAL);     break;
+        case 'S': color = UIColor(UIColorID::UI_COLOR_FOREGROUND1); break;
+        case 'W': color = UIColor(UIColorID::UI_COLOR_CAUTION);     break;
+        case 'E': color = UIColor(UIColorID::UI_COLOR_DESTRUCTIVE); break;
+        default:  color = UIColor(UIColorID::UI_COLOR_ERROR);       break; // Malformed
+        }
+        DrawTextIV(
+            consoleOutput[i].c_str(),
+            consolePaneRec.xy + Height(FontSize() * 2 * (i + 1)) + FontPadding(),
+            FontSize(), color);
     }
 }
 void Window::SetMinLogLevel_User(int level)
@@ -1376,16 +1392,14 @@ std::string LogTypeStr(LogType type)
     case LogType::error:    return "[ERROR]";
     }
 }
-void Window::Log(int level, LogType type, const std::string& output)
+void Window::Log(LogType type, const std::string& output)
 {
-    if (level < minLogLevel)
+    if ((int)type < minLogLevel)
         return;
 
     double logTime = GetTime();
     consoleOutput[0] =
-        LogTypeStr(type) +
-        "[LEVEL " + std::to_string(level) + "]" +
-        output +
+        LogTypeStr(type) + output +
         " - t+" + std::to_string(logTime) +
         "(" + std::to_string((logTime - timeOfLastLog) * 1000) + "ms)";
 
@@ -1404,7 +1418,7 @@ void Window::ClearLog()
     timeOfLastLog = GetTime();
     std::ofstream logfile("session.log", std::ios_base::trunc);
     logfile.close();
-    Log(INT_MAX, LogType::info, "Start of log");
+    Log(LogType::info, "Start of log");
 }
 void Window::CleanPropertiesPane()
 {
