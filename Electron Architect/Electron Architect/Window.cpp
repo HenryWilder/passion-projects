@@ -33,8 +33,8 @@ Window::Window(int windowWidth, int windowHeight) :
     windowWidth(windowWidth),
     windowHeight(windowHeight),
     consoleOutput{ "", "", "", "", "", "", },
-    userSetMinLogLevel(0),
-    minLogLevel(0),
+    userSetMinLogLevel(LogType::info),
+    minLogLevel(LogType::info),
     modeButtons{
         IconButton(
             IVec2(0, 3),
@@ -1372,12 +1372,12 @@ void Window::DrawConsoleOutput()
             FontSize(), color);
     }
 }
-void Window::SetMinLogLevel_User(int level)
+void Window::SetMinLogLevel_User(LogType level)
 {
     userSetMinLogLevel = level;
     SetMinLogLevel(minLogLevel); // Check if minLogLevel is still valid
 }
-void Window::SetMinLogLevel(int level)
+void Window::SetMinLogLevel(LogType level)
 {
     minLogLevel = std::max(userSetMinLogLevel, level);
 }
@@ -1394,7 +1394,7 @@ std::string LogTypeStr(LogType type)
 }
 void Window::Log(LogType type, const std::string& output)
 {
-    if ((int)type < minLogLevel)
+    if ((int)type < (int)minLogLevel)
         return;
 
     double logTime = GetTime();

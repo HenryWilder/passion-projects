@@ -66,9 +66,7 @@ public:
     // Wire functions
 
     // CreateWire can affect the positions of parameter `end` in `nodes`
-    Wire* CreateWire(Node* start, Node* end);
-    // CreateWire can affect the positions of parameter `end` in `nodes`
-    Wire* CreateWire(Node* start, Node* end, ElbowConfig elbowConfig);
+    Wire* CreateWire(Node* start, Node* end, ElbowConfig elbowConfig = ElbowConfig(0));
     void DestroyWire(Wire* wire);
     // Looks like it swaps the two nodes, but really only swaps the gate!
     void SwapNodes(Node* a, Node* b);
@@ -114,8 +112,8 @@ public:
 
     // Serialization functions
 
-    void Save(const char* filename) const;
-    void Load(const char* filename);
+    void Save(const std::string& filename) const;
+    void Load(const std::string& filename);
     // Saves the graph in SVG format
-    void Export(const char* filename) const;
+    void Export(const std::string& filename) const;
 };

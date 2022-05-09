@@ -289,23 +289,19 @@ void Graph::BypassNode_Complex(Node* node)
 Node* Graph::MergeNodes(Node* depricating, Node* overriding)
 {
     Log(LogType::attempt, "Node merge");
-    if (!depricating)
+    if (!depricating || !overriding)
     {
-        LogError(TextFormat("Cannot merge 0x%p with nullptr.", overriding));
-        exit(1);
-    }
-    if (!overriding)
-    {
-        LogError(TextFormat("Cannot merge 0x%p with nullptr.", depricating));
+        Log(LogType::error, "Cannot merge with null");
         exit(1);
     }
     if (depricating == overriding)
     {
-        LogError(TextFormat("Cannot merge 0x%p with itself.", depricating));
+        Log(LogType::error, "Cannot merge with self");
         exit(1);
     }
 
-    Node* c = CreateNode(depricating->GetPosition(), overriding->GetGate(), overriding->m_ntd.r.resistance); // Generic ntd data
+    // Hack: resistance being used as generic ntd data
+    Node* c = CreateNode(depricating->GetPosition(), overriding->GetGate(), overriding->m_ntd.r.resistance);
 
     for (Wire* wire : depricating->GetInputs())
     {
@@ -331,74 +327,24 @@ Node* Graph::MergeNodes(Node* depricating, Node* overriding)
     DestroyNode(depricating);
     DestroyNode(overriding);
 
-    LogSuccess(TextFormat("Merged nodes 0x%p and 0x%p into node 0x%p", depricating, overriding, c));
+    Log(LogType::success, "Node merge complete");
     return c;
 }
 
 // Wire functions
 
 // CreateWire can affect the positions of parameter `end` in `nodes`
-Wire* Graph::CreateWire(Node* start, Node* end)
-{
-    LogAttempt(TextFormat("Wire node 0x%p to node 0x%p...", start, end));
-    if (!start)
-    {
-        LogError(TextFormat("Wire failed. Cannot wire node 0x%p to nullptr.", end));
-        exit(1);
-    }
-    if (!end)
-    {
-        LogError(TextFormat("Cannot wire node 0x%p to nullptr.", start));
-        exit(1);
-    }
-    if (start == end)
-    {
-        LogError(TextFormat("Cannot wire node 0x%p to itself.", start));
-        exit(1);
-    }
-
-    // Duplicate guard
-    {
-        auto it = end->FindConnection(start);
-        if (end->IsValidConnection(it))
-        {
-            Wire* wire = *it;
-            if (start == wire->start) // Wire already matches
-                return wire;
-            else if (start == wire->end) // Wire is reverse of existing
-                return ReverseWire(wire);
-        }
-    }
-
-    Wire* wire = _CreateWire(Wire(start, end));
-
-    start->AddWireOutput(wire);
-    end->AddWireInput(wire);
-
-    // Remove end from start nodes, as it is no longer an inputless node with this change
-    FindAndErase(startNodes, end);
-
-    orderDirty = true;
-    LogSuccess(TextFormat("Wired node 0x%p to node 0x%p with wire 0x%p", start, end, wire));
-    return wire;
-}
-// CreateWire can affect the positions of parameter `end` in `nodes`
 Wire* Graph::CreateWire(Node* start, Node* end, ElbowConfig elbowConfig)
 {
-    LogAttempt(TextFormat("Wire node 0x%p to node 0x%p", start, end));
-    if (!start)
+    Log(LogType::attempt, "Wiring nodes");
+    if (!start || !end)
     {
-        LogError(TextFormat("Cannot wire node 0x%p to nullptr.", end));
-        exit(1);
-    }
-    if (!end)
-    {
-        LogError(TextFormat("Cannot wire node 0x%p to nullptr.", start));
+        Log(LogType::error, "Cannot wire to null");
         exit(1);
     }
     if (start == end)
     {
-        LogError(TextFormat("Cannot wire node 0x%p to itself.", start));
+        Log(LogType::error, "Cannot wire to self");
         exit(1);
     }
 
@@ -424,7 +370,7 @@ Wire* Graph::CreateWire(Node* start, Node* end, ElbowConfig elbowConfig)
     FindAndErase(startNodes, end);
 
     orderDirty = true;
-    LogSuccess(TextFormat("Wired node 0x%p to node 0x%p with wire 0x%p", start, end, wire));
+    Log(LogType::success, "Wire complete");
     return wire;
 }
 void Graph::DestroyWire(Wire* wire)
@@ -436,26 +382,26 @@ void Graph::DestroyWire(Wire* wire)
 }
 void Graph::SwapNodes(Node* a, Node* b)
 {
-    LogMessage(TextFormat("Swapped type of node 0x%p with node 0x%p", a, b));
+    Log(LogType::info, "Swapped nodes");
     std::swap(a->m_gate, b->m_gate);
 }
 // Invalidates input wire!
 Wire* Graph::ReverseWire(Wire* wire)
 {
-    LogAttempt(TextFormat("Reverse wire 0x%p", wire));
+    Log(LogType::attempt, "Reversing wire");
     if (!wire)
     {
-        LogError("Cannot reverse nullptr.");
+        Log(LogType::error, "Cannot reverse null");
         exit(1);
     }
     if (!wire->start)
     {
-        LogError("Wire start was nullptr.");
+        Log(LogType::error, "Wire start was null");
         exit(1);
     }
     if (!wire->end)
     {
-        LogError("Wire end was nullptr.");
+        Log(LogType::error, "Wire end was null");
         exit(1);
     }
 
@@ -467,13 +413,13 @@ Wire* Graph::ReverseWire(Wire* wire)
     wire = CreateWire(tbStart, tbEnd);
     wire->SnapElbowToLegal(elbow);
     orderDirty = true;
-    LogSuccess(TextFormat("Reversed wire 0x%p", wire));
+    Log(LogType::success, "Wire reversal complete");
     return wire;
 }
 // Invalidates input wire! (obviously; it's being split in two)
 std::pair<Wire*, Wire*> Graph::BisectWire(Wire* wire, Node* bisector)
 {
-    LogAttempt(TextFormat("Bisect wire 0x%p with node 0x%p", wire, bisector));
+    Log(LogType::attempt, "Wire bisection");
     std::pair<Wire*, Wire*> newWire;
 
     newWire.first = CreateWire(wire->start, bisector);
@@ -485,7 +431,7 @@ std::pair<Wire*, Wire*> Graph::BisectWire(Wire* wire, Node* bisector)
     newWire.second->UpdateElbowToLegal();
 
     DestroyWire(wire);
-    LogSuccess(TextFormat("Bisected wire 0x%p into the wires 0x%p and 0x%p", wire, newWire.first, newWire.second));
+    Log(LogType::success, "Wire bisection complete");
     return newWire;
 }
 
@@ -493,14 +439,14 @@ Group* Graph::CreateGroup(IRect rec, Color color)
 {
     Group* group = new Group(rec, color, "Label");
     groups.push_back(group);
-    LogMessage(TextFormat("Created new group 0x%p", group));
+    Log(LogType::info, "Created group");
     return group;
 }
 void Graph::DestroyGroup(Group* group)
 {
     FindAndErase_ExpectExisting(groups, group);
     delete group;
-    LogMessage(TextFormat("Deleted group 0x%p", group));
+    Log(LogType::info, "Destroyed group");
 }
 Group* Graph::FindGroupAtPos(IVec2 pos) const
 {
@@ -536,7 +482,7 @@ void Graph::FindNodesInGroup(std::vector<Node*>& result, Group* group) const
 // Uses BFS
 void Graph::Sort()
 {
-    LogMessage(TextFormat("Sorting node graph 0x%p", this));
+    Log(LogType::attempt, "Sorting graph");
     decltype(nodes) sorted;
     sorted.reserve(nodes.size());
 
@@ -585,7 +531,7 @@ void Graph::Sort()
 
     nodes.swap(sorted);
 
-    LogSuccess("Sort finished");
+    Log(LogType::success, "Graph sort complete");
     orderDirty = false;
 }
 
@@ -669,7 +615,10 @@ void Graph::EvaluateNode(Node* node)
         break;
 
     default:
-        LogError("Missing specialization for selected gate evaluation");
+        Log(LogType::error,
+            "Missing eval specialization for encountered node; node type is " +
+            std::to_string((int)node->m_gate) +
+            TextFormat(" (\'%c\')", (char)node->m_gate));
         exit(1);
         break;
     }
@@ -787,11 +736,11 @@ void Graph::StoreBlueprint(Blueprint* bp)
         }
     }
     blueprints.push_back(copy);
-    LogMessage(TextFormat("Stored blueprint 0x%p \"%s\" to position 0x%p [index %u] (now \"%s\")", bp, bp->name, copy, blueprints.size() - 1, copy->name));
+    Log(LogType::success, "Stored blueprint " + copy->name);
 }
 void Graph::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
 {
-    LogAttempt(TextFormat("Spawning blueprint 0x%p", bp));
+    Log(LogType::attempt, "Spawning blueprint " + bp->name);
     std::unordered_map<size_t, Node*> nodeID;
     nodes.reserve(nodes.size() + bp->nodes.size());
     for (size_t i = 0; i < bp->nodes.size(); ++i)
@@ -803,20 +752,28 @@ void Graph::SpawnBlueprint(Blueprint* bp, IVec2 topLeft)
     for (const WireBP& wire_bp : bp->wires)
     {
         Node* start;
-        Node* end;
         {
             auto it = nodeID.find(wire_bp.startNodeIndex);
-            _ASSERT_EXPR(it != nodeID.end(), L"Malformed nodeID");
+            if (it == nodeID.end())
+            {
+                Log(LogType::error, "Malformed node ID in blueprint");
+                exit(1);
+            }
             start = it->second;
         }
+        Node* end;
         {
             auto it = nodeID.find(wire_bp.endNodeIndex);
-            _ASSERT_EXPR(it != nodeID.end(), L"Malformed nodeID");
+            if (it == nodeID.end())
+            {
+                Log(LogType::error, "Malformed node ID in blueprint");
+                exit(1);
+            }
             end = it->second;
         }
         Wire* wire = CreateWire(start, end, wire_bp.elbowConfig);
     }
-    LogSuccess(TextFormat("Spawned blueprint 0x%p", bp));
+    Log(LogType::success, "Spawned blueprint " + bp->name);
 }
 
 const std::vector<Blueprint*>& Graph::GetBlueprints() const
@@ -824,9 +781,9 @@ const std::vector<Blueprint*>& Graph::GetBlueprints() const
     return blueprints;
 }
 
-void Graph::Save(const char* filename) const
+void Graph::Save(const std::string& filename) const
 {
-    LogAttempt(TextFormat("Saving file \"%s\"", filename));
+    Log(LogType::attempt, "Saving file " + filename);
     auto prepNodeIDs = [](std::unordered_map<Node*, size_t>& nodeIDs, const std::vector<Node*>& nodes)
     {
         nodeIDs.reserve(nodes.size());
@@ -870,7 +827,7 @@ void Graph::Save(const char* filename) const
             if (node->HasName())
             {
                 file << ' ' << node->GetName();
-                LogMessage(TextFormat("Stored named node \"%s\"", node->GetName().c_str()));
+                Log(LogType::info, "Stored named node " + node->GetName());
             }
             file << '\n';
         }
@@ -893,12 +850,12 @@ void Graph::Save(const char* filename) const
         }
     }
     file.close();
-    LogSuccess(TextFormat("Saved file \"%s\"", filename));
+    Log(LogType::success, "Save complete");
 }
 
-void Graph::Load(const char* filename)
+void Graph::Load(const std::string& filename)
 {
-    LogAttempt(TextFormat("Loading file \"%s\"", filename));
+    Log(LogType::success, "Loading file " + filename);
 
     // HACK: Does not conform to standard _CreateNode/Wire functions!!
     auto allocNodes = [](std::vector<Node*>& nodes, size_t nodeCount)
@@ -972,6 +929,7 @@ void Graph::Load(const char* filename)
             {
                 file.ignore(1); // Ignore delimiting space
                 std::getline(file, nodeData[i].name);
+                Log(LogType::info, "Loaded named node " + nodeData[i].name);
             }
         }
 
@@ -1009,11 +967,19 @@ void Graph::Load(const char* filename)
         std::thread allocWiresThread(allocWires, std::ref(wires), wireCount);
 
         allocNodesThread.join(); // Nodes do not rely on wire pointers to start initialization
-        _ASSERT_EXPR(nodes.size() == nodeCount, L"Node array size mismatch!");
+        if (nodes.size() != nodeCount)
+        {
+            Log(LogType::error, "Node array size mismatch");
+            exit(1);
+        }
         std::thread initNodesThread(initNodes, std::ref(nodes), nodeData);
 
         allocWiresThread.join(); // Wires rely on node pointers to start initialization
-        _ASSERT_EXPR(wires.size() == wireCount, L"Wire array size mismatch!");
+        if (wires.size() != wireCount)
+        {
+            Log(LogType::error, "Wire array size mismatch");
+            exit(1);
+        }
         std::thread initWiresThread(initWires, std::cref(nodes), std::ref(wires), wireData);
 
         initNodesThread.join();
@@ -1032,16 +998,16 @@ void Graph::Load(const char* filename)
     }
     file.close();
 
-    LogSuccess(TextFormat("Loaded file \"%s\"", filename));
+    Log(LogType::success, "Load complete");
 }
 
-void Graph::Export(const char* filename) const
+void Graph::Export(const std::string& filename) const
 {
-    LogAttempt(TextFormat("Exporting SVG \"%s\"", filename));
+    Log(LogType::attempt, "Exporting SVG " + filename);
 
     if (nodes.empty())
     {
-        LogMessage("Nothing to export.");
+        Log(LogType::warning, "Nothing to export");
         return;
     }
 
@@ -1228,5 +1194,5 @@ void Graph::Export(const char* filename) const
     }
     file.close();
 
-    LogSuccess(TextFormat("Exported SVG \"%s\"", filename));
+    Log(LogType::success, "Export complete");
 }

@@ -85,8 +85,8 @@ public:
     IRect propertiesPaneRec;
 
     double timeOfLastLog = 0.0;
-    int userSetMinLogLevel = 0; // Allows user to surpress logs below this level
-    int minLogLevel = 0;        // Allows program to surpress logs below this level (Cannot be lower than userSetMinLogLevel)
+    LogType userSetMinLogLevel = LogType::info; // Allows user to surpress logs below this level
+    LogType minLogLevel = LogType::info;        // Allows program to surpress logs below this level (Cannot be lower than userSetMinLogLevel)
     std::string consoleOutput[6];
     IRect consolePaneRec;
 
@@ -205,8 +205,8 @@ public:
     void DrawConsoleOutput();
     // Push to the console and log file
     // Only to be used by config
-    void SetMinLogLevel_User(int level);
-    void SetMinLogLevel(int level);
+    void SetMinLogLevel_User(LogType level);
+    void SetMinLogLevel(LogType level);
     void Log(LogType type, const std::string& output);
     void LogMessage(const char* output);
     void LogAttempt(const char* output);
