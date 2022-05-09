@@ -15,7 +15,7 @@
 #include "Window.h"
 #include "Mode.h"
 
-const char* GateName(Gate gate)
+const std::string GateName(Gate gate)
 {
     switch (gate)
     {
@@ -33,7 +33,7 @@ const char* GateName(Gate gate)
         return "ERROR";
     }
 }
-const char* ModeName(Mode mode)
+const std::string ModeName(Mode mode)
 {
     switch (mode)
     {
@@ -49,14 +49,14 @@ const char* ModeName(Mode mode)
         return "ERROR";
     }
 }
-const char* StateName(bool state)
+const std::string StateName(bool state)
 {
     if (state)
         return "active";
     else
         return "inactive";
 }
-const char* ElbowConfigName(ElbowConfig elbow)
+const std::string ElbowConfigName(ElbowConfig elbow)
 {
     switch (elbow)
     {

@@ -647,6 +647,7 @@ void Graph::DrawWires(Color colorActive, Color colorInactive) const
 }
 void Graph::DrawNodes(Color colorActive, Color colorInactive) const
 {
+    constexpr int nodeRadius = (int)Node::g_nodeRadius;
     for (Node* node : nodes)
     {
         if (node->GetGate() == Gate::LED && owningTab->owningWindow->GetBaseMode() == Mode::INTERACT) [[unlikely]]
@@ -654,21 +655,21 @@ void Graph::DrawNodes(Color colorActive, Color colorInactive) const
             if (node->GetState())
             {
                 DrawRectangle(
-                    node->GetX() - Node::g_nodeRadius - 1,
-                    node->GetY() - Node::g_nodeRadius - 1,
-                    Node::g_nodeRadius * 2 + 2,
-                    Node::g_nodeRadius * 2 + 2,
+                    node->GetX() - nodeRadius - 1,
+                    node->GetY() - nodeRadius - 1,
+                    nodeRadius * 2 + 2,
+                    nodeRadius * 2 + 2,
                     Node::g_resistanceBands[node->GetColorIndex()]
                 );
             }
             else
             {
                 DrawRectangle(
-                    node->GetX() - Node::g_nodeRadius - 1,
-                    node->GetY() - Node::g_nodeRadius - 1,
-                    Node::g_nodeRadius * 2 + 2,
-                    Node::g_nodeRadius * 2 + 2,
-                    BLACK
+                    node->GetX() - nodeRadius - 1,
+                    node->GetY() - nodeRadius - 1,
+                    nodeRadius * 2 + 2,
+                    nodeRadius * 2 + 2,
+                    UIColor(UIColorID::UI_COLOR_BACKGROUND)
                 );
             }
         }

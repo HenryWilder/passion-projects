@@ -32,10 +32,10 @@ enum class Mode
     BP_SELECT,
 };
 
-const char* GateName(Gate gate);
-const char* ModeName(Mode mode);
-const char* StateName(bool state);
-const char* ElbowConfigName(ElbowConfig elbow);
+const std::string GateName(Gate gate);
+const std::string ModeName(Mode mode);
+const std::string StateName(bool state);
+const std::string ElbowConfigName(ElbowConfig elbow);
 
 constexpr ModeType TypeOfMode(Mode mode)
 {

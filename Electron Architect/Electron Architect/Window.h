@@ -15,7 +15,7 @@ enum class ModeType;
 // Reusable address so clipboard doesn't have to delete
 extern Blueprint g_clipboardBP;
 
-void DrawTextShadowedIV(const char* text, IVec2 pos, int fontSize, Color color, Color shadow);
+void DrawTextShadowedIV(const std::string& text, IVec2 pos, int fontSize, Color color, Color shadow);
 
 enum class LogType
 {
@@ -73,7 +73,7 @@ public:
     Gate lastGate = Gate::OR;
     uint8_t storedExtraParam = 0;
 
-    const char* deviceParameterTextFmt = "";
+    std::string deviceParameterTextFmt;
 
     Node* hoveredNode = nullptr;
     Wire* hoveredWire = nullptr;
@@ -190,9 +190,9 @@ public:
     static Color ResistanceBandColor(uint8_t index);
     Color ExtraParamColor() const;
 
-    void DrawTooltipAtCursor(const char* text, Color color);
+    void DrawTooltipAtCursor(const std::string& text, Color color);
 
-    void DrawTooltipAtCursor_Shadowed(const char* text, Color color);
+    void DrawTooltipAtCursor_Shadowed(const std::string& text, Color color);
 
     void ReloadConfig();
 
@@ -208,26 +208,37 @@ public:
     void SetMinLogLevel_User(LogType level);
     void SetMinLogLevel(LogType level);
     void Log(LogType type, const std::string& output);
-    void LogMessage(const char* output);
-    void LogAttempt(const char* output);
-    void LogSuccess(const char* output);
-    void LogError(const char* output);
     void ClearLog();
 
     void CleanPropertiesPane();
-    void PushProperty(const char* name, const char* value);
-    void PushProperty_int(const char* name, int value);
-    void PushProperty_uint(const char* name, size_t value);
-    void PushProperty_ptr(const char* name, void* value);
-    void PushProperty_str(const char* name, const std::string& value);
-    void PushProperty_longStr(const char* name, const char* value);
-    void PushProperty_bool(const char* name, bool value);
-    void PushPropertyTitle(const char* title);
-    void PushPropertySubtitle(const char* title, Color color = UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    void PushProperty(const std::string& name, const std::string& value);
+    inline void PushProperty_int(const std::string& name, int value)
+    {
+        PushProperty(name, TextFormat("%i", value));
+    }
+    inline void PushProperty_uint(const std::string& name, size_t value)
+    {
+        PushProperty(name, TextFormat("%u", value));
+    }
+    inline void PushProperty_ptr(const std::string& name, void* value)
+    {
+        PushProperty(name, TextFormat("0x%p", value));
+    }
+    inline void PushProperty_str(const std::string& name, const std::string& value)
+    {
+        PushProperty(name, value);
+    }
+    void PushProperty_longStr(const std::string& name, const std::string& value);
+    inline void PushProperty_bool(const std::string& name, bool value)
+    {
+        PushProperty(name, value ? "true" : "false");
+    }
+    void PushPropertyTitle(const std::string& title);
+    void PushPropertySubtitle(const std::string& title, Color color = UIColor(UIColorID::UI_COLOR_FOREGROUND));
     void PushPropertySpacer();
-    void PushPropertySection_Node(const char* name, Node* value);
-    void PushPropertySection_Wire(const char* name, Wire* value);
-    void PushPropertySection_Selection(const char* name, const std::vector<Node*>& value);
-    void PushPropertySection_Group(const char* name, Group* value);
+    void PushPropertySection_Node(const std::string& name, Node* value);
+    void PushPropertySection_Wire(const std::string& name, Wire* value);
+    void PushPropertySection_Selection(const std::string& name, const std::vector<Node*>& value);
+    void PushPropertySection_Group(const std::string& name, Group* value);
     void DrawToolProperties();
 };

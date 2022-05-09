@@ -30,34 +30,36 @@ int main()
     window.CurrentTab().graph->Load("session.cg"); // Construct and load last session
     // Load blueprints
     {
-        window.LogAttempt("Loading blueprints");
+        window.Log(LogType::attempt, "Loading blueprints");
         std::filesystem::path blueprints{ "blueprints" };
         std::filesystem::create_directories(blueprints);
         std::filesystem::directory_iterator directory{ blueprints };
         if (directory._At_end())
-            window.LogMessage("No blueprints found.");
+            window.Log(LogType::info, "No blueprints found");
         else
         {
+            size_t count = 0;
             for (auto const& dir_entry : directory)
             {
                 std::string filename = dir_entry.path().string();
-                window.LogMessage(TextFormat("Located file \"%s\"", filename.c_str()));
+                window.Log(LogType::info, "Located file \"" + filename + '\"');
                 if (filename.substr(filename.size() - 3, filename.size()) == ".bp")
-                    window.LogAttempt(TextFormat("Loading blueprint \"%s\"", filename.c_str()));
+                    window.Log(LogType::attempt, "Loading blueprint \"" + filename + '\"');
                 Blueprint bp;
                 try
                 {
                     LoadBlueprint(filename.c_str(), bp);
                     window.CurrentTab().graph->StoreBlueprint(&bp);
-                    window.LogSuccess(TextFormat("Blueprint \"%s\" loaded.", filename.c_str()));
+                    window.Log(LogType::success, "Blueprint loaded");
+                    ++count;
                 }
                 catch (std::length_error e)
                 {
-                    window.LogError("File corrupt.");
+                    window.Log(LogType::warning, "Blueprint file corrupt");
                 }
             }
+            window.Log(LogType::success, std::to_string(count) + " Blueprints loaded");
         }
-        window.LogSuccess("Blueprints loaded.");
     }
 
     while (!WindowShouldClose())

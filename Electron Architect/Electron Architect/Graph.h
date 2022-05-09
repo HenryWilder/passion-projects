@@ -5,6 +5,8 @@
 #include "Group.h"
 #include "Blueprint.h"
 
+enum class LogType;
+
 struct Tab;
 
 class Graph

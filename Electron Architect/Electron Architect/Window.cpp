@@ -17,16 +17,17 @@
 
 Blueprint g_clipboardBP;
 
-void DrawTextShadowedIV(const char* text, IVec2 pos, int fontSize, Color color, Color shadow)
+void DrawTextShadowedIV(const std::string& text, IVec2 pos, int fontSize, Color color, Color shadow)
 {
+    const char* str = text.c_str();
     for (int y = -1; y <= 1; ++y)
     {
         for (int x = -1; x <= 1; ++x)
         {
-            DrawTextIV(text, pos + IVec2(x,y), fontSize, shadow);
+            DrawTextIV(str, pos + IVec2(x, y), fontSize, shadow);
         }
     }
-    DrawTextIV(text, pos, fontSize, color);
+    DrawTextIV(str, pos, fontSize, color);
 }
 
 Window::Window(int windowWidth, int windowHeight) :
@@ -443,10 +444,9 @@ ModeType Window::GetModeType()
 
 void Window::SetMode(Mode newMode)
 {
-    LogAttempt(TextFormat("Changing mode from { base: %s; overlay: %s } to %s",
-        (base ? ModeName(base->GetMode()) : "null"),
-        (overlay ? ModeName(overlay->GetMode()) : "null"),
-        ModeName(newMode)));
+    Log(LogType::attempt, "Changing mode from { base: " +
+        (base ? ModeName(base->GetMode()) : "null") + "; overlay: " +
+        (overlay ? ModeName(overlay->GetMode()) : "null") + " } to " + ModeName(newMode));
 
     b_cursorMoved = true;
 
@@ -455,7 +455,7 @@ void Window::SetMode(Mode newMode)
         if (!!overlay)
         {
             delete overlay;
-            LogMessage("Deleted overlay mode");
+            Log(LogType::info, "Deleted overlay mode");
         }
 
         if (TypeOfMode(newMode) != ModeType::Basic)
@@ -463,7 +463,7 @@ void Window::SetMode(Mode newMode)
             switch (newMode)
             {
             default:
-                LogError(TextFormat("Missing overlay mode construct for mode %s. Defaulting to null", ModeName(newMode)));
+                Log(LogType::warning, "Missing overlay mode construct for mode. Defaulting to null");
                 overlay = nullptr;
                 break;
 
@@ -480,7 +480,7 @@ void Window::SetMode(Mode newMode)
         else // Mode is basic; no overlay
         {
             overlay = nullptr;
-            LogMessage("Annulled overlay mode");
+            Log(LogType::info, "Annulled overlay mode");
         }
     }
 
@@ -490,13 +490,13 @@ void Window::SetMode(Mode newMode)
         if (!!base) [[likely]] // There should only be one point in the program where base is nullptr. Namely, the start.
         {
             delete base;
-            LogMessage("Deleted base mode");
+            Log(LogType::info, "Deleted base mode");
         }
 
         switch (newMode)
         {
         default:
-            LogError(TextFormat("Missing base mode construct for mode %s. Defaulting to null", ModeName(newMode)));
+            Log(LogType::warning, "Missing base mode construct for mode. Defaulting to null");
             base = nullptr;
             break;
 
@@ -512,12 +512,12 @@ void Window::SetMode(Mode newMode)
     }
     if (!base)
     {
-        LogError("Base mode is null");
+        Log(LogType::error, "Base mode is null");
         exit(1);
     }
-    LogSuccess(TextFormat("Mode changed to { %s; %s }",
-        (base ? ModeName(base->GetMode()) : "null"),
-        (overlay ? ModeName(overlay->GetMode()) : "null")));
+    Log(LogType::success, "Mode changed to { " +
+        (base ? ModeName(base->GetMode()) : "null") + ";" +
+        (overlay ? ModeName(overlay->GetMode()) : "null") + " }");
 }
 
 void Window::SetGate(Gate newGate)
@@ -529,7 +529,7 @@ void Window::SetGate(Gate newGate)
         "Capacity: %i ticks",
         "Color: %s"
     };
-    LogMessage(TextFormat("Changed gate from %s to %s", GateName(gatePick), GateName(newGate)));
+    Log(LogType::info, "Changed gate from " + GateName(gatePick) + " to " + GateName(newGate));
     gatePick = newGate;
     switch (newGate)
     {
@@ -551,9 +551,12 @@ void Window::SetGate(Gate newGate)
 
 void Window::ClearOverlayMode()
 {
-    LogMessage("Clearing overlay mode");
-    // Make this an error instead of an assertion
-    _ASSERT_EXPR(!!base, L"Base mode was not initialized or got nullified");
+    Log(LogType::info, "Clearing overlay mode");
+    if (!base)
+    {
+        Log(LogType::error, "Base mode was not initialized or got nullified");
+        exit(1);
+    }
     SetMode(base->GetMode());
 }
 
@@ -600,7 +603,8 @@ void Window::UpdateCamera()
 
 void Window::CopySelectionToClipboard()
 {
-    LogMessage("Copied selection to clipboard");
+    // Todo: actually copy a csv to the user's clipboard
+    Log(LogType::info, "Copied selection to clipboard");
     if (CurrentTab().selection.empty()) // Clear selection
         clipboard = nullptr;
     else // Copy selection
@@ -878,15 +882,15 @@ Color Window::ExtraParamColor() const
     return ResistanceBandColor(storedExtraParam);
 }
 
-void Window::DrawTooltipAtCursor(const char* text, Color color)
+void Window::DrawTooltipAtCursor(const std::string& text, Color color)
 {
     EndMode2D();
-    DrawTextIV(text, cursorUIPos + IVec2(16), FontSize(), color);
+    DrawTextIV(text.c_str(), cursorUIPos + IVec2(16), FontSize(), color);
     if (!tabs.empty())
         BeginMode2D(CurrentTab().camera);
 }
 
-void Window::DrawTooltipAtCursor_Shadowed(const char* text, Color color)
+void Window::DrawTooltipAtCursor_Shadowed(const std::string& text, Color color)
 {
     EndMode2D();
     DrawTextShadowedIV(text, cursorUIPos + IVec2(16), FontSize(), color, UIColor(UIColorID::UI_COLOR_BACKGROUND));
@@ -1088,7 +1092,7 @@ void Window::DrawTool()
     else
         base->Draw(*this);
 }
-void Window::PushProperty(const char* name, const char* value)
+void Window::PushProperty(const std::string& name, const std::string& value)
 {
     const int propHeight = FontSize() * 2;
     IRect box(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
@@ -1096,33 +1100,17 @@ void Window::PushProperty(const char* name, const char* value)
     const int propertiesPaneMiddle = propertiesPaneRec.w / 3;
     const int propertiesPaneMiddleAbs = propertiesPaneRec.x + propertiesPaneMiddle;
     DrawLine(propertiesPaneMiddleAbs, box.y, propertiesPaneMiddleAbs, box.Bottom(), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-    DrawTextIV(name, box.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-    DrawTextIV(value, box.xy + Width(propertiesPaneMiddle) + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(name.c_str(), box.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(value.c_str(), box.xy + Width(propertiesPaneMiddle) + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber++;
 }
-void Window::PushProperty_int(const char* name, int value)
-{
-    PushProperty(name, TextFormat("%i", value));
-}
-void Window::PushProperty_uint(const char* name, size_t value)
-{
-    PushProperty(name, TextFormat("%u", value));
-}
-void Window::PushProperty_ptr(const char* name, void* value)
-{
-    PushProperty(name, TextFormat("0x%p", value));
-}
-void Window::PushProperty_str(const char* name, const std::string& value)
-{
-    PushProperty(name, value.c_str());
-}
-void Window::PushProperty_longStr(const char* name, const char* value)
+void Window::PushProperty_longStr(const std::string& name, const std::string& value)
 {
     const int propHeight = FontSize() * 2;
 
     IRect box1(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
     DrawRectangleLinesIRect(box1, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-    DrawTextIV(name, box1.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(name.c_str(), box1.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber++;
 
     // Size to text
@@ -1130,33 +1118,29 @@ void Window::PushProperty_longStr(const char* name, const char* value)
     int lineCount = (int)std::count(str.begin(), str.end(), '\n') + 1;
     IRect box2(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight * lineCount);
     DrawRectangleLinesIRect(box2, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-    DrawTextIV(value, box2.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(value.c_str(), box2.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber += lineCount;
 }
-void Window::PushProperty_bool(const char* name, bool value)
-{
-    PushProperty(name, value ? "true" : "false");
-}
-void Window::PushPropertyTitle(const char* title)
+void Window::PushPropertyTitle(const std::string& title)
 {
     const int propHeight = FontSize() * 2;
     IRect box(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight);
     DrawRectangleIRect(ShrinkIRect(box), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-    DrawTextIV(title, box.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    DrawTextIV(title.c_str(), box.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber++;
 }
-void Window::PushPropertySubtitle(const char* title, Color color)
+void Window::PushPropertySubtitle(const std::string& title, Color color)
 {
     const int propHeight = FontSize() * 2;
     IVec2 pos(propertiesPaneRec.x, propHeight * propertyNumber);
-    DrawTextIV(title, pos + FontPadding(), FontSize(), color);
+    DrawTextIV(title.c_str(), pos + FontPadding(), FontSize(), color);
     propertyNumber++;
 }
 void Window::PushPropertySpacer()
 {
     propertyNumber++;
 }
-void Window::PushPropertySection_Node(const char* name, Node* value)
+void Window::PushPropertySection_Node(const std::string& name, Node* value)
 {
     if (!!value)
     {
@@ -1193,7 +1177,7 @@ void Window::PushPropertySection_Node(const char* name, Node* value)
         PushPropertySpacer();
     }
 }
-void Window::PushPropertySection_Wire(const char* name, Wire* value)
+void Window::PushPropertySection_Wire(const std::string& name, Wire* value)
 {
     if (!!value)
     {
@@ -1210,7 +1194,7 @@ void Window::PushPropertySection_Wire(const char* name, Wire* value)
         PushPropertySpacer();
     }
 }
-void Window::PushPropertySection_Selection(const char* name, const std::vector<Node*>& value)
+void Window::PushPropertySection_Selection(const std::string& name, const std::vector<Node*>& value)
 {
     PushPropertySubtitle(name);
 
@@ -1253,7 +1237,7 @@ void Window::PushPropertySection_Selection(const char* name, const std::vector<N
 
     PushPropertySpacer();
 }
-void Window::PushPropertySection_Group(const char* name, Group* value)
+void Window::PushPropertySection_Group(const std::string& name, Group* value)
 {
     if (!!value)
     {
@@ -1390,6 +1374,7 @@ std::string LogTypeStr(LogType type)
     case LogType::success:  return "[SUCCESS]";
     case LogType::warning:  return "[WARNING]";
     case LogType::error:    return "[ERROR]";
+    default:                return "[UNKNOWN]";
     }
 }
 void Window::Log(LogType type, const std::string& output)
