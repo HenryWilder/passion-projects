@@ -33,6 +33,8 @@ Window::Window(int windowWidth, int windowHeight) :
     windowWidth(windowWidth),
     windowHeight(windowHeight),
     consoleOutput{ "", "", "", "", "", "", },
+    userSetMinLogLevel(0),
+    minLogLevel(0),
     modeButtons{
         IconButton(
             IVec2(0, 3),
@@ -1354,41 +1356,55 @@ void Window::DrawConsoleOutput()
         DrawTextIV(consoleOutput[i].c_str(), consolePaneRec.xy + Height(FontSize() * 2 * (i + 1)) + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     }
 }
-void Window::Log(const char* output)
+void Window::SetMinLogLevel_User(int level)
 {
+    userSetMinLogLevel = level;
+    SetMinLogLevel(minLogLevel); // Check if minLogLevel is still valid
+}
+void Window::SetMinLogLevel(int level)
+{
+    minLogLevel = std::max(userSetMinLogLevel, level);
+}
+std::string LogTypeStr(LogType type)
+{
+    switch (type)
+    {
+    case LogType::info:     return "[INFO]";
+    case LogType::attempt:  return "[ATTEMPT]";
+    case LogType::success:  return "[SUCCESS]";
+    case LogType::warning:  return "[WARNING]";
+    case LogType::error:    return "[ERROR]";
+    }
+}
+void Window::Log(int level, LogType type, const std::string& output)
+{
+    if (level < minLogLevel)
+        return;
+
     double logTime = GetTime();
+    consoleOutput[0] =
+        LogTypeStr(type) +
+        "[LEVEL " + std::to_string(level) + "]" +
+        output +
+        " - t+" + std::to_string(logTime) +
+        "(" + std::to_string((logTime - timeOfLastLog) * 1000) + "ms)";
+
+    std::ofstream logfile("session.log", std::ios_base::app);
+    logfile << consoleOutput[0] << '\n';
+    logfile.close();
+
     for (int i = 1; i < _countof(consoleOutput); ++i)
     {
-        consoleOutput[i - 1] = consoleOutput[i];
+        consoleOutput[i - 1].swap(consoleOutput[i]); // [0] gets sequentially traded forward without copying
     }
-    consoleOutput[_countof(consoleOutput) - 1] = TextFormat("%s - t+%.3f (%.2fms)", output, logTime, (logTime - timeOfLastLog) * 1000.0);
     timeOfLastLog = logTime;
-    std::ofstream logfile("session.log", std::ios_base::app);
-    logfile << consoleOutput[_countof(consoleOutput) - 1] << '\n';
-    logfile.close();
-}
-void Window::LogMessage(const char* output)
-{
-    Log(TextFormat("[Info] %s", output));
-}
-void Window::LogAttempt(const char* output)
-{
-    Log(TextFormat("[Attempt] %s...", output));
-}
-void Window::LogError(const char* output)
-{
-    Log(TextFormat("[Error] %s", output));
-}
-void Window::LogSuccess(const char* output)
-{
-    Log(TextFormat("[Success] %s", output));
 }
 void Window::ClearLog()
 {
     timeOfLastLog = GetTime();
     std::ofstream logfile("session.log", std::ios_base::trunc);
     logfile.close();
-    Log("Start of log");
+    Log(INT_MAX, LogType::info, "Start of log");
 }
 void Window::CleanPropertiesPane()
 {

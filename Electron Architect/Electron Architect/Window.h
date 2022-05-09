@@ -17,6 +17,15 @@ extern Blueprint g_clipboardBP;
 
 void DrawTextShadowedIV(const char* text, IVec2 pos, int fontSize, Color color, Color shadow);
 
+enum class LogType
+{
+    info,
+    attempt,
+    success,
+    warning,
+    error,
+};
+
 struct Window
 {
     Window(int windowWidth, int windowHeight);
@@ -71,6 +80,8 @@ public:
     IRect propertiesPaneRec;
 
     double timeOfLastLog = 0.0;
+    int userSetMinLogLevel = 0; // Allows user to surpress logs below this level
+    int minLogLevel = 0;        // Allows program to surpress logs below this level (Cannot be lower than userSetMinLogLevel)
     std::string consoleOutput[6];
     IRect consolePaneRec;
 
@@ -188,7 +199,10 @@ public:
     void CleanConsolePane();
     void DrawConsoleOutput();
     // Push to the console and log file
-    void Log(const char* output);
+    // Only to be used by config
+    void SetMinLogLevel_User(int level);
+    void SetMinLogLevel(int level);
+    void Log(int level, LogType type, const std::string& output);
     void LogMessage(const char* output);
     void LogAttempt(const char* output);
     void LogSuccess(const char* output);
