@@ -38,7 +38,7 @@ Window::Window(int windowWidth, int windowHeight) :
     minLogLevel(LogType::info),
     modeButtons{
         IconButton(
-            IVec2(0, 3),
+            IVec2(),
             "Mode: Draw [b]",
             "Left click to create a node and a wire.\n"
             "Click an existing node to create a wire from it.\n"
@@ -50,7 +50,7 @@ Window::Window(int windowWidth, int windowHeight) :
             &modeIcons16x),
 
         IconButton(
-            IVec2(0, 4),
+            IVec2(),
             "Mode: Edit [v]",
             "Left click and drag nodes to move them around.\n"
             "Marquee rectangles can be made with the mouse.\n"
@@ -63,7 +63,7 @@ Window::Window(int windowWidth, int windowHeight) :
             &modeIcons16x),
 
         IconButton(
-            IVec2(0, 5),
+            IVec2(),
             "Mode: Erase [x]",
             "Left click a node, wire, or group to erase it.\n"
             "Hold shift to bypass the node without erasing\n"
@@ -73,7 +73,7 @@ Window::Window(int windowWidth, int windowHeight) :
             &modeIcons16x),
 
         IconButton(
-            IVec2(0, 6),
+            IVec2(),
             "Mode: Interact [f]",
             "Left click an inputless node to toggle it on/off.",
             [this]() { SetMode(Mode::INTERACT); },
@@ -82,7 +82,7 @@ Window::Window(int windowWidth, int windowHeight) :
     },
     gateButtons{
         IconButton(
-            IVec2(0,8),
+            IVec2(),
             "Gate: Or [1]",
             "Outputs true if any input is true,\n"
             "Outputs false otherwise.",
@@ -91,7 +91,7 @@ Window::Window(int windowWidth, int windowHeight) :
             &gateIcons16x),
 
         IconButton(
-            IVec2(0,9),
+            IVec2(),
             "Gate: And [2]",
             "Outputs true if all inputs are true,\n"
             "Outputs false otherwise.",
@@ -100,7 +100,7 @@ Window::Window(int windowWidth, int windowHeight) :
             &gateIcons16x),
 
         IconButton(
-            IVec2(0,10),
+            IVec2(),
             "Gate: Nor [3]",
             "Outputs false if any input is true.\n"
             "Outputs true otherwise.",
@@ -109,7 +109,7 @@ Window::Window(int windowWidth, int windowHeight) :
             &gateIcons16x),
 
         IconButton(
-            IVec2(0,11),
+            IVec2(),
             "Gate: Xor [4]",
             "Outputs true if exactly 1 input is true,\n"
             "Outputs false otherwise.\n"
@@ -119,7 +119,7 @@ Window::Window(int windowWidth, int windowHeight) :
             &gateIcons16x),
 
         IconButton(
-            IVec2(0,12),
+            IVec2(),
             "Element: Resistor [5]",
             "Outputs true if > resistance inputs are true,\n"
             "Outputs false otherwise.\n"
@@ -129,7 +129,7 @@ Window::Window(int windowWidth, int windowHeight) :
             &gateIcons16x),
 
         IconButton(
-            IVec2(0,13),
+            IVec2(),
             "Element: Capacitor [6]",
             "Stores charge while any input is true.\n"
             "Stops charging once charge = capacity.\n"
@@ -142,7 +142,7 @@ Window::Window(int windowWidth, int windowHeight) :
             &gateIcons16x),
 
         IconButton(
-            IVec2(0,14),
+            IVec2(),
             "Element: LED [7]",
             "Treats I/O the same as an OR gate.\n"
             "Lights up with the selected color when powered.",
@@ -151,7 +151,7 @@ Window::Window(int windowWidth, int windowHeight) :
             &gateIcons16x),
 
         IconButton(
-            IVec2(0,15),
+            IVec2(),
             "Element: Delay [8]",
              "Treats I/O the same as an OR gate.\n"
             "Outputs with a 1-tick delay.\n"
@@ -162,7 +162,7 @@ Window::Window(int windowWidth, int windowHeight) :
             &gateIcons16x),
 
         IconButton(
-            IVec2(0,16),
+            IVec2(),
             "Element: Battery [9]",
             "Always outputs true, regardless of inputs.",
             [this]() { SetGate(Gate::BATTERY); },
@@ -171,7 +171,7 @@ Window::Window(int windowWidth, int windowHeight) :
     },
     paramButtons{
         ColorButton(
-            IVec2(0,18),
+            IVec2(),
             "Parameter: 0",
             "@TODO",
             [this]() { storedExtraParam = 0; },
@@ -179,7 +179,7 @@ Window::Window(int windowWidth, int windowHeight) :
             "0"),
 
         ColorButton(
-            IVec2(0,19),
+            IVec2(),
             "Parameter: 1",
             "@TODO",
             [this]() { storedExtraParam = 1; },
@@ -187,7 +187,7 @@ Window::Window(int windowWidth, int windowHeight) :
             "1"),
 
         ColorButton(
-            IVec2(0,20),
+            IVec2(),
             "Parameter: 2",
             "@TODO",
             [this]() { storedExtraParam = 2; },
@@ -195,7 +195,7 @@ Window::Window(int windowWidth, int windowHeight) :
             "2"),
 
         ColorButton(
-            IVec2(0,21),
+            IVec2(),
             "Parameter: 3",
             "@TODO",
             [this]() { storedExtraParam = 3; },
@@ -203,7 +203,7 @@ Window::Window(int windowWidth, int windowHeight) :
             "3"),
 
         ColorButton(
-            IVec2(0,22),
+            IVec2(),
             "Parameter: 4",
             "@TODO",
             [this]() { storedExtraParam = 4; },
@@ -211,7 +211,7 @@ Window::Window(int windowWidth, int windowHeight) :
             "4"),
 
         ColorButton(
-            IVec2(0,23),
+            IVec2(),
             "Parameter: 5",
             "@TODO",
             [this]() { storedExtraParam = 5; },
@@ -219,7 +219,7 @@ Window::Window(int windowWidth, int windowHeight) :
             "5"),
 
         ColorButton(
-            IVec2(0,24),
+            IVec2(),
             "Parameter: 6",
             "@TODO",
             [this]() { storedExtraParam = 6; },
@@ -227,7 +227,7 @@ Window::Window(int windowWidth, int windowHeight) :
             "6"),
 
         ColorButton(
-            IVec2(0,25),
+            IVec2(),
             "Parameter: 7",
             "@TODO",
             [this]() { storedExtraParam = 7; },
@@ -235,7 +235,7 @@ Window::Window(int windowWidth, int windowHeight) :
             "7"),
 
         ColorButton(
-            IVec2(0,26),
+            IVec2(),
             "Parameter: 8",
             "@TODO",
             [this]() { storedExtraParam = 8; },
@@ -243,7 +243,7 @@ Window::Window(int windowWidth, int windowHeight) :
             "8"),
 
         ColorButton(
-            IVec2(0,27),
+            IVec2(),
             "Parameter: 9",
             "@TODO",
             [this]() { storedExtraParam = 9; },
@@ -251,19 +251,29 @@ Window::Window(int windowWidth, int windowHeight) :
             "9"),
     },
     blueprintsButton(
-        IVec2(0, 0),
+        IVec2(),
         "Blueprints",
         "@TODO",
         [this]() { SetMode(Mode::BP_SELECT); },
         IVec2::Zero(),
-        &blueprintIcon16x),
+        &blueprintIcon16x
+    ),
     clipboardButton(
-            IVec2(0, 1),
+            IVec2(),
             "Clipboard (ctrl+c to copy, ctrl+v to paste)",
             "@TODO",
             [this]() { if (this->IsClipboardValid()) SetMode(Mode::PASTE); },
             IVec2::Zero(),
-            &clipboardIcon16x),
+            &clipboardIcon16x
+    ),
+    toolPaneSizeButton(
+        IVec2(0),
+        "Toggle toolpane size",
+        "@TODO",
+        [this]() { ToggleToolPaneSize(); },
+        "+",
+        1
+    ),
     allButtons{
         &modeButtons[0],
         &modeButtons[1],
@@ -290,6 +300,7 @@ Window::Window(int windowWidth, int windowHeight) :
         &paramButtons[9],
         &blueprintsButton,
         &clipboardButton,
+        &toolPaneSizeButton,
     }
 {
     ClearLog();
@@ -606,11 +617,7 @@ void Window::UpdateSize()
     windowWidth = GetScreenWidth();
     windowHeight = GetScreenHeight();
     // Todo: Standardize these to match with ReloadConfig
-    toolPaneRec.h = windowHeight;
-    consolePaneRec.y = windowHeight - consolePaneRec.h;
-    consolePaneRec.w = windowWidth - toolPaneRec.w - propertiesPaneRec.w;
-    propertiesPaneRec.x = windowWidth - propertiesPaneRec.w;
-    propertiesPaneRec.h = windowHeight;
+    ReloadPanes();
 }
 
 void Window::CopySelectionToClipboard()
@@ -946,6 +953,21 @@ const char* ConfigColorToString(Color color)
     return TextFormat("%u|%u|%u", color.r, color.g, color.b);
 }
 
+void Window::ReloadPanes()
+{
+    propertiesPaneRec.y = 0;
+    propertiesPaneRec.h = windowHeight;
+    propertiesPaneRec.w = 256 * uiScale;
+    consolePaneRec.x = 0;
+    consolePaneRec.w = windowWidth - propertiesPaneRec.w;
+    consolePaneRec.h = FontSize() * 7 * 2;
+    consolePaneRec.y = windowHeight - consolePaneRec.h;
+    propertiesPaneRec.x = windowWidth - propertiesPaneRec.w;
+
+    toolPaneRec = IRect((toolPaneSizeState ? 3 * Button::g_width : Button::g_width), windowHeight - consolePaneRec.h);
+    ReloadToolPane();
+}
+
 void Window::ReloadConfig()
 {
     std::ifstream file("config.ini");
@@ -1007,6 +1029,7 @@ void Window::ReloadConfig()
             "\npaste_preview_lod=4"
             "\nframes_per_tick=6"
             "\nui_scale=1"
+            "\ntoolpane_expanded=1"
             "\nmin_log_level=3";
 
         replacement.close();
@@ -1048,6 +1071,7 @@ void Window::ReloadConfig()
         else if (attribute == "paste_preview_lod")      pastePreviewLOD     = std::stoi(value);
         else if (attribute == "frames_per_tick")        framesPerTick       = std::stoi(value);
         else if (attribute == "ui_scale")               uiScale             = std::stoi(value);
+        else if (attribute == "toolpane_expanded")      toolPaneSizeState   = std::stoi(value);
         else if (attribute == "min_log_level")          SetMinLogLevel_User(LogType(std::min(std::max(0, std::stoi(value)), 4)));
     }
 
@@ -1057,8 +1081,6 @@ void Window::ReloadConfig()
         uiScale = 1;
 
     IconButton::g_width = 16 * uiScale;
-    propertiesPaneRec.y = 0;
-    propertiesPaneRec.h = windowHeight;
     switch (uiScale)
     {
     default:
@@ -1074,7 +1096,6 @@ void Window::ReloadConfig()
         }
         blueprintsButton.textureSheet = &blueprintIcon16x;
         clipboardButton.textureSheet = &clipboardIcon16x;
-        propertiesPaneRec.w = 256;
         break;
     case 2:
         for (IconButton& b : modeButtons)
@@ -1087,16 +1108,10 @@ void Window::ReloadConfig()
         }
         blueprintsButton.textureSheet = &blueprintIcon32x;
         clipboardButton.textureSheet = &clipboardIcon32x;
-        propertiesPaneRec.w = 512;
         break;
     }
-    consolePaneRec.x = Button::g_width;
-    consolePaneRec.w = windowWidth - propertiesPaneRec.w - consolePaneRec.x;
-    consolePaneRec.h = FontSize() * 7 * 2;
-    consolePaneRec.y = windowHeight - consolePaneRec.h;
-    propertiesPaneRec.x = windowWidth - propertiesPaneRec.w;
 
-    toolPaneRec = IRect(Button::g_width, windowHeight);
+    ReloadPanes();
 
     file.close();
 }
@@ -1280,6 +1295,76 @@ void Window::DrawClipboardPreview() const
         ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND3), 0.25f),
         clipboardPreviewLOD);
 }
+void Window::ReloadToolPane()
+{
+    if (toolPaneSizeState)
+    {
+        blueprintsButton.relativePos = IVec2(0, 1);
+        clipboardButton.relativePos  = IVec2(0, 2);
+        modeButtons[0].relativePos   = IVec2(1, 1);
+        modeButtons[1].relativePos   = IVec2(1, 2);
+        modeButtons[2].relativePos   = IVec2(2, 1);
+        modeButtons[3].relativePos   = IVec2(2, 2);
+
+        gateButtons[0].relativePos   = IVec2(0, 4);
+        gateButtons[1].relativePos   = IVec2(1, 4);
+        gateButtons[2].relativePos   = IVec2(2, 4);
+        gateButtons[3].relativePos   = IVec2(0, 5);
+        gateButtons[4].relativePos   = IVec2(1, 5);
+        gateButtons[5].relativePos   = IVec2(2, 5);
+        gateButtons[6].relativePos   = IVec2(0, 6);
+        gateButtons[7].relativePos   = IVec2(1, 6);
+        gateButtons[8].relativePos   = IVec2(2, 6);
+
+        paramButtons[0].relativePos  = IVec2(1,11);
+        paramButtons[1].relativePos  = IVec2(0,10);
+        paramButtons[2].relativePos  = IVec2(1,10);
+        paramButtons[3].relativePos  = IVec2(2,10);
+        paramButtons[4].relativePos  = IVec2(0, 9);
+        paramButtons[5].relativePos  = IVec2(1, 9);
+        paramButtons[6].relativePos  = IVec2(2, 9);
+        paramButtons[7].relativePos  = IVec2(0, 8);
+        paramButtons[8].relativePos  = IVec2(1, 8);
+        paramButtons[9].relativePos  = IVec2(2, 8);
+
+        toolPaneSizeButton.width = 3;
+        toolPaneSizeButton.buttonText = "-";
+    }
+    else
+    {
+        int i = 1;
+
+        blueprintsButton.relativePos = IVec2(0, i++);
+        clipboardButton.relativePos = IVec2(0, i++);
+
+        for (int j = 0; j < _countof(modeButtons); ++j)
+        {
+            modeButtons[j].relativePos = IVec2(0, i++);
+        }
+
+        i++;
+
+        for (int j = 0; j < _countof(gateButtons); ++j)
+        {
+            gateButtons[j].relativePos = IVec2(0, i++);
+        }
+
+        i++;
+
+        for (int j = 0; j < _countof(paramButtons); ++j)
+        {
+            paramButtons[j].relativePos = IVec2(0, i++);
+        }
+
+        toolPaneSizeButton.width = 1;
+        toolPaneSizeButton.buttonText = "+";
+    }
+}
+void Window::ToggleToolPaneSize()
+{
+    toolPaneSizeState = !toolPaneSizeState;
+    ReloadPanes();
+}
 void Window::DrawToolPane()
 {
     DrawRectangleIRect(toolPaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
@@ -1311,7 +1396,10 @@ void Window::DrawToolPane()
 
         // Text buttons
         else if (const TextButton* tb = dynamic_cast<const TextButton*>(b))
-            DrawTextIV(tb->buttonText, tb->Bounds().xy, FontSize(), color);
+        {
+            IVec2 textCenter = tb->Bounds().xy + Height(FontPadding().y) + Width((Button::g_width - MeasureText(tb->buttonText, FontSize())) / 2);
+            DrawTextIV(tb->buttonText, textCenter, FontSize(), color);
+        }
 
         // Color buttons
         else if (const ColorButton* cb = dynamic_cast<const ColorButton*>(b))

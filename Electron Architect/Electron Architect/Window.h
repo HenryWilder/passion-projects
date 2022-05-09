@@ -98,8 +98,10 @@ public:
     const ColorButton* ButtonFromParameter(uint8_t param) const;
     IconButton blueprintsButton;
     IconButton clipboardButton;
-    Button* const allButtons[25];
+    TextButton toolPaneSizeButton;
+    Button* const allButtons[26];
     IRect toolPaneRec;
+    bool toolPaneSizeState;
 
 private:
 
@@ -196,11 +198,14 @@ public:
 
     void DrawTooltipAtCursor_Shadowed(const std::string& text, Color color);
 
+    void ReloadPanes();
     void ReloadConfig();
 
     void UpdateTool();
     void DrawTool();
 
+    void ReloadToolPane();
+    void ToggleToolPaneSize();
     void DrawToolPane();
 
     void CleanConsolePane();

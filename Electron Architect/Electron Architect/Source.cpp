@@ -183,6 +183,11 @@ int main()
                     window.DrawToolProperties();
                 }
 
+                // Tool
+                {
+                    window.DrawToolPane();
+                }
+
                 // Node tooltip
                 if (!!window.hoveredNode && window.hoveredNode->HasName())
                     DrawTextShadowedIV(
@@ -191,11 +196,6 @@ int main()
                         window.FontSize(),
                         UIColor(UIColorID::UI_COLOR_FOREGROUND),
                         UIColor(UIColorID::UI_COLOR_BACKGROUND));
-
-                // Mode/gate
-                {
-                    window.DrawToolPane();
-                }
             }
 
         } EndDrawing();
