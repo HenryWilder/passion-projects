@@ -1369,12 +1369,12 @@ std::string LogTypeStr(LogType type)
 {
     switch (type)
     {
-    case LogType::info:     return "[INFO]";
-    case LogType::attempt:  return "[ATTEMPT]";
-    case LogType::success:  return "[SUCCESS]";
-    case LogType::warning:  return "[WARNING]";
-    case LogType::error:    return "[ERROR]";
-    default:                return "[UNKNOWN]";
+    case LogType::info:     return "[INFO] ";
+    case LogType::attempt:  return "[ATTEMPT] ";
+    case LogType::success:  return "[SUCCESS] ";
+    case LogType::warning:  return "[WARNING] ";
+    case LogType::error:    return "[ERROR] ";
+    default:                return "[UNKNOWN] ";
     }
 }
 void Window::Log(LogType type, const std::string& output)

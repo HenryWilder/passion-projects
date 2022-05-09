@@ -26,7 +26,7 @@ Graph::~Graph()
 
 void Graph::Log(LogType type, const std::string& what) const
 {
-    owningTab->owningWindow->Log(type, TextFormat("[Graph] %s", what));
+    owningTab->owningWindow->Log(type, "[Graph] " + what);
 }
 
 void Graph::_Free()
