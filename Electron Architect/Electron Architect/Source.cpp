@@ -173,7 +173,12 @@ int main()
 
                 // Node tooltip
                 if (!!window.hoveredNode && window.hoveredNode->HasName())
-                    window.DrawTooltipAtCursor_Shadowed(window.hoveredNode->GetName().c_str(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                    DrawTextShadowedIV(
+                        window.hoveredNode->GetName().c_str(),
+                        window.cursorUIPos + IVec2(16),
+                        window.FontSize(),
+                        UIColor(UIColorID::UI_COLOR_FOREGROUND),
+                        UIColor(UIColorID::UI_COLOR_BACKGROUND));
 
                 // Mode/gate
                 {

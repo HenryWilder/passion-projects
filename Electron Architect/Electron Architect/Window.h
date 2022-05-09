@@ -15,7 +15,7 @@ enum class ModeType;
 // Reusable address so clipboard doesn't have to delete
 extern Blueprint g_clipboardBP;
 
-void DrawTextShadowedIV(const char* text, IVec2 pos, int fontSize, Color color);
+void DrawTextShadowedIV(const char* text, IVec2 pos, int fontSize, Color color, Color shadow);
 
 struct Window
 {
