@@ -209,7 +209,7 @@ void Blueprint::Save() const
     file << nodes.size() << '\n';
     for (const NodeBP& node : nodes)
     {
-        file << node.b_io << ' ' << (char)node.gate << ' ' << (unsigned)node.extraParam << ' ' << node.relativePosition.x << ' ' << node.relativePosition.y << '\n';
+        file << node.b_io << ' ' << (char)node.gate << ' ' << (unsigned)node.extraParam << ' ' << node.relativePosition.x << ' ' << node.relativePosition.y << node.name << '\n';
     }
     file << wires.size() << '\n';
     for (const WireBP& wire : wires)
@@ -255,8 +255,9 @@ void LoadBlueprint(const char* filename, Blueprint& dest)
         char gate;
         uint8_t ep;
         IVec2 pos;
-        file >> io >> gate >> ep >> pos.x >> pos.y;
-        dest.nodes.emplace_back(io, (Gate)gate, ep, pos);
+        std::string name;
+        file >> io >> gate >> ep >> pos.x >> pos.y >> name;
+        dest.nodes.emplace_back(io, (Gate)gate, ep, pos, name);
         extents.x = std::max(pos.x, extents.x);
         extents.y = std::max(pos.y, extents.y);
     }
