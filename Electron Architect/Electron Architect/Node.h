@@ -33,8 +33,8 @@ public:
     void SetY(int y);
 
     bool HasName() const;
-    const char* GetName() const;
-    void SetName(const char* name);
+    const std::string& GetName() const;
+    void SetName(const std::string& name);
 
     Gate GetGate() const;
     void SetGate(Gate gate);

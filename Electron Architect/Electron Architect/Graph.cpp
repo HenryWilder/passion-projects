@@ -884,7 +884,10 @@ void Graph::Save(const char* filename) const
             else if (node->GetGate() == Gate::CAPACITOR)
                 file << TextFormat(" %i", node->GetCapacity());
             if (node->HasName())
+            {
                 file << ' ' << node->GetName();
+                LogMessage(TextFormat("Stored named node \"%s\"", node->GetName().c_str()));
+            }
             file << '\n';
         }
 

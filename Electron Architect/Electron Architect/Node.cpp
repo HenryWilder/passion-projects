@@ -43,12 +43,12 @@ bool Node::HasName() const
     return !m_name.empty();
 }
 
-const char* Node::GetName() const
+const std::string& Node::GetName() const
 {
-    return m_name.c_str();
+    return m_name;
 }
 
-void Node::SetName(const char* name)
+void Node::SetName(const std::string& name)
 {
     m_name = name;
 }
