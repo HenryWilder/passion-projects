@@ -236,8 +236,12 @@ void EditTool::Update(Window& window)
     // Press
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
+        if (groupCorner.Valid())
+        {
+            draggingGroupCorner = true;
+        }
         // There is a selection, and a node inside it has been pressed (move selected)
-        if (!!window.hoveredNode && std::find(window.CurrentTab().selection.begin(), window.CurrentTab().selection.end(), window.hoveredNode) != window.CurrentTab().selection.end())
+        else if (!!window.hoveredNode && std::find(window.CurrentTab().selection.begin(), window.CurrentTab().selection.end(), window.hoveredNode) != window.CurrentTab().selection.end())
         {
             nodeBeingDragged = window.hoveredNode;
             wireBeingDragged = nullptr;
