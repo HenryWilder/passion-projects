@@ -218,7 +218,7 @@ IRect Blueprint::GetSelectionPreviewRect(IVec2 pos) const
 void Blueprint::Save() const
 {
     std::ofstream file(TextFormat(".\\blueprints\\%s.bp", name.c_str()));
-    file << nodes.size() << '\n';
+    file << "n " << nodes.size() << '\n';
     for (const NodeBP& node : nodes)
     {
         file << node.b_io << ' ' << (char)node.gate << ' ' << (unsigned)node.extraParam << ' '
@@ -227,7 +227,7 @@ void Blueprint::Save() const
             file << ' ' << node.name;
         file << '\n';
     }
-    file << wires.size() << '\n';
+    file << "w " << wires.size() << '\n';
     for (const WireBP& wire : wires)
     {
         file << wire.startNodeIndex << ' ' << wire.endNodeIndex << ' ' << (int)wire.elbowConfig << '\n';
@@ -249,33 +249,23 @@ void LoadBlueprint(const char* filename, Blueprint& dest)
     else
         dest.name = name;
     IVec2 extents = IVec2::Zero();
+
+    file.ignore(64, 'n');
     size_t nodeCount;
     file >> nodeCount;
-    try
-    {
-        dest.nodes.reserve(nodeCount);
-    }
-    catch (std::length_error e)
-    {
-        file.close();
-        throw e;
-    }
-    catch (...)
-    {
-        file.close();
-        throw std::exception("unknown");
-    }
+    dest.nodes.reserve(nodeCount);
     for (size_t i = 0; i < nodeCount; ++i)
     {
         bool io;
         char gate;
-        uint8_t ep;
+        unsigned ep;
         IVec2 pos;
         std::string name;
         file >> io >> gate >> ep >> pos.x >> pos.y;
-        if (file.peek() != '\n')
+        if (file.peek() == ' ')
         {
-            file >> name;
+            file.ignore(1);
+            std::getline(file, name);
             dest.nodes.emplace_back(name, io, (Gate)gate, ep, pos);
         }
         else
@@ -285,27 +275,16 @@ void LoadBlueprint(const char* filename, Blueprint& dest)
         extents.y = std::max(pos.y, extents.y);
     }
     dest.extents = extents;
+    file.ignore(64, 'w');
     size_t wireCount;
     file >> wireCount;
-    try
-    {
-        dest.wires.reserve(wireCount);
-    }
-    catch (std::length_error e)
-    {
-        file.close();
-        throw e;
-    }
-    catch (...)
-    {
-        file.close();
-        throw std::exception("unknown");
-    }
+    dest.wires.reserve(wireCount);
     for (size_t i = 0; i < wireCount; ++i)
     {
         size_t startNodeIndex, endNodeIndex;
-        uint8_t elbowConfig;
+        unsigned elbowConfig;
         file >> startNodeIndex >> endNodeIndex >> elbowConfig;
+        _ASSERT_EXPR(elbowConfig < 4, L"Elbow config out of range");
         dest.wires.emplace_back(startNodeIndex, endNodeIndex, (ElbowConfig)elbowConfig);
     }
     file.close();
