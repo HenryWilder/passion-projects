@@ -48,12 +48,6 @@ IVec2 Normal(IVec2 vec)
     };
 }
 
-bool InBoundingBox(IVec2 p, IVec2 a, IVec2 b)
-{
-    return Between_Inclusive(p.x, a.x, b.x) &&
-        Between_Inclusive(p.y, a.y, b.y);
-}
-
 IVec2 IVec2Scale_f(IVec2 a, float b)
 {
     return IVec2((int)((float)a.x * b), (int)((float)a.y * b));
@@ -161,8 +155,8 @@ bool InBoundingBox(IRect bounds, IVec2 pt)
     return
         pt.x >= bounds.x &&
         pt.y >= bounds.y &&
-        pt.x <= bounds.x + bounds.w &&
-        pt.y <= bounds.y + bounds.h;
+        pt.x <  bounds.x + bounds.w &&
+        pt.y <  bounds.y + bounds.h;
 }
 
 void DrawRectangleIRect(IRect rec, Color color)

@@ -82,8 +82,6 @@ int IntGridDistance(IVec2 a, IVec2 b);
 long DistanceSqr(IVec2 a, IVec2 b);
 IVec2 Normal(IVec2 vec);
 
-bool InBoundingBox(IVec2 p, IVec2 a, IVec2 b);
-
 constexpr IVec2 operator+(IVec2 a, IVec2 b) { return IVec2(a.x + b.x, a.y + b.y); }
 constexpr IVec2 operator-(IVec2 a, IVec2 b) { return IVec2(a.x - b.x, a.y - b.y); }
 constexpr IVec2 operator*(IVec2 a, IVec2 b) { return IVec2(a.x * b.x, a.y * b.y); }
