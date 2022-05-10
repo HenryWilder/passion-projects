@@ -271,6 +271,9 @@ void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
 }
 void Node::Draw(Color foreground, Color background, Color CapacitorInactive) const
 {
+    if (m_gate == Gate::OR && GetInputCount() == 1 && GetOutputCount() == 1)
+        return;
+
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
 
     Draw(m_position, m_gate, foreground, background);
@@ -282,7 +285,7 @@ void Node::Draw(Color foreground, Color background, Color CapacitorInactive) con
     }
     else if (m_gate == Gate::LED)
     {
-        DrawCircle(GetX(), GetY(), 1.0f, g_resistanceBands[GetColorIndex()]);
+        DrawCircleIV(m_position, 1.0f, g_resistanceBands[GetColorIndex()]);
     }
     else if (m_gate == Gate::CAPACITOR)
     {
