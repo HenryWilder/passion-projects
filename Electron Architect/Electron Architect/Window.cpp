@@ -1000,9 +1000,48 @@ void Window::ReloadPanes()
     ReloadToolPane();
 }
 
+void Window::SaveConfig() const
+{
+    std::ofstream config("config.ini", std::ios_base::trunc);
+
+    config <<
+        "[Colors]"
+        "\nbackground_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND)) <<
+        "\nbackground1_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND1)) <<
+        "\nbackground2_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND2)) <<
+        "\nbackground3_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND3)) <<
+        "\nforeground3_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND3)) <<
+        "\nforeground2_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND2)) <<
+        "\nforeground1_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND1)) <<
+        "\nforeground_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND)) <<
+        "\ninput_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_INPUT)) <<
+        "\noutput_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_OUTPUT)) <<
+        "\navailable_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_AVAILABLE)) <<
+        "\ninteract_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_INTERACT)) <<
+        "\nactive_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_ACTIVE)) <<
+        "\nerror_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_ERROR)) <<
+        "\ndestruction_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_DESTRUCTIVE)) <<
+        "\naugment_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_SPECIAL)) <<
+        "\ncaution_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_CAUTION)) <<
+        "\nblueprint_background_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BLUEPRINTS_BACKGROUND)) <<
+        "\n\n[LOD]"
+        "\nblueprint_menu_lod=" << (int)blueprintLOD <<
+        "\nclipboard_preview_lod=" << (int)clipboardPreviewLOD <<
+        "\npaste_preview_lod=" << (int)pastePreviewLOD <<
+        "\nframes_per_tick=" << (int)framesPerTick <<
+        "\nui_scale=" << uiScale <<
+        "\ntoolpane_expanded=" << toolPaneSizeState <<
+        "\nshow_console=" << consoleOn <<
+        "\nshow_properties=" << propertiesOn <<
+        "\nmin_log_level=" << (int)userSetMinLogLevel;
+        
+    config.close();
+}
 void Window::ReloadConfig()
 {
     std::ifstream file("config.ini");
+
+    // Defaults
 
     UIColor(UIColorID::UI_COLOR_BACKGROUND) = BLACK;
     UIColor(UIColorID::UI_COLOR_BACKGROUND1) = ui_color::SPACEGRAY;
@@ -1029,44 +1068,21 @@ void Window::ReloadConfig()
 
     UIColor(UIColorID::UI_COLOR_BLUEPRINTS_BACKGROUND) = { 10,15,30, 255 };
 
+    blueprintLOD = 0;
+    clipboardPreviewLOD = 0;
+    pastePreviewLOD = 0;
+    framesPerTick = 6;
+    uiScale = 1;
+    toolPaneSizeState = 1;
+    consoleOn = 1;
+    propertiesOn = 1;
+    SetMinLogLevel_User(LogType::warning);
+
     if (!file.is_open()) // In case of deletion
     {
         file.close();
 
-        std::ofstream replacement("config.ini");
-
-        replacement <<
-            "[Colors]"
-            "\nbackground_color="           << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND)) <<
-            "\nbackground1_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND1)) <<
-            "\nbackground2_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND2)) <<
-            "\nbackground3_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BACKGROUND3)) <<
-            "\nforeground3_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND3)) <<
-            "\nforeground2_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND2)) <<
-            "\nforeground1_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND1)) <<
-            "\nforeground_color="           << ConfigColorToString(UIColor(UIColorID::UI_COLOR_FOREGROUND)) <<
-            "\ninput_color="                << ConfigColorToString(UIColor(UIColorID::UI_COLOR_INPUT)) <<
-            "\noutput_color="               << ConfigColorToString(UIColor(UIColorID::UI_COLOR_OUTPUT)) <<
-            "\navailable_color="            << ConfigColorToString(UIColor(UIColorID::UI_COLOR_AVAILABLE)) <<
-            "\ninteract_color="             << ConfigColorToString(UIColor(UIColorID::UI_COLOR_INTERACT)) <<
-            "\nactive_color="               << ConfigColorToString(UIColor(UIColorID::UI_COLOR_ACTIVE)) <<
-            "\nerror_color="                << ConfigColorToString(UIColor(UIColorID::UI_COLOR_ERROR)) <<
-            "\ndestruction_color="          << ConfigColorToString(UIColor(UIColorID::UI_COLOR_DESTRUCTIVE)) <<
-            "\naugment_color="              << ConfigColorToString(UIColor(UIColorID::UI_COLOR_SPECIAL)) <<
-            "\ncaution_color="              << ConfigColorToString(UIColor(UIColorID::UI_COLOR_CAUTION)) <<
-            "\nblueprint_background_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BLUEPRINTS_BACKGROUND)) <<
-            "\n\n[LOD]"
-            "\nblueprint_menu_lod=1"
-            "\nclipboard_preview_lod=0"
-            "\npaste_preview_lod=4"
-            "\nframes_per_tick=6"
-            "\nui_scale=1"
-            "\ntoolpane_expanded=1"
-            "\nshow_console=1"
-            "\nshow_properties=1"
-            "\nmin_log_level=3";
-
-        replacement.close();
+        SaveConfig();
 
         file.open("config.ini");
     }
@@ -1101,7 +1117,6 @@ void Window::ReloadConfig()
         // Integers
         else if (attribute == "blueprint_menu_lod")     blueprintLOD        = std::stoi(value);
         else if (attribute == "clipboard_preview_lod")  clipboardPreviewLOD = std::stoi(value);
-        else if (attribute == "paste_preview_lod")      pastePreviewLOD     = std::stoi(value);
         else if (attribute == "paste_preview_lod")      pastePreviewLOD     = std::stoi(value);
         else if (attribute == "frames_per_tick")        framesPerTick       = std::stoi(value);
         else if (attribute == "ui_scale")               uiScale             = std::stoi(value);

@@ -203,6 +203,7 @@ int main()
     *   Unload and free memory
     ******************************************/
 
+    window.SaveConfig();
     UnloadImage(icon);
     UnloadTexture(iconTex);
 

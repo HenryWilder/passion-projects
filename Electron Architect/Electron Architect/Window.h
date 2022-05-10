@@ -203,6 +203,7 @@ public:
     void DrawTooltipAtCursor_Shadowed(const std::string& text, Color color);
 
     void ReloadPanes();
+    void SaveConfig() const;
     void ReloadConfig();
 
     void UpdateTool();
