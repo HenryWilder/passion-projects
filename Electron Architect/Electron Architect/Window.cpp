@@ -1114,6 +1114,7 @@ void Window::ReloadConfig()
         else if (attribute == "error_color")        UIColor(UIColorID::UI_COLOR_ERROR)       = ConfigStrToColor(value);
         else if (attribute == "destruction_color")  UIColor(UIColorID::UI_COLOR_DESTRUCTIVE) = ConfigStrToColor(value);
         else if (attribute == "caution_color")      UIColor(UIColorID::UI_COLOR_CAUTION)     = ConfigStrToColor(value);
+        else if (attribute == "blueprint_background_color") UIColor(UIColorID::UI_COLOR_BLUEPRINTS_BACKGROUND) = ConfigStrToColor(value);
 
         // Integers
         else if (attribute == "blueprint_menu_lod")     blueprintLOD        = std::stoi(value);
