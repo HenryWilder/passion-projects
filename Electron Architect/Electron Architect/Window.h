@@ -99,9 +99,13 @@ public:
     IconButton blueprintsButton;
     IconButton clipboardButton;
     TextButton toolPaneSizeButton;
-    Button* const allButtons[26];
+    TextButton propertiesToggleButton;
+    TextButton consoleToggleButton;
+    Button* const allButtons[28];
     IRect toolPaneRec;
     bool toolPaneSizeState;
+    bool consoleOn;
+    bool propertiesOn;
 
 private:
 
@@ -207,6 +211,9 @@ public:
     void ReloadToolPane();
     void ToggleToolPaneSize();
     void DrawToolPane();
+
+    void ToggleProperties();
+    void ToggleConsole();
 
     void CleanConsolePane();
     void DrawConsoleOutput();

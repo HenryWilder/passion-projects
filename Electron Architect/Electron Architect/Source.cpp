@@ -134,12 +134,14 @@ int main()
                 // Panels
 
                 // Console
+                if (window.consoleOn)
                 {
                     window.CleanConsolePane();
                     window.DrawConsoleOutput();
                 }
 
                 // Properties
+                if (window.propertiesOn)
                 {
                     // Initialize properties panel
                     window.CleanPropertiesPane();

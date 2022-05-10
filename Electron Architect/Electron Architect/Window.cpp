@@ -175,80 +175,80 @@ Window::Window(int windowWidth, int windowHeight) :
             "Parameter: 0",
             "@TODO",
             [this]() { storedExtraParam = 0; },
-            Node::g_resistanceBands[0],
-            "0"),
+Node::g_resistanceBands[0],
+"0"),
 
-        ColorButton(
-            IVec2(),
-            "Parameter: 1",
-            "@TODO",
-            [this]() { storedExtraParam = 1; },
-            Node::g_resistanceBands[1],
-            "1"),
+ColorButton(
+    IVec2(),
+    "Parameter: 1",
+    "@TODO",
+    [this]() { storedExtraParam = 1; },
+    Node::g_resistanceBands[1],
+    "1"),
 
-        ColorButton(
-            IVec2(),
-            "Parameter: 2",
-            "@TODO",
-            [this]() { storedExtraParam = 2; },
-            Node::g_resistanceBands[2],
-            "2"),
+    ColorButton(
+        IVec2(),
+        "Parameter: 2",
+        "@TODO",
+        [this]() { storedExtraParam = 2; },
+        Node::g_resistanceBands[2],
+        "2"),
 
-        ColorButton(
-            IVec2(),
-            "Parameter: 3",
-            "@TODO",
-            [this]() { storedExtraParam = 3; },
-            Node::g_resistanceBands[3],
-            "3"),
+    ColorButton(
+        IVec2(),
+        "Parameter: 3",
+        "@TODO",
+        [this]() { storedExtraParam = 3; },
+        Node::g_resistanceBands[3],
+        "3"),
 
-        ColorButton(
-            IVec2(),
-            "Parameter: 4",
-            "@TODO",
-            [this]() { storedExtraParam = 4; },
-            Node::g_resistanceBands[4],
-            "4"),
+    ColorButton(
+        IVec2(),
+        "Parameter: 4",
+        "@TODO",
+        [this]() { storedExtraParam = 4; },
+        Node::g_resistanceBands[4],
+        "4"),
 
-        ColorButton(
-            IVec2(),
-            "Parameter: 5",
-            "@TODO",
-            [this]() { storedExtraParam = 5; },
-            Node::g_resistanceBands[5],
-            "5"),
+ColorButton(
+    IVec2(),
+    "Parameter: 5",
+    "@TODO",
+    [this]() { storedExtraParam = 5; },
+    Node::g_resistanceBands[5],
+    "5"),
 
-        ColorButton(
-            IVec2(),
-            "Parameter: 6",
-            "@TODO",
-            [this]() { storedExtraParam = 6; },
-            Node::g_resistanceBands[6],
-            "6"),
+    ColorButton(
+        IVec2(),
+        "Parameter: 6",
+        "@TODO",
+        [this]() { storedExtraParam = 6; },
+        Node::g_resistanceBands[6],
+        "6"),
 
-        ColorButton(
-            IVec2(),
-            "Parameter: 7",
-            "@TODO",
-            [this]() { storedExtraParam = 7; },
-            Node::g_resistanceBands[7],
-            "7"),
+    ColorButton(
+        IVec2(),
+        "Parameter: 7",
+        "@TODO",
+        [this]() { storedExtraParam = 7; },
+        Node::g_resistanceBands[7],
+        "7"),
 
-        ColorButton(
-            IVec2(),
-            "Parameter: 8",
-            "@TODO",
-            [this]() { storedExtraParam = 8; },
-            Node::g_resistanceBands[8],
-            "8"),
+    ColorButton(
+        IVec2(),
+        "Parameter: 8",
+        "@TODO",
+        [this]() { storedExtraParam = 8; },
+        Node::g_resistanceBands[8],
+        "8"),
 
-        ColorButton(
-            IVec2(),
-            "Parameter: 9",
-            "@TODO",
-            [this]() { storedExtraParam = 9; },
-            Node::g_resistanceBands[9],
-            "9"),
+    ColorButton(
+        IVec2(),
+        "Parameter: 9",
+        "@TODO",
+        [this]() { storedExtraParam = 9; },
+        Node::g_resistanceBands[9],
+        "9"),
     },
     blueprintsButton(
         IVec2(),
@@ -256,15 +256,15 @@ Window::Window(int windowWidth, int windowHeight) :
         "@TODO",
         [this]() { SetMode(Mode::BP_SELECT); },
         IVec2::Zero(),
-        &blueprintIcon16x
+        & blueprintIcon16x
     ),
     clipboardButton(
-            IVec2(),
-            "Clipboard (ctrl+c to copy, ctrl+v to paste)",
-            "@TODO",
-            [this]() { if (this->IsClipboardValid()) SetMode(Mode::PASTE); },
-            IVec2::Zero(),
-            &clipboardIcon16x
+        IVec2(),
+        "Clipboard (ctrl+c to copy, ctrl+v to paste)",
+        "@TODO",
+        [this]() { if (this->IsClipboardValid()) SetMode(Mode::PASTE); },
+        IVec2::Zero(),
+        & clipboardIcon16x
     ),
     toolPaneSizeButton(
         IVec2(0),
@@ -274,6 +274,22 @@ Window::Window(int windowWidth, int windowHeight) :
         "+",
         1
     ),
+    propertiesToggleButton(
+        IVec2(),
+        "Toggle the properties pane",
+        "@TODO",
+        [this]() { ToggleProperties(); },
+        "P",
+        1
+        ),
+    consoleToggleButton(
+        IVec2(),
+        "Toggle the console pane",
+        "@TODO",
+        [this]() { ToggleConsole(); },
+        "C",
+        1
+        ),
     allButtons{
         &modeButtons[0],
         &modeButtons[1],
@@ -301,6 +317,8 @@ Window::Window(int windowWidth, int windowHeight) :
         &blueprintsButton,
         &clipboardButton,
         &toolPaneSizeButton,
+        &propertiesToggleButton,
+        &consoleToggleButton,
     }
 {
     ClearLog();
@@ -614,9 +632,10 @@ void Window::UpdateCamera()
 
 void Window::UpdateSize()
 {
-    windowWidth = GetScreenWidth();
-    windowHeight = GetScreenHeight();
-    // Todo: Standardize these to match with ReloadConfig
+    windowWidth = GetRenderWidth();
+    windowHeight = GetRenderHeight();
+    Log(LogType::info, "Window width is now " + std::to_string(windowWidth));
+    Log(LogType::info, "Window height is now " + std::to_string(windowHeight));
     ReloadPanes();
 }
 
@@ -824,11 +843,14 @@ void Window::CheckHotkeys()
 
     if (IsKeyPressed(KEY_F11))
     {
+        if (!IsWindowFullscreen())
+            SetWindowSize(GetMonitorWidth(GetCurrentMonitor()), GetMonitorHeight(GetCurrentMonitor()));
+        else
+            SetWindowSize(1280, 720);
         ToggleFullscreen();
-        windowWidth = GetScreenWidth();
-        windowHeight = GetScreenHeight();
-        Log(LogType::error, "Window width is now " + std::to_string(windowWidth));
-        Log(LogType::error, "Window height is now " + std::to_string(windowHeight));
+        if (!IsWindowFullscreen())
+            MaximizeWindow();
+        UpdateSize();
     }
 }
 
@@ -958,13 +980,23 @@ void Window::ReloadPanes()
     propertiesPaneRec.y = 0;
     propertiesPaneRec.h = windowHeight;
     propertiesPaneRec.w = 256 * uiScale;
-    consolePaneRec.x = 0;
-    consolePaneRec.w = windowWidth - propertiesPaneRec.w;
-    consolePaneRec.h = FontSize() * 7 * 2;
-    consolePaneRec.y = windowHeight - consolePaneRec.h;
     propertiesPaneRec.x = windowWidth - propertiesPaneRec.w;
 
-    toolPaneRec = IRect((toolPaneSizeState ? 3 * Button::g_width : Button::g_width), windowHeight - consolePaneRec.h);
+    consolePaneRec.x = 0;
+    consolePaneRec.h = FontSize() * 7 * 2;
+    consolePaneRec.y = windowHeight - consolePaneRec.h;
+    if (propertiesOn)
+        consolePaneRec.w = windowWidth - propertiesPaneRec.w;
+    else
+        consolePaneRec.w = windowWidth;
+        
+    toolPaneRec.xy = IVec2(0);
+    toolPaneRec.w = (toolPaneSizeState ? 3 * Button::g_width : Button::g_width);
+    if (consoleOn)
+        toolPaneRec.h = windowHeight - consolePaneRec.h;
+    else
+        toolPaneRec.h = windowHeight;
+
     ReloadToolPane();
 }
 
@@ -1030,6 +1062,8 @@ void Window::ReloadConfig()
             "\nframes_per_tick=6"
             "\nui_scale=1"
             "\ntoolpane_expanded=1"
+            "\nshow_console=1"
+            "\nshow_properties=1"
             "\nmin_log_level=3";
 
         replacement.close();
@@ -1072,6 +1106,8 @@ void Window::ReloadConfig()
         else if (attribute == "frames_per_tick")        framesPerTick       = std::stoi(value);
         else if (attribute == "ui_scale")               uiScale             = std::stoi(value);
         else if (attribute == "toolpane_expanded")      toolPaneSizeState   = std::stoi(value);
+        else if (attribute == "show_console")           consoleOn           = std::stoi(value);
+        else if (attribute == "show_properties")        propertiesOn        = std::stoi(value);
         else if (attribute == "min_log_level")          SetMinLogLevel_User(LogType(std::min(std::max(0, std::stoi(value)), 4)));
     }
 
@@ -1299,43 +1335,51 @@ void Window::ReloadToolPane()
 {
     if (toolPaneSizeState)
     {
-        blueprintsButton.relativePos = IVec2(0, 1);
-        clipboardButton.relativePos  = IVec2(0, 2);
-        modeButtons[0].relativePos   = IVec2(1, 1);
-        modeButtons[1].relativePos   = IVec2(1, 2);
-        modeButtons[2].relativePos   = IVec2(2, 1);
-        modeButtons[3].relativePos   = IVec2(2, 2);
+        toolPaneSizeButton.relativePos      = IVec2(0, 0);
+        propertiesToggleButton.relativePos  = IVec2(1, 0);
+        consoleToggleButton.relativePos     = IVec2(2, 0);
 
-        gateButtons[0].relativePos   = IVec2(0, 4);
-        gateButtons[1].relativePos   = IVec2(1, 4);
-        gateButtons[2].relativePos   = IVec2(2, 4);
-        gateButtons[3].relativePos   = IVec2(0, 5);
-        gateButtons[4].relativePos   = IVec2(1, 5);
-        gateButtons[5].relativePos   = IVec2(2, 5);
-        gateButtons[6].relativePos   = IVec2(0, 6);
-        gateButtons[7].relativePos   = IVec2(1, 6);
-        gateButtons[8].relativePos   = IVec2(2, 6);
+        blueprintsButton.relativePos        = IVec2(0, 1);
+        clipboardButton.relativePos         = IVec2(0, 2);
+        modeButtons[0].relativePos          = IVec2(1, 1);
+        modeButtons[1].relativePos          = IVec2(1, 2);
+        modeButtons[2].relativePos          = IVec2(2, 1);
+        modeButtons[3].relativePos          = IVec2(2, 2);
 
-        paramButtons[0].relativePos  = IVec2(1,11);
-        paramButtons[1].relativePos  = IVec2(0,10);
-        paramButtons[2].relativePos  = IVec2(1,10);
-        paramButtons[3].relativePos  = IVec2(2,10);
-        paramButtons[4].relativePos  = IVec2(0, 9);
-        paramButtons[5].relativePos  = IVec2(1, 9);
-        paramButtons[6].relativePos  = IVec2(2, 9);
-        paramButtons[7].relativePos  = IVec2(0, 8);
-        paramButtons[8].relativePos  = IVec2(1, 8);
-        paramButtons[9].relativePos  = IVec2(2, 8);
+        gateButtons[0].relativePos          = IVec2(0, 4);
+        gateButtons[1].relativePos          = IVec2(1, 4);
+        gateButtons[2].relativePos          = IVec2(2, 4);
+        gateButtons[3].relativePos          = IVec2(0, 5);
+        gateButtons[4].relativePos          = IVec2(1, 5);
+        gateButtons[5].relativePos          = IVec2(2, 5);
+        gateButtons[6].relativePos          = IVec2(0, 6);
+        gateButtons[7].relativePos          = IVec2(1, 6);
+        gateButtons[8].relativePos          = IVec2(2, 6);
 
-        toolPaneSizeButton.width = 3;
+        paramButtons[0].relativePos         = IVec2(1,11);
+        paramButtons[1].relativePos         = IVec2(0,10);
+        paramButtons[2].relativePos         = IVec2(1,10);
+        paramButtons[3].relativePos         = IVec2(2,10);
+        paramButtons[4].relativePos         = IVec2(0, 9);
+        paramButtons[5].relativePos         = IVec2(1, 9);
+        paramButtons[6].relativePos         = IVec2(2, 9);
+        paramButtons[7].relativePos         = IVec2(0, 8);
+        paramButtons[8].relativePos         = IVec2(1, 8);
+        paramButtons[9].relativePos         = IVec2(2, 8);
+
         toolPaneSizeButton.buttonText = "-";
     }
     else
     {
-        int i = 1;
+        int i = 0;
+
+        toolPaneSizeButton.relativePos      = IVec2(0, i++);
+        propertiesToggleButton.relativePos  = IVec2(0, i++);
+        consoleToggleButton.relativePos     = IVec2(0, i++);
+
 
         blueprintsButton.relativePos = IVec2(0, i++);
-        clipboardButton.relativePos = IVec2(0, i++);
+        clipboardButton.relativePos  = IVec2(0, i++);
 
         for (int j = 0; j < _countof(modeButtons); ++j)
         {
@@ -1356,7 +1400,6 @@ void Window::ReloadToolPane()
             paramButtons[j].relativePos = IVec2(0, i++);
         }
 
-        toolPaneSizeButton.width = 1;
         toolPaneSizeButton.buttonText = "+";
     }
 }
@@ -1365,6 +1408,23 @@ void Window::ToggleToolPaneSize()
     toolPaneSizeState = !toolPaneSizeState;
     ReloadPanes();
 }
+
+void Window::ToggleProperties()
+{
+    if (propertiesOn = !propertiesOn)
+        consolePaneRec.w = windowWidth - propertiesPaneRec.w;
+    else
+        consolePaneRec.w = windowWidth;
+}
+
+void Window::ToggleConsole()
+{
+    if (consoleOn = !consoleOn)
+        toolPaneRec.h = windowHeight - consolePaneRec.h;
+    else
+        toolPaneRec.h = windowHeight;
+}
+
 void Window::DrawToolPane()
 {
     DrawRectangleIRect(toolPaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
@@ -1397,7 +1457,13 @@ void Window::DrawToolPane()
         // Text buttons
         else if (const TextButton* tb = dynamic_cast<const TextButton*>(b))
         {
-            IVec2 textCenter = tb->Bounds().xy + Height(FontPadding().y) + Width((Button::g_width - MeasureText(tb->buttonText, FontSize())) / 2);
+            IVec2 textCenter = tb->Bounds().xy + Height(FontPadding().y) + Width((tb->Bounds().w - MeasureText(tb->buttonText, FontSize())) / 2);
+            Color background;
+            if (CursorInUIBounds(b->Bounds())) [[unlikely]]
+                background = UIColor(UIColorID::UI_COLOR_AVAILABLE);
+            else [[likely]]
+                background = UIColor(UIColorID::UI_COLOR_BACKGROUND1);
+            DrawRectangleIRect(tb->Bounds(), background);
             DrawTextIV(tb->buttonText, textCenter, FontSize(), color);
         }
 
@@ -1427,7 +1493,8 @@ void Window::DrawToolPane()
     }
     if (!!hoveredButton) [[unlikely]]
     {
-        DrawTextIV(hoveredButton->tooltip, hoveredButton->Bounds().TR() + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+        DrawTextShadowedIV(hoveredButton->tooltip, hoveredButton->Bounds().TR() + FontPadding(), FontSize(),
+        UIColor(UIColorID::UI_COLOR_FOREGROUND), UIColor(UIColorID::UI_COLOR_BACKGROUND));
 
         // Clipboard preview
         if (hoveredButton == &clipboardButton && IsClipboardValid()) [[unlikely]]
