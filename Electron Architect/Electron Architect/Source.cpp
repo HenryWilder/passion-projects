@@ -21,8 +21,7 @@ int main()
     *   Load textures, shaders, and meshes
     ******************************************/
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    Window window(1280, 720);
-    MaximizeWindow();
+    Window window;
 
     Texture2D iconTex = LoadTexture("icon.png");
     Image icon = LoadImageFromTexture(iconTex);

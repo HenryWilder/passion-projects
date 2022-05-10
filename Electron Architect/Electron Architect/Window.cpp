@@ -30,9 +30,9 @@ void DrawTextShadowedIV(const std::string& text, IVec2 pos, int fontSize, Color 
     DrawTextIV(str, pos, fontSize, color);
 }
 
-Window::Window(int windowWidth, int windowHeight) :
-    windowWidth(windowWidth),
-    windowHeight(windowHeight),
+Window::Window() :
+    windowWidth(1280),
+    windowHeight(720),
     consoleOutput{ "", "", "", "", "", "", },
     userSetMinLogLevel(LogType::info),
     minLogLevel(LogType::info),
@@ -976,6 +976,37 @@ const char* ConfigColorToString(Color color)
     return TextFormat("%u|%u|%u", color.r, color.g, color.b);
 }
 
+IRect ConfigStrToIRect(const std::string& str)
+{
+    size_t separators[3]{ 0,0,0 };
+    separators[0] = str.find('|');
+    if (separators[0] == str.npos)
+        return IRect(0);
+    separators[1] = str.find('|', separators[0] + 1);
+    if (separators[1] == str.npos)
+        return IRect(0);
+    separators[2] = str.find('|', separators[1] + 1);
+    if (separators[2] == str.npos)
+        return IRect(0);
+    try
+    {
+        int x = std::stoi(str.substr(0, separators[0]));
+        int y = std::stoi(str.substr(separators[0] + 1, separators[1] - (separators[0] + 1)));
+        int w = std::stoi(str.substr(separators[1] + 1, separators[2] - (separators[1] + 1)));
+        int h = std::stoi(str.substr(separators[2] + 1));
+        return IRect(x, y, w, h);
+    }
+    catch (...)
+    {
+        return IRect(0);
+    }
+}
+
+const char* ConfigIRectToString(IRect rec)
+{
+    return TextFormat("%i|%i|%i|%i", rec.x, rec.y, rec.w, rec.h);
+}
+
 void Window::ReloadPanes()
 {
     propertiesPaneRec.y = 0;
@@ -1025,11 +1056,13 @@ void Window::SaveConfig() const
         "\naugment_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_SPECIAL)) <<
         "\ncaution_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_CAUTION)) <<
         "\nblueprint_background_color=" << ConfigColorToString(UIColor(UIColorID::UI_COLOR_BLUEPRINTS_BACKGROUND)) <<
-        "\n\n[LOD]"
+        "\n\n[Performance]"
         "\nblueprint_menu_lod=" << (int)blueprintLOD <<
         "\nclipboard_preview_lod=" << (int)clipboardPreviewLOD <<
         "\npaste_preview_lod=" << (int)pastePreviewLOD <<
         "\nframes_per_tick=" << (int)framesPerTick <<
+        "\n\n[Preferences]"
+        "\nwindow_position_size=" << GetWindowPosition().x << '|' << GetWindowPosition().y << '|' << GetRenderWidth() << '|' << GetRenderHeight() <<
         "\nui_scale=" << uiScale <<
         "\ntoolpane_expanded=" << toolPaneSizeState <<
         "\nshow_console=" << consoleOn <<
@@ -1040,45 +1073,50 @@ void Window::SaveConfig() const
 }
 void Window::ReloadConfig()
 {
-    std::ifstream file("config.ini");
-
     // Defaults
+    {
+        UIColor(UIColorID::UI_COLOR_BACKGROUND) = BLACK;
+        UIColor(UIColorID::UI_COLOR_BACKGROUND1) = ui_color::SPACEGRAY;
+        UIColor(UIColorID::UI_COLOR_BACKGROUND2) = ui_color::LIFELESSNEBULA;
+        UIColor(UIColorID::UI_COLOR_BACKGROUND3) = ui_color::GLEEFULDUST;
 
-    UIColor(UIColorID::UI_COLOR_BACKGROUND) = BLACK;
-    UIColor(UIColorID::UI_COLOR_BACKGROUND1) = ui_color::SPACEGRAY;
-    UIColor(UIColorID::UI_COLOR_BACKGROUND2) = ui_color::LIFELESSNEBULA;
-    UIColor(UIColorID::UI_COLOR_BACKGROUND3) = ui_color::GLEEFULDUST;
+        UIColor(UIColorID::UI_COLOR_FOREGROUND3) = ui_color::DEADCABLE;
+        UIColor(UIColorID::UI_COLOR_FOREGROUND2) = ui_color::HAUNTINGWHITE;
+        UIColor(UIColorID::UI_COLOR_FOREGROUND1) = ui_color::INTERFERENCEGRAY;
+        UIColor(UIColorID::UI_COLOR_FOREGROUND) = WHITE;
 
-    UIColor(UIColorID::UI_COLOR_FOREGROUND3) = ui_color::DEADCABLE;
-    UIColor(UIColorID::UI_COLOR_FOREGROUND2) = ui_color::HAUNTINGWHITE;
-    UIColor(UIColorID::UI_COLOR_FOREGROUND1) = ui_color::INTERFERENCEGRAY;
-    UIColor(UIColorID::UI_COLOR_FOREGROUND) = WHITE;
+        UIColor(UIColorID::UI_COLOR_INPUT) = ui_color::INPUTLAVENDER;
+        UIColor(UIColorID::UI_COLOR_OUTPUT) = ui_color::OUTPUTAPRICOT;
 
-    UIColor(UIColorID::UI_COLOR_INPUT) = ui_color::INPUTLAVENDER;
-    UIColor(UIColorID::UI_COLOR_OUTPUT) = ui_color::OUTPUTAPRICOT;
+        UIColor(UIColorID::UI_COLOR_AVAILABLE) = ui_color::WIPBLUE;
+        UIColor(UIColorID::UI_COLOR_INTERACT) = YELLOW;
 
-    UIColor(UIColorID::UI_COLOR_AVAILABLE) = ui_color::WIPBLUE;
-    UIColor(UIColorID::UI_COLOR_INTERACT) = YELLOW;
+        UIColor(UIColorID::UI_COLOR_ACTIVE) = ui_color::REDSTONE;
 
-    UIColor(UIColorID::UI_COLOR_ACTIVE) = ui_color::REDSTONE;
+        UIColor(UIColorID::UI_COLOR_ERROR) = MAGENTA;
+        UIColor(UIColorID::UI_COLOR_DESTRUCTIVE) = ui_color::DESTRUCTIVERED;
+        UIColor(UIColorID::UI_COLOR_SPECIAL) = VIOLET;
+        UIColor(UIColorID::UI_COLOR_CAUTION) = ui_color::CAUTIONYELLOW;
 
-    UIColor(UIColorID::UI_COLOR_ERROR) = MAGENTA;
-    UIColor(UIColorID::UI_COLOR_DESTRUCTIVE) = ui_color::DESTRUCTIVERED;
-    UIColor(UIColorID::UI_COLOR_SPECIAL) = VIOLET;
-    UIColor(UIColorID::UI_COLOR_CAUTION) = ui_color::CAUTIONYELLOW;
+        UIColor(UIColorID::UI_COLOR_BLUEPRINTS_BACKGROUND) = { 10,15,30, 255 };
 
-    UIColor(UIColorID::UI_COLOR_BLUEPRINTS_BACKGROUND) = { 10,15,30, 255 };
+        SetWindowPosition(320, 180);
+        SetWindowSize(1280,720);
+        windowWidth = 1280;
+        windowHeight = 720;
 
-    blueprintLOD = 0;
-    clipboardPreviewLOD = 0;
-    pastePreviewLOD = 0;
-    framesPerTick = 6;
-    uiScale = 1;
-    toolPaneSizeState = 1;
-    consoleOn = 1;
-    propertiesOn = 1;
-    SetMinLogLevel_User(LogType::warning);
+        blueprintLOD = 0;
+        clipboardPreviewLOD = 0;
+        pastePreviewLOD = 0;
+        framesPerTick = 6;
+        uiScale = 1;
+        toolPaneSizeState = 1;
+        consoleOn = 1;
+        propertiesOn = 1;
+        SetMinLogLevel_User(LogType::warning);
+    }
 
+    std::ifstream file("config.ini");
     if (!file.is_open()) // In case of deletion
     {
         file.close();
@@ -1121,6 +1159,12 @@ void Window::ReloadConfig()
         else if (attribute == "clipboard_preview_lod")  clipboardPreviewLOD = std::stoi(value);
         else if (attribute == "paste_preview_lod")      pastePreviewLOD     = std::stoi(value);
         else if (attribute == "frames_per_tick")        framesPerTick       = std::stoi(value);
+        else if (attribute == "window_position_size")
+        {
+            IRect windowRec = ConfigStrToIRect(value);
+            SetWindowPosition(windowRec.x, windowRec.y);
+            SetWindowSize(windowRec.w, windowRec.h);
+        }
         else if (attribute == "ui_scale")               uiScale             = std::stoi(value);
         else if (attribute == "toolpane_expanded")      toolPaneSizeState   = std::stoi(value);
         else if (attribute == "show_console")           consoleOn           = std::stoi(value);

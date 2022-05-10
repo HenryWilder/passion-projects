@@ -33,7 +33,7 @@ enum class LogType
 
 struct Window
 {
-    Window(int windowWidth, int windowHeight);
+    Window();
     ~Window();
 
 private:
