@@ -152,10 +152,15 @@ int main()
                     window.CleanPropertiesPane();
 
                     // Cursor stats
-                    window.PushPropertySubtitle("Cursor");
-                    window.PushProperty_int("X", window.cursorPos.x / g_gridSize);
-                    window.PushProperty_int("Y", window.cursorPos.y / g_gridSize);
-                    window.PushPropertySpacer();
+                    if (!(window.CursorInUIBounds(window.toolPaneRec) ||
+                        (window.CursorInUIBounds(window.propertiesPaneRec) && window.propertiesOn) ||
+                        (window.CursorInUIBounds(window.consolePaneRec) && window.consoleOn)))
+                    {
+                        window.PushPropertySubtitle("Cursor");
+                        window.PushProperty_int("X", window.cursorPos.x / g_gridSize);
+                        window.PushProperty_int("Y", window.cursorPos.y / g_gridSize);
+                        window.PushPropertySpacer();
+                    }
 
                     window.PushPropertySubtitle("Mode");
                     const char* modeName;
