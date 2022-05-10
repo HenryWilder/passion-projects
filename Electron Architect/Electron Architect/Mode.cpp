@@ -144,8 +144,8 @@ void PenTool::Draw(Window& window)
         IVec2 end = window.cursorPos;
         elbow = Wire::GetLegalElbowPosition(start, end, currentWireElbowConfig);
         Wire::Draw(start, elbow, end, UIColor(UIColorID::UI_COLOR_AVAILABLE));
-        Node::Draw(end, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
+    Node::Draw(window.cursorPos, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE));
 
     if (!!window.hoveredWire)
     {

@@ -120,8 +120,6 @@ int main()
                 window.DrawGrid();
 
                 window.CurrentTab().graph->DrawGroups();
-
-                //DrawRectangleIRect(IRect(window.cursorPos - IVec2(g_gridSize / 2) - Width(1), g_gridSize + 1), UIColor(UIColorID::UI_COLOR_AVAILABLE));
             }
 
             // Draw
@@ -186,9 +184,7 @@ int main()
                 }
 
                 // Tool
-                {
-                    window.DrawToolPane();
-                }
+                window.DrawToolPane();
 
                 // Node tooltip
                 if (!!window.hoveredNode && window.hoveredNode->HasName())
