@@ -178,7 +178,7 @@ void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nod
                 color = ioNodeColor;
             else
                 color = nodeColor;
-            Node::Draw(node_bp.relativePosition + offset, node_bp.gate, color);
+            Node::Draw(node_bp.relativePosition + offset, node_bp.gate, color, backgroundColor);
         }
         break;
     case 2: // All nodes are circles, io are colored

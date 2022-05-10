@@ -63,8 +63,13 @@ public:
     bool IsSpecialErasable() const;
     bool IsComplexBipassable() const;
 
-    static void Draw(IVec2 position, Gate gate, Color color);
-    void Draw(Color color) const;
+    static void Draw(IVec2 position, Gate gate, Color foreGround, Color background);
+    void Draw(Color foreground, Color background, Color CapacitorInactive) const;
+    // For drawing when there is no such thing as active vs inactive
+    inline void DrawStateless(Color foreground, Color background) const
+    {
+        Draw(m_position, m_gate, foreground, background);
+    }
 
     bool WireIsInput(Wire* wire) const;
     bool WireIsOutput(Wire* wire) const;

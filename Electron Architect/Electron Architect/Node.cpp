@@ -186,7 +186,7 @@ bool Node::IsComplexBipassable() const
     return (GetInputCount() > 1 && GetOutputCount() > 1);
 }
 
-void Node::Draw(IVec2 position, Gate gate, Color color)
+void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
 {
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
     if (gate == Gate::OR || gate == Gate::NOR || gate == Gate::XOR)
@@ -194,16 +194,16 @@ void Node::Draw(IVec2 position, Gate gate, Color color)
         switch (gate)
         {
         case Gate::OR:
-            DrawCircleIV(position, nodeRadius, color);
+            DrawCircleIV(position, nodeRadius, foreGround);
             return;
         case Gate::NOR:
-            DrawCircleIV(position, nodeRadius, color);
-            DrawCircleIV(position, nodeRadius - 1.0f, BLACK);
+            DrawCircleIV(position, nodeRadius, foreGround);
+            DrawCircleIV(position, nodeRadius - 1.0f, background);
             return;
         case Gate::XOR:
-            DrawCircleIV(position, nodeRadius + 1.0f, color);
-            DrawCircleIV(position, nodeRadius, BLACK);
-            DrawCircleIV(position, nodeRadius - 1.0f, color);
+            DrawCircleIV(position, nodeRadius + 1.0f, foreGround);
+            DrawCircleIV(position, nodeRadius, background);
+            DrawCircleIV(position, nodeRadius - 1.0f, foreGround);
             return;
         }
     }
@@ -213,26 +213,29 @@ void Node::Draw(IVec2 position, Gate gate, Color color)
         switch (gate)
         {
         case Gate::AND:
-            DrawRectangleIRect(rec, color);
+            DrawRectangleIRect(rec, foreGround);
             return;
         case Gate::RESISTOR:
-            DrawRectangleIRect(rec, color);
-            DrawRectangleIRect(ShrinkIRect(rec), BLACK);
+            DrawRectangleIRect(rec, foreGround);
+            DrawRectangleIRect(ShrinkIRect(rec), background);
             return;
         case Gate::CAPACITOR:
-            DrawRectangleIRect(ExpandIRect(rec), color);
-            DrawRectangleIRect(rec, BLACK);
-            DrawRectangleIRect(ShrinkIRect(rec), color);
+            DrawRectangleIRect(ExpandIRect(rec), foreGround);
+            DrawRectangleIRect(rec, background);
+            DrawRectangleIRect(ShrinkIRect(rec), foreGround);
             return;
         case Gate::DELAY:
-            DrawRectangleIRect(ExpandIRect(rec), color);
-            DrawRectangleIRect(rec, BLACK);
-            DrawLine(rec.x, rec.y + rec.h / 2, rec.x + rec.w, rec.y + rec.h / 2, color);
+            DrawRectangleIRect(ExpandIRect(rec), foreGround);
+            DrawRectangleIRect(rec, background);
+            DrawLine(rec.x, rec.y + rec.h / 2, rec.x + rec.w, rec.y + rec.h / 2, foreGround);
             return;
         case Gate::BATTERY:
-            DrawRectangleIRect(ExpandIRect(rec), color);
-            DrawRectangleIRect(rec, BLACK);
-            DrawRectangleIRect(rec / Height(2), color);
+            DrawRectangleIRect(ExpandIRect(rec), foreGround);
+            int halfHeight = rec.h / 2;
+            IRect halfRec = rec;
+            halfRec.h = halfHeight;
+            halfRec.y += halfHeight;
+            DrawRectangleIRect(halfRec, background);
             return;
         }
     }
@@ -259,23 +262,23 @@ void Node::Draw(IVec2 position, Gate gate, Color color)
         switch (gate)
         {
         case Gate::LED:
-            DrawTriangle(tri[0], tri[1], tri[2], color);
+            DrawTriangle(tri[0], tri[1], tri[2], foreGround);
             return;
         }
     }
     else
         _ASSERT_EXPR(false, L"Gate type not given specialize draw method");
 }
-void Node::Draw(Color color) const
+void Node::Draw(Color foreground, Color background, Color CapacitorInactive) const
 {
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
 
-    Draw(m_position, m_gate, color);
+    Draw(m_position, m_gate, foreground, background);
 
     if (m_gate == Gate::RESISTOR)
     {
         DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, g_resistanceBands[GetResistance()]);
-        DrawRectangle(GetX() - nodeRadius + 2, GetY() - nodeRadius + 2, nodeRadius * 2 - 4, nodeRadius * 2 - 4, BLACK);
+        DrawRectangle(GetX() - nodeRadius + 2, GetY() - nodeRadius + 2, nodeRadius * 2 - 4, nodeRadius * 2 - 4, background);
     }
     else if (m_gate == Gate::LED)
     {
@@ -283,7 +286,7 @@ void Node::Draw(Color color) const
     }
     else if (m_gate == Gate::CAPACITOR)
     {
-        DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, ColorAlpha(WHITE, 1.0f - GetChargePercent()));
+        DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, ColorAlpha(CapacitorInactive, 1.0f - GetChargePercent()));
     }
 }
 

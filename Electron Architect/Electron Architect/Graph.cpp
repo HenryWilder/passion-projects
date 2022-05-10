@@ -669,12 +669,12 @@ void Graph::DrawNodes(Color colorActive, Color colorInactive) const
                     node->GetY() - nodeRadius - 1,
                     nodeRadius * 2 + 2,
                     nodeRadius * 2 + 2,
-                    UIColor(UIColorID::UI_COLOR_BACKGROUND)
+                    BLACK
                 );
             }
         }
         else [[likely]]
-            node->Draw(node->GetState() ? colorActive : colorInactive);
+            node->Draw(node->GetState() ? colorActive : colorInactive, UIColor(UIColorID::UI_COLOR_BACKGROUND), colorInactive);
     }
 }
 void Graph::DrawGroups() const

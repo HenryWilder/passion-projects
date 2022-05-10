@@ -145,7 +145,7 @@ void PenTool::Draw(Window& window)
         elbow = Wire::GetLegalElbowPosition(start, end, currentWireElbowConfig);
         Wire::Draw(start, elbow, end, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
-    Node::Draw(window.cursorPos, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE));
+    Node::Draw(window.cursorPos, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
 
     if (!!window.hoveredWire)
     {
@@ -170,12 +170,12 @@ void PenTool::Draw(Window& window)
 
     if (!!window.hoveredWire)
     {
-        window.hoveredWire->start->Draw(UIColor(UIColorID::UI_COLOR_INPUT));
-        window.hoveredWire->end->Draw(UIColor(UIColorID::UI_COLOR_OUTPUT));
+        window.hoveredWire->start->DrawStateless(UIColor(UIColorID::UI_COLOR_INPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        window.hoveredWire->end->DrawStateless(UIColor(UIColorID::UI_COLOR_OUTPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
     else if (!!window.hoveredNode)
     {
-        window.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
+        window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 }
 void PenTool::DrawProperties(Window& window)
@@ -532,12 +532,12 @@ void EditTool::Draw(Window& window)
 
     if (!!window.hoveredNode)
     {
-        window.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_CAUTION));
+        window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_CAUTION), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
     if (!!window.hoveredWire)
     {
-        window.hoveredWire->start->Draw(UIColor(UIColorID::UI_COLOR_INPUT));
-        window.hoveredWire->end->Draw(UIColor(UIColorID::UI_COLOR_OUTPUT));
+        window.hoveredWire->start->DrawStateless(UIColor(UIColorID::UI_COLOR_INPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        window.hoveredWire->end->DrawStateless(UIColor(UIColorID::UI_COLOR_OUTPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 
     if (!!nodeBeingDragged && hoveringMergable)
@@ -663,7 +663,7 @@ void EraseTool::Draw(Window& window)
 
     if (!!window.hoveredNode)
     {
-        window.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_ERROR), UIColor(UIColorID::UI_COLOR_BACKGROUND));
         DrawCross(window.hoveredNode->GetPosition(), UIColor(UIColorID::UI_COLOR_DESTRUCTIVE));
 
         if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
@@ -744,12 +744,12 @@ void InteractTool::Draw(Window& window)
 
     for (const Node* node : window.CurrentTab().graph->GetStartNodes())
     {
-        node->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
+        node->DrawStateless(UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 
     if (!!window.hoveredNode)
     {
-        window.hoveredNode->Draw(UIColor(UIColorID::UI_COLOR_CAUTION));
+        window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_CAUTION), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 }
 void InteractTool::DrawProperties(Window& window)
