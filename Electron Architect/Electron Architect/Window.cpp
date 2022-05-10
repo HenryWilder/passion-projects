@@ -1457,7 +1457,8 @@ void Window::DrawToolPane()
         bool shouldHighlight =
             (b == ButtonFromMode(GetBaseMode())) ||
             (b == ButtonFromGate(gatePick)) ||
-            (b == ButtonFromParameter(storedExtraParam));
+            (b == ButtonFromParameter(storedExtraParam) ||
+            (b == &clipboardButton && IsClipboardValid()));
 
         Color color;
         if (shouldHighlight || CursorInUIBounds(b->Bounds())) [[unlikely]]
