@@ -44,7 +44,8 @@ Window::Window(int windowWidth, int windowHeight) :
             "Click an existing node to create a wire from it.\n"
             "Left click again to connect it to another node.\n"
             "Hold shift while creating a wire for parallel.\n"
-            "Right click to stop drawing.",
+            "Right click to stop drawing.\n"
+            "Press [R] to cycle through wire joints.",
             [this]() { SetMode(Mode::PEN); },
             IVec2(0, 0),
             &modeIcons16x),
