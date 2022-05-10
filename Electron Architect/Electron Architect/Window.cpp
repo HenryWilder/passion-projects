@@ -173,7 +173,7 @@ Window::Window(int windowWidth, int windowHeight) :
     paramButtons{
         ColorButton(
             IVec2(),
-            "Parameter: 0",
+            "Parameter: 0 [ctrl+0]/[numpad 0]",
             "@TODO",
             [this]() { storedExtraParam = 0; },
 Node::g_resistanceBands[0],
@@ -181,7 +181,7 @@ Node::g_resistanceBands[0],
 
 ColorButton(
     IVec2(),
-    "Parameter: 1",
+    "Parameter: 1 [ctrl+1]/[numpad 1]",
     "@TODO",
     [this]() { storedExtraParam = 1; },
     Node::g_resistanceBands[1],
@@ -189,7 +189,7 @@ ColorButton(
 
     ColorButton(
         IVec2(),
-        "Parameter: 2",
+        "Parameter: 2 [ctrl+2]/[numpad 2]",
         "@TODO",
         [this]() { storedExtraParam = 2; },
         Node::g_resistanceBands[2],
@@ -197,7 +197,7 @@ ColorButton(
 
     ColorButton(
         IVec2(),
-        "Parameter: 3",
+        "Parameter: 3 [ctrl+3]/[numpad 3]",
         "@TODO",
         [this]() { storedExtraParam = 3; },
         Node::g_resistanceBands[3],
@@ -205,7 +205,7 @@ ColorButton(
 
     ColorButton(
         IVec2(),
-        "Parameter: 4",
+        "Parameter: 4 [ctrl+4]/[numpad 4]",
         "@TODO",
         [this]() { storedExtraParam = 4; },
         Node::g_resistanceBands[4],
@@ -213,7 +213,7 @@ ColorButton(
 
 ColorButton(
     IVec2(),
-    "Parameter: 5",
+    "Parameter: 5 [ctrl+5]/[numpad 5]",
     "@TODO",
     [this]() { storedExtraParam = 5; },
     Node::g_resistanceBands[5],
@@ -221,7 +221,7 @@ ColorButton(
 
     ColorButton(
         IVec2(),
-        "Parameter: 6",
+        "Parameter: 6 [ctrl+6]/[numpad 6]",
         "@TODO",
         [this]() { storedExtraParam = 6; },
         Node::g_resistanceBands[6],
@@ -229,7 +229,7 @@ ColorButton(
 
     ColorButton(
         IVec2(),
-        "Parameter: 7",
+        "Parameter: 7 [ctrl+7]/[numpad 7]",
         "@TODO",
         [this]() { storedExtraParam = 7; },
         Node::g_resistanceBands[7],
@@ -237,7 +237,7 @@ ColorButton(
 
     ColorButton(
         IVec2(),
-        "Parameter: 8",
+        "Parameter: 8 [ctrl+8]/[numpad 8]",
         "@TODO",
         [this]() { storedExtraParam = 8; },
         Node::g_resistanceBands[8],
@@ -245,7 +245,7 @@ ColorButton(
 
     ColorButton(
         IVec2(),
-        "Parameter: 9",
+        "Parameter: 9 [ctrl+9]/[numpad 9]",
         "@TODO",
         [this]() { storedExtraParam = 9; },
         Node::g_resistanceBands[9],
