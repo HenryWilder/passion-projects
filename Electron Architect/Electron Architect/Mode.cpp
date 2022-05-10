@@ -109,7 +109,13 @@ void PenTool::Update(Window& window)
 
             if (oldNode != newNode)
             {
-                Wire* wire = window.CurrentTab().graph->CreateWire(oldNode, newNode);
+                Wire* wire;
+                // Reverse wire direction when holding ctrl
+                if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
+                    wire = window.CurrentTab().graph->CreateWire(newNode, oldNode);
+                else
+                    wire = window.CurrentTab().graph->CreateWire(oldNode, newNode);
+                
                 wire->elbowConfig = currentWireElbowConfig;
                 wire->UpdateElbowToLegal();
                 previousWireStart = oldNode;
@@ -133,19 +139,31 @@ void PenTool::Draw(Window& window)
 {
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
-    if (!!currentWireStart)
+    // Draw node/wire preview
     {
-        IVec2 start;
-        if (!!previousWireStart && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
-            start = previousWireStart->GetPosition();
+        if (!!currentWireStart)
+        {
+            IVec2 start;
+            IVec2 end = window.cursorPos;
+
+            if (!!previousWireStart && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
+                start = previousWireStart->GetPosition();
+            else
+                start = currentWireStart->GetPosition();
+
+            IVec2 elbow;
+            if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
+                elbow = Wire::GetLegalElbowPosition(end, start, currentWireElbowConfig);
+            else
+                elbow = Wire::GetLegalElbowPosition(start, end, currentWireElbowConfig);
+
+            Wire::Draw(start, elbow, end, UIColor(UIColorID::UI_COLOR_AVAILABLE));
+
+            Node::Draw(end, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        }
         else
-            start = currentWireStart->GetPosition();
-        IVec2 elbow;
-        IVec2 end = window.cursorPos;
-        elbow = Wire::GetLegalElbowPosition(start, end, currentWireElbowConfig);
-        Wire::Draw(start, elbow, end, UIColor(UIColorID::UI_COLOR_AVAILABLE));
+            Node::Draw(window.cursorPos, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
-    Node::Draw(window.cursorPos, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
 
     if (!!window.hoveredWire)
     {
