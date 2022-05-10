@@ -135,6 +135,9 @@ int main()
 
                 // Panels
 
+                // Tool
+                window.DrawToolPane();
+
                 // Console
                 if (window.consoleOn)
                 {
@@ -186,9 +189,6 @@ int main()
 
                     window.DrawToolProperties();
                 }
-
-                // Tool
-                window.DrawToolPane();
 
                 // Node tooltip
                 if (!!window.hoveredNode && window.hoveredNode->HasName())
