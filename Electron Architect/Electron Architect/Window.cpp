@@ -15,6 +15,17 @@
 #include "Mode.h"
 #include "Window.h"
 
+#include "icon_blueprints16x.h"
+#include "icon_blueprints32x.h"
+#include "icon_clipboard16x.h"
+#include "icon_clipboard32x.h"
+#include "icons_gate16x.h"
+#include "icons_gate32x.h"
+#include "icons_mode16x.h"
+#include "icons_mode32x.h"
+
+#define MEMORY_IMAGE(name) CLITERAL(Image){(name##_DATA),(name##_WIDTH),(name##_HEIGHT),1,(name##_FORMAT)}
+
 Blueprint g_clipboardBP;
 
 void DrawTextShadowedIV(const std::string& text, IVec2 pos, int fontSize, Color color, Color shadow)
@@ -327,14 +338,14 @@ ColorButton(
     SetExitKey(0);
     SetTargetFPS(60);
 
-    blueprintIcon16x = LoadTexture("icon_blueprints16x.png");
-    blueprintIcon32x = LoadTexture("icon_blueprints32x.png");
-    clipboardIcon16x = LoadTexture("icon_clipboard16x.png");
-    clipboardIcon32x = LoadTexture("icon_clipboard32x.png");
-    modeIcons16x = LoadTexture("icons_mode16x.png");
-    modeIcons32x = LoadTexture("icons_mode32x.png");
-    gateIcons16x = LoadTexture("icons_gate16x.png");
-    gateIcons32x = LoadTexture("icons_gate32x.png");
+    blueprintIcon16x = LoadTextureFromImage(MEMORY_IMAGE(ICON_BLUEPRINTS16X));
+    blueprintIcon32x = LoadTextureFromImage(MEMORY_IMAGE(ICON_BLUEPRINTS32X));
+    clipboardIcon16x = LoadTextureFromImage(MEMORY_IMAGE(ICON_CLIPBOARD16X));
+    clipboardIcon32x = LoadTextureFromImage(MEMORY_IMAGE(ICON_CLIPBOARD32X));
+    modeIcons16x = LoadTextureFromImage(MEMORY_IMAGE(ICONS_MODE16X));
+    modeIcons32x = LoadTextureFromImage(MEMORY_IMAGE(ICONS_MODE32X));
+    gateIcons16x = LoadTextureFromImage(MEMORY_IMAGE(ICONS_GATE16X));
+    gateIcons32x = LoadTextureFromImage(MEMORY_IMAGE(ICONS_GATE32X));
 
     activeTab = 0;
     tabs.push_back(new Tab(this, "Unnamed graph"));

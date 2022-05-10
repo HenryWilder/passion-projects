@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Images As Code">
+      <UniqueIdentifier>{6b964471-2360-4e7f-8c0e-75549ba90236}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -89,7 +92,7 @@
     <Image Include="icon_clipboard32x.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="icon.png">
+    <Image Include="program_icon.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
@@ -135,6 +138,36 @@
     </ClInclude>
     <ClInclude Include="Tab.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="icon_blueprints16x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="icon_blueprints32x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="icon_clipboard16x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="icon_clipboard32x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="icons_blueprint16x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="icons_gate16x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="icons_gate32x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="icons_mode16x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="icons_mode32x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="program_icon.h">
+      <Filter>Images As Code</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

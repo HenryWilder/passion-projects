@@ -15,6 +15,8 @@
 #include "Mode.h"
 #include "Window.h"
 
+#include "program_icon.h"
+
 int main()
 {
     /******************************************
@@ -23,8 +25,14 @@ int main()
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     Window window;
 
-    Texture2D iconTex = LoadTexture("icon.png");
-    Image icon = LoadImageFromTexture(iconTex);
+    Image icon{
+        .data{PROGRAM_ICON_DATA},
+        .width{PROGRAM_ICON_WIDTH},
+        .height{PROGRAM_ICON_HEIGHT},
+        .mipmaps{1},
+        .format{PROGRAM_ICON_FORMAT}
+    };
+
     SetWindowIcon(icon);
 
     window.CurrentTab().graph->Load("session.cg"); // Construct and load last session
@@ -212,8 +220,6 @@ int main()
     ******************************************/
 
     window.SaveConfig();
-    UnloadImage(icon);
-    UnloadTexture(iconTex);
 
 	return 0;
 }

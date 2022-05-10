@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{0241244f-dbeb-4f91-a630-52e6d3f94be3}</ProjectGuid>
-    <RootNamespace>ElectronArchitect</RootNamespace>
+    <ProjectGuid>{622dc593-8e49-43b5-bd55-551dddc0e95b}</ProjectGuid>
+    <RootNamespace>ImagePackager</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -72,13 +72,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
-    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -92,24 +88,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <AdditionalIncludeDirectories>$(SolutionDir)..\raylib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>raylib.lib;kernel32.lib;user32.lib;gdi32.lib;winmm.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)build\raylib\bin\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalOptions>
-      </AdditionalOptions>
-      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <AdditionalDependencies>raylib.lib;kernel32.lib;user32.lib;gdi32.lib;winmm.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -119,26 +105,16 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <AdditionalIncludeDirectories>$(SolutionDir)..\raylib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>raylib.lib;kernel32.lib;user32.lib;gdi32.lib;winmm.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)build\raylib\bin\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalOptions>
-      </AdditionalOptions>
-      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <AdditionalDependencies>raylib.lib;kernel32.lib;user32.lib;gdi32.lib;winmm.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -146,24 +122,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <AdditionalIncludeDirectories>$(SolutionDir)..\raylib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)build\raylib\bin\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
       <AdditionalDependencies>raylib.lib;kernel32.lib;user32.lib;gdi32.lib;winmm.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
-      <AdditionalOptions>
-      </AdditionalOptions>
-      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -173,91 +139,21 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <AdditionalIncludeDirectories>$(SolutionDir)..\raylib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)build\raylib\bin\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
       <AdditionalDependencies>raylib.lib;kernel32.lib;user32.lib;gdi32.lib;winmm.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib</AdditionalDependencies>
-      <AdditionalOptions>
-      </AdditionalOptions>
-      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Blueprint.cpp" />
-    <ClCompile Include="Buttons.cpp" />
-    <ClCompile Include="Component.cpp" />
-    <ClCompile Include="Group.cpp" />
-    <ClCompile Include="HUtility.cpp" />
-    <ClCompile Include="IVec.cpp" />
-    <ClCompile Include="Mode.cpp" />
-    <ClCompile Include="NativeBlueprints.cpp" />
-    <ClCompile Include="Graph.cpp" />
-    <ClCompile Include="Node.cpp" />
-    <ClCompile Include="Source.cpp" />
-    <ClCompile Include="Tab.cpp" />
-    <ClCompile Include="UIColors.cpp" />
-    <ClCompile Include="Window.cpp" />
-    <ClCompile Include="Wire.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="program_icon.png" />
-    <Image Include="icons_blueprint16x.png" />
-    <Image Include="icons_gate16x.png" />
-    <Image Include="icons_mode16x.png" />
-    <Image Include="icons_gate32x.png" />
-    <Image Include="icons_mode32x.png" />
-    <Image Include="icon_blueprints16x.png" />
-    <Image Include="icon_blueprints32x.png" />
-    <Image Include="icon_clipboard16x.png" />
-    <Image Include="icon_clipboard32x.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Blueprint.h" />
-    <ClInclude Include="Buttons.h" />
-    <ClInclude Include="Component.h" />
-    <ClInclude Include="Group.h" />
-    <ClInclude Include="HUtility.h" />
-    <ClInclude Include="icons_blueprint16x.h" />
-    <ClInclude Include="icons_gate16x.h" />
-    <ClInclude Include="icons_gate32x.h" />
-    <ClInclude Include="icons_mode16x.h" />
-    <ClInclude Include="icons_mode32x.h" />
-    <ClInclude Include="icon_blueprints16x.h" />
-    <ClInclude Include="icon_blueprints32x.h" />
-    <ClInclude Include="icon_clipboard16x.h" />
-    <ClInclude Include="icon_clipboard32x.h" />
-    <ClInclude Include="IVec.h" />
-    <ClInclude Include="Mode.h" />
-    <ClInclude Include="Graph.h" />
-    <ClInclude Include="Node.h" />
-    <ClInclude Include="program_icon.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="Tab.h" />
-    <ClInclude Include="UIColors.h" />
-    <ClInclude Include="Window.h" />
-    <ClInclude Include="Wire.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="config.ini" />
+    <ClCompile Include="ImagePackager.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <ProjectExtensions>
-    <VisualStudio>
-      <UserProperties config_3user_1json__JsonSchema="https://github.com/HenryWilder/passion-projects/releases/latest/download/userconfig_schema.json" />
-    </VisualStudio>
-  </ProjectExtensions>
 </Project>
