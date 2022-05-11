@@ -271,7 +271,7 @@ void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
 }
 void Node::Draw(Color foreground, Color background, Color CapacitorInactive) const
 {
-    if (m_gate == Gate::OR && GetInputCount() == 1 && GetOutputCount() == 1)
+    if (m_gate == Gate::OR && GetInputCount() == 1 && GetOutputCount() > 0)
         return;
 
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);

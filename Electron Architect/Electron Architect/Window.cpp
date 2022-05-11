@@ -1296,6 +1296,8 @@ void Window::PushPropertySection_Node(const std::string& name, Node* value)
         PushProperty_ptr("Pointer", value);
         PushProperty_uint("Serial", CurrentTab().graph->NodeID(value));
         PushProperty("Type", GateName(value->GetGate()));
+        PushProperty_bool("Passthrough", value->GetGate() == Gate::OR && value->GetInputCount() == 1 && value->GetOutputCount() > 0);
+        PushProperty_bool("Interactable", value->GetInputCount() == 0);
         switch (value->GetGate())
         {
         case Gate::RESISTOR:  PushProperty_uint("Resistance", value->GetResistance());  break;
@@ -1305,8 +1307,6 @@ void Window::PushPropertySection_Node(const std::string& name, Node* value)
         }
         PushPropertySubtitle("Inputs", UIColor(UIColorID::UI_COLOR_INPUT));
         PushProperty_uint("Count", value->GetInputCount());
-        if (value->GetInputCount() == 0)
-            PushProperty("Note", "Available for interaction");
 
         for (const Wire* wire : value->GetInputsConst())
         {

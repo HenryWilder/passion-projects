@@ -244,6 +244,7 @@
     <ClInclude Include="Node.h" />
     <ClInclude Include="program_icon.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="resource1.h" />
     <ClInclude Include="Tab.h" />
     <ClInclude Include="UIColors.h" />
     <ClInclude Include="Window.h" />

@@ -169,6 +169,9 @@
     <ClInclude Include="program_icon.h">
       <Filter>Images As Code</Filter>
     </ClInclude>
+    <ClInclude Include="resource1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="config.ini">
