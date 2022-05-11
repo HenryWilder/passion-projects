@@ -68,6 +68,8 @@ const std::string ElbowConfigName(ElbowConfig elbow)
     }
 }
 
+// Draw
+
 PenTool::PenTool() :
     dragStart(0),
     currentWireElbowConfig(ElbowConfig::horizontal),
@@ -204,6 +206,8 @@ void PenTool::DrawProperties(Window& window)
     window.PushPropertySection_Wire("Hovered wire", window.hoveredWire);
 }
 
+// Edit
+
 EditTool::EditTool() :
     fallbackPos(0),
     selectionWIP(false),
@@ -276,7 +280,7 @@ void EditTool::Update(Window& window)
         else if (window.IsSelectionRectValid() && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
         {
             window.CurrentTab().selection.clear();
-            for (IRect rec : window.CurrentTab().selectionRecs)
+            for (const IRect& rec : window.CurrentTab().selectionRecs)
             {
                 window.CurrentTab().graph->FindNodesInRect(window.CurrentTab().selection, rec);
             }
@@ -463,7 +467,7 @@ void EditTool::Update(Window& window)
                 window.CurrentTab().selection.clear();
                 if (window.IsSelectionRectValid())
                 {
-                    for (IRect rec : window.CurrentTab().selectionRecs)
+                    for (const IRect& rec : window.CurrentTab().selectionRecs)
                     {
                         window.CurrentTab().graph->FindNodesInRect(window.CurrentTab().selection, rec);
                     }
@@ -492,6 +496,12 @@ void EditTool::Update(Window& window)
         case Gate::CAPACITOR: window.hoveredNode->SetCapacity(window.storedExtraParam);   break;
         }
     }
+
+    // Wire bridge
+    if (IsKeyPressed(KEY_SPACE) && window.CurrentTab().IsSelectionBridgeable()) [[unlikely]]
+    {
+        window.CurrentTab().BridgeSelection();
+    }
 }
 void EditTool::Draw(Window& window)
 {
@@ -509,10 +519,24 @@ void EditTool::Draw(Window& window)
         DrawRectangleIRect(groupCorner.GetCollisionRect(), color);
     }
 
-    for (IRect rec : window.CurrentTab().selectionRecs)
     {
-        DrawRectangleIRect(rec, ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5));
-        DrawRectangleLines(rec.x, rec.y, rec.w, rec.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+        Color selectionFillColor;
+        Color selectionOutlineColor;
+        if (window.CurrentTab().IsSelectionBridgeable()) [[unlikely]]
+        {
+            selectionFillColor = ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND2), 0.5);
+            selectionOutlineColor = UIColor(UIColorID::UI_COLOR_FOREGROUND1);
+        }
+        else [[likely]]
+        {
+            selectionFillColor = ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5);
+            selectionOutlineColor = UIColor(UIColorID::UI_COLOR_BACKGROUND2);
+        }
+        for (const IRect& rec : window.CurrentTab().selectionRecs)
+        {
+            DrawRectangleIRect(rec, selectionFillColor);
+            DrawRectangleLinesIRect(rec, selectionOutlineColor);
+        }
     }
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
@@ -580,6 +604,8 @@ void EditTool::DrawProperties(Window& window)
     // Group hover stats
     window.PushPropertySection_Group("Hovered group", window.hoveredGroup);
 }
+
+// Erase
 
 EraseTool::EraseTool() {}
 EraseTool::~EraseTool() {}
@@ -742,6 +768,8 @@ void EraseTool::DrawProperties(Window& window)
     // Todo
 }
 
+// Interact
+
 InteractTool::InteractTool() {}
 InteractTool::~InteractTool() {}
 ModeType InteractTool::GetModeType() const { return ModeType::Basic; }
@@ -776,169 +804,7 @@ void InteractTool::DrawProperties(Window& window)
     window.PushPropertySection_Node("Hovered interactable node", window.hoveredNode);
 }
 
-#if 0
-ButtonOverlay::ButtonOverlay() {}
-ButtonOverlay::~ButtonOverlay() {}
-ModeType ButtonOverlay::GetModeType() const { return ModeType::Overlay; }
-Mode ButtonOverlay::GetMode() const { return Mode::BUTTON; }
-void ButtonOverlay::Update(Window& window)
-{
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-    {
-        IRect rec = Window::dropdownBounds[DropdownActive];
-        if (window.CursorInUIBounds(rec))
-        {
-            rec.h = Button::g_width;
-
-            switch (DropdownActive)
-            {
-            case 0: // Mode
-            {
-                for (Mode m : Window::sidebarModeOrder)
-                {
-                    if (m == window.baseMode)
-                        continue;
-
-                    if (window.CursorInUIBounds(rec))
-                    {
-                        window.SetMode(m);
-                        break;
-                    }
-
-                    rec.y += Button::g_width;
-                }
-            }
-            break;
-
-            case 1: // Gate
-            {
-                for (Gate g : Window::sidebarGateOrder)
-                {
-                    if (g == window.gatePick)
-                        continue;
-
-                    if (window.CursorInUIBounds(rec))
-                    {
-                        window.SetGate(g);
-                        break;
-                    }
-
-                    rec.y += Button::g_width;
-                }
-
-                window.ClearOverlayMode();
-            }
-            break;
-
-            case 2: // Resistance
-            {
-                for (uint8_t v = 0; v < _countof(Node::g_resistanceBands); ++v)
-                {
-                    if (v == window.storedExtraParam)
-                        continue;
-
-                    if (window.CursorInUIBounds(rec))
-                    {
-                        window.storedExtraParam = v;
-                        break;
-                    }
-
-                    rec.y += Button::g_width;
-                }
-
-                window.ClearOverlayMode();
-            }
-            break;
-            }
-        }
-        else
-            window.ClearOverlayMode();
-    }
-    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-    {
-        window.ClearOverlayMode();
-    }
-}
-void ButtonOverlay::Draw(Window& window)
-{
-    window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
-    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-
-    EndMode2D();
-
-    IRect rec = window.dropdownBounds[DropdownActive];
-    DrawRectangleIRect(rec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
-    rec.h = Button::g_width;
-
-    switch (DropdownActive)
-    {
-    case 0: // Mode
-    {
-        for (Mode m : Window::sidebarModeOrder)
-        {
-            if (m == window.baseMode)
-                continue;
-            Color color;
-            if (InBoundingBox(rec, window.cursorUIPos))
-            {
-                color = UIColor(UIColorID::UI_COLOR_FOREGROUND);
-                DrawText(Window::GetModeTooltipName(m), Button::g_width + (window.FontSize() / 2), Button::g_width + (window.FontSize() / 8) + rec.y, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-            }
-            else
-                color = UIColor(UIColorID::UI_COLOR_FOREGROUND3);
-            window.DrawModeIcon(m, rec.xy, color);
-            rec.y += Button::g_width;
-        }
-    }
-    break;
-
-    case 1: // Gate
-    {
-        for (Gate g : Window::sidebarGateOrder)
-        {
-            if (g == window.gatePick)
-                continue;
-            Color color;
-            if (InBoundingBox(rec, window.cursorUIPos))
-            {
-                color = UIColor(UIColorID::UI_COLOR_FOREGROUND);
-                DrawText(Window::GetGateTooltipName(g), Button::g_width * 2 + (window.FontSize() / 2), Button::g_width + (window.FontSize() / 8) + rec.y, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-            }
-            else
-                color = UIColor(UIColorID::UI_COLOR_FOREGROUND3);
-            window.DrawGateIcon(g, rec.xy, color);
-            rec.y += Button::g_width;
-        }
-    }
-    break;
-
-    case 2: // Resistance
-    {
-        for (uint8_t v = 0; v < _countof(Node::g_resistanceBands); ++v)
-        {
-            if (v == window.storedExtraParam)
-                continue;
-            Color color = Node::g_resistanceBands[v];
-            if (InBoundingBox(rec, window.cursorUIPos))
-            {
-                DrawRectangleIRect(rec, UIColor(UIColorID::UI_COLOR_AVAILABLE));
-                DrawRectangleIRect(ExpandIRect(rec, -2), color);
-                const char* text;
-                if (window.gatePick == Gate::LED)
-                    text = TextFormat(window.deviceParameterTextFmt, Node::GetColorName(v));
-                else
-                    text = TextFormat(window.deviceParameterTextFmt, v);
-                DrawText(text, Button::g_width * 3 + (window.FontSize() / 2), Button::g_width + (window.FontSize() / 8) + rec.y, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
-            }
-            else
-                DrawRectangleIRect(rec, color);
-            rec.y += Button::g_width;
-        }
-    }
-    break;
-    }
-}
-#endif
+// Paste
 
 PasteOverlay::PasteOverlay() {}
 PasteOverlay::~PasteOverlay() {}
@@ -965,6 +831,8 @@ void PasteOverlay::DrawProperties(Window& window)
 {
     // Todo
 }
+
+// Blueprint menu
 
 BlueprintMenu::BlueprintMenu() :
     hovering(nullptr) {}

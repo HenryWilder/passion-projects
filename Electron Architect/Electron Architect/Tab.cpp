@@ -1,6 +1,8 @@
 #include <raylib.h>
+#include <thread>
 #include "IVec.h"
 #include "Graph.h"
+#include "Window.h"
 #include "Tab.h"
 
 Tab::Tab(Window* owner, const char* name) :
@@ -11,16 +13,6 @@ Tab::Tab(Window* owner, const char* name) :
 Tab::~Tab()
 {
 	delete graph;
-}
-
-bool Tab::SelectionExists() const
-{
-	return !selection.empty();
-}
-
-size_t Tab::SelectionSize() const
-{
-	return selection.size();
 }
 
 IRect* Tab::GetLastSelectionRec()
@@ -43,14 +35,72 @@ void Tab::CreateSelectionRec(IRect rec)
 		selectionRecs.push_back(rec);
 }
 
-bool Tab::SelectionRectExists() const
+bool Tab::IsSelectionBridgeable() const
 {
-	return !selectionRecs.empty();
-}
+	// Must be exactly two rectangles
+	if (SelectionRectCount() != 2)
+		return false;
+	
+	// Must be an even number of nodes
+	if (selection.size() & 1)
+		return false;
 
-size_t Tab::SelectionRectCount() const
+	// Must have same number of nodes in each selection rectangle
+	size_t rec1Nodes = 0;
+	size_t rec2Nodes = 0;
+	for (Node* node : selection)
+	{
+		if (InBoundingBox(selectionRecs[0], node->GetPosition()))
+			++rec1Nodes;
+		else
+		{
+			_ASSERT_EXPR(InBoundingBox(selectionRecs[1], node->GetPosition()), L"Node in selection was in neither selection rectangle");
+			++rec2Nodes;
+		}
+	}
+	return rec1Nodes == rec2Nodes;
+}
+void Tab::BridgeSelection()
 {
-	return selectionRecs.size();
+	_ASSERT_EXPR(IsSelectionBridgeable(), L"Selection is not bridgable");
+
+	std::vector<Node*> rec1Nodes;
+	std::vector<Node*> rec2Nodes;
+	for (Node* node : selection)
+	{
+		if (InBoundingBox(selectionRecs[0], node->GetPosition()))
+			rec1Nodes.push_back(node);
+		else
+		{
+			_ASSERT_EXPR(InBoundingBox(selectionRecs[1], node->GetPosition()), L"Node in selection was in neither selection rectangle");
+			rec2Nodes.push_back(node);
+		}
+	}
+
+	if (rec1Nodes.size() != rec2Nodes.size())
+	{
+		owningWindow->Log(LogType::warning, "Tried to bridge selection illegally");
+		return;
+	}
+
+	{
+		auto sortNodes = [](std::vector<Node*>& nodeVec) {
+			std::sort(nodeVec.begin(), nodeVec.end(),
+				[](Node* a, Node* b)
+				{
+					return (a->GetX() != b->GetX() ? a->GetX() < b->GetX() : a->GetY() < b->GetY());
+				});
+		};
+		std::thread a(sortNodes, std::ref(rec1Nodes));
+		std::thread b(sortNodes, std::ref(rec2Nodes));
+		a.join();
+		b.join();
+	}
+
+	for (size_t i = 0; i < rec1Nodes.size(); ++i)
+	{
+		graph->CreateWire(rec1Nodes[i], rec2Nodes[i]);
+	}
 }
 
 void Tab::UpdateCamera()

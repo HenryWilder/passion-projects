@@ -17,14 +17,28 @@ struct Tab
 	std::vector<Node*> selection;
 	std::vector<IRect> selectionRecs;
 
-	bool SelectionExists() const;
-	size_t SelectionSize() const;
+	inline bool SelectionExists() const
+	{
+		return !selection.empty();
+	}
+	inline size_t SelectionSize() const
+	{
+		return selection.size();
+	}
 
 	IRect* GetLastSelectionRec();
 	const IRect* GetLastSelectionRecConst() const;
 	void CreateSelectionRec(IRect rec);
-	bool SelectionRectExists() const;
-	size_t SelectionRectCount() const;
+	inline bool SelectionRectExists() const
+	{
+		return !selectionRecs.empty();
+	}
+	inline size_t SelectionRectCount() const
+	{
+		return selectionRecs.size();
+	}
+	bool IsSelectionBridgeable() const;
+	void BridgeSelection();
 
 	void UpdateCamera();
 };
