@@ -54,8 +54,9 @@ Window::Window() :
             "Left click to create a node and a wire.\n"
             "Click an existing node to create a wire from it.\n"
             "Left click again to connect it to another node.\n"
-            "Hold shift while creating a wire for parallel.\n"
             "Right click to stop drawing.\n"
+            "Hold [shift] while creating a wire for parallel.\n"
+            "Hold [ctrl] while creating a wire to reverse it.\n"
             "Press [R] to cycle through wire joints.",
             [this]() { SetMode(Mode::PEN); },
             IVec2(0, 0),
