@@ -24,6 +24,8 @@ void Tab::UpdateBridgeCache()
 	if (selectionRecs.size() != 2)
 		return;
 
+	owningWindow->Log(LogType::attempt, "Updating bridge cache");
+
 	size_t cacheSizes[2] = { 0,0 };
 	// Rule checks and cache size counting
 	{
@@ -51,6 +53,7 @@ void Tab::UpdateBridgeCache()
 						cacheSizes[1] > halfSelectionSize))
 					[[unlikely]]
 				{
+					owningWindow->Log(LogType::success, "Early exit");
 					return;
 				}
 			}
@@ -60,6 +63,7 @@ void Tab::UpdateBridgeCache()
 			(cacheSizes[0] != 1 && cacheSizes[1] != 1) :
 			(cacheSizes[0] != cacheSizes[1]))
 		{
+			owningWindow->Log(LogType::success, "No bridge can be made");
 			return;
 		}
 	}
@@ -89,6 +93,7 @@ void Tab::UpdateBridgeCache()
 		a.join();
 		b.join();
 	}
+	owningWindow->Log(LogType::success, "Bridge cache updated and valid");
 }
 
 void Tab::BridgeSelection(ElbowConfig elbow)
