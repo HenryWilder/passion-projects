@@ -51,10 +51,11 @@ Window::Window() :
         IconButton(
             IVec2(),
             "Mode: Draw [b]",
-            "Left click to create a node and a wire.\n"
-            "Click an existing node to create a wire from it.\n"
-            "Left click again to connect it to another node.\n"
-            "Right click to stop drawing.\n"
+            "[Left click] to create a node and wire.\n"
+            "  if a node exists, a wire will be created from it.\n"
+            "[Left click] again to connect to another node\n"
+            "  if no node exists, one will be made.\n"
+            "[Right click] to stop drawing.\n"
             "Hold [shift] while creating a wire for parallel.\n"
             "Hold [ctrl] while creating a wire to reverse it.\n"
             "Press [R] to cycle through wire joints.",
@@ -65,12 +66,21 @@ Window::Window() :
         IconButton(
             IVec2(),
             "Mode: Edit [v]",
-            "Left click and drag nodes to move them around.\n"
-            "Marquee rectangles can be made with the mouse.\n"
-            "Hold ctrl to make additional marquees.\n"
-            "Drag wire joints with left click.\n"
-            "Wire joints snap to 45 degree angles.\n"
-            "Right click a node to apply current gate.",
+            "Drag with [left click] to select.\n"
+            "Drag nodes with [left click].\n"
+            "Hold [ctrl] to make multiple selections.\n"
+            "Drag wire joints with [left click].\n"
+            "  Wire joints snap to 45 degree angles.\n"
+            "[Right click] a node to apply current gate.\n"
+            "Press [space] to bridge nodes with wires\n"
+            "  Must have exactly two selections\n"
+            "  One selection must contain exactly 1 node\n"
+            "  OR both rectangles must have equal nodes.\n"
+            "  Selections will change colors if valid.\n"
+            "  Bridge wires are connected in the order:\n"
+            "    left to right\n"
+            "    if horizontally same, top to bottom\n"
+            "Press [R] to cycle through bridge joints.",
             [this]() { SetMode(Mode::EDIT); },
             IVec2(1, 0),
             &modeIcons16x),
@@ -78,9 +88,9 @@ Window::Window() :
         IconButton(
             IVec2(),
             "Mode: Erase [x]",
-            "Left click a node, wire, or group to erase it.\n"
-            "Hold shift to bypass the node without erasing\n"
-            "the wires connected to it.",
+            "[Left click] a node, wire, or group to erase it.\n"
+            "[Shift]+[left click] to bypass the node without\n"
+            "  erasing the wires connected to it.",
             [this]() { SetMode(Mode::ERASE); },
             IVec2(0, 1),
             &modeIcons16x),
@@ -88,7 +98,8 @@ Window::Window() :
         IconButton(
             IVec2(),
             "Mode: Interact [f]",
-            "Left click an inputless node to toggle it on/off.",
+            "[Left click] an interactable node to toggle it on/off.\n"
+            "  A node is interactable if it has no inputs.",
             [this]() { SetMode(Mode::INTERACT); },
             IVec2(1, 1),
             & modeIcons16x),
@@ -177,7 +188,10 @@ Window::Window() :
         IconButton(
             IVec2(),
             "Element: Battery [9]",
-            "Always outputs true, regardless of inputs.",
+            "Always outputs true, regardless of inputs.\n"
+            "Batteries will always be start nodes - \n"
+            "  that is, batteries will always be treated as\n"
+            "  entrypoints for graph traversal.",
             [this]() { SetGate(Gate::BATTERY); },
             IVec2(0,4),
             &gateIcons16x),
