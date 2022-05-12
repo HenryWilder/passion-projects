@@ -54,7 +54,7 @@ bool Tab::IsSelectionBridgeable() const
 			++rec2Nodes;
 		}
 	}
-	return rec1Nodes == rec2Nodes || rec1Nodes == 1 || rec2Nodes == 1;
+	return rec1Nodes == rec2Nodes || ((rec1Nodes == 1 || rec2Nodes == 1) && selection.size() > 1);
 }
 void Tab::BridgeSelection()
 {
