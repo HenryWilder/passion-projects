@@ -55,11 +55,7 @@ public:
 	inline void AddSelectionRec(IRect rec)
 	{
 		if (rec.w > 0 && rec.h > 0)
-		{
 			selectionRecs.push_back(rec);
-			if (selectionRecs.size() == 2)
-				UpdateBridgeCache();
-		}
 	}
 	inline void PopSelectionRec()
 	{

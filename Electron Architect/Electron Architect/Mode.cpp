@@ -475,6 +475,8 @@ void EditTool::Update(Window& window)
                 std::unordered_set<Node*> selectionUnique(window.CurrentTab().selection.begin(), window.CurrentTab().selection.end());
                 window.CurrentTab().selection.clear();
                 window.CurrentTab().selection = std::vector<Node*>(selectionUnique.begin(), selectionUnique.end());
+
+                window.CurrentTab().UpdateBridgeCache();
             }
         }
         if (draggingGroup)

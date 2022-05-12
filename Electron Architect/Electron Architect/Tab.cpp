@@ -64,6 +64,8 @@ void Tab::UpdateBridgeCache()
 			(cacheSizes[0] != cacheSizes[1]))
 		{
 			owningWindow->Log(LogType::success, "No bridge can be made");
+			owningWindow->Log(LogType::info, "Selection 1 size: " + std::to_string(cacheSizes[0]));
+			owningWindow->Log(LogType::info, "Selection 2 size: " + std::to_string(cacheSizes[1]));
 			return;
 		}
 	}
@@ -122,7 +124,7 @@ void Tab::DrawBridgePreview(ElbowConfig elbow, Color color) const
 	size_t i_increment = (size_t)(bridgeCache[0].size() > 1);
 	size_t j = 0;
 	size_t j_increment = (size_t)(bridgeCache[1].size() > 1);
-	while (i < bridgeCache[0].size() || j < bridgeCache[1].size())
+	while (i < bridgeCache[0].size() && j < bridgeCache[1].size())
 	{
 		Wire(bridgeCache[0][i], bridgeCache[1][j], elbow).Draw(color);
 		i += i_increment;
