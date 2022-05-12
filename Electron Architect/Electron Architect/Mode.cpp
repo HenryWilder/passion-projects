@@ -521,26 +521,23 @@ void EditTool::Draw(Window& window)
     }
 
     {
-        Color selectionFillColor;
-        Color selectionOutlineColor;
         bool bridgable = window.CurrentTab().IsSelectionBridgeable();
         if (bridgable) [[unlikely]]
         {
-            selectionFillColor = ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND2), 0.5);
-            selectionOutlineColor = UIColor(UIColorID::UI_COLOR_FOREGROUND1);
+            DrawRectangleIRect(window.CurrentTab().selectionRecs[0], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
+            DrawRectangleLinesIRect(window.CurrentTab().selectionRecs[0], UIColor(UIColorID::UI_COLOR_INPUT));
+            DrawRectangleIRect(window.CurrentTab().selectionRecs[1], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
+            DrawRectangleLinesIRect(window.CurrentTab().selectionRecs[1], UIColor(UIColorID::UI_COLOR_OUTPUT));
+            window.CurrentTab().DrawBridgePreview(ElbowConfig::horizontal, UIColor(UIColorID::UI_COLOR_AVAILABLE));
         }
         else [[likely]]
         {
-            selectionFillColor = ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5);
-            selectionOutlineColor = UIColor(UIColorID::UI_COLOR_BACKGROUND2);
+            for (const IRect& rec : window.CurrentTab().selectionRecs)
+            {
+                DrawRectangleIRect(rec, ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5));
+                DrawRectangleLinesIRect(rec, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+            }
         }
-        for (const IRect& rec : window.CurrentTab().selectionRecs)
-        {
-            DrawRectangleIRect(rec, selectionFillColor);
-            DrawRectangleLinesIRect(rec, selectionOutlineColor);
-        }
-        if (bridgable) [[unlikely]]
-            window.CurrentTab().DrawBridgePreview(ElbowConfig::horizontal, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
