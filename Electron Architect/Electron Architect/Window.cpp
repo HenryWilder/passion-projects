@@ -871,7 +871,58 @@ void Window::CheckHotkeys()
         hoveredWire = nullptr;
     }
 
-    if (IsKeyPressed(KEY_F11))
+    // Help
+    if (IsKeyPressed(KEY_F1))
+    {
+        // Todo
+    }
+    // Rename
+    else if (IsKeyPressed(KEY_F2))
+    {
+        // Todo
+    }
+    // Search
+    else if (IsKeyPressed(KEY_F3))
+    {
+        // Todo
+    }
+    // Nothing yet
+    else if (IsKeyPressed(KEY_F4))
+    {
+        // Todo
+    }
+    // Reload graph
+    else if (IsKeyPressed(KEY_F5))
+    {
+        CurrentTab().graph->Sort();
+    }
+    // Nothing yet
+    else if (IsKeyPressed(KEY_F6))
+    {
+        // Todo
+    }
+    // Nothing yet
+    else if (IsKeyPressed(KEY_F7))
+    {
+        // Todo
+    }
+    // Nothing yet
+    else if (IsKeyPressed(KEY_F8))
+    {
+        // Todo
+    }
+    // Nothing yet
+    else if (IsKeyPressed(KEY_F9))
+    {
+        // Todo
+    }
+    // Toggle ribbon
+    else if (IsKeyPressed(KEY_F10))
+    {
+        // Todo
+    }
+    // Fullscreen
+    else if (IsKeyPressed(KEY_F11))
     {
         if (!IsWindowFullscreen())
             SetWindowSize(GetMonitorWidth(GetCurrentMonitor()), GetMonitorHeight(GetCurrentMonitor()));
@@ -882,6 +933,21 @@ void Window::CheckHotkeys()
             MaximizeWindow();
         UpdateSize();
     }
+    // Save
+    //else if (IsKeyPressed(KEY_F12))
+    //{
+    //    // Export SVG
+    //    if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
+    //        (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
+    //    {
+    //        CurrentTab().graph->Export(CurrentTab().graph->GetName() + ".svg");
+    //    }
+    //    // Save
+    //    else
+    //    {
+    //        CurrentTab().graph->Save(CurrentTab().graph->GetName() + ".cg");
+    //    }
+    //}
 }
 
 IVec2 Window::GetCursorDelta() const

@@ -76,9 +76,6 @@ int main()
         *   Simulate frame and update variables
         ******************************************/
 
-        if (IsKeyPressed(KEY_F5))
-            window.CurrentTab().graph->Sort();
-
         if (IsWindowResized())
             window.UpdateSize();
 
