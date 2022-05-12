@@ -103,9 +103,10 @@ public:
     TextButton consoleToggleButton;
     Button* const allButtons[28];
     IRect toolPaneRec;
-    bool toolPaneSizeState;
-    bool consoleOn;
-    bool propertiesOn;
+    bool toolPaneSizeState = true;
+    bool consoleOn = true;
+    bool propertiesOn = true;
+    bool selectionPreview = false;
 
 private:
 

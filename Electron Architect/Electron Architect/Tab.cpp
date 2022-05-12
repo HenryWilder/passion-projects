@@ -50,7 +50,7 @@ void Tab::UpdateBridgeCache()
 				if (cacheSizes[0] > 1 &&
 					cacheSizes[1] > 1 &&
 					(cacheSizes[0] > halfSelectionSize ||
-						cacheSizes[1] > halfSelectionSize))
+					 cacheSizes[1] > halfSelectionSize))
 					[[unlikely]]
 				{
 					owningWindow->Log(LogType::success, "Early exit");
@@ -59,9 +59,9 @@ void Tab::UpdateBridgeCache()
 			}
 		}
 
-		if ((selection.size() & 1) ?
-			(cacheSizes[0] != 1 && cacheSizes[1] != 1) :
-			(cacheSizes[0] != cacheSizes[1]))
+		if (!(cacheSizes[0] == 1 && cacheSizes[1] > 1) &&
+			!(cacheSizes[1] == 1 && cacheSizes[0] > 1) &&
+			!(cacheSizes[0] == cacheSizes[1]))
 		{
 			owningWindow->Log(LogType::success, "No bridge can be made");
 			owningWindow->Log(LogType::info, "Selection 1 size: " + std::to_string(cacheSizes[0]));

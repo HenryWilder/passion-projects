@@ -1096,7 +1096,8 @@ void Window::SaveConfig() const
         "\ntoolpane_expanded=" << toolPaneSizeState <<
         "\nshow_console=" << consoleOn <<
         "\nshow_properties=" << propertiesOn <<
-        "\nmin_log_level=" << (int)minLogLevel;
+        "\nmin_log_level=" << (int)minLogLevel <<
+        "\nselection_preview=" << selectionPreview;
         
     config.close();
 }
@@ -1143,6 +1144,7 @@ void Window::ReloadConfig()
         consoleOn = 1;
         propertiesOn = 1;
         minLogLevel = LogType::warning;
+        selectionPreview = false;
     }
 
     std::ifstream file("config.ini");
@@ -1199,6 +1201,7 @@ void Window::ReloadConfig()
         else if (attribute == "show_console")           consoleOn           = std::stoi(value);
         else if (attribute == "show_properties")        propertiesOn        = std::stoi(value);
         else if (attribute == "min_log_level")          minLogLevel = LogType(std::min(std::max(0, std::stoi(value)), 4));
+        else if (attribute == "selection_preview")      selectionPreview    = !!std::stoi(value);
     }
 
     if (uiScale >= 2)

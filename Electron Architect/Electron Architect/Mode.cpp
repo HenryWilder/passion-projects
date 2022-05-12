@@ -522,15 +522,37 @@ void EditTool::Draw(Window& window)
         DrawRectangleIRect(groupCorner.GetCollisionRect(), color);
     }
 
+    // Selection preview
+    std::vector<Node*> selectionPreviewNodes;
+    if (window.selectionPreview && selectionWIP)
     {
-        bool bridgable = window.CurrentTab().IsSelectionBridgeable();
-        if (bridgable) [[unlikely]]
+        const IRect* rec = window.CurrentTab().GetLastSelectionRecConst();
+        if (!!rec)
+            window.CurrentTab().graph->FindNodesInRect(selectionPreviewNodes, *rec);
+    }
+
+    // Selection rectangles
+    {
+        bool actuallyBridgeable = window.CurrentTab().IsSelectionBridgeable();
+
+        bool previewBridgeable = 
+            actuallyBridgeable ||
+            (window.selectionPreview && selectionWIP &&
+            window.CurrentTab().SelectionRectCount() == 2 &&
+            window.CurrentTab().SelectionExists() &&
+                ((window.CurrentTab().selection.size() == 1 && selectionPreviewNodes.size() > 1) ||
+                 (window.CurrentTab().selection.size() > 1 && selectionPreviewNodes.size() == 1) ||
+                 (window.CurrentTab().selection.size() == selectionPreviewNodes.size())));
+
+        if (previewBridgeable) [[unlikely]]
         {
             DrawRectangleIRect(window.CurrentTab().SelectionRecs()[0], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
             DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[0], UIColor(UIColorID::UI_COLOR_INPUT));
             DrawRectangleIRect(window.CurrentTab().SelectionRecs()[1], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
             DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[1], UIColor(UIColorID::UI_COLOR_OUTPUT));
-            window.CurrentTab().DrawBridgePreview(window.currentWireElbowConfig, UIColor(UIColorID::UI_COLOR_AVAILABLE));
+
+            if (actuallyBridgeable)
+                window.CurrentTab().DrawBridgePreview(window.currentWireElbowConfig, UIColor(UIColorID::UI_COLOR_AVAILABLE));
         }
         else [[likely]]
         {
@@ -543,7 +565,12 @@ void EditTool::Draw(Window& window)
     }
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
+    // Selection
     for (Node* node : window.CurrentTab().selection)
+    {
+        DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, UIColor(UIColorID::UI_COLOR_AVAILABLE));
+    }
+    for (Node* node : selectionPreviewNodes)
     {
         DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
