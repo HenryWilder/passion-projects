@@ -110,7 +110,7 @@ public:
     Group* FindGroupAtPos(IVec2 pos) const;
     GroupCorner FindGroupCornerAtPos(IVec2 pos) const;
 
-    void FindNodesInRect(_Out_ std::vector<Node*>& result, IRect rec) const;
+    void FindNodesInRect(std::vector<Node*>& result, IRect rec) const;
 
     // Serialization functions
 

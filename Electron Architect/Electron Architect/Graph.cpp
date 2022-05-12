@@ -740,7 +740,7 @@ Wire* Graph::FindWireElbowAtPos(IVec2 pos) const
     return nullptr;
 }
 
-void Graph::FindNodesInRect(_Out_ std::vector<Node*>& result, IRect rec) const
+void Graph::FindNodesInRect(std::vector<Node*>& result, IRect rec) const
 {
     // Exclusive bounds
     IRect bounds = ShrinkIRect(rec);
@@ -870,10 +870,10 @@ void Graph::Save(const std::string& filename) const
         file << TextFormat("g %i\n", groups.size());
         for (Group* group : groups)
         {
-            file << TextFormat("%s %i %i %i %i %i %i %i %i\n",
-                group->label.c_str(),
+            file << TextFormat("%i %i %i %i %i %i %i %i %s\n",
                 group->captureBounds.x, group->captureBounds.y, group->captureBounds.w, group->captureBounds.h,
-                (int)group->color.r, (int)group->color.g, (int)group->color.b, (int)group->color.a);
+                (int)group->color.r, (int)group->color.g, (int)group->color.b, (int)group->color.a,
+                group->label.c_str());
         }
     }
     file.close();
@@ -983,9 +983,10 @@ void Graph::Load(const std::string& filename)
                 int r, g, b, a;
                 std::string label;
                 file
-                    >> label
                     >> x >> y >> w >> h
                     >> r >> g >> b >> a;
+                file.ignore(1);
+                std::getline(file, label);
                 groups.push_back(new Group(IRect(x, y, w, h), Color((uint8_t)r, (uint8_t)g, (uint8_t)b, (uint8_t)a), label));
             }
         }
