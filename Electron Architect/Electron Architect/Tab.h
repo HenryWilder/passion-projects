@@ -15,9 +15,11 @@ struct Tab
 	Camera2D camera;
 	Graph* graph;
 	std::vector<Node*> selection;
+private:
+	// Note: Make sure not to modify this without updating the bridge cache!
 	std::vector<IRect> selectionRecs;
+public:
 	std::vector<Node*> bridgeCache[2];
-	bool selectionDirty;
 
 	inline bool SelectionExists() const
 	{
@@ -28,9 +30,6 @@ struct Tab
 		return selection.size();
 	}
 
-	IRect* GetLastSelectionRec();
-	const IRect* GetLastSelectionRecConst() const;
-	void CreateSelectionRec(IRect rec);
 	inline bool SelectionRectExists() const
 	{
 		return !selectionRecs.empty();
@@ -39,9 +38,48 @@ struct Tab
 	{
 		return selectionRecs.size();
 	}
-	bool IsSelectionBridgeable() const;
+
+	inline const std::vector<IRect>& SelectionRecs() const
+	{
+		return selectionRecs;
+	}
+	inline IRect* GetLastSelectionRec()
+	{
+		return SelectionRectExists() ? &selectionRecs.back() : nullptr;
+	}
+	inline const IRect* GetLastSelectionRecConst() const
+	{
+		return SelectionRectExists() ? &selectionRecs.back() : nullptr;
+	}
+
+	inline void AddSelectionRec(IRect rec)
+	{
+		if (rec.w > 0 && rec.h > 0)
+		{
+			selectionRecs.push_back(rec);
+			if (selectionRecs.size() == 2)
+				UpdateBridgeCache();
+		}
+	}
+	inline void PopSelectionRec()
+	{
+		selectionRecs.pop_back();
+		UpdateBridgeCache();
+	}
+	inline void ClearSelection()
+	{
+		selection.clear();
+		selectionRecs.clear();
+		bridgeCache[0].clear();
+		bridgeCache[1].clear();
+	}
+
+	void UpdateBridgeCache();
+	inline bool IsSelectionBridgeable() const
+	{
+		return !bridgeCache[0].empty();
+	}
 	void BridgeSelection(ElbowConfig elbow);
-	// Todo: pretty expensive, having to sort the entire thing every frame! Do something!!
 	void DrawBridgePreview(ElbowConfig elbow, Color color) const;
 
 	void UpdateCamera();

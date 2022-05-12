@@ -15,167 +15,113 @@ Tab::~Tab()
 	delete graph;
 }
 
-IRect* Tab::GetLastSelectionRec()
+void Tab::UpdateBridgeCache()
 {
-	if (SelectionRectExists())
-		return &selectionRecs.back();
-	return nullptr;
-}
+	bridgeCache[0].clear();
+	bridgeCache[1].clear();
 
-const IRect* Tab::GetLastSelectionRecConst() const
-{
-	if (SelectionRectExists())
-		return &selectionRecs.back();
-	return nullptr;
-}
-
-void Tab::CreateSelectionRec(IRect rec)
-{
-	if (rec.w > 0 && rec.h > 0)
-		selectionRecs.push_back(rec);
-}
-
-bool Tab::IsSelectionBridgeable() const
-{
 	// Must be exactly two rectangles
-	if (SelectionRectCount() != 2)
-		return false;
-	
-	// Must have same number of nodes in each selection rectangle
-	size_t rec1Nodes = 0;
-	size_t rec2Nodes = 0;
-	for (Node* node : selection)
+	if (selectionRecs.size() != 2)
+		return;
+
+	size_t cacheSizes[2] = { 0,0 };
+	// Rule checks and cache size counting
 	{
-		if (InBoundingBox(selectionRecs[0], node->GetPosition()))
-			++rec1Nodes;
-		else
+		size_t halfSelectionSize = selection.size() / 2;
+		for (Node* node : selection)
 		{
-			_ASSERT_EXPR(InBoundingBox(selectionRecs[1], node->GetPosition()), L"Node in selection was in neither selection rectangle");
-			++rec2Nodes;
+			if (InBoundingBox(selectionRecs[0], node->GetPosition()))
+				cacheSizes[0]++;
+			else
+			{
+				// Expected behavior check
+				if (!InBoundingBox(selectionRecs[1], node->GetPosition())) [[unlikely]]
+				{
+					owningWindow->Log(LogType::warning, "Node in selection was in neither selection rectangle");
+					return;
+				}
+
+				cacheSizes[1]++;
+
+				// Confirmed neither is a single node, and one of them has more than half of the nodes
+				// (optimization)
+				if (cacheSizes[0] > 1 &&
+					cacheSizes[1] > 1 &&
+					(cacheSizes[0] > halfSelectionSize ||
+						cacheSizes[1] > halfSelectionSize))
+					[[unlikely]]
+				{
+					return;
+				}
+			}
+		}
+
+		if ((selection.size() & 1) ?
+			(cacheSizes[0] != 1 && cacheSizes[1] != 1) :
+			(cacheSizes[0] != cacheSizes[1]))
+		{
+			return;
 		}
 	}
-	return rec1Nodes == rec2Nodes || ((rec1Nodes == 1 || rec2Nodes == 1) && selection.size() > 1);
+
+	// Produce cache
+	{
+		bridgeCache[0].reserve(cacheSizes[0]);
+		bridgeCache[1].reserve(cacheSizes[1]);
+		for (Node* node : selection)
+		{
+			if (InBoundingBox(selectionRecs[0], node->GetPosition()))
+				bridgeCache[0].push_back(node);
+			else
+				bridgeCache[1].push_back(node);
+		}
+
+		auto sortNodes = [](std::vector<Node*>& nodeVec) {
+			std::sort(nodeVec.begin(), nodeVec.end(),
+				[](Node* a, Node* b)
+				{
+					return (a->GetX() != b->GetX() ? a->GetX() < b->GetX() : a->GetY() < b->GetY());
+				});
+		};
+
+		std::thread a(sortNodes, std::ref(bridgeCache[0]));
+		std::thread b(sortNodes, std::ref(bridgeCache[1]));
+		a.join();
+		b.join();
+	}
 }
+
 void Tab::BridgeSelection(ElbowConfig elbow)
 {
 	_ASSERT_EXPR(IsSelectionBridgeable(), L"Selection is not bridgable");
 
-	std::vector<Node*> rec1Nodes;
-	std::vector<Node*> rec2Nodes;
-	for (Node* node : selection)
+	size_t i = 0;
+	size_t i_increment = (size_t)(bridgeCache[0].size() > 1);
+	size_t j = 0;
+	size_t j_increment = (size_t)(bridgeCache[1].size() > 1);
+	while (i < bridgeCache[0].size() || j < bridgeCache[1].size())
 	{
-		if (InBoundingBox(selectionRecs[0], node->GetPosition()))
-			rec1Nodes.push_back(node);
-		else
-		{
-			_ASSERT_EXPR(InBoundingBox(selectionRecs[1], node->GetPosition()), L"Node in selection was in neither selection rectangle");
-			rec2Nodes.push_back(node);
-		}
+		graph->CreateWire(bridgeCache[0][i], bridgeCache[1][j], elbow);
+		i += i_increment;
+		j += j_increment;
 	}
-
-	auto sortNodes = [](std::vector<Node*>& nodeVec) {
-		std::sort(nodeVec.begin(), nodeVec.end(),
-			[](Node* a, Node* b)
-			{
-				return (a->GetX() != b->GetX() ? a->GetX() < b->GetX() : a->GetY() < b->GetY());
-			});
-	};
-
-	if (rec1Nodes.size() == 1 && rec2Nodes.size() == 1)
-	{
-		graph->CreateWire(rec1Nodes[0], rec2Nodes[0], elbow);
-	}
-	else if (rec1Nodes.size() == 1)
-	{
-		sortNodes(rec2Nodes);
-		for (size_t i = 0; i < rec2Nodes.size(); ++i)
-		{
-			graph->CreateWire(rec1Nodes[0], rec2Nodes[i], elbow);
-		}
-	}
-	else if (rec2Nodes.size() == 1)
-	{
-		sortNodes(rec1Nodes);
-		for (size_t i = 0; i < rec1Nodes.size(); ++i)
-		{
-			graph->CreateWire(rec1Nodes[i], rec2Nodes[0], elbow);
-		}
-	}
-	else
-	{
-		{
-			std::thread a(sortNodes, std::ref(rec1Nodes));
-			std::thread b(sortNodes, std::ref(rec2Nodes));
-			a.join();
-			b.join();
-		}
-
-		for (size_t i = 0; i < rec1Nodes.size(); ++i)
-		{
-			graph->CreateWire(rec1Nodes[i], rec2Nodes[i], elbow);
-		}
-	}
+	bridgeCache[0].clear();
+	bridgeCache[1].clear();
 }
 
 void Tab::DrawBridgePreview(ElbowConfig elbow, Color color) const
 {
 	_ASSERT_EXPR(IsSelectionBridgeable(), L"Selection is not bridgable");
 
-	std::vector<Node*> rec1Nodes;
-	std::vector<Node*> rec2Nodes;
-	for (Node* node : selection)
+	size_t i = 0;
+	size_t i_increment = (size_t)(bridgeCache[0].size() > 1);
+	size_t j = 0;
+	size_t j_increment = (size_t)(bridgeCache[1].size() > 1);
+	while (i < bridgeCache[0].size() || j < bridgeCache[1].size())
 	{
-		if (InBoundingBox(selectionRecs[0], node->GetPosition()))
-			rec1Nodes.push_back(node);
-		else
-		{
-			_ASSERT_EXPR(InBoundingBox(selectionRecs[1], node->GetPosition()), L"Node in selection was in neither selection rectangle");
-			rec2Nodes.push_back(node);
-		}
-	}
-
-	auto sortNodes = [](std::vector<Node*>& nodeVec) {
-		std::sort(nodeVec.begin(), nodeVec.end(),
-			[](Node* a, Node* b)
-			{
-				return (a->GetX() != b->GetX() ? a->GetX() < b->GetX() : a->GetY() < b->GetY());
-			});
-	};
-
-	if (rec1Nodes.size() == 1 && rec2Nodes.size() == 1)
-	{
-		Wire(rec1Nodes.back(), rec2Nodes.back(), elbow).Draw(color);
-	}
-	else if (rec1Nodes.size() == 1)
-	{
-		sortNodes(rec2Nodes);
-		for (size_t i = 0; i < rec2Nodes.size(); ++i)
-		{
-			// Holy cow this is so much nicer! Why aren't I using this everywhere?!
-			Wire(rec1Nodes.back(), rec2Nodes[i], elbow).Draw(color);
-		}
-	}
-	else if (rec2Nodes.size() == 1)
-	{
-		sortNodes(rec1Nodes);
-		for (size_t i = 0; i < rec1Nodes.size(); ++i)
-		{
-			Wire(rec1Nodes[i], rec2Nodes.back(), elbow).Draw(color);
-		}
-	}
-	else
-	{
-		{
-			std::thread a(sortNodes, std::ref(rec1Nodes));
-			std::thread b(sortNodes, std::ref(rec2Nodes));
-			a.join();
-			b.join();
-		}
-
-		for (size_t i = 0; i < rec1Nodes.size(); ++i)
-		{
-			Wire(rec1Nodes[i], rec2Nodes[i], elbow).Draw(color);
-		}
+		Wire(bridgeCache[0][i], bridgeCache[1][j], elbow).Draw(color);
+		i += i_increment;
+		j += j_increment;
 	}
 }
 

@@ -279,7 +279,7 @@ void EditTool::Update(Window& window)
         else if (window.IsSelectionRectValid() && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
         {
             window.CurrentTab().selection.clear();
-            for (const IRect& rec : window.CurrentTab().selectionRecs)
+            for (const IRect& rec : window.CurrentTab().SelectionRecs())
             {
                 window.CurrentTab().graph->FindNodesInRect(window.CurrentTab().selection, rec);
             }
@@ -288,7 +288,7 @@ void EditTool::Update(Window& window)
         // Create a new selection rectangle
         else if (window.IsSelectionRectValid() && (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)))
         {
-            window.CurrentTab().CreateSelectionRec(IRect(window.cursorPos, 1));
+            window.CurrentTab().AddSelectionRec(IRect(window.cursorPos, 1));
             fallbackPos = window.cursorPos;
             if (selectionWIP = !(nodeBeingDragged || wireBeingDragged || draggingGroup || draggingGroupCorner))
                 selectionStart = window.cursorPos;
@@ -296,8 +296,7 @@ void EditTool::Update(Window& window)
         // Clear selection and start anew
         else
         {
-            window.CurrentTab().selection.clear();
-            window.CurrentTab().selectionRecs.clear();
+            window.ClearSelection();
             nodeBeingDragged = window.hoveredNode;
             wireBeingDragged = window.hoveredWire;
 
@@ -320,7 +319,7 @@ void EditTool::Update(Window& window)
         auto [minx, maxx] = std::minmax(window.cursorPos.x, selectionStart.x);
         auto [miny, maxy] = std::minmax(window.cursorPos.y, selectionStart.y);
         if (!window.CurrentTab().GetLastSelectionRec())
-            window.CurrentTab().CreateSelectionRec(IRect(1));
+            window.CurrentTab().AddSelectionRec(IRect(1));
         window.CurrentTab().GetLastSelectionRec()->w = maxx - (window.CurrentTab().GetLastSelectionRec()->x = minx);
         window.CurrentTab().GetLastSelectionRec()->h = maxy - (window.CurrentTab().GetLastSelectionRec()->y = miny);
     }
@@ -335,7 +334,9 @@ void EditTool::Update(Window& window)
             {
                 node->SetPosition_Temporary(node->GetPosition() + offset);
             }
-            for (IRect& rec : window.CurrentTab().selectionRecs)
+            // Explicit exception to the rule of selectionRecs being modified without updating bridge cache
+            // Please forgive my transgressions
+            for (IRect& rec : const_cast<std::vector<IRect>&>(window.CurrentTab().SelectionRecs()))
             {
                 rec.xy += offset;
             }
@@ -418,7 +419,7 @@ void EditTool::Update(Window& window)
             }
             else if (selectionWIP)
             {
-                window.CurrentTab().selectionRecs.clear();
+                window.ClearSelection();
             }
         }
         // Finalize
@@ -461,12 +462,12 @@ void EditTool::Update(Window& window)
                     (window.CurrentTab().GetLastSelectionRec()->w == 0 ||
                     window.CurrentTab().GetLastSelectionRec()->h == 0))
                 {
-                    window.CurrentTab().selectionRecs.pop_back();
+                    window.CurrentTab().PopSelectionRec();
                 }
                 window.CurrentTab().selection.clear();
                 if (window.IsSelectionRectValid())
                 {
-                    for (const IRect& rec : window.CurrentTab().selectionRecs)
+                    for (const IRect& rec : window.CurrentTab().SelectionRecs())
                     {
                         window.CurrentTab().graph->FindNodesInRect(window.CurrentTab().selection, rec);
                     }
@@ -523,15 +524,15 @@ void EditTool::Draw(Window& window)
         bool bridgable = window.CurrentTab().IsSelectionBridgeable();
         if (bridgable) [[unlikely]]
         {
-            DrawRectangleIRect(window.CurrentTab().selectionRecs[0], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
-            DrawRectangleLinesIRect(window.CurrentTab().selectionRecs[0], UIColor(UIColorID::UI_COLOR_INPUT));
-            DrawRectangleIRect(window.CurrentTab().selectionRecs[1], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
-            DrawRectangleLinesIRect(window.CurrentTab().selectionRecs[1], UIColor(UIColorID::UI_COLOR_OUTPUT));
+            DrawRectangleIRect(window.CurrentTab().SelectionRecs()[0], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
+            DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[0], UIColor(UIColorID::UI_COLOR_INPUT));
+            DrawRectangleIRect(window.CurrentTab().SelectionRecs()[1], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
+            DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[1], UIColor(UIColorID::UI_COLOR_OUTPUT));
             window.CurrentTab().DrawBridgePreview(window.currentWireElbowConfig, UIColor(UIColorID::UI_COLOR_AVAILABLE));
         }
         else [[likely]]
         {
-            for (const IRect& rec : window.CurrentTab().selectionRecs)
+            for (const IRect& rec : window.CurrentTab().SelectionRecs())
             {
                 DrawRectangleIRect(rec, ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5));
                 DrawRectangleLinesIRect(rec, UIColor(UIColorID::UI_COLOR_BACKGROUND2));

@@ -670,19 +670,25 @@ void Window::CopySelectionToClipboard()
 {
     // Todo: actually copy a csv to the user's clipboard
     Log(LogType::info, "Copied selection to clipboard");
-    if (CurrentTab().selection.empty()) // Clear selection
+    if (!CurrentTab().selection.empty()) // Copy selection
+    {
+        g_clipboardBP = Blueprint(CurrentTab().selection);
+        clipboard = &g_clipboardBP;
+    }
+    else // Clear selection
         clipboard = nullptr;
-    else // Copy selection
-        clipboard = &(g_clipboardBP = Blueprint(CurrentTab().selection));
 }
 
 void Window::MakeGroupFromSelection()
 {
-    if (!CurrentTab().GetLastSelectionRec())
+    if (!CurrentTab().SelectionRectExists())
         return;
-    CurrentTab().graph->CreateGroup(*CurrentTab().GetLastSelectionRec(), UIColor(UIColorID::UI_COLOR_AVAILABLE));
-    CurrentTab().selectionRecs.clear();
-    CurrentTab().selection.clear();
+
+    for (const IRect& rec : CurrentTab().SelectionRecs())
+    {
+        CurrentTab().graph->CreateGroup(rec, UIColor(UIColorID::UI_COLOR_AVAILABLE));
+    }
+    CurrentTab().ClearSelection();
 }
 
 bool Window::IsSelectionRectValid() const
@@ -716,8 +722,7 @@ bool Window::SelectionExists() const
 
 void Window::ClearSelection()
 {
-    CurrentTab().selection.clear();
-    CurrentTab().selectionRecs.clear();
+    CurrentTab().ClearSelection();
 }
 
 void Window::DestroySelection()
