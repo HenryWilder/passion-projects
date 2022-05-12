@@ -83,7 +83,6 @@ struct PenTool : public Tool
     void DrawProperties(Window& window) final;
 
     IVec2 dragStart;
-    ElbowConfig currentWireElbowConfig;
     Node* previousWireStart;
     Node* currentWireStart;
 };

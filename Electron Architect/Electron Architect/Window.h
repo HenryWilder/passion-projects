@@ -72,6 +72,7 @@ public:
     Gate gatePick = Gate::OR;
     Gate lastGate = Gate::OR;
     uint8_t storedExtraParam = 0;
+    ElbowConfig currentWireElbowConfig = ElbowConfig::horizontal;
 
     std::string deviceParameterTextFmt;
 

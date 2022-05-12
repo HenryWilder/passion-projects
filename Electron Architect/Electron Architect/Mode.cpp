@@ -72,7 +72,6 @@ const std::string ElbowConfigName(ElbowConfig elbow)
 
 PenTool::PenTool() :
     dragStart(0),
-    currentWireElbowConfig(ElbowConfig::horizontal),
     previousWireStart(nullptr),
     currentWireStart(nullptr) {}
 PenTool::~PenTool() {}
@@ -118,7 +117,7 @@ void PenTool::Update(Window& window)
                 else
                     wire = window.CurrentTab().graph->CreateWire(oldNode, newNode);
                 
-                wire->elbowConfig = currentWireElbowConfig;
+                wire->elbowConfig = window.currentWireElbowConfig;
                 wire->UpdateElbowToLegal();
                 previousWireStart = oldNode;
             }
@@ -128,9 +127,9 @@ void PenTool::Update(Window& window)
     else if (IsKeyPressed(KEY_R))
     {
         if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
-            --currentWireElbowConfig;
+            --window.currentWireElbowConfig;
         else
-            ++currentWireElbowConfig;
+            ++window.currentWireElbowConfig;
     }
     else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
@@ -155,9 +154,9 @@ void PenTool::Draw(Window& window)
 
             IVec2 elbow;
             if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
-                elbow = Wire::GetLegalElbowPosition(end, start, currentWireElbowConfig);
+                elbow = Wire::GetLegalElbowPosition(end, start, window.currentWireElbowConfig);
             else
-                elbow = Wire::GetLegalElbowPosition(start, end, currentWireElbowConfig);
+                elbow = Wire::GetLegalElbowPosition(start, end, window.currentWireElbowConfig);
 
             Wire::Draw(start, elbow, end, UIColor(UIColorID::UI_COLOR_AVAILABLE));
 
@@ -528,7 +527,7 @@ void EditTool::Draw(Window& window)
             DrawRectangleLinesIRect(window.CurrentTab().selectionRecs[0], UIColor(UIColorID::UI_COLOR_INPUT));
             DrawRectangleIRect(window.CurrentTab().selectionRecs[1], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
             DrawRectangleLinesIRect(window.CurrentTab().selectionRecs[1], UIColor(UIColorID::UI_COLOR_OUTPUT));
-            window.CurrentTab().DrawBridgePreview(ElbowConfig::horizontal, UIColor(UIColorID::UI_COLOR_AVAILABLE));
+            window.CurrentTab().DrawBridgePreview(window.currentWireElbowConfig, UIColor(UIColorID::UI_COLOR_AVAILABLE));
         }
         else [[likely]]
         {
@@ -589,6 +588,15 @@ void EditTool::Draw(Window& window)
         window.DrawTooltipAtCursor(
             "Hold [shift] to merge on release.\n"
             "Otherwise, nodes will only be swapped.", UIColor(UIColorID::UI_COLOR_SPECIAL));
+    }
+
+
+    if (IsKeyPressed(KEY_R))
+    {
+        if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+            --window.currentWireElbowConfig;
+        else
+            ++window.currentWireElbowConfig;
     }
 }
 void EditTool::DrawProperties(Window& window)
