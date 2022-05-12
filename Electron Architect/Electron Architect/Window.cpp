@@ -45,8 +45,6 @@ Window::Window() :
     windowWidth(1280),
     windowHeight(720),
     consoleOutput{ "", "", "", "", "", "", },
-    userSetMinLogLevel(LogType::info),
-    minLogLevel(LogType::info),
     modeButtons{
         IconButton(
             IVec2(),
@@ -1098,7 +1096,7 @@ void Window::SaveConfig() const
         "\ntoolpane_expanded=" << toolPaneSizeState <<
         "\nshow_console=" << consoleOn <<
         "\nshow_properties=" << propertiesOn <<
-        "\nmin_log_level=" << (int)userSetMinLogLevel;
+        "\nmin_log_level=" << (int)minLogLevel;
         
     config.close();
 }
@@ -1144,7 +1142,7 @@ void Window::ReloadConfig()
         toolPaneSizeState = 1;
         consoleOn = 1;
         propertiesOn = 1;
-        SetMinLogLevel_User(LogType::warning);
+        minLogLevel = LogType::warning;
     }
 
     std::ifstream file("config.ini");
@@ -1200,7 +1198,7 @@ void Window::ReloadConfig()
         else if (attribute == "toolpane_expanded")      toolPaneSizeState   = std::stoi(value);
         else if (attribute == "show_console")           consoleOn           = std::stoi(value);
         else if (attribute == "show_properties")        propertiesOn        = std::stoi(value);
-        else if (attribute == "min_log_level")          SetMinLogLevel_User(LogType(std::min(std::max(0, std::stoi(value)), 4)));
+        else if (attribute == "min_log_level")          minLogLevel = LogType(std::min(std::max(0, std::stoi(value)), 4));
     }
 
     if (uiScale >= 2)
@@ -1627,15 +1625,6 @@ void Window::DrawConsoleOutput()
             consolePaneRec.xy + Height(FontSize() * 2 * (i + 1)) + FontPadding(),
             FontSize(), color);
     }
-}
-void Window::SetMinLogLevel_User(LogType level)
-{
-    userSetMinLogLevel = level;
-    SetMinLogLevel(minLogLevel); // Check if minLogLevel is still valid
-}
-void Window::SetMinLogLevel(LogType level)
-{
-    minLogLevel = std::max(userSetMinLogLevel, level);
 }
 std::string LogTypeStr(LogType type)
 {
