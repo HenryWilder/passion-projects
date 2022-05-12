@@ -56,7 +56,7 @@ bool Tab::IsSelectionBridgeable() const
 	}
 	return rec1Nodes == rec2Nodes || ((rec1Nodes == 1 || rec2Nodes == 1) && selection.size() > 1);
 }
-void Tab::BridgeSelection()
+void Tab::BridgeSelection(ElbowConfig elbow)
 {
 	_ASSERT_EXPR(IsSelectionBridgeable(), L"Selection is not bridgable");
 
@@ -83,14 +83,14 @@ void Tab::BridgeSelection()
 
 	if (rec1Nodes.size() == 1 && rec2Nodes.size() == 1)
 	{
-		graph->CreateWire(rec1Nodes[0], rec2Nodes[0]);
+		graph->CreateWire(rec1Nodes[0], rec2Nodes[0], elbow);
 	}
 	else if (rec1Nodes.size() == 1)
 	{
 		sortNodes(rec2Nodes);
 		for (size_t i = 0; i < rec2Nodes.size(); ++i)
 		{
-			graph->CreateWire(rec1Nodes[0], rec2Nodes[i]);
+			graph->CreateWire(rec1Nodes[0], rec2Nodes[i], elbow);
 		}
 	}
 	else if (rec2Nodes.size() == 1)
@@ -98,7 +98,7 @@ void Tab::BridgeSelection()
 		sortNodes(rec1Nodes);
 		for (size_t i = 0; i < rec1Nodes.size(); ++i)
 		{
-			graph->CreateWire(rec1Nodes[i], rec2Nodes[0]);
+			graph->CreateWire(rec1Nodes[i], rec2Nodes[0], elbow);
 		}
 	}
 	else
@@ -112,7 +112,7 @@ void Tab::BridgeSelection()
 
 		for (size_t i = 0; i < rec1Nodes.size(); ++i)
 		{
-			graph->CreateWire(rec1Nodes[i], rec2Nodes[i]);
+			graph->CreateWire(rec1Nodes[i], rec2Nodes[i], elbow);
 		}
 	}
 }

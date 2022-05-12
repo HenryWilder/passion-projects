@@ -499,7 +499,7 @@ void EditTool::Update(Window& window)
     // Wire bridge
     if (IsKeyPressed(KEY_SPACE) && window.CurrentTab().IsSelectionBridgeable()) [[unlikely]]
     {
-        window.CurrentTab().BridgeSelection();
+        window.CurrentTab().BridgeSelection(window.currentWireElbowConfig);
         window.ClearSelection();
     }
 }
