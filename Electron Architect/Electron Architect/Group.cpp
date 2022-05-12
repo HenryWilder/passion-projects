@@ -44,11 +44,6 @@ IRect Group::GetLabelBounds() const
     return labelBounds;
 }
 
-const std::string& Group::GetLabel() const
-{
-    return label;
-}
-
 IRect Group::GetCaptureBounds() const
 {
     return captureBounds;

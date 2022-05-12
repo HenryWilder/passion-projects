@@ -475,7 +475,7 @@ GroupCorner Graph::FindGroupCornerAtPos(IVec2 pos) const
     }
     return { nullptr, 0 };
 }
-void Graph::FindNodesInGroup(std::vector<Node*>& result, Group* group) const
+void Graph::FindNodesInGroup(_Out_ std::vector<Node*>& result, Group* group) const
 {
     FindNodesInRect(result, group->captureBounds);
 }
@@ -740,7 +740,7 @@ Wire* Graph::FindWireElbowAtPos(IVec2 pos) const
     return nullptr;
 }
 
-void Graph::FindNodesInRect(std::vector<Node*>& result, IRect rec) const
+void Graph::FindNodesInRect(_Out_ std::vector<Node*>& result, IRect rec) const
 {
     // Exclusive bounds
     IRect bounds = ShrinkIRect(rec);

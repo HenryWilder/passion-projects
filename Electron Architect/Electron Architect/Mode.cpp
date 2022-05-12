@@ -226,6 +226,7 @@ EditTool::EditTool() :
     selectionStart(0),
     draggingGroup(false),
     draggingGroupCorner(false),
+    renamingGroup(false),
     groupCorner(),
     hoveringMergable(nullptr),
     nodeBeingDragged(nullptr),
@@ -235,6 +236,24 @@ ModeType EditTool::GetModeType() const { return ModeType::Basic; }
 Mode EditTool::GetMode() const { return Mode::EDIT; }
 void EditTool::Update(Window& window)
 {
+    if (renamingGroup)
+    {
+        _ASSERT_EXPR(!!window.hoveredGroup, L"Cannot rename null group");
+
+        if (char pressed = GetCharPressed())
+            window.hoveredGroup->GetLabelEditable() += pressed;
+
+        if (IsKeyPressed(KEY_BACKSPACE))
+            window.hoveredGroup->GetLabelEditable().pop_back();
+
+        if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_ESCAPE))
+        {
+            renamingGroup = false;
+            window.b_cursorMoved = true;
+        }
+        return;
+    }
+
     // Todo: fix bug with canceling multiple-drag (And update group dragging to match!!)
 
     if (window.b_cursorMoved && !selectionWIP)
@@ -501,14 +520,22 @@ void EditTool::Update(Window& window)
         wireBeingDragged = nullptr;
     }
     // Right click
-    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && !!window.hoveredNode)
+    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
-        window.hoveredNode->SetGate(window.gatePick);
-        switch (window.hoveredNode->GetGate())
+        if (!!window.hoveredNode)
         {
-        case Gate::RESISTOR:  window.hoveredNode->SetResistance(window.storedExtraParam); break;
-        case Gate::LED:       window.hoveredNode->SetColorIndex(window.storedExtraParam); break;
-        case Gate::CAPACITOR: window.hoveredNode->SetCapacity(window.storedExtraParam);   break;
+            window.hoveredNode->SetGate(window.gatePick);
+            switch (window.hoveredNode->GetGate())
+            {
+            case Gate::RESISTOR:  window.hoveredNode->SetResistance(window.storedExtraParam); break;
+            case Gate::LED:       window.hoveredNode->SetColorIndex(window.storedExtraParam); break;
+            case Gate::CAPACITOR: window.hoveredNode->SetCapacity(window.storedExtraParam);   break;
+            }
+        }
+        else if (!!window.hoveredGroup)
+        {
+            window.hoveredGroup->GetLabelEditable().clear();
+            renamingGroup = true;
         }
     }
 

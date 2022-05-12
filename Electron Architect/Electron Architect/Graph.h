@@ -81,7 +81,7 @@ public:
 
     Group* CreateGroup(IRect rec, Color color);
     void DestroyGroup(Group* group);
-    void FindNodesInGroup(std::vector<Node*>& result, Group* group) const;
+    void FindNodesInGroup(_Out_ std::vector<Node*>& result, Group* group) const;
 
     // Blueprint functions
 
@@ -110,7 +110,7 @@ public:
     Group* FindGroupAtPos(IVec2 pos) const;
     GroupCorner FindGroupCornerAtPos(IVec2 pos) const;
 
-    void FindNodesInRect(std::vector<Node*>& result, IRect rec) const;
+    void FindNodesInRect(_Out_ std::vector<Node*>& result, IRect rec) const;
 
     // Serialization functions
 

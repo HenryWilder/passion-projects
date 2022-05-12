@@ -104,6 +104,7 @@ struct EditTool : public Tool
     IVec2 selectionStart;
     bool draggingGroup;
     bool draggingGroupCorner;
+    bool renamingGroup;
     GroupCorner groupCorner;
     Node* hoveringMergable;
     Node* nodeBeingDragged;

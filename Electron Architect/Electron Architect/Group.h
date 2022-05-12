@@ -32,7 +32,14 @@ public:
     IRect GetBounds() const;
 
     IRect GetLabelBounds() const;
-    const std::string& GetLabel() const;
+    inline const std::string& GetLabel() const
+    {
+        return label;
+    }
+    inline std::string& GetLabelEditable()
+    {
+        return label;
+    }
 
     IRect GetCaptureBounds() const;
     void SetCaptureBounds(IRect bounds);
