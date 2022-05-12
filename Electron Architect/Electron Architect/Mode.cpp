@@ -141,52 +141,55 @@ void PenTool::Draw(Window& window)
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
     // Draw node/wire preview
+    Node* startNode = nullptr;
     {
+        IVec2 end = window.cursorPos;
         if (!!currentWireStart)
         {
-            IVec2 start;
-            IVec2 end = window.cursorPos;
-
             if (!!previousWireStart && (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
-                start = previousWireStart->GetPosition();
+                startNode = previousWireStart;
             else
-                start = currentWireStart->GetPosition();
+                startNode = currentWireStart;
 
             IVec2 elbow;
             if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
-                elbow = Wire::GetLegalElbowPosition(end, start, window.currentWireElbowConfig);
+                elbow = Wire::GetLegalElbowPosition(end, startNode->GetPosition(), window.currentWireElbowConfig);
             else
-                elbow = Wire::GetLegalElbowPosition(start, end, window.currentWireElbowConfig);
+                elbow = Wire::GetLegalElbowPosition(startNode->GetPosition(), end, window.currentWireElbowConfig);
 
-            Wire::Draw(start, elbow, end, UIColor(UIColorID::UI_COLOR_AVAILABLE));
-
-            Node::Draw(end, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+            Wire::Draw(startNode->GetPosition(), elbow, end, UIColor(UIColorID::UI_COLOR_AVAILABLE));
         }
-        else
-            Node::Draw(window.cursorPos, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        if (!window.hoveredNode)
+            Node::Draw(end, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 
     if (!!window.hoveredWire && !(IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
     {
         window.hoveredWire->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
-    else if (!!window.hoveredNode)
+    else if (!!window.hoveredNode && !currentWireStart)
     {
-        // Todo: Can this please be based on the input and output ranges and not a test being run on an already partitioned vector?...
-        for (const Wire* wire : window.hoveredNode->GetWires())
+        for (const Wire* wire : window.hoveredNode->GetInputsConst())
         {
-            Color color;
-            if (wire->start == window.hoveredNode)
-                color = UIColor(UIColorID::UI_COLOR_OUTPUT); // Output
-            else
-                color = UIColor(UIColorID::UI_COLOR_INPUT); // Input
-
-            wire->Draw(color);
+            wire->Draw(UIColor(UIColorID::UI_COLOR_INPUT));
+        }
+        for (const Wire* wire : window.hoveredNode->GetOutputsConst())
+        {
+            wire->Draw(UIColor(UIColorID::UI_COLOR_OUTPUT));
         }
     }
 
     window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
+    if (!!startNode)
+    {
+        Color color;
+        if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
+            color = UIColor(UIColorID::UI_COLOR_OUTPUT);
+        else
+            color = UIColor(UIColorID::UI_COLOR_INPUT);
+        startNode->DrawStateless(color, UIColor(UIColorID::UI_COLOR_BACKGROUND));
+    }
     if (!!window.hoveredWire)
     {
         window.hoveredWire->start->DrawStateless(UIColor(UIColorID::UI_COLOR_INPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
@@ -194,7 +197,17 @@ void PenTool::Draw(Window& window)
     }
     else if (!!window.hoveredNode)
     {
-        window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        if (currentWireStart)
+        {
+            Color color;
+            if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
+                color = UIColor(UIColorID::UI_COLOR_INPUT);
+            else
+                color = UIColor(UIColorID::UI_COLOR_OUTPUT);
+            window.hoveredNode->DrawStateless(color, UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        }
+        else
+            window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 }
 void PenTool::DrawProperties(Window& window)
