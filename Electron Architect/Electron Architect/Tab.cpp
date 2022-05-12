@@ -41,10 +41,6 @@ bool Tab::IsSelectionBridgeable() const
 	if (SelectionRectCount() != 2)
 		return false;
 	
-	// Must be an even number of nodes
-	if (selection.size() & 1)
-		return false;
-
 	// Must have same number of nodes in each selection rectangle
 	size_t rec1Nodes = 0;
 	size_t rec2Nodes = 0;
@@ -58,7 +54,7 @@ bool Tab::IsSelectionBridgeable() const
 			++rec2Nodes;
 		}
 	}
-	return rec1Nodes == rec2Nodes;
+	return rec1Nodes == rec2Nodes || rec1Nodes == 1 || rec2Nodes == 1;
 }
 void Tab::BridgeSelection()
 {
@@ -77,29 +73,47 @@ void Tab::BridgeSelection()
 		}
 	}
 
-	if (rec1Nodes.size() != rec2Nodes.size())
-	{
-		owningWindow->Log(LogType::warning, "Tried to bridge selection illegally");
-		return;
-	}
+	auto sortNodes = [](std::vector<Node*>& nodeVec) {
+		std::sort(nodeVec.begin(), nodeVec.end(),
+			[](Node* a, Node* b)
+			{
+				return (a->GetX() != b->GetX() ? a->GetX() < b->GetX() : a->GetY() < b->GetY());
+			});
+	};
 
+	if (rec1Nodes.size() == 1 && rec2Nodes.size() == 1)
 	{
-		auto sortNodes = [](std::vector<Node*>& nodeVec) {
-			std::sort(nodeVec.begin(), nodeVec.end(),
-				[](Node* a, Node* b)
-				{
-					return (a->GetX() != b->GetX() ? a->GetX() < b->GetX() : a->GetY() < b->GetY());
-				});
-		};
-		std::thread a(sortNodes, std::ref(rec1Nodes));
-		std::thread b(sortNodes, std::ref(rec2Nodes));
-		a.join();
-		b.join();
+		graph->CreateWire(rec1Nodes[0], rec2Nodes[0]);
 	}
-
-	for (size_t i = 0; i < rec1Nodes.size(); ++i)
+	if (rec1Nodes.size() == 1)
 	{
-		graph->CreateWire(rec1Nodes[i], rec2Nodes[i]);
+		sortNodes(rec2Nodes);
+		for (size_t i = 0; i < rec2Nodes.size(); ++i)
+		{
+			graph->CreateWire(rec1Nodes[0], rec2Nodes[i]);
+		}
+	}
+	if (rec2Nodes.size() == 1)
+	{
+		sortNodes(rec1Nodes);
+		for (size_t i = 0; i < rec1Nodes.size(); ++i)
+		{
+			graph->CreateWire(rec1Nodes[i], rec2Nodes[0]);
+		}
+	}
+	else
+	{
+		{
+			std::thread a(sortNodes, std::ref(rec1Nodes));
+			std::thread b(sortNodes, std::ref(rec2Nodes));
+			a.join();
+			b.join();
+		}
+
+		for (size_t i = 0; i < rec1Nodes.size(); ++i)
+		{
+			graph->CreateWire(rec1Nodes[i], rec2Nodes[i]);
+		}
 	}
 }
 
