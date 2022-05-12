@@ -177,13 +177,18 @@ bool Node::IsOutputOnly() const
 bool Node::IsSpecialErasable() const
 {
     return
-        (GetInputCount() == 1 && GetOutputCount() >= 1) ||
-        (GetInputCount() >= 1 && GetOutputCount() == 1);
+        (GetInputCount()  == 1 && !IsInputOnly()) ||
+        (GetOutputCount() == 1 && !IsOutputOnly());
 }
 
 bool Node::IsComplexBipassable() const
 {
     return (GetInputCount() > 1 && GetOutputCount() > 1);
+}
+
+bool Node::IsPassthrough() const
+{
+    return m_gate == Gate::OR && GetInputCount() == 1 && GetOutputCount() > 0;
 }
 
 void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
@@ -271,7 +276,7 @@ void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
 }
 void Node::Draw(Color foreground, Color background, Color CapacitorInactive) const
 {
-    if (m_gate == Gate::OR && GetInputCount() == 1 && GetOutputCount() > 0)
+    if (IsPassthrough())
         return;
 
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);

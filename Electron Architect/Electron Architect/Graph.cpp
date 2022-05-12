@@ -1,6 +1,8 @@
 #include <thread>
 #include <unordered_set>
 #include <fstream>
+#include <queue>
+#include <stack>
 #include "HUtility.h"
 #include "Blueprint.h"
 #include "Graph.h"
@@ -486,12 +488,34 @@ void Graph::Sort()
     decltype(nodes) sorted;
     sorted.reserve(nodes.size());
 
+    {
+        std::stack<size_t> toErase;
+        for (size_t i = 0; i < startNodes.size(); ++i)
+        {
+            if (!startNodes[i]->IsOutputOnly() && startNodes[i]->GetGate() != Gate::BATTERY)
+                toErase.push(i);
+        }
+        while (!toErase.empty())
+        {
+            startNodes.erase(startNodes.begin() + toErase.top());
+            toErase.pop();
+        }
+    }
+
     std::queue<Node*> list;
-    std::unordered_map<Node*, size_t> visited; // Pointer, depth
+    std::unordered_set<Node*> visited;
     for (Node* node : startNodes)
     {
         list.push(node);
-        visited.insert({ node, 0 });
+        visited.insert(node);
+    }
+    // All batteries are start nodes
+    for (Node* node : startNodes)
+    {
+        if (node->GetGate() != Gate::BATTERY || visited.find(node) != visited.end())
+            continue;
+        list.push(node);
+        visited.insert(node);
     }
 
     auto nodeIsUnvisited = [&visited](Node* node)
@@ -504,14 +528,13 @@ void Graph::Sort()
         while (!list.empty())
         {
             Node* current = list.front();
-            size_t nextDepth = visited.find(current)->second + 1;
             for (Wire* wire : current->m_wires)
             {
                 Node* next = wire->end;
                 if (next == current || !nodeIsUnvisited(next))
                     continue;
 
-                visited.insert({ next, nextDepth });
+                visited.insert(next);
                 list.push(next);
             }
             sorted.push_back(current);
@@ -526,7 +549,7 @@ void Graph::Sort()
         Node* firstUnvisitedNode = *it;
         startNodes.push_back(firstUnvisitedNode);
         list.push(firstUnvisitedNode);
-        visited.insert({ firstUnvisitedNode, 0 });
+        visited.insert(firstUnvisitedNode);
     }
 
     nodes.swap(sorted);
@@ -537,6 +560,9 @@ void Graph::Sort()
 
 void Graph::EvaluateNode(Node* node)
 {
+    if (node->IsPassthrough())
+        return void(node->m_state = (*node->GetInputs().begin())->GetState());
+
     switch (node->m_gate)
     {
     case Gate::LED:

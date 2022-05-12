@@ -62,6 +62,7 @@ public:
     bool IsOutputOnly() const;
     bool IsSpecialErasable() const;
     bool IsComplexBipassable() const;
+    bool IsPassthrough() const;
 
     static void Draw(IVec2 position, Gate gate, Color foreGround, Color background);
     void Draw(Color foreground, Color background, Color CapacitorInactive) const;

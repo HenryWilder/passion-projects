@@ -1297,8 +1297,9 @@ void Window::PushPropertySection_Node(const std::string& name, Node* value)
         PushProperty_ptr("Pointer", value);
         PushProperty_uint("Serial", CurrentTab().graph->NodeID(value));
         PushProperty("Type", GateName(value->GetGate()));
-        PushProperty_bool("Passthrough", value->GetGate() == Gate::OR && value->GetInputCount() == 1 && value->GetOutputCount() > 0);
-        PushProperty_bool("Interactable", value->GetInputCount() == 0);
+        PushProperty_bool("Passthrough", value->IsPassthrough());
+        PushProperty_bool("Interactable", value->IsOutputOnly());
+        PushProperty_bool("Start node", value->IsOutputOnly() || value->GetGate() == Gate::BATTERY);
         switch (value->GetGate())
         {
         case Gate::RESISTOR:  PushProperty_uint("Resistance", value->GetResistance());  break;
