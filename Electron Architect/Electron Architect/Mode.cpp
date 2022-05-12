@@ -523,7 +523,8 @@ void EditTool::Draw(Window& window)
     {
         Color selectionFillColor;
         Color selectionOutlineColor;
-        if (window.CurrentTab().IsSelectionBridgeable()) [[unlikely]]
+        bool bridgable = window.CurrentTab().IsSelectionBridgeable();
+        if (bridgable) [[unlikely]]
         {
             selectionFillColor = ColorAlpha(UIColor(UIColorID::UI_COLOR_FOREGROUND2), 0.5);
             selectionOutlineColor = UIColor(UIColorID::UI_COLOR_FOREGROUND1);
@@ -538,6 +539,8 @@ void EditTool::Draw(Window& window)
             DrawRectangleIRect(rec, selectionFillColor);
             DrawRectangleLinesIRect(rec, selectionOutlineColor);
         }
+        if (bridgable) [[unlikely]]
+            window.CurrentTab().DrawBridgePreview(ElbowConfig::horizontal, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 

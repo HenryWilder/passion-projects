@@ -85,7 +85,7 @@ void Tab::BridgeSelection()
 	{
 		graph->CreateWire(rec1Nodes[0], rec2Nodes[0]);
 	}
-	if (rec1Nodes.size() == 1)
+	else if (rec1Nodes.size() == 1)
 	{
 		sortNodes(rec2Nodes);
 		for (size_t i = 0; i < rec2Nodes.size(); ++i)
@@ -93,7 +93,7 @@ void Tab::BridgeSelection()
 			graph->CreateWire(rec1Nodes[0], rec2Nodes[i]);
 		}
 	}
-	if (rec2Nodes.size() == 1)
+	else if (rec2Nodes.size() == 1)
 	{
 		sortNodes(rec1Nodes);
 		for (size_t i = 0; i < rec1Nodes.size(); ++i)
@@ -113,6 +113,68 @@ void Tab::BridgeSelection()
 		for (size_t i = 0; i < rec1Nodes.size(); ++i)
 		{
 			graph->CreateWire(rec1Nodes[i], rec2Nodes[i]);
+		}
+	}
+}
+
+void Tab::DrawBridgePreview(ElbowConfig elbow, Color color) const
+{
+	_ASSERT_EXPR(IsSelectionBridgeable(), L"Selection is not bridgable");
+
+	std::vector<Node*> rec1Nodes;
+	std::vector<Node*> rec2Nodes;
+	for (Node* node : selection)
+	{
+		if (InBoundingBox(selectionRecs[0], node->GetPosition()))
+			rec1Nodes.push_back(node);
+		else
+		{
+			_ASSERT_EXPR(InBoundingBox(selectionRecs[1], node->GetPosition()), L"Node in selection was in neither selection rectangle");
+			rec2Nodes.push_back(node);
+		}
+	}
+
+	auto sortNodes = [](std::vector<Node*>& nodeVec) {
+		std::sort(nodeVec.begin(), nodeVec.end(),
+			[](Node* a, Node* b)
+			{
+				return (a->GetX() != b->GetX() ? a->GetX() < b->GetX() : a->GetY() < b->GetY());
+			});
+	};
+
+	if (rec1Nodes.size() == 1 && rec2Nodes.size() == 1)
+	{
+		Wire(rec1Nodes.back(), rec2Nodes.back(), elbow).Draw(color);
+	}
+	else if (rec1Nodes.size() == 1)
+	{
+		sortNodes(rec2Nodes);
+		for (size_t i = 0; i < rec2Nodes.size(); ++i)
+		{
+			// Holy cow this is so much nicer! Why aren't I using this everywhere?!
+			Wire(rec1Nodes.back(), rec2Nodes[i], elbow).Draw(color);
+		}
+	}
+	else if (rec2Nodes.size() == 1)
+	{
+		sortNodes(rec1Nodes);
+		for (size_t i = 0; i < rec1Nodes.size(); ++i)
+		{
+			Wire(rec1Nodes[i], rec2Nodes.back(), elbow).Draw(color);
+		}
+	}
+	else
+	{
+		{
+			std::thread a(sortNodes, std::ref(rec1Nodes));
+			std::thread b(sortNodes, std::ref(rec2Nodes));
+			a.join();
+			b.join();
+		}
+
+		for (size_t i = 0; i < rec1Nodes.size(); ++i)
+		{
+			Wire(rec1Nodes[i], rec2Nodes[i], elbow).Draw(color);
 		}
 	}
 }

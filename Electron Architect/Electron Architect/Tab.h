@@ -39,6 +39,8 @@ struct Tab
 	}
 	bool IsSelectionBridgeable() const;
 	void BridgeSelection();
+	// Todo: pretty expensive, having to sort the entire thing every frame! Do something!!
+	void DrawBridgePreview(ElbowConfig elbow, Color color) const;
 
 	void UpdateCamera();
 };
