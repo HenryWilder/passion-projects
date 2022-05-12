@@ -16,6 +16,8 @@ struct Tab
 	Graph* graph;
 	std::vector<Node*> selection;
 	std::vector<IRect> selectionRecs;
+	std::vector<Node*> bridgeCache[2];
+	bool selectionDirty;
 
 	inline bool SelectionExists() const
 	{
