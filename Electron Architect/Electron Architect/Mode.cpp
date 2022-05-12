@@ -181,7 +181,7 @@ void PenTool::Draw(Window& window)
 
     window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
-    if (!!startNode)
+    if (!!startNode && startNode != window.hoveredNode)
     {
         Color color;
         if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
@@ -197,7 +197,7 @@ void PenTool::Draw(Window& window)
     }
     else if (!!window.hoveredNode)
     {
-        if (currentWireStart)
+        if (!!currentWireStart && window.hoveredNode != currentWireStart)
         {
             Color color;
             if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
@@ -206,7 +206,7 @@ void PenTool::Draw(Window& window)
                 color = UIColor(UIColorID::UI_COLOR_OUTPUT);
             window.hoveredNode->DrawStateless(color, UIColor(UIColorID::UI_COLOR_BACKGROUND));
         }
-        else
+        else if (!currentWireStart)
             window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 }

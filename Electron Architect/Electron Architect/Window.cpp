@@ -1281,9 +1281,9 @@ void Window::PushProperty_longStr(const std::string& name, const std::string& va
     propertyNumber++;
 
     // Size to text
-    std::string str = value;
-    int lineCount = (int)std::count(str.begin(), str.end(), '\n') + 1;
-    IRect box2(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight * lineCount);
+    const int propHeight1 = FontSize() * 2 - 1;
+    int lineCount = (int)std::count(value.begin(), value.end(), '\n') + 1;
+    IRect box2(propertiesPaneRec.x, propHeight * propertyNumber, propertiesPaneRec.w, propHeight1 * lineCount);
     DrawRectangleLinesIRect(box2, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
     DrawTextIV(value.c_str(), box2.xy + FontPadding(), FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
     propertyNumber += lineCount;
