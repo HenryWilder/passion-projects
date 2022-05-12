@@ -93,7 +93,7 @@ void PenTool::Update(Window& window)
         if (!newNode)
         {
             newNode = window.CurrentTab().graph->CreateNode(window.cursorPos, window.gatePick, window.storedExtraParam);
-            if (!!window.hoveredWire)
+            if (!!window.hoveredWire && !(IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
             {
                 window.CurrentTab().graph->BisectWire(window.hoveredWire, newNode);
                 window.hoveredWire = nullptr;
@@ -166,7 +166,7 @@ void PenTool::Draw(Window& window)
             Node::Draw(window.cursorPos, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 
-    if (!!window.hoveredWire)
+    if (!!window.hoveredWire && !(IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
     {
         window.hoveredWire->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
