@@ -74,6 +74,8 @@
 *.pidb
 *.svclog
 *.scc
+*.res
+*.recipe
 
 # Custom files
 *.cg
