@@ -88,3 +88,4 @@
 # Folders
 Win32/
 x64/
+build/
