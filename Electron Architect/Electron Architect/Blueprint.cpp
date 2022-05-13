@@ -235,17 +235,15 @@ void StaticBlueprint::Save() const
     file.close();
 }
 
-void LoadBlueprint(const char* filename, _Out_ StaticBlueprint& dest)
+StaticBlueprint* LoadBlueprint(std::ifstream& file)
 {
-    dest = StaticBlueprint(); // Reset in case of edge cases
-    std::ifstream file(TextFormat("%s", filename));
+    StaticBlueprint* dest = new StaticBlueprint();
     if (file.bad())
         return;
-    std::string name = filename;
     size_t start = name.find_last_of('\\') + 1;
     size_t end = name.size() - 3;
     if (start != name.npos)
-        dest.name = name.substr(start, end - start);
+        dest->name = name.substr(start, end - start);
     else
         dest.name = name;
     IVec2 extents = IVec2::Zero();
@@ -288,4 +286,26 @@ void LoadBlueprint(const char* filename, _Out_ StaticBlueprint& dest)
         dest.wires.emplace_back(startNodeIndex, endNodeIndex, (ElbowConfig)elbowConfig);
     }
     file.close();
+}
+
+ScalableBlueprint* LoadDynamicBlueprint(std::ifstream& filename)
+{
+
+}
+
+BlueprintBase* LoadBlueprint(const char* filename)
+{
+    std::ifstream file(TextFormat("%s", filename));
+    file.ignore(1, 'v');
+    double version;
+    char type;
+    file >> version >> type;
+    if (version != 1.4)
+        return nullptr;
+    switch (type)
+    {
+    case 's': return LoadStaticBlueprint(file); // Static
+    case 'd': return LoadDynamicBlueprint(file); // Dynamic
+    default: return nullptr; // Incompatible
+    }
 }

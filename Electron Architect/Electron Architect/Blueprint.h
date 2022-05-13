@@ -40,6 +40,8 @@ struct BlueprintBase
 {
     virtual void DrawPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const = 0;
     virtual IRect GetPreviewRect(IVec2 pos) const = 0;
+    BlueprintBase() : name("Unnamed blueprint") {}
+    BlueprintBase(const std::string& name) : name(name) {}
     std::string name;
 };
 
@@ -65,7 +67,6 @@ public:
         }
     }
 
-    std::string name;
     IVec2 extents;
     std::vector<NodeBP> nodes;
     std::vector<WireBP> wires;
@@ -77,14 +78,16 @@ public:
 };
 
 void CreateStaticBlueprint(const std::vector<Node*>& src);
-void LoadStaticBlueprint(const char* filename, _Out_ StaticBlueprint& dest);
+// Calls new
+StaticBlueprint* LoadStaticBlueprint(std::ifstream& file);
 
 struct ScalableBlueprint : public BlueprintBase
 {
     std::unordered_set<std::string> parameters;
-    void Instantiate(_Out_ StaticBlueprint& dest);
+    void Instantiate(_Out_ StaticBlueprint& dest, std::unordered_map<std::string, unsigned> values);
 };
 
-void LoadDynamicBlueprint(const char* filename, _Out_ ScalableBlueprint& dest);
+// Calls new
+ScalableBlueprint* LoadDynamicBlueprint(std::ifstream& file);
 
-void LoadBlueprint(const char* filename);
+BlueprintBase* LoadBlueprint(const char* filename);
