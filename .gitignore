@@ -84,3 +84,7 @@
 *.svg
 *.zip
 *.vs
+
+# Folders
+Win32/
+x64/
