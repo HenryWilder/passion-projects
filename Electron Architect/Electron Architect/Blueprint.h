@@ -36,16 +36,23 @@ struct WireBP
     ElbowConfig elbowConfig;
 };
 
-struct Blueprint
+struct BlueprintBase
+{
+    virtual void DrawPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const = 0;
+    virtual IRect GetPreviewRect(IVec2 pos) const = 0;
+    std::string name;
+};
+
+struct StaticBlueprint : public BlueprintBase
 {
 private: // Multithread functions
     void PopulateNodes(const std::vector<Node*>& src);
     void PopulateWires(const std::vector<Node*>& src);
 
 public:
-    Blueprint() : name("Unnamed blueprint"), extents() {}
-    Blueprint(const std::vector<Node*>& src);
-    Blueprint(const char* name, std::vector<NodeBP>&& nodes, std::vector<WireBP>&& wires) :
+    StaticBlueprint() : name("Unnamed blueprint"), extents() {}
+    StaticBlueprint(const std::vector<Node*>& src);
+    StaticBlueprint(const char* name, std::vector<NodeBP>&& nodes, std::vector<WireBP>&& wires) :
         name(name), nodes(std::begin(nodes), std::end(nodes)), wires(std::begin(wires), std::end(wires))
     {
         extents = IVec2::Zero();
@@ -69,4 +76,15 @@ public:
     void Save() const;
 };
 
-void LoadBlueprint(const char* filename, Blueprint& dest);
+void CreateStaticBlueprint(const std::vector<Node*>& src);
+void LoadStaticBlueprint(const char* filename, _Out_ StaticBlueprint& dest);
+
+struct ScalableBlueprint : public BlueprintBase
+{
+    std::unordered_set<std::string> parameters;
+    void Instantiate(_Out_ StaticBlueprint& dest);
+};
+
+void LoadDynamicBlueprint(const char* filename, _Out_ ScalableBlueprint& dest);
+
+void LoadBlueprint(const char* filename);

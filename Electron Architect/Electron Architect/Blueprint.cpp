@@ -2,7 +2,7 @@
 #include <fstream>
 #include "Blueprint.h"
 
-void Blueprint::PopulateNodes(const std::vector<Node*>& src)
+void StaticBlueprint::PopulateNodes(const std::vector<Node*>& src)
 {
     constexpr IRect boundsInit = IRect(
         INT_MAX,
@@ -65,7 +65,7 @@ void Blueprint::PopulateNodes(const std::vector<Node*>& src)
         }
     }
 }
-void Blueprint::PopulateWires(const std::vector<Node*>& src)
+void StaticBlueprint::PopulateWires(const std::vector<Node*>& src)
 {
     std::unordered_map<Node*, size_t> nodeIndices;
     std::unordered_map<Wire*, bool> visitedWires;
@@ -127,7 +127,7 @@ void Blueprint::PopulateWires(const std::vector<Node*>& src)
     }
 }
 
-Blueprint::Blueprint(const std::vector<Node*>& src)
+StaticBlueprint::Blueprint(const std::vector<Node*>& src)
 {
     name = "Unnamed blueprint";
     extents = IVec2::Zero();
@@ -137,7 +137,7 @@ Blueprint::Blueprint(const std::vector<Node*>& src)
     wireThread.join();
 }
 
-void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const
+void StaticBlueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const
 {
     IVec2 offset = pos + IVec2(g_gridSize);
     DrawRectangleIRect(GetSelectionPreviewRect(pos), backgroundColor);
@@ -210,12 +210,12 @@ void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nod
     }
 }
 
-IRect Blueprint::GetSelectionPreviewRect(IVec2 pos) const
+IRect StaticBlueprint::GetSelectionPreviewRect(IVec2 pos) const
 {
     return IRect(pos, extents + IVec2(g_gridSize * 2));
 }
 
-void Blueprint::Save() const
+void StaticBlueprint::Save() const
 {
     std::ofstream file(TextFormat(".\\blueprints\\%s.bp", name.c_str()));
     file << "n " << nodes.size() << '\n';
@@ -235,9 +235,9 @@ void Blueprint::Save() const
     file.close();
 }
 
-void LoadBlueprint(const char* filename, Blueprint& dest)
+void LoadBlueprint(const char* filename, _Out_ StaticBlueprint& dest)
 {
-    dest = Blueprint(); // Reset in case of edge cases
+    dest = StaticBlueprint(); // Reset in case of edge cases
     std::ifstream file(TextFormat("%s", filename));
     if (file.bad())
         return;
