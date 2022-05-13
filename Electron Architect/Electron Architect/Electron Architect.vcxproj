@@ -201,7 +201,7 @@
     <ClCompile Include="Group.cpp" />
     <ClCompile Include="HUtility.cpp" />
     <ClCompile Include="IVec.cpp" />
-    <ClCompile Include="Mode.cpp" />
+    <ClCompile Include="Tool.cpp" />
     <ClCompile Include="NativeBlueprints.h" />
     <ClCompile Include="Graph.cpp" />
     <ClCompile Include="Node.cpp" />
@@ -239,7 +239,7 @@
     <ClInclude Include="icon_clipboard16x.h" />
     <ClInclude Include="icon_clipboard32x.h" />
     <ClInclude Include="IVec.h" />
-    <ClInclude Include="Mode.h" />
+    <ClInclude Include="Tool.h" />
     <ClInclude Include="Graph.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="program_icon.h" />

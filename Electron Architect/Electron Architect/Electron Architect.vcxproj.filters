@@ -51,7 +51,7 @@
     <ClCompile Include="UIColors.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Mode.cpp">
+    <ClCompile Include="Tool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Window.cpp">
@@ -130,7 +130,7 @@
     <ClInclude Include="UIColors.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Mode.h">
+    <ClInclude Include="Tool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Window.h">

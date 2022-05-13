@@ -7,7 +7,7 @@
 #include "Blueprint.h"
 #include "Graph.h"
 #include "Tab.h"
-#include "Mode.h"
+#include "Tool.h"
 #include "Window.h"
 #include "NativeBlueprints.h"
 

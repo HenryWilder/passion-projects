@@ -12,7 +12,7 @@
 #include "Tab.h"
 #include "Buttons.h"
 #include "UIColors.h"
-#include "Mode.h"
+#include "Tool.h"
 #include "Window.h"
 
 #include "program_icon.h"

@@ -13,7 +13,7 @@
 #include "Buttons.h"
 #include "UIColors.h"
 #include "Window.h"
-#include "Mode.h"
+#include "Tool.h"
 
 const std::string GateName(Gate gate)
 {
