@@ -83,6 +83,8 @@ struct PenTool : public Tool
     void DrawProperties(Window& window) final;
 
     IVec2 dragStart;
+    bool dragging;
+    enum class DragType : bool { drag_create = false, drag_connect = true } dragMode;
     Node* previousWireStart;
     Node* currentWireStart;
 };

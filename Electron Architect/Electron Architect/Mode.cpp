@@ -72,6 +72,7 @@ const std::string ElbowConfigName(ElbowConfig elbow)
 
 PenTool::PenTool() :
     dragStart(0),
+    dragging(false),
     previousWireStart(nullptr),
     currentWireStart(nullptr) {}
 PenTool::~PenTool() {}
@@ -86,11 +87,17 @@ void PenTool::Update(Window& window)
         if (!window.hoveredNode)
             window.hoveredWire = window.CurrentTab().graph->FindWireAtPos(window.cursorPos);
     }
-
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    
+    // Click (start drag)
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) [[unlikely]]
     {
+        dragging = true;
         Node* newNode = window.hoveredNode;
-        if (!newNode)
+
+        // Not hovering a node - create a new one
+        dragMode = (DragType)!!newNode;
+
+        if (dragMode == DragType::drag_create)
         {
             newNode = window.CurrentTab().graph->CreateNode(window.cursorPos, window.gatePick, window.storedExtraParam);
             if (!!window.hoveredWire && !(IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
@@ -99,7 +106,8 @@ void PenTool::Update(Window& window)
                 window.hoveredWire = nullptr;
             }
         }
-        // Do not create a new node/wire if already hovering the start node
+
+        // Do not create a new wire if already hovering the start node
         if (!!currentWireStart && newNode != currentWireStart)
         {
             Node* oldNode;
@@ -110,28 +118,60 @@ void PenTool::Update(Window& window)
 
             if (oldNode != newNode)
             {
-                Wire* wire;
+                previousWireStart = oldNode;
+
+                std::pair<Node*, Node*> nodes;
+
                 // Reverse wire direction when holding ctrl
                 if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
-                    wire = window.CurrentTab().graph->CreateWire(newNode, oldNode);
+                    nodes = { oldNode, newNode };
                 else
-                    wire = window.CurrentTab().graph->CreateWire(oldNode, newNode);
-                
-                wire->elbowConfig = window.currentWireElbowConfig;
-                wire->UpdateElbowToLegal();
-                previousWireStart = oldNode;
+                    nodes = { newNode, oldNode };
+
+                window.CurrentTab().graph->CreateWire(nodes.first, nodes.second, window.currentWireElbowConfig);
             }
         }
         currentWireStart = newNode;
     }
-    else if (IsKeyPressed(KEY_R))
+    // Stop dragging
+    else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) [[unlikely]]
+    {
+        dragging = false;
+
+        // Create connection
+        if (dragMode == DragType::drag_connect)
+        {
+            if (window.hoveredNode)
+            {
+                std::pair<Node*, Node*> nodes;
+
+                // Reverse wire direction when holding ctrl
+                if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
+                    nodes = { window.hoveredNode, currentWireStart };
+                else
+                    nodes = { currentWireStart, window.hoveredNode };
+
+                window.CurrentTab().graph->CreateWire(nodes.first, nodes.second, window.currentWireElbowConfig);
+            }
+            currentWireStart = nullptr; // Cancel wire
+        }
+    }
+    // On move while dragging
+    else if (dragging && window.b_cursorMoved && // Dragging
+        dragMode == DragType::drag_create && // Should create
+        !window.hoveredNode) // Won't create redundant
+    {
+        currentWireStart = nullptr;
+        window.CurrentTab().graph->CreateNode(window.cursorPos, window.gatePick, window.storedExtraParam);
+    }
+    if (IsKeyPressed(KEY_R)) [[unlikely]]
     {
         if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
             --window.currentWireElbowConfig;
         else
             ++window.currentWireElbowConfig;
     }
-    else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) [[unlikely]]
     {
         previousWireStart = currentWireStart = nullptr;
     }
