@@ -190,7 +190,8 @@ int main()
                 }
 
                 // Show element properties in pen/edit mode
-                if (window.GetBaseMode() == Mode::PEN ||
+                if (!inMenu &&
+                    window.GetBaseMode() == Mode::PEN ||
                     window.GetBaseMode() == Mode::EDIT)
                 {
                     window.PushPropertySubtitle("Element");

@@ -1021,14 +1021,14 @@ void BlueprintMenu::Draw(Window& window)
         if (!!hovering && bp == hovering) [[unlikely]]
         {
             background = UIColor(UIColorID::UI_COLOR_AVAILABLE);
-            foreground = UIColor(UIColorID::UI_COLOR_FOREGROUND1);
-            foregroundIO = UIColor(UIColorID::UI_COLOR_FOREGROUND2);
+            foreground = UIColor(UIColorID::UI_COLOR_FOREGROUND2);
+            foregroundIO = UIColor(UIColorID::UI_COLOR_FOREGROUND1);
         }
         else [[likely]]
         {
             background = UIColor(UIColorID::UI_COLOR_BACKGROUND1);
-            foreground = UIColor(UIColorID::UI_COLOR_FOREGROUND3);
-            foregroundIO = UIColor(UIColorID::UI_COLOR_BACKGROUND2);
+            foreground = UIColor(UIColorID::UI_COLOR_BACKGROUND2);
+            foregroundIO = UIColor(UIColorID::UI_COLOR_FOREGROUND3);
         }
 
         bp->DrawSelectionPreview(pos, background, foreground, foregroundIO, ColorAlpha(foreground, 0.25f), window.blueprintLOD);
@@ -1042,5 +1042,28 @@ void BlueprintMenu::Draw(Window& window)
 }
 void BlueprintMenu::DrawProperties(Window& window)
 {
-    // Todo
+    if (!!hovering)
+    {
+        window.PushPropertySubtitle("Hovered blueprint");
+        window.PushProperty("Name", hovering->name);
+        window.PushProperty_int("Width", hovering->extents.x / g_gridSize + 1);
+        window.PushProperty_int("Height", hovering->extents.y / g_gridSize + 1);
+        window.PushProperty_int("Wires", hovering->wires.size());
+        window.PushPropertySubtitle("Wires");
+        window.PushProperty_int("\tCount", hovering->wires.size());
+        window.PushPropertySubtitle("Nodes");
+        window.PushProperty_int("\tCount", hovering->nodes.size());
+        window.PushPropertySubtitle("Exposed nodes", UIColor(UIColorID::UI_COLOR_FOREGROUND1)); // foregroundIO
+        size_t exposed = std::count_if(hovering->nodes.begin(), hovering->nodes.end(), [](const NodeBP& node_bp) { return node_bp.b_io; });
+        window.PushProperty_int("\tCount", exposed);
+        for (const NodeBP& node_bp : hovering->nodes)
+        {
+            if (!node_bp.b_io)
+                continue;
+            if (!node_bp.name.empty())
+                window.PushProperty("\tName", node_bp.name);
+            else
+                window.PushProperty("\tName", "[blank]");
+        }
+    }
 }
