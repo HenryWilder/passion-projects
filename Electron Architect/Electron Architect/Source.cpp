@@ -122,9 +122,11 @@ int main()
 
         BeginDrawing(); {
 
+            bool inMenu = window.GetModeType() == ModeType::Menu;
+
             ClearBackground(UIColor(UIColorID::UI_COLOR_BACKGROUND));
 
-            if (window.GetModeType() != ModeType::Menu)
+            if (!inMenu)
             {
                 BeginMode2D(window.CurrentTab().camera);
 
@@ -136,39 +138,42 @@ int main()
             // Draw
             window.DrawTool();
 
-            if (window.GetModeType() != ModeType::Menu)
-            {
-                EndMode2D(); // Just in case
+            EndMode2D(); // Just in case
 
-                // Panels
+            // Panels
 
-                // Tool
+            // Tool pane
+            if (!inMenu)
                 window.DrawToolPane();
 
-                // Console
-                if (window.consoleOn)
+            // Console panel
+            if (window.consoleOn)
+            {
+                window.CleanConsolePane();
+                window.DrawConsoleOutput();
+            }
+
+            // Properties pane
+            if (window.propertiesOn)
+            {
+                // Initialize properties panel
+                window.CleanPropertiesPane();
+
+                // Cursor stats
+                if (
+                   !(window.CursorInUIBounds(window.toolPaneRec) ||
+                    (window.CursorInUIBounds(window.propertiesPaneRec) && window.propertiesOn) ||
+                    (window.CursorInUIBounds(window.consolePaneRec) && window.consoleOn) ||
+                    (inMenu)))
                 {
-                    window.CleanConsolePane();
-                    window.DrawConsoleOutput();
+                    window.PushPropertySubtitle("Cursor");
+                    window.PushProperty_int("X", window.cursorPos.x / g_gridSize);
+                    window.PushProperty_int("Y", window.cursorPos.y / g_gridSize);
+                    window.PushPropertySpacer();
                 }
 
-                // Properties
-                if (window.propertiesOn)
+                if (!inMenu)
                 {
-                    // Initialize properties panel
-                    window.CleanPropertiesPane();
-
-                    // Cursor stats
-                    if (!(window.CursorInUIBounds(window.toolPaneRec) ||
-                        (window.CursorInUIBounds(window.propertiesPaneRec) && window.propertiesOn) ||
-                        (window.CursorInUIBounds(window.consolePaneRec) && window.consoleOn)))
-                    {
-                        window.PushPropertySubtitle("Cursor");
-                        window.PushProperty_int("X", window.cursorPos.x / g_gridSize);
-                        window.PushProperty_int("Y", window.cursorPos.y / g_gridSize);
-                        window.PushPropertySpacer();
-                    }
-
                     window.PushPropertySubtitle("Mode");
                     const char* modeName;
                     switch (window.GetBaseMode())
@@ -182,28 +187,29 @@ int main()
                     window.PushProperty("Name", modeName);
                     window.PushProperty_longStr("Description", window.ButtonFromMode(window.GetBaseMode())->description);
                     window.PushPropertySpacer();
-
-                    // Show element properties in pen/edit mode
-                    if (window.GetBaseMode() == Mode::PEN || window.GetBaseMode() == Mode::EDIT)
-                    {
-                        window.PushPropertySubtitle("Element");
-                        window.PushProperty("Name", GateName(window.gatePick));
-                        switch (window.gatePick)
-                        {
-                        case Gate::RESISTOR:  window.PushProperty_uint("Resistance", window.storedExtraParam); break;
-                        case Gate::CAPACITOR: window.PushProperty_uint("Capacity",   window.storedExtraParam); break;
-                        case Gate::LED:       window.PushProperty("Color", Node::GetColorName(window.storedExtraParam)); break;
-                        default: break;
-                        }
-                        window.PushProperty_longStr("Description", window.ButtonFromGate(window.gatePick)->description);
-                        window.PushPropertySpacer();
-                    }
-
-                    window.DrawToolProperties();
                 }
 
+                // Show element properties in pen/edit mode
+                if (window.GetBaseMode() == Mode::PEN ||
+                    window.GetBaseMode() == Mode::EDIT)
+                {
+                    window.PushPropertySubtitle("Element");
+                    window.PushProperty("Name", GateName(window.gatePick));
+                    switch (window.gatePick)
+                    {
+                    case Gate::RESISTOR:  window.PushProperty_uint("Resistance", window.storedExtraParam); break;
+                    case Gate::CAPACITOR: window.PushProperty_uint("Capacity",   window.storedExtraParam); break;
+                    case Gate::LED:       window.PushProperty("Color", Node::GetColorName(window.storedExtraParam)); break;
+                    default: break;
+                    }
+                    window.PushProperty_longStr("Description", window.ButtonFromGate(window.gatePick)->description);
+                    window.PushPropertySpacer();
+                }
+
+                window.DrawToolProperties();
+
                 // Node tooltip
-                if (!!window.hoveredNode && window.hoveredNode->HasName())
+                if (!inMenu && !!window.hoveredNode && window.hoveredNode->HasName())
                     DrawTextShadowedIV(
                         window.hoveredNode->GetName(),
                         window.cursorUIPos + IVec2(16),
