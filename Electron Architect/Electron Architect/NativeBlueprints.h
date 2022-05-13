@@ -1,8 +1,8 @@
-#include "Graph.h"
+#pragma once
 #include "Blueprint.h"
 
 // Built-in blueprints
-Blueprint nativeBlueprints[] =
+inline Blueprint nativeBlueprints[] =
 {
     Blueprint(
         "NAND Gate",
