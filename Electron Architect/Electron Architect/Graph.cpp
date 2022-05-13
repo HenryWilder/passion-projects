@@ -9,8 +9,7 @@
 #include "Tab.h"
 #include "Mode.h"
 #include "Window.h"
-
-extern Blueprint nativeBlueprints[10];
+#include "NativeBlueprints.h"
 
 Graph::Graph(Tab* owner, const std::string& name) : owningTab(owner), name(name)
 {

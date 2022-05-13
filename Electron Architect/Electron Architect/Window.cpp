@@ -351,7 +351,7 @@ ColorButton(
     ClearLog();
     InitWindow(windowWidth, windowHeight, "Electron Architect");
     SetExitKey(0);
-    SetTargetFPS(60);
+    SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
 
     blueprintIcon16x = LoadTextureFromImage(MEMORY_IMAGE(ICON_BLUEPRINTS16X));
     blueprintIcon32x = LoadTextureFromImage(MEMORY_IMAGE(ICON_BLUEPRINTS32X));
