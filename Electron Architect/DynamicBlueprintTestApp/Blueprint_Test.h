@@ -3,24 +3,33 @@
 #include <unordered_set>
 #include <vector>
 #include <string>
-#include "IVec.h"
-#include "Node.h"
-#include "Wire.h"
+#include "IVec_Test.h"
 
-struct Color;
+enum class Gate : char
+{
+    OR = '|',
+    AND = '&',
+    NOR = '!',
+    XOR = '^',
+
+    RESISTOR = '~',
+    CAPACITOR = '=',
+    LED = '@',
+    DELAY = ';',
+
+    BATTERY = '#',
+};
+
+enum class ElbowConfig : uint8_t
+{
+    horizontal,
+    diagonalA,
+    vertical,
+    diagonalB,
+};
 
 struct NodeBP
 {
-    NodeBP() : b_io(), gate(), extraParam(), relativePosition(), name("") {}
-    NodeBP(bool b_io, Gate gate, IVec2 relativePosition) :
-        b_io(b_io), gate(gate), extraParam(0), relativePosition(relativePosition), name("") {}
-    NodeBP(bool b_io, Gate gate, uint8_t extraParam, IVec2 relativePosition) :
-        b_io(b_io), gate(gate), extraParam(extraParam), relativePosition(relativePosition), name("") {}
-    NodeBP(const std::string& name, bool b_io, Gate gate, IVec2 relativePosition) :
-        b_io(b_io), gate(gate), extraParam(0), relativePosition(relativePosition), name(name) {}
-    NodeBP(const std::string& name, bool b_io, Gate gate, uint8_t extraParam, IVec2 relativePosition) :
-        b_io(b_io), gate(gate), extraParam(extraParam), relativePosition(relativePosition), name(name) {}
-
     bool b_io; // Whether the node is an input/output to the entire system (Should it be shown on the paste preview?)
     Gate gate;
     uint8_t extraParam;
@@ -30,17 +39,11 @@ struct NodeBP
 
 struct WireBP
 {
-    WireBP() = default;
-    WireBP(size_t startNodeIndex, size_t endNodeIndex, ElbowConfig elbowConfig) :
-        startNodeIndex(startNodeIndex), endNodeIndex(endNodeIndex), elbowConfig(elbowConfig) {}
-
     size_t startNodeIndex, endNodeIndex;
     ElbowConfig elbowConfig;
 };
 
 using Token_t = std::string;
-using TokenNameSet_t = std::unordered_set<Token_t>;
-using TokenValueMap_t = std::unordered_map<Token_t, unsigned>;
 
 struct Expression
 {
@@ -50,6 +53,14 @@ struct Expression
     {
         inline Element(unsigned value) : isParam(false), value(value) {}
         inline Element(const Token_t& param) : isParam(true), param(param) {}
+        inline Element(const Element& base) : isParam(base.isParam)
+        {
+            if (isParam)
+                param = base.param;
+            else
+                value = base.value;
+        }
+        ~Element() {}
 
         bool isParam;
         union
@@ -58,7 +69,7 @@ struct Expression
             Token_t param;
         };
 
-        unsigned Value(const TokenValueMap_t& src) const;
+        unsigned Value(const std::unordered_map<Token_t, unsigned>& src) const;
     };
     enum class Operation : char
     {
@@ -76,7 +87,7 @@ struct Expression
     // Returns 0 on no errors
     int ParseStrToExpression(Expression& expr, const std::string& str);
 
-    inline unsigned Solve(const TokenValueMap_t& values);
+    unsigned Solve(const std::unordered_map<Token_t, unsigned>& values);
 };
 
 using AnchorTag_t = std::string;
@@ -110,34 +121,28 @@ struct BlueprintScope
     std::vector<BlueprintScope*> nests;
 };
 
-struct Blueprint
-{
-    std::string name;
-    std::string desc;
-    TokenNameSet_t parameters;
-    BlueprintScope top;
-    void Instantiate(_Out_ BlueprintInstance& dest, const TokenValueMap_t& values);
-}; 
-
+struct Blueprint;
 struct BlueprintInstance
 {
-private: // Multithread functions
-    void PopulateNodes(const std::vector<Node*>& src);
-    void PopulateWires(const std::vector<Node*>& src);
-
-public:
+    Blueprint* base;
     IVec2 extents;
     std::vector<NodeBP> nodes;
     std::vector<WireBP> wires;
 
-    void DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const;
-    IRect GetSelectionPreviewRect(IVec2 pos) const;
-
-    void Save() const;
+    bool ShouldDelete() const;
 };
 
-void CreateBlueprint(const std::vector<Node*>& src);
+struct Blueprint
+{
+    std::string name;
+    std::string desc;
+    std::unordered_map<Token_t, unsigned> parameters;
+    BlueprintScope top;
+    BlueprintInstance* cached; // "Default" instance
+    BlueprintInstance* Instantiate(const std::unordered_map<Token_t, unsigned>& values) const;
+};
 
+// A static blueprint is just a blueprint with no parameters
 Blueprint* LoadStaticBlueprint(std::ifstream& filename, const std::string& name);
 Blueprint* LoadDynamicBlueprint(std::ifstream& filename, const std::string& name);
 Blueprint* LoadBlueprint(const std::string& filename);
