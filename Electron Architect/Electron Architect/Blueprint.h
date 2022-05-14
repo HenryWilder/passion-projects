@@ -94,6 +94,18 @@ struct Expression
     // Returns 0 on no errors
     unsigned ParseStrToExpression(Expression& expr, const std::string& str)
     {
+        // No spaces (just a value)
+        if (str.find(' ') != str.npos)
+        {
+            for (const char c : str)
+            {
+                if (c < '0' || c > '9')
+                    return error_value;
+            }
+            expr.elements.emplace_back((unsigned)std::stoul(str));
+            return 0;
+        }
+
         size_t pos = 0;
         bool op = false;
         std::string::const_iterator last = str.begin();
@@ -120,6 +132,7 @@ struct Expression
                 }
                 expr.elements.emplace_back(token.data());
             }
+            op = !op;
         }
 
         return 0;
@@ -140,6 +153,23 @@ struct Expression
     }
 };
 
+using AnchorTag_t = std::string;
+
+struct NodeBP_Dynamic
+{
+    AnchorTag_t anchor;
+    std::string name;
+    Expression x;
+    Expression y;
+    bool b_io;
+};
+struct WireBP_Dynamic
+{
+    ElbowConfig elbow;
+    AnchorTag_t tags[2];
+    Expression offsets[2];
+};
+
 struct Blueprint
 {
     std::string name;
@@ -147,7 +177,7 @@ struct Blueprint
     TokenNameSet_t parameters;
     void Instantiate(_Out_ BlueprintInstance& dest, const TokenValueMap_t& values)
     {
-
+        std::unordered_map<AnchorTag_t, std::vector<NodeBP>*> anchors;
     }
 };
 
