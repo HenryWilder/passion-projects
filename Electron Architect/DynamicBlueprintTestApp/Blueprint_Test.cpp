@@ -25,10 +25,11 @@ void Split(std::vector<std::string_view>& tokens, const std::string& line, const
     tokens.clear();
     if (line.empty())
         return;
-    size_t tokenCount = std::count(line.begin(), line.end(), delimiter);
-    std::cout << tokenCount;
-    tokens.reserve(tokens.size() + tokenCount);
+    //size_t tokenCount = std::count(line.begin(), line.end(), delimiter);
+    //std::cout << tokenCount;
+    //tokens.reserve(tokens.size() + tokenCount);
 
+    size_t lastPos = 0;
     size_t pos = 0;
     if (line.find(delimiter) == line.npos)
     {
@@ -36,9 +37,11 @@ void Split(std::vector<std::string_view>& tokens, const std::string& line, const
     }
     else
     {
-        while ((pos = line.find(delimiter, pos + 1)) != line.npos)
+        while ((pos = line.find(delimiter, lastPos + 1)) != line.npos)
         {
-
+            tokens.push_back({ line.begin() + lastPos, line.end() + pos });
+            std::cout << "Token: " << tokens.back() << "\n";
+            lastPos = pos;
         }
     }
 }
