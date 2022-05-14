@@ -9,6 +9,50 @@ Blueprint* LoadStaticBlueprint(std::ifstream& filename, const std::string& name)
     return nullptr;
 }
 
+struct TokenType
+{
+    enum class Tag : char
+    {
+        reserved,
+        string,
+        number,
+    } tag;
+    std::string expect; // Only if reserved
+};
+
+void Split(std::vector<std::string_view>& tokens, const std::string& line, const std::string& delimiter = " ")
+{
+    tokens.clear();
+    if (line.empty())
+        return;
+    size_t tokenCount = std::count(line.begin(), line.end(), delimiter);
+    std::cout << tokenCount;
+    tokens.reserve(tokens.size() + tokenCount);
+
+    size_t pos = 0;
+    if (line.find(delimiter) == line.npos)
+    {
+        tokens.push_back({ line.begin(), line.end() });
+    }
+    else
+    {
+        while ((pos = line.find(delimiter, pos + 1)) != line.npos)
+        {
+
+        }
+    }
+}
+
+// Return 0 on success
+int Parse(const std::vector<std::string_view>& tokens, std::vector<TokenType> syntax)
+{
+    if (tokens.size() != syntax.size())
+        return 1;
+
+
+    return 0;
+}
+
 Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
 {
     Blueprint output;
@@ -23,21 +67,65 @@ Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
     std::string line;
     while (std::getline(file, line))
     {
-        if (size_t trimStart = line.find_first_not_of("\t "); trimStart != std::string::npos)
+        if (size_t trimStart = line.find_first_not_of("\t "); trimStart != line.npos)
             line = line.substr(trimStart); // Ignore whitespace
-
-        std::cout << line << '\n';
 
         if (line == "desc {")
         {
-            if (output.desc.empty() && std::getline(file, line, '}'))
+            // Too many descriptions
+            if (!output.desc.empty())
             {
-                output.desc = line;
-                output.desc.replace(outpu, "");
-                std::cout << "DESCRIPTION: \"" << output.desc << "\"\n";
+                std::cout << "Blueprint cannot contain multiple descriptions.";
+                return nullptr;
+            }
+
+            while (std::getline(file, line, '\n'))
+            {
+                if (!line.empty() && line.front() == '}')
+                {
+                    output.desc.pop_back(); // Remove excess newline
+                    break;
+                }
+                size_t start = line.find_first_not_of("\t ");
+                size_t end = line.find_last_not_of("\t ") + 1;
+                output.desc += line.substr(start, end - start) + '\n';
+            }
+            std::cout << "DESCRIPTION:\n\"" << output.desc << "\"\n";
+        }
+        else if (!line.empty())
+        {
+            size_t firstSpace = line.find(' ');
+            if (firstSpace != line.npos && (firstSpace + 1) < line.size() && line[firstSpace + 1] == ':')
+            {
+                size_t startOfParam = line.find(' ', firstSpace + 1) + 1;
+                size_t endOfParam = line.find(' ', startOfParam);
+                std::cout <<
+                    "Local: \"" << line.substr(0, firstSpace) <<
+                    "\" in range of \"" << line.substr(startOfParam, endOfParam - startOfParam) << "\"\n";
+
+                if (line.size() <= (endOfParam + 1) || line[endOfParam + 1] != '{')
+                {
+                    std::cout << "Expected \'{\'";
+                    if (line.size() > (endOfParam + 1))
+                        std::cout << "Read: \"" << line.substr(endOfParam + 1) << "\"";
+                    return nullptr;
+                }
+            }
+            else if (firstSpace == 1)
+            {
+                std::cout << "TOKEN: " << line.front() << "; ";
+                switch (line.front())
+                {
+                case 'p': std::cout << "Parameter\n"; break;
+                case 'n': std::cout << "Node\n"; break;
+                case 'w': std::cout << "Wire\n"; break;
+                }
             }
             else
+            {
+                std::cout << "Error";
                 return nullptr;
+            }
         }
     }
     return new Blueprint(output);
