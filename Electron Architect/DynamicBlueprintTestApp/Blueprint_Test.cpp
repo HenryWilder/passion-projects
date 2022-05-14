@@ -25,9 +25,6 @@ void Split(std::vector<std::string_view>& tokens, const std::string& line, const
     tokens.clear();
     if (line.empty())
         return;
-    //size_t tokenCount = std::count(line.begin(), line.end(), delimiter);
-    //std::cout << tokenCount;
-    //tokens.reserve(tokens.size() + tokenCount);
 
     size_t lastPos = 0;
     size_t pos = 0;
