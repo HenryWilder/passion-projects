@@ -46,8 +46,8 @@ struct Expression
     static constexpr unsigned skip_value = UINT_MAX - 1;
     struct Element
     {
-        Element(unsigned value) : isParam(false), value(value) {}
-        Element(const Token_t& param) : isParam(true), param(param) {}
+        inline Element(unsigned value) : isParam(false), value(value) {}
+        inline Element(const Token_t& param) : isParam(true), param(param) {}
 
         bool isParam;
         union
@@ -56,16 +56,7 @@ struct Expression
             Token_t param;
         };
 
-        unsigned Value(const TokenValueMap_t& src) const
-        {
-            if (!isParam)
-                return value;
-
-            if (auto it = src.find(param); it != src.end())
-                return it->second;
-
-            return error_value;
-        }
+        unsigned Value(const TokenValueMap_t& src) const;
     };
     enum class Operation : char
     {
@@ -75,82 +66,15 @@ struct Expression
         DIV = '/',
         MOD = '%',
     };
-    inline unsigned Operate(Operation op, unsigned lval, unsigned rval)
-    {
-        switch (op)
-        {
-        case Operation::ADD: return lval + rval;
-        case Operation::SUB: return ((lval > rval) ? (lval - rval) : skip_value);
-        case Operation::MUL: return lval * rval;
-        case Operation::DIV: return ((rval != 0) ? (lval / rval) : error_value);
-        case Operation::MOD: return ((rval != 0) ? (lval % rval) : error_value);
-        default: return 0;
-        }
-    }
+    unsigned Operate(Operation op, unsigned lval, unsigned rval);
     std::vector<Element> elements;
     std::vector<Operation> operations; // Should be the size of elements - 1
 
     // Must be unpackaged from parentheses
     // Returns 0 on no errors
-    unsigned ParseStrToExpression(Expression& expr, const std::string& str)
-    {
-        // No spaces (just a value)
-        if (str.find(' ') != str.npos)
-        {
-            for (const char c : str)
-            {
-                if (c < '0' || c > '9')
-                    return error_value;
-            }
-            expr.elements.emplace_back((unsigned)std::stoul(str));
-            return 0;
-        }
+    int ParseStrToExpression(Expression& expr, const std::string& str);
 
-        size_t pos = 0;
-        bool op = false;
-        std::string::const_iterator last = str.begin();
-        while ((pos = str.find(' ')) != str.npos)
-        {
-            std::string_view token(last, str.begin() + pos);
-            if (op)
-            {
-                if (token.size() > 1)
-                    return error_value;
-
-                expr.operations.push_back((Operation)token.back());
-            }
-            else
-            {
-                if (token.front() >= '0' && token.front() <= '9') // Expect a number
-                {
-                    for (const char c : token)
-                    {
-                        if (c < '0' || c > '9')
-                            return error_value;
-                    }
-                    expr.elements.emplace_back((unsigned)std::stoul(token.data()));
-                }
-                expr.elements.emplace_back(token.data());
-            }
-            op = !op;
-        }
-
-        return 0;
-    }
-
-    inline unsigned Solve(const TokenValueMap_t& values)
-    {
-        if (operations.size() >= elements.size())
-            return error_value;
-
-        unsigned current = elements[0].Value(values);
-
-        for (size_t i = 0; i < operations.size(); ++i)
-        {
-            unsigned next = elements[i + 1].Value(values);
-            current = Operate(operations[i], current, next);
-        }
-    }
+    inline unsigned Solve(const TokenValueMap_t& values);
 };
 
 using AnchorTag_t = std::string;
@@ -163,6 +87,7 @@ struct NodeBP_Dynamic
     Expression y;
     bool b_io;
 };
+
 struct WireBP_Dynamic
 {
     ElbowConfig elbow;
@@ -170,16 +95,27 @@ struct WireBP_Dynamic
     Expression offsets[2];
 };
 
+struct BPLocal
+{
+    Token_t param;
+};
+
+struct BlueprintScope
+{
+    std::unordered_map<Token_t, BPLocal> locals;
+    NodeBP_Dynamic nodes;
+    WireBP_Dynamic wires;
+    std::vector<BlueprintScope*> nests;
+};
+
 struct Blueprint
 {
     std::string name;
     std::string desc;
     TokenNameSet_t parameters;
-    void Instantiate(_Out_ BlueprintInstance& dest, const TokenValueMap_t& values)
-    {
-        std::unordered_map<AnchorTag_t, std::vector<NodeBP>*> anchors;
-    }
-};
+    BlueprintScope top;
+    void Instantiate(_Out_ BlueprintInstance& dest, const TokenValueMap_t& values);
+}; 
 
 struct BlueprintInstance
 {
@@ -200,4 +136,6 @@ public:
 
 void CreateBlueprint(const std::vector<Node*>& src);
 
-Blueprint* LoadBlueprint(const char* filename);
+Blueprint* LoadStaticBlueprint(std::ifstream& filename, const std::string& name);
+Blueprint* LoadDynamicBlueprint(std::ifstream& filename, const std::string& name);
+Blueprint* LoadBlueprint(const std::string& filename);

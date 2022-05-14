@@ -288,14 +288,25 @@ StaticBlueprint* LoadBlueprint(std::ifstream& file)
     file.close();
 }
 
-ScalableBlueprint* LoadDynamicBlueprint(std::ifstream& filename)
+Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
 {
+    std::string line;
+    enum class Context
+    {
+        global,
+        desc,
+        scope,
+    } c;
+    size_t scopeDepth;
+    while (std::getline(file, line))
+    {
 
+    }
 }
 
-BlueprintBase* LoadBlueprint(const char* filename)
+Blueprint* LoadBlueprint(const std::string& name)
 {
-    std::ifstream file(TextFormat("%s.bp", filename));
+    std::ifstream file(name + ".bp");
     file.ignore(1, 'v');
     double version;
     char type;
@@ -304,8 +315,98 @@ BlueprintBase* LoadBlueprint(const char* filename)
         return nullptr;
     switch (type)
     {
-    case 's': return LoadStaticBlueprint(file); // Static
-    case 'd': return LoadDynamicBlueprint(file); // Dynamic
+    case 's': return LoadStaticBlueprint(file, name); // Static
+    case 'd': return LoadDynamicBlueprint(file, name); // Dynamic
     default: return nullptr; // Incompatible
     }
+}
+
+
+unsigned Expression::Element::Value(const TokenValueMap_t& src) const
+{
+    if (!isParam)
+        return value;
+
+    if (auto it = src.find(param); it != src.end())
+        return it->second;
+
+    return error_value;
+}
+
+unsigned Expression::Operate(Operation op, unsigned lval, unsigned rval)
+{
+    switch (op)
+    {
+    case Operation::ADD: return lval + rval;
+    case Operation::SUB: return ((lval > rval) ? (lval - rval) : skip_value);
+    case Operation::MUL: return lval * rval;
+    case Operation::DIV: return ((rval != 0) ? (lval / rval) : error_value);
+    case Operation::MOD: return ((rval != 0) ? (lval % rval) : error_value);
+    default: return 0;
+    }
+}
+
+int Expression::ParseStrToExpression(Expression& expr, const std::string& str)
+{
+    // No spaces (just a value)
+    if (str.find(' ') != str.npos)
+    {
+        for (const char c : str)
+        {
+            if (c < '0' || c > '9')
+                return 1;
+        }
+        expr.elements.emplace_back((unsigned)std::stoul(str));
+        return 0;
+    }
+
+    size_t pos = 0;
+    bool op = false;
+    std::string::const_iterator last = str.begin();
+    while ((pos = str.find(' ')) != str.npos)
+    {
+        std::string_view token(last, str.begin() + pos);
+        if (op)
+        {
+            if (token.size() > 1)
+                return 1;
+
+            expr.operations.push_back((Operation)token.back());
+        }
+        else
+        {
+            if (token.front() >= '0' && token.front() <= '9') // Expect a number
+            {
+                for (const char c : token)
+                {
+                    if (c < '0' || c > '9')
+                        return 1;
+                }
+                expr.elements.emplace_back((unsigned)std::stoul(token.data()));
+            }
+            expr.elements.emplace_back(token.data());
+        }
+        op = !op;
+    }
+
+    return 0;
+}
+
+unsigned Expression::Solve(const TokenValueMap_t& values)
+{
+    if (operations.size() >= elements.size())
+        return error_value;
+
+    unsigned current = elements[0].Value(values);
+
+    for (size_t i = 0; i < operations.size(); ++i)
+    {
+        unsigned next = elements[i + 1].Value(values);
+        current = Operate(operations[i], current, next);
+    }
+}
+
+void Blueprint::Instantiate(_Out_ BlueprintInstance& dest, const TokenValueMap_t& values)
+{
+    std::unordered_map<AnchorTag_t, std::vector<NodeBP>*> anchors;
 }
