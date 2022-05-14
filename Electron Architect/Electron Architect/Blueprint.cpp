@@ -1,5 +1,6 @@
 #include <thread>
 #include <fstream>
+#include <stack>
 #include "Blueprint.h"
 
 void StaticBlueprint::PopulateNodes(const std::vector<Node*>& src)
@@ -290,18 +291,29 @@ StaticBlueprint* LoadBlueprint(std::ifstream& file)
 
 Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
 {
-    std::string line;
+    Blueprint output;
+    output.name = name;
     enum class Context
     {
         global,
         desc,
-        scope,
-    } c;
-    size_t scopeDepth;
+        scoped,
+    } c = Context::global;
+    std::stack<BlueprintScope*> scope;
+    std::string line;
     while (std::getline(file, line))
     {
+        line = line.substr(line.find_first_not_of("\t ")); // Ignore whitespace
 
+        if (line == "desc {")
+        {
+            if (output.desc.empty() && std::getline(file, line, '}'))
+                output.desc = line;
+            else
+                return nullptr;
+        }
     }
+    return new Blueprint(output);
 }
 
 Blueprint* LoadBlueprint(const std::string& name)
