@@ -295,7 +295,7 @@ ScalableBlueprint* LoadDynamicBlueprint(std::ifstream& filename)
 
 BlueprintBase* LoadBlueprint(const char* filename)
 {
-    std::ifstream file(TextFormat("%s", filename));
+    std::ifstream file(TextFormat("%s.bp", filename));
     file.ignore(1, 'v');
     double version;
     char type;
