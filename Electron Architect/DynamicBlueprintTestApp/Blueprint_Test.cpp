@@ -119,9 +119,9 @@ struct Token
     ~Token() = default;
 };
 
-std::vector<Token> Tokenize(std::ifstream& file)
+std::queue<std::vector<Token>*> Tokenize(std::ifstream& file)
 {
-    std::vector<Token> tokens;
+    std::queue<std::vector<Token>*> tokens;
 
     std::string line;
     while (std::getline(file, line))
@@ -132,6 +132,12 @@ std::vector<Token> Tokenize(std::ifstream& file)
         if (size_t trimStart = line.find_first_not_of("\t "); trimStart != line.npos)
             line = line.substr(trimStart); // Ignore whitespace
 
+        tokens.push(new std::vector<Token>);
+        if (line.front() != 'd')
+            tokens.back()->reserve(std::count(line.begin(), line.end(), ' '));
+        else
+            tokens.back()->reserve(2);
+
         std::cout << "Line: " << line << '\n';
 
         std::string tokenStr;
@@ -140,19 +146,19 @@ std::vector<Token> Tokenize(std::ifstream& file)
         {
             tokenStr = line.substr(0, pos);
             line = line.substr(pos + 1);
-            tokens.emplace_back(tokenStr);
+            tokens.back()->push_back(tokenStr);
             std::cout << "Token: " << tokenStr << '\n';
-            if (tokens.back().type == Token::Type::keyword && tokens.back().kw == Token::Keyword::description)
+            if (tokens.back()->back().type == Token::Type::keyword && tokens.back()->back().kw == Token::Keyword::description)
             {
                 std::cout << "Token: " << line << '\n';
-                tokens.emplace_back(line);
+                tokens.back()->push_back(line);
                 line.clear();
             }
         }
         if (!line.empty())
         {
             std::cout << "Token: " << line << '\n';
-            tokens.emplace_back(line);
+            tokens.back()->push_back(line);
         }
     }
     return tokens;
@@ -160,6 +166,7 @@ std::vector<Token> Tokenize(std::ifstream& file)
 
 struct Error
 {
+    Error(unsigned lineNumber = 0) : lineNumber(lineNumber) {}
     unsigned lineNumber;
     std::string what() const
     {
@@ -172,28 +179,99 @@ struct Error
 };
 struct ParseError : public Error
 {
-    std::string errorText;
+    ParseError(unsigned lineNumber = 0) : Error(lineNumber) {}
     std::string msg() const override
     {
-        return "Parse error. The line \'" + errorText + "\' could not be parsed.";
+        return "Parse error.";
     }
 };
 struct MissingExpected : public ParseError
 {
+    MissingExpected(const std::string& expected, unsigned lineNumber = 0) : ParseError(lineNumber), expected(expected) {}
     std::string expected;
-    std::string got;
     std::string msg() const override
     {
-        return ParseError::msg() + "\nExpected " + expected + " - Got " + got + ".";
+        return ParseError::msg() + "\nExpected " + expected;
+    }
+};
+struct Unexpected : public MissingExpected
+{
+    Unexpected(const std::string& expected, const std::string& found, unsigned lineNumber = 0) : MissingExpected(expected, lineNumber), found(found) {}
+    std::string found;
+    std::string msg() const override
+    {
+        return ParseError::msg() + "\nExpected " + expected + "\n found " + found;
     }
 };
 
-std::vector<ParseError*> Parse(const std::vector<Token>& tokens)
+std::vector<Error*> Parse(std::queue<std::vector<Token>*>& tokens)
 {
-    for ()
+    std::vector<Error*> errors;
+    unsigned lineNumber = 1;
+    while (!tokens.empty())
     {
+        {
+            _ASSERT_EXPR(!tokens.front()->empty(), L"Line cannot be empty");
+            const std::vector<Token>& line = *tokens.front();
+            const Token& start = line[0];
+            if (start.type == Token::Type::keyword)
+            {
+                // d <string>
+                if (start.kw == Token::Keyword::description)
+                {
+                    if (line.size() == 2)
+                    {
+                        // Todo
+                    }
+                    // d
+                    else if (line.size() < 2)
+                    {
+                        errors.push_back(new MissingExpected("a string", lineNumber));
+                    }
+                    // d <string> ...
+                    else if (line.size() > 2)
+                    {
+                        errors.push_back(new MissingExpected("only one argument", lineNumber));
+                    }
+                }
+                // p <identifier>
+                // p <identifier> = <number>
+                else if (start.kw == Token::Keyword::parameter)
+                {
 
+                }
+                // n <identifier> <string> <<number>|<string>> <<number>|<string>>
+                // n <identifier> <string> <<number>|<string>> <<number>|<string>> <number>
+                // n <identifier> <string> <<number>|<string>> <<number>|<string>> <string>
+                // n <identifier> <string> <<number>|<string>> <<number>|<string>> <number> <string>
+                else if (start.kw == Token::Keyword::node)
+                {
+
+                }
+                // w <string> <identifier> <identifier>
+                // w <string> <identifier>[<string>] <identifier>
+                // w <string> <identifier> <identifier>[<string>]
+                // w <string> <identifier>[<string>] <identifier>[<string>]
+                else if (start.kw == Token::Keyword::node)
+                {
+
+                }
+            }
+            // <identifier> : <identifier> {
+            else if (start.type == Token::Type::identifier)
+            {
+
+            }
+            else
+            {
+                errors.push_back(new MissingExpected("a keyword (d, n, p, w)", lineNumber));
+            }
+        }
+        delete tokens.front();
+        tokens.pop();
+        ++lineNumber;
     }
+    return errors;
 }
 
 Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
