@@ -53,7 +53,7 @@ struct Token
 
         Punctuation punc;
 
-        std::string id_str;
+        const char* id_str;
 
         unsigned num;
     };
@@ -86,7 +86,7 @@ struct Token
             type = Type::number;
             for (char c : token)
             {
-                if (!(t >= '0' && t <= '9'))
+                if (!(c >= '0' && c <= '9'))
                 {
                     type = Type::string;
                     break;
@@ -98,7 +98,7 @@ struct Token
             type = Type::identifier;
             for (char c : token)
             {
-                if (!((t >= 'a' && t <= 'z') || (t >= 'A' && t <= 'Z') || (t >= '0' && t <= '9') || t == '_'))
+                if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'))
                 {
                     type = Type::string;
                     break;
@@ -109,30 +109,8 @@ struct Token
         if (type == Type::number)
             num = (unsigned)std::stoul(token);
         else
-            id_str = token;
+            id_str = token.c_str();
     }
-    Token(const Token& base)
-    {
-        type = base.type;
-        switch (type)
-        {
-        case Token::Type::keyword:
-            kw = base.kw;
-            return;
-        case Token::Type::punctuation:
-            punc = base.punc;
-            return;
-        case Token::Type::number:
-            num = base.num;
-            return;
-        default:
-        case Token::Type::identifier:
-        case Token::Type::string:
-            id_str = base.id_str;
-            return;
-        }
-    }
-    ~Token() {}
 };
 
 std::vector<Token> Tokenize(std::ifstream& file)
@@ -144,6 +122,9 @@ std::vector<Token> Tokenize(std::ifstream& file)
     {
         if (line.empty())
             continue;
+
+        if (size_t trimStart = line.find_first_not_of("\t "); trimStart != line.npos)
+            line = line.substr(trimStart); // Ignore whitespace
 
         std::cout << "Line: " << line << '\n';
 
