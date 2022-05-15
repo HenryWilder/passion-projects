@@ -213,11 +213,10 @@ std::vector<Error*> Parse(std::queue<std::vector<Token>*>& tokens)
         {
             _ASSERT_EXPR(!tokens.front()->empty(), L"Line cannot be empty");
             const std::vector<Token>& line = *tokens.front();
-            const Token& start = line[0];
-            if (start.type == Token::Type::keyword)
+            if (line[0].type == Token::Type::keyword)
             {
                 // d <string>
-                if (start.kw == Token::Keyword::description)
+                if (line[0].kw == Token::Keyword::description)
                 {
                     if (line.size() == 2)
                     {
@@ -236,15 +235,33 @@ std::vector<Error*> Parse(std::queue<std::vector<Token>*>& tokens)
                 }
                 // p <identifier>
                 // p <identifier> = <number>
-                else if (start.kw == Token::Keyword::parameter)
+                else if (line[0].kw == Token::Keyword::parameter)
                 {
-
+                    if (line[1].type == Token::Type::identifier)
+                    {
+                        if (line.size() == 2)
+                        {
+                            // Todo
+                        }
+                        else if (line.size() == 4)
+                        {
+                            // Todo
+                        }
+                        else
+                        {
+                            errors.push_back(new Unexpected(
+                                "either 2 (<indentifier> <identifier>) or 4 (<indentifier> <identifier> = <number>) arguments",
+                                "", lineNumber));
+                        }
+                    }
+                    else if (line[1].type != Token::Type::identifier)
+                        errors.push_back(new MissingExpected("idententifier", lineNumber));
                 }
                 // n <identifier> <string> <<number>|<string>> <<number>|<string>>
                 // n <identifier> <string> <<number>|<string>> <<number>|<string>> <number>
                 // n <identifier> <string> <<number>|<string>> <<number>|<string>> <string>
                 // n <identifier> <string> <<number>|<string>> <<number>|<string>> <number> <string>
-                else if (start.kw == Token::Keyword::node)
+                else if (line[0].kw == Token::Keyword::node)
                 {
 
                 }
@@ -252,16 +269,17 @@ std::vector<Error*> Parse(std::queue<std::vector<Token>*>& tokens)
                 // w <string> <identifier>[<string>] <identifier>
                 // w <string> <identifier> <identifier>[<string>]
                 // w <string> <identifier>[<string>] <identifier>[<string>]
-                else if (start.kw == Token::Keyword::node)
+                else if (line[0].kw == Token::Keyword::node)
                 {
 
                 }
             }
             // <identifier> : <identifier> {
-            else if (start.type == Token::Type::identifier)
+            else if (line[0].type == Token::Type::identifier)
             {
-
+                if ()
             }
+            // error
             else
             {
                 errors.push_back(new MissingExpected("a keyword (d, n, p, w)", lineNumber));
