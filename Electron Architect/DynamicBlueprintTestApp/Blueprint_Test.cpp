@@ -2,6 +2,7 @@
 #include <thread>
 #include <fstream>
 #include <stack>
+#include <queue>
 #include "Blueprint_Test.h"
 
 Blueprint* LoadStaticBlueprint(std::ifstream& filename, const std::string& name)
@@ -9,48 +10,159 @@ Blueprint* LoadStaticBlueprint(std::ifstream& filename, const std::string& name)
     return nullptr;
 }
 
-struct TokenType
+struct Token
 {
-    enum class Tag : char
+    enum class Type
     {
-        reserved,
+        keyword,
+        punctuation,
+        identifier,
         string,
         number,
-    } tag;
-    std::string expect; // Only if reserved
-};
+    };
 
-void Split(std::vector<std::string_view>& tokens, const std::string& line, const std::string& delimiter = " ")
-{
-    tokens.clear();
-    if (line.empty())
-        return;
+    enum class Keyword : char
+    {
+        description = 'd',
+        parameter = 'p',
+        node = 'n',
+        wire = 'w',
+    };
 
-    size_t lastPos = 0;
-    size_t pos = 0;
-    if (line.find(delimiter) == line.npos)
+    enum class Punctuation : char
     {
-        tokens.push_back({ line.begin(), line.end() });
-    }
-    else
+        open_scope = '{',
+        close_scope = '}',
+
+        open_expression = '(',
+        close_expression = ')',
+
+        operator_range = ':',
+        operator_assign = '=',
+        operator_add = '+',
+        operator_sub = '-',
+        operator_mul = '*',
+        operator_div = '/',
+        operator_mod = '%',
+    };
+
+    Type type;
+    union
     {
-        while ((pos = line.find(delimiter, lastPos + 1)) != line.npos)
+        Keyword kw;
+
+        Punctuation punc;
+
+        std::string id_str;
+
+        unsigned num;
+    };
+
+    Token(const std::string& token)
+    {
+        _ASSERT_EXPR(!token.empty(), L"Token cannot be null");
+
+        memset(&kw, 0, sizeof(id_str));
+
+        char t = token.front();
+        if (token.size() == 1)
         {
-            tokens.push_back({ line.begin() + lastPos, line.end() + pos });
-            std::cout << "Token: " << tokens.back() << "\n";
-            lastPos = pos;
+            if (t == 'd' || t == 'p' || t == 'n' || t == 'w')
+            {
+                type = Type::keyword;
+                kw = (Keyword)t;
+                return;
+            }
+            else if (t == '{' || t == '}' || t == '(' || t == ')' || t == ':' || t == '=' || t == '+' || t == '-' || t == '*' || t == '/' || t == '%')
+            {
+                type = Type::punctuation;
+                punc = (Punctuation)t;
+                return;
+            }
+        }
+
+        if (t >= '0' && t <= '9')
+        {
+            type = Type::number;
+            for (char c : token)
+            {
+                if (!(t >= '0' && t <= '9'))
+                {
+                    type = Type::string;
+                    break;
+                }
+            }
+        }
+        else if ((t >= 'a' && t <= 'z') || (t >= 'A' && t <= 'Z') || t == '_')
+        {
+            type = Type::identifier;
+            for (char c : token)
+            {
+                if (!((t >= 'a' && t <= 'z') || (t >= 'A' && t <= 'Z') || (t >= '0' && t <= '9') || t == '_'))
+                {
+                    type = Type::string;
+                    break;
+                }
+            }
+        }
+
+        if (type == Type::number)
+            num = (unsigned)std::stoul(token);
+        else
+            id_str = token;
+    }
+    Token(const Token& base)
+    {
+        type = base.type;
+        switch (type)
+        {
+        case Token::Type::keyword:
+            kw = base.kw;
+            return;
+        case Token::Type::punctuation:
+            punc = base.punc;
+            return;
+        case Token::Type::number:
+            num = base.num;
+            return;
+        default:
+        case Token::Type::identifier:
+        case Token::Type::string:
+            id_str = base.id_str;
+            return;
         }
     }
-}
+    ~Token() {}
+};
 
-// Return 0 on success
-int Parse(const std::vector<std::string_view>& tokens, std::vector<TokenType> syntax)
+std::vector<Token> Tokenize(std::ifstream& file)
 {
-    if (tokens.size() != syntax.size())
-        return 1;
+    std::vector<Token> tokens;
 
+    std::string line;
+    while (std::getline(file, line))
+    {
+        if (line.empty())
+            continue;
 
-    return 0;
+        std::cout << "Line: " << line << '\n';
+
+        std::string tokenStr;
+        size_t pos = 0;
+        while ((pos = line.find(' ')) != std::string::npos)
+        {
+            tokenStr = line.substr(0, pos);
+            line = line.substr(pos + 1);
+            tokens.emplace_back(tokenStr);
+            std::cout << "Token: " << tokenStr << '\n';
+        }
+        if (!line.empty())
+        {
+            std::cout << "Token: " << line << '\n';
+            tokens.emplace_back(line);
+        }
+    }
+    return tokens;
 }
 
 Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
@@ -65,6 +177,9 @@ Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
     } c = Context::global;
     std::stack<BlueprintScope*> scope;
     std::string line;
+    Tokenize(file);
+    return nullptr;
+
     while (std::getline(file, line))
     {
         if (size_t trimStart = line.find_first_not_of("\t "); trimStart != line.npos)
