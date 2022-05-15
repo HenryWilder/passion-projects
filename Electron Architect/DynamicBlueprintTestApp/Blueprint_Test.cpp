@@ -158,6 +158,39 @@ std::vector<Token> Tokenize(std::ifstream& file)
     return tokens;
 }
 
+struct Error
+{
+    unsigned lineNumber;
+    std::string what() const
+    {
+        return msg() + "\nLine " + std::to_string(lineNumber);
+    }
+    virtual std::string msg() const
+    {
+        return "Unknown error";
+    }
+};
+struct ParseError : public Error
+{
+    std::string error;
+    std::string msg() const override
+    {
+        return "Parse error: \'" + error + "\' could not be parsed.";
+    }
+};
+struct MissingExpected : public ParseError
+{
+    std::string expected;
+    std::string msg() const override
+    {
+        return ParseError::msg() + "\nExpected \'" + + "\'.";
+    }
+};
+ParseError Parse(const std::vector<Token>& tokens)
+{
+
+}
+
 Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
 {
     Blueprint output;
