@@ -263,7 +263,7 @@ std::vector<Error*> Parse(std::queue<std::vector<Token>*>& tokens)
                 // n <identifier> <string> <<number>|<string>> <<number>|<string>> <number> <string>
                 else if (line[0].kw == Token::Keyword::node)
                 {
-
+                    // Todo
                 }
                 // w <string> <identifier> <identifier>
                 // w <string> <identifier>[<string>] <identifier>
@@ -271,13 +271,13 @@ std::vector<Error*> Parse(std::queue<std::vector<Token>*>& tokens)
                 // w <string> <identifier>[<string>] <identifier>[<string>]
                 else if (line[0].kw == Token::Keyword::node)
                 {
-
+                    // Todo
                 }
             }
             // <identifier> : <identifier> {
             else if (line[0].type == Token::Type::identifier)
             {
-                if ()
+                // Todo
             }
             // error
             else
