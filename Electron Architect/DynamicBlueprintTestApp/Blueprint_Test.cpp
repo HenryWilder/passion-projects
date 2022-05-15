@@ -47,22 +47,26 @@ struct Token
     };
 
     Type type;
-    union
-    {
-        Keyword kw;
-
-        Punctuation punc;
-
-        const char* id_str;
-
-        unsigned num;
-    };
+    Keyword kw;
+    Punctuation punc;
+    unsigned num;
+    std::string id_str;
 
     Token(const std::string& token)
     {
         _ASSERT_EXPR(!token.empty(), L"Token cannot be null");
 
-        memset(&kw, 0, sizeof(id_str));
+        kw = Keyword(0);
+        punc = Punctuation(0);
+        id_str = "";
+        num = 0;
+
+        if (token.find(' ') != token.npos)
+        {
+            type = Type::string;
+            id_str = token;
+            return;
+        }
 
         char t = token.front();
         if (token.size() == 1)
@@ -111,6 +115,8 @@ struct Token
         else
             id_str = token.c_str();
     }
+    Token(const Token& base) : type(base.type), kw(base.kw), punc(base.punc), num(base.num), id_str(base.id_str) {}
+    ~Token() = default;
 };
 
 std::vector<Token> Tokenize(std::ifstream& file)
@@ -136,6 +142,12 @@ std::vector<Token> Tokenize(std::ifstream& file)
             line = line.substr(pos + 1);
             tokens.emplace_back(tokenStr);
             std::cout << "Token: " << tokenStr << '\n';
+            if (tokens.back().type == Token::Type::keyword && tokens.back().kw == Token::Keyword::description)
+            {
+                std::cout << "Token: " << line << '\n';
+                tokens.emplace_back(line);
+                line.clear();
+            }
         }
         if (!line.empty())
         {
