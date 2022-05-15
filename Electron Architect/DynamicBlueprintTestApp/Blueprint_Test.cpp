@@ -14,11 +14,11 @@ struct Token
 {
     enum class Type
     {
-        keyword,
-        punctuation,
-        identifier,
-        string,
-        number,
+        keyword = 'a',
+        punctuation = ',',
+        identifier = '@',
+        string = '\"',
+        number = '0',
     };
 
     enum class Keyword : char
@@ -54,7 +54,7 @@ struct Token
 
     Token(const std::string& token)
     {
-        _ASSERT_EXPR(!token.empty(), L"Token cannot be null");
+        _ASSERT_EXPR(!token.empty() && token[0] != '\0', L"Token cannot be null");
 
         kw = Keyword(0);
         punc = Punctuation(0);
@@ -93,27 +93,31 @@ struct Token
                 if (!(c >= '0' && c <= '9'))
                 {
                     type = Type::string;
-                    break;
+                    id_str = token;
+                    return;
                 }
             }
+            num = (unsigned)std::stoul(token);
+            return;
         }
         else if ((t >= 'a' && t <= 'z') || (t >= 'A' && t <= 'Z') || t == '_')
         {
             type = Type::identifier;
+            id_str = token;
             for (char c : token)
             {
                 if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'))
                 {
                     type = Type::string;
-                    break;
+                    return;
                 }
             }
         }
-
-        if (type == Type::number)
-            num = (unsigned)std::stoul(token);
         else
-            id_str = token.c_str();
+        {
+            type = Type::string;
+            id_str = token;
+        }
     }
     Token(const Token& base) : type(base.type), kw(base.kw), punc(base.punc), num(base.num), id_str(base.id_str) {}
     ~Token() = default;
@@ -123,6 +127,20 @@ std::queue<std::vector<Token>*> Tokenize(std::ifstream& file)
 {
     std::queue<std::vector<Token>*> tokens;
 
+    auto TokenTypeName = [](const Token::Type& what)
+    {
+        switch (what)
+        {
+        case Token::Type::keyword: return "Keyword";
+        case Token::Type::punctuation: return "Punctuation";
+        case Token::Type::identifier: return "Identifier";
+        case Token::Type::string: return "String";
+        case Token::Type::number: return "Number";
+        default: return "ERROR";
+        }
+    };
+
+    unsigned lineNumber = 1;
     std::string line;
     while (std::getline(file, line))
     {
@@ -133,12 +151,14 @@ std::queue<std::vector<Token>*> Tokenize(std::ifstream& file)
             line = line.substr(trimStart); // Ignore whitespace
 
         tokens.push(new std::vector<Token>);
-        if (line.front() != 'd')
-            tokens.back()->reserve(std::count(line.begin(), line.end(), ' '));
-        else
-            tokens.back()->reserve(2);
+        switch (line.front()) // Reserve fewer for tokens with many spaced strings
+        {
+        case 'd': tokens.back()->reserve(2); break;
+        case 'n': tokens.back()->reserve(7); break;
+        default: tokens.back()->reserve(std::count(line.begin(), line.end(), ' ')); break;
+        }
 
-        std::cout << "Line: " << line << '\n';
+        std::cout << "Line " << lineNumber << ": \'" << line << "\'\n";
 
         std::string tokenStr;
         size_t pos = 0;
@@ -147,19 +167,20 @@ std::queue<std::vector<Token>*> Tokenize(std::ifstream& file)
             tokenStr = line.substr(0, pos);
             line = line.substr(pos + 1);
             tokens.back()->push_back(tokenStr);
-            std::cout << "Token: " << tokenStr << '\n';
+            std::cout << "  " << TokenTypeName(tokens.back()->back().type) << ": " << tokenStr << '\n';
             if (tokens.back()->back().type == Token::Type::keyword && tokens.back()->back().kw == Token::Keyword::description)
             {
-                std::cout << "Token: " << line << '\n';
                 tokens.back()->push_back(line);
+                std::cout << "  " << TokenTypeName(tokens.back()->back().type) << ": " << line << '\n';
                 line.clear();
             }
         }
         if (!line.empty())
         {
-            std::cout << "Token: " << line << '\n';
             tokens.back()->push_back(line);
+            std::cout << "  " << TokenTypeName(tokens.back()->back().type) << ": " << line << '\n';
         }
+        ++lineNumber;
     }
     return tokens;
 }
@@ -170,11 +191,11 @@ struct Error
     unsigned lineNumber;
     std::string what() const
     {
-        return msg() + "\nLine " + std::to_string(lineNumber);
+        return msg() + "\tLine " + std::to_string(lineNumber);
     }
     virtual std::string msg() const
     {
-        return "Unknown error";
+        return "Unknown error.";
     }
 };
 struct ParseError : public Error
@@ -191,7 +212,7 @@ struct MissingExpected : public ParseError
     std::string expected;
     std::string msg() const override
     {
-        return ParseError::msg() + "\nExpected " + expected;
+        return ParseError::msg() + " Expected " + expected;
     }
 };
 struct Unexpected : public MissingExpected
@@ -200,7 +221,7 @@ struct Unexpected : public MissingExpected
     std::string found;
     std::string msg() const override
     {
-        return ParseError::msg() + "\nExpected " + expected + "\n found " + found;
+        return ParseError::msg() + " Expected " + expected + " found " + found;
     }
 };
 
@@ -251,7 +272,7 @@ std::vector<Error*> Parse(std::queue<std::vector<Token>*>& tokens)
                         {
                             errors.push_back(new Unexpected(
                                 "either 2 (<indentifier> <identifier>) or 4 (<indentifier> <identifier> = <number>) arguments",
-                                "", lineNumber));
+                                std::to_string(line.size()) + " arguments", lineNumber));
                         }
                     }
                     else if (line[1].type != Token::Type::identifier)
@@ -305,7 +326,19 @@ Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
     } c = Context::global;
     std::stack<BlueprintScope*> scope;
     std::string line;
-    Tokenize(file);
+    auto tokens = Tokenize(file);
+    auto errors = Parse(tokens);
+    if (errors.empty())
+        std::cout << "\nSuccess!!";
+    else
+    {
+        std::cout << "\nEncountered " + std::to_string(errors.size()) + " errors:\n";
+        for (Error* err : errors)
+        {
+            std::cout << err->what();
+        }
+    }
+    std::cout << '\n';
     return nullptr;
 
     while (std::getline(file, line))
@@ -392,7 +425,7 @@ Blueprint* LoadBlueprint(const std::string& name)
 }
 
 
-unsigned Expression::Element::Value(const std::unordered_map<Token_t, unsigned>& src) const
+unsigned Expression::Element::Value(const std::unordered_map<std::string, unsigned>& src) const
 {
     if (!isParam)
         return value;
@@ -462,7 +495,7 @@ int Expression::ParseStrToExpression(Expression& expr, const std::string& str)
     return 0;
 }
 
-unsigned Expression::Solve(const std::unordered_map<Token_t, unsigned>& values)
+unsigned Expression::Solve(const std::unordered_map<std::string, unsigned>& values)
 {
     if (operations.size() >= elements.size())
         return error_value;
@@ -483,13 +516,13 @@ bool BlueprintInstance::ShouldDelete() const
     return this != base->cached;
 }
 
-BlueprintInstance* Blueprint::Instantiate(const std::unordered_map<Token_t, unsigned>& values) const
+BlueprintInstance* Blueprint::Instantiate(const std::unordered_map<std::string, unsigned>& values) const
 {
     // Same as cached?
     if (values == parameters)
     {
         return cached;
     }
-    std::unordered_map<AnchorTag_t, std::vector<NodeBP>*> anchors;
+    std::unordered_map<std::string, std::vector<NodeBP>*> anchors;
     return nullptr;
 }

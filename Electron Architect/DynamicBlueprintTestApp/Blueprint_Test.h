@@ -43,7 +43,17 @@ struct WireBP
     ElbowConfig elbowConfig;
 };
 
-using Token_t = std::string;
+struct Blueprint;
+struct BlueprintInstance
+{
+    Blueprint* base = nullptr;
+    IVec2 extents;
+    std::vector<NodeBP> nodes;
+    std::vector<WireBP> wires;
+
+    // Whether or this is cached vs needs to be deleted outside of the blueprint
+    bool ShouldDelete() const;
+};
 
 struct Expression
 {
@@ -52,7 +62,7 @@ struct Expression
     struct Element
     {
         inline Element(unsigned value) : isParam(false), value(value) {}
-        inline Element(const Token_t& param) : isParam(true), param(param) {}
+        inline Element(const std::string& param) : isParam(true), param(param) {}
         inline Element(const Element& base) : isParam(base.isParam)
         {
             if (isParam)
@@ -66,10 +76,10 @@ struct Expression
         union
         {
             unsigned value;
-            Token_t param;
+            std::string param;
         };
 
-        unsigned Value(const std::unordered_map<Token_t, unsigned>& src) const;
+        unsigned Value(const std::unordered_map<std::string, unsigned>& src) const;
     };
     enum class Operation : char
     {
@@ -87,14 +97,12 @@ struct Expression
     // Returns 0 on no errors
     int ParseStrToExpression(Expression& expr, const std::string& str);
 
-    unsigned Solve(const std::unordered_map<Token_t, unsigned>& values);
+    unsigned Solve(const std::unordered_map<std::string, unsigned>& values);
 };
-
-using AnchorTag_t = std::string;
 
 struct NodeBP_Dynamic
 {
-    AnchorTag_t anchor;
+    std::string anchor;
     std::string name;
     Expression x;
     Expression y;
@@ -104,42 +112,29 @@ struct NodeBP_Dynamic
 struct WireBP_Dynamic
 {
     ElbowConfig elbow;
-    AnchorTag_t tags[2];
-    Expression offsets[2];
-};
-
-struct BPLocal
-{
-    Token_t param;
+    std::string inputAncor;
+    std::string outputAnchor;
+    Expression inputOffset;
+    Expression outputOffset;
 };
 
 struct BlueprintScope
 {
-    std::unordered_map<Token_t, BPLocal> locals;
+    std::string local;
+    std::string range;
     NodeBP_Dynamic nodes;
     WireBP_Dynamic wires;
-    std::vector<BlueprintScope*> nests;
-};
-
-struct Blueprint;
-struct BlueprintInstance
-{
-    Blueprint* base;
-    IVec2 extents;
-    std::vector<NodeBP> nodes;
-    std::vector<WireBP> wires;
-
-    bool ShouldDelete() const;
+    std::vector<BlueprintScope*> subScopes;
 };
 
 struct Blueprint
 {
     std::string name;
     std::string desc;
-    std::unordered_map<Token_t, unsigned> parameters;
+    std::unordered_map<std::string, unsigned> parameters;
     BlueprintScope top;
     BlueprintInstance* cached; // "Default" instance
-    BlueprintInstance* Instantiate(const std::unordered_map<Token_t, unsigned>& values) const;
+    BlueprintInstance* Instantiate(const std::unordered_map<std::string, unsigned>& values) const;
 };
 
 // A static blueprint is just a blueprint with no parameters
