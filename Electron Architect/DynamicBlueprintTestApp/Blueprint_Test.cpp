@@ -172,27 +172,33 @@ struct Error
 };
 struct ParseError : public Error
 {
-    std::string error;
+    std::string errorText;
     std::string msg() const override
     {
-        return "Parse error: \'" + error + "\' could not be parsed.";
+        return "Parse error. The line \'" + errorText + "\' could not be parsed.";
     }
 };
 struct MissingExpected : public ParseError
 {
     std::string expected;
+    std::string got;
     std::string msg() const override
     {
-        return ParseError::msg() + "\nExpected \'" + + "\'.";
+        return ParseError::msg() + "\nExpected " + expected + " - Got " + got + ".";
     }
 };
-ParseError Parse(const std::vector<Token>& tokens)
-{
 
+std::vector<ParseError*> Parse(const std::vector<Token>& tokens)
+{
+    for ()
+    {
+
+    }
 }
 
 Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
 {
+    std::cout << "Loading dynamic blueprint\n";
     Blueprint output;
     output.name = name;
     enum class Context
@@ -275,7 +281,6 @@ Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
 Blueprint* LoadBlueprint(const std::string& name)
 {
     std::ifstream file(name + ".bp");
-    std::cout << "Opened!";
     file.ignore(1, 'v');
     double version;
     char type;
