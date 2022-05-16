@@ -101,13 +101,7 @@ int main()
         }
 
         // Input
-        if (window.GetModeType() == ModeType::Menu ||
-            !(window.CursorInUIBounds(window.toolPaneRec) ||
-                (window.CursorInUIBounds(window.propertiesPaneRec) && window.propertiesOn) ||
-                (window.CursorInUIBounds(window.consolePaneRec) && window.consoleOn)))
-        {
-            window.UpdateTool();
-        }
+        window.UpdateTool();
 
     EVAL:
         window.cursorPosPrev = window.cursorPos;

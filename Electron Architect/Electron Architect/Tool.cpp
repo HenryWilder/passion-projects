@@ -79,9 +79,15 @@ PenTool::PenTool() :
 PenTool::~PenTool() {}
 ModeType PenTool::GetModeType() const { return ModeType::Basic; }
 Mode PenTool::GetMode() const { return Mode::PEN; }
-void PenTool::Update(Window& window)
+void PenTool::Update(Window& window, bool allowHover)
 {
-    if (window.b_cursorMoved) // On move
+    if (!allowHover)
+    {
+        window.hoveredWire = nullptr;
+        window.hoveredNode = nullptr;
+        window.hoveredGroup = nullptr;
+    }
+    else if (window.b_cursorMoved) // On move
     {
         window.hoveredWire = nullptr;
         window.hoveredNode = window.CurrentTab().graph->FindNodeAtPos(window.cursorPos);
@@ -275,9 +281,9 @@ EditTool::EditTool() :
 EditTool::~EditTool() {}
 ModeType EditTool::GetModeType() const { return ModeType::Basic; }
 Mode EditTool::GetMode() const { return Mode::EDIT; }
-void EditTool::Update(Window& window)
+void EditTool::Update(Window& window, bool allowHover)
 {
-    if (renamingGroup)
+    if (renamingGroup && allowHover)
     {
         _ASSERT_EXPR(!!window.hoveredGroup, L"Cannot rename null group");
 
@@ -297,7 +303,14 @@ void EditTool::Update(Window& window)
 
     // Todo: fix bug with canceling multiple-drag (And update group dragging to match!!)
 
-    if (window.b_cursorMoved && !selectionWIP)
+    if (!allowHover)
+    {
+        window.hoveredWire = nullptr;
+        window.hoveredNode = nullptr;
+        window.hoveredGroup = nullptr;
+        groupCorner.group = nullptr;
+    }
+    else if (window.b_cursorMoved && !selectionWIP /* selectionWIP locks hover in place (as empty) */)
     {
         if (!nodeBeingDragged &&
             !wireBeingDragged &&
@@ -730,10 +743,17 @@ EraseTool::EraseTool() {}
 EraseTool::~EraseTool() {}
 ModeType EraseTool::GetModeType() const { return ModeType::Basic; }
 Mode EraseTool::GetMode() const { return Mode::ERASE; }
-void EraseTool::Update(Window& window)
+void EraseTool::Update(Window& window, bool allowHover)
 {
-    if (window.b_cursorMoved)
+    if (!allowHover)
     {
+        window.hoveredWire = nullptr;
+        window.hoveredNode = nullptr;
+        window.hoveredGroup = nullptr;
+    }
+    else if (window.b_cursorMoved)
+    {
+        window.hoveredGroup = nullptr;
         window.hoveredWire = nullptr;
         window.hoveredNode = window.CurrentTab().graph->FindNodeAtPos(window.cursorPos);
         if (!window.hoveredNode)
@@ -893,14 +913,24 @@ InteractTool::InteractTool() {}
 InteractTool::~InteractTool() {}
 ModeType InteractTool::GetModeType() const { return ModeType::Basic; }
 Mode InteractTool::GetMode() const { return Mode::INTERACT; }
-void InteractTool::Update(Window& window)
+void InteractTool::Update(Window& window, bool allowHover)
 {
-    window.hoveredNode = window.CurrentTab().graph->FindNodeAtPos(window.cursorPos);
+    if (!allowHover)
+    {
+        window.hoveredWire = nullptr;
+        window.hoveredNode = nullptr;
+        window.hoveredGroup = nullptr;
+    }
+    else
+        window.hoveredNode = window.CurrentTab().graph->FindNodeAtPos(window.cursorPos);
+
     if (!!window.hoveredNode && !window.hoveredNode->IsOutputOnly())
         window.hoveredNode = nullptr;
 
     if (!!window.hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         window.hoveredNode->SetGate(window.hoveredNode->GetGate() == Gate::NOR ? Gate::OR : Gate::NOR);
+
+    
 }
 void InteractTool::Draw(Window& window)
 {
@@ -929,11 +959,11 @@ PasteOverlay::PasteOverlay() {}
 PasteOverlay::~PasteOverlay() {}
 ModeType PasteOverlay::GetModeType() const { return ModeType::Overlay; }
 Mode PasteOverlay::GetMode() const { return Mode::PASTE; }
-void PasteOverlay::Update(Window& window)
+void PasteOverlay::Update(Window& window, bool allowHover)
 {
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
     {
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && allowHover)
             window.CurrentTab().graph->SpawnBlueprint(window.clipboard, window.cursorPos);
         window.ClearSelection();
         window.ClearOverlayMode();
@@ -958,8 +988,11 @@ BlueprintMenu::BlueprintMenu() :
 BlueprintMenu::~BlueprintMenu() {}
 ModeType BlueprintMenu::GetModeType() const { return ModeType::Menu; }
 Mode BlueprintMenu::GetMode() const { return Mode::BP_SELECT; }
-void BlueprintMenu::Update(Window& window)
+void BlueprintMenu::Update(Window& window, bool allowHover)
 {
+    // Clicks will always be allowed in menus.
+    // Maybe that's not the best idea...
+
     constexpr int halfGrid = g_gridSize / 2;
     if (window.b_cursorMoved)
     {
@@ -982,7 +1015,7 @@ void BlueprintMenu::Update(Window& window)
             int recBottom = rec.y + rec.h;
             maxY = std::max(maxY, recBottom);
         }
-    }
+}
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !!hovering)
     {
         window.clipboard = hovering;

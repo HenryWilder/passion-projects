@@ -1327,10 +1327,16 @@ void Window::ReloadConfig()
 
 void Window::UpdateTool()
 {
+    bool allowHover =
+        GetModeType() == ModeType::Menu ||
+        !(CursorInUIBounds(toolPaneRec) ||
+            (CursorInUIBounds(propertiesPaneRec) && propertiesOn) ||
+            (CursorInUIBounds(consolePaneRec) && consoleOn));
+
     if (!!overlay)
-        overlay->Update(*this);
+        overlay->Update(*this, allowHover);
     else
-        base->Update(*this);
+        base->Update(*this, allowHover);
 }
 void Window::DrawTool()
 {

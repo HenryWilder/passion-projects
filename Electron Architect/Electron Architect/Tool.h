@@ -65,7 +65,7 @@ struct Tool
     virtual ModeType GetModeType() const = 0;
     virtual Mode GetMode() const = 0;
 
-    virtual void Update(Window& window) = 0;
+    virtual void Update(Window& window, bool allowHover) = 0;
     virtual void Draw(Window& window) = 0;
     virtual void DrawProperties(Window& window) = 0;
 };
@@ -78,7 +78,7 @@ struct PenTool : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& window) final;
+    void Update(Window& window, bool allowHover) final;
     void Draw(Window& window) final;
     void DrawProperties(Window& window) final;
 
@@ -97,7 +97,7 @@ struct EditTool : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& window) final;
+    void Update(Window& window, bool allowHover) final;
     void Draw(Window& window) final;
     void DrawProperties(Window& window) final;
 
@@ -121,7 +121,7 @@ struct EraseTool : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& window) final;
+    void Update(Window& window, bool allowHover) final;
     void Draw(Window& window) final;
     void DrawProperties(Window& window) final;
 };
@@ -134,7 +134,7 @@ struct InteractTool : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& window) final;
+    void Update(Window& window, bool allowHover) final;
     void Draw(Window& window) final;
     void DrawProperties(Window& window) final;
 };
@@ -147,7 +147,7 @@ struct PasteOverlay : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& window) final;
+    void Update(Window& window, bool allowHover) final;
     void Draw(Window& window) final;
     void DrawProperties(Window& window) final;
 };
@@ -160,7 +160,7 @@ struct BlueprintMenu : public Tool
     ModeType GetModeType() const final;
     Mode GetMode() const final;
 
-    void Update(Window& window) final;
+    void Update(Window& window, bool allowHover) final;
     void Draw(Window& window) final;
     void DrawProperties(Window& window) final;
 
