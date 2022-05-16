@@ -165,6 +165,16 @@ void Tab::UpdateCamera()
 	else if (GetMouseWheelMove() < 0 && camera.zoom > 0.125f)
 		camera.zoom /= 2;
 
-	camera.target.x += (float)(((int)IsKeyDown(KEY_RIGHT) - (int)IsKeyDown(KEY_LEFT)) * g_gridSize) / std::min(camera.zoom, 1.0f);
-	camera.target.y += (float)(((int)IsKeyDown(KEY_DOWN)  - (int)IsKeyDown(KEY_UP))   * g_gridSize) / std::min(camera.zoom, 1.0f);
+	if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
+	{
+		Vector2 delta = GetMouseDelta();
+		delta.x = (float)((int)(delta.x / ((float)g_gridSize * camera.zoom)) * g_gridSize);
+		delta.y = (float)((int)(delta.y / ((float)g_gridSize * camera.zoom)) * g_gridSize);
+		camera.target = camera.target - delta;
+	}
+	else
+	{
+		camera.target.x += (float)(((int)IsKeyDown(KEY_RIGHT) - (int)IsKeyDown(KEY_LEFT)) * g_gridSize) / std::min(camera.zoom, 1.0f);
+		camera.target.y += (float)(((int)IsKeyDown(KEY_DOWN)  - (int)IsKeyDown(KEY_UP))   * g_gridSize) / std::min(camera.zoom, 1.0f);
+	}
 }
