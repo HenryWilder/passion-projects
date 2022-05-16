@@ -1,9 +1,8 @@
 #include <thread>
 #include <fstream>
-#include <stack>
 #include "Blueprint.h"
 
-void StaticBlueprint::PopulateNodes(const std::vector<Node*>& src)
+void Blueprint::PopulateNodes(const std::vector<Node*>& src)
 {
     constexpr IRect boundsInit = IRect(
         INT_MAX,
@@ -66,7 +65,7 @@ void StaticBlueprint::PopulateNodes(const std::vector<Node*>& src)
         }
     }
 }
-void StaticBlueprint::PopulateWires(const std::vector<Node*>& src)
+void Blueprint::PopulateWires(const std::vector<Node*>& src)
 {
     std::unordered_map<Node*, size_t> nodeIndices;
     std::unordered_map<Wire*, bool> visitedWires;
@@ -128,7 +127,7 @@ void StaticBlueprint::PopulateWires(const std::vector<Node*>& src)
     }
 }
 
-StaticBlueprint::Blueprint(const std::vector<Node*>& src)
+Blueprint::Blueprint(const std::vector<Node*>& src)
 {
     name = "Unnamed blueprint";
     extents = IVec2::Zero();
@@ -138,7 +137,7 @@ StaticBlueprint::Blueprint(const std::vector<Node*>& src)
     wireThread.join();
 }
 
-void StaticBlueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const
+void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const
 {
     IVec2 offset = pos + IVec2(g_gridSize);
     DrawRectangleIRect(GetSelectionPreviewRect(pos), backgroundColor);
@@ -211,12 +210,12 @@ void StaticBlueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Col
     }
 }
 
-IRect StaticBlueprint::GetSelectionPreviewRect(IVec2 pos) const
+IRect Blueprint::GetSelectionPreviewRect(IVec2 pos) const
 {
     return IRect(pos, extents + IVec2(g_gridSize * 2));
 }
 
-void StaticBlueprint::Save() const
+void Blueprint::Save() const
 {
     std::ofstream file(TextFormat(".\\blueprints\\%s.bp", name.c_str()));
     file << "n " << nodes.size() << '\n';
@@ -236,15 +235,17 @@ void StaticBlueprint::Save() const
     file.close();
 }
 
-StaticBlueprint* LoadBlueprint(std::ifstream& file)
+void LoadBlueprint(const char* filename, Blueprint& dest)
 {
-    StaticBlueprint* dest = new StaticBlueprint();
+    dest = Blueprint(); // Reset in case of edge cases
+    std::ifstream file(TextFormat("%s", filename));
     if (file.bad())
         return;
+    std::string name = filename;
     size_t start = name.find_last_of('\\') + 1;
     size_t end = name.size() - 3;
     if (start != name.npos)
-        dest->name = name.substr(start, end - start);
+        dest.name = name.substr(start, end - start);
     else
         dest.name = name;
     IVec2 extents = IVec2::Zero();
@@ -287,138 +288,4 @@ StaticBlueprint* LoadBlueprint(std::ifstream& file)
         dest.wires.emplace_back(startNodeIndex, endNodeIndex, (ElbowConfig)elbowConfig);
     }
     file.close();
-}
-
-Blueprint* LoadDynamicBlueprint(std::ifstream& file, const std::string& name)
-{
-    Blueprint output;
-    output.name = name;
-    enum class Context
-    {
-        global,
-        desc,
-        scoped,
-    } c = Context::global;
-    std::stack<BlueprintScope*> scope;
-    std::string line;
-    while (std::getline(file, line))
-    {
-        line = line.substr(line.find_first_not_of("\t ")); // Ignore whitespace
-
-        if (line == "desc {")
-        {
-            if (output.desc.empty() && std::getline(file, line, '}'))
-                output.desc = line;
-            else
-                return nullptr;
-        }
-    }
-    return new Blueprint(output);
-}
-
-Blueprint* LoadBlueprint(const std::string& name)
-{
-    std::ifstream file(name + ".bp");
-    file.ignore(1, 'v');
-    double version;
-    char type;
-    file >> version >> type;
-    if (version != 1.4)
-        return nullptr;
-    switch (type)
-    {
-    case 's': return LoadStaticBlueprint(file, name); // Static
-    case 'd': return LoadDynamicBlueprint(file, name); // Dynamic
-    default: return nullptr; // Incompatible
-    }
-}
-
-
-unsigned Expression::Element::Value(const TokenValueMap_t& src) const
-{
-    if (!isParam)
-        return value;
-
-    if (auto it = src.find(param); it != src.end())
-        return it->second;
-
-    return error_value;
-}
-
-unsigned Expression::Operate(Operation op, unsigned lval, unsigned rval)
-{
-    switch (op)
-    {
-    case Operation::ADD: return lval + rval;
-    case Operation::SUB: return ((lval > rval) ? (lval - rval) : skip_value);
-    case Operation::MUL: return lval * rval;
-    case Operation::DIV: return ((rval != 0) ? (lval / rval) : error_value);
-    case Operation::MOD: return ((rval != 0) ? (lval % rval) : error_value);
-    default: return 0;
-    }
-}
-
-int Expression::ParseStrToExpression(Expression& expr, const std::string& str)
-{
-    // No spaces (just a value)
-    if (str.find(' ') != str.npos)
-    {
-        for (const char c : str)
-        {
-            if (c < '0' || c > '9')
-                return 1;
-        }
-        expr.elements.emplace_back((unsigned)std::stoul(str));
-        return 0;
-    }
-
-    size_t pos = 0;
-    bool op = false;
-    std::string::const_iterator last = str.begin();
-    while ((pos = str.find(' ')) != str.npos)
-    {
-        std::string_view token(last, str.begin() + pos);
-        if (op)
-        {
-            if (token.size() > 1)
-                return 1;
-
-            expr.operations.push_back((Operation)token.back());
-        }
-        else
-        {
-            if (token.front() >= '0' && token.front() <= '9') // Expect a number
-            {
-                for (const char c : token)
-                {
-                    if (c < '0' || c > '9')
-                        return 1;
-                }
-                expr.elements.emplace_back((unsigned)std::stoul(token.data()));
-            }
-            expr.elements.emplace_back(token.data());
-        }
-        op = !op;
-    }
-
-    return 0;
-}
-
-unsigned Expression::Solve(const TokenValueMap_t& values)
-{
-    if (operations.size() >= elements.size())
-        return error_value;
-
-    unsigned current = elements[0].Value(values);
-
-    for (size_t i = 0; i < operations.size(); ++i)
-    {
-        unsigned next = elements[i + 1].Value(values);
-        current = Operate(operations[i], current, next);
-    }
-}
-
-void Blueprint::Instantiate(_Out_ BlueprintInstance& dest, const TokenValueMap_t& values)
-{
-    std::unordered_map<AnchorTag_t, std::vector<NodeBP>*> anchors;
 }
