@@ -132,15 +132,27 @@ void Tab::DrawBridgePreview(ElbowConfig elbow, Color color) const
 {
 	_ASSERT_EXPR(IsSelectionBridgeable(), L"Selection is not bridgable");
 
-	size_t i = 0;
-	size_t i_increment = (size_t)(bridgeCache[0].size() > 1);
-	size_t j = 0;
-	size_t j_increment = (size_t)(bridgeCache[1].size() > 1);
-	while (i < bridgeCache[0].size() && j < bridgeCache[1].size())
+	if (bridgeCache[0].size() == bridgeCache[1].size())
 	{
-		Wire(bridgeCache[0][i], bridgeCache[1][j], elbow).Draw(color);
-		i += i_increment;
-		j += j_increment;
+		for (size_t i = 0; i < bridgeCache[0].size(); ++i)
+		{
+			Wire(bridgeCache[0][i], bridgeCache[1][i], elbow).Draw(color);
+		}
+	}
+	else if (bridgeCache[0].size() == 1)
+	{
+		for (size_t i = 0; i < bridgeCache[1].size(); ++i)
+		{
+			Wire(bridgeCache[0][0], bridgeCache[1][i], elbow).Draw(color);
+			graph->CreateWire(bridgeCache[0][0], bridgeCache[1][i], elbow);
+		}
+	}
+	else if (bridgeCache[1].size() == 1)
+	{
+		for (size_t i = 0; i < bridgeCache[0].size(); ++i)
+		{
+			Wire(bridgeCache[0][i], bridgeCache[1][0], elbow).Draw(color);
+		}
 	}
 }
 

@@ -73,6 +73,7 @@ const std::string ElbowConfigName(ElbowConfig elbow)
 PenTool::PenTool() :
     dragStart(0),
     dragging(false),
+    dragMode(DragType::drag_create),
     previousWireStart(nullptr),
     currentWireStart(nullptr) {}
 PenTool::~PenTool() {}
@@ -699,7 +700,6 @@ void EditTool::Draw(Window& window)
             "Hold [shift] to merge on release.\n"
             "Otherwise, nodes will only be swapped.", UIColor(UIColorID::UI_COLOR_SPECIAL));
     }
-
 
     if (IsKeyPressed(KEY_R))
     {
