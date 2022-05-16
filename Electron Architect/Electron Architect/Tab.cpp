@@ -171,6 +171,8 @@ void Tab::Set2DMode(bool value)
 
 void Tab::UpdateCamera()
 {
+	camera.offset = owningWindow->WindowExtents() / 2;
+
 	if (GetMouseWheelMove() > 0 && camera.zoom < 2.0f)
 		camera.zoom *= 2;
 
@@ -182,7 +184,7 @@ void Tab::UpdateCamera()
 		Vector2 delta = GetMouseDelta();
 		delta.x = (float)((int)(delta.x / ((float)g_gridSize * camera.zoom)) * g_gridSize);
 		delta.y = (float)((int)(delta.y / ((float)g_gridSize * camera.zoom)) * g_gridSize);
-		camera.target = camera.target + delta;
+		camera.target = camera.target - delta;
 	}
 	else
 	{
