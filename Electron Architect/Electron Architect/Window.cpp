@@ -974,28 +974,33 @@ void Window::DrawGrid(int gridSize) const
     // Grid
     if (!tabs.empty())
     {
-        IVec2 extents((int)((float)windowWidth / CurrentTab().camera.zoom), (int)((float)windowHeight / CurrentTab().camera.zoom));
-        IRect bounds(IVec2(CurrentTab().camera.target), extents);
+        Vector2 start = GetScreenToWorld2D({ 0,0 }, CurrentTab().camera);
+        start.x = std::floor(start.x / (float)gridSize) * (float)gridSize;
+        start.y = std::floor(start.y / (float)gridSize) * (float)gridSize;
+        Vector2 end = GetScreenToWorld2D({ (float)windowWidth, (float)windowHeight }, CurrentTab().camera);
+        end.x = std::ceil(end.x / (float)gridSize) * (float)gridSize;
+        end.y = std::ceil(end.y / (float)gridSize) * (float)gridSize;
+        Rectangle bounds = { start.x, start.y, end.x - start.x, end.y - start.y };
 
         // "If the number of world pixels compacted into a single screen pixel equal or exceed the pixels between gridlines"
         if ((int)(1.0f / CurrentTab().camera.zoom) >= gridSize)
         {
-            DrawRectangleIRect(bounds, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+            DrawRectangleRec(bounds, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
         }
         else
         {
-            for (int y = bounds.y; y < bounds.y + bounds.h; y += gridSize)
+            for (int y = start.y; y < end.y; y += gridSize)
             {
-                DrawLine(bounds.x, y, bounds.x + bounds.w, y, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+                DrawLine(start.x, y, end.x, y, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
             }
-            for (int x = bounds.x; x < bounds.x + bounds.w; x += gridSize)
+            for (int x = start.x; x < end.x; x += gridSize)
             {
-                DrawLine(x, bounds.y, x, bounds.y + bounds.h, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
+                DrawLine(x, start.y, x, end.y, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
             }
         }
         int halfgrid = gridSize / 2;
-        DrawLine(bounds.x, -halfgrid, bounds.x + bounds.w, -halfgrid, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
-        DrawLine(-halfgrid, bounds.y, -halfgrid, bounds.y + bounds.h, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+        DrawLine(start.x, -halfgrid, end.x, -halfgrid, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+        DrawLine(-halfgrid, start.y, -halfgrid, end.y, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
     }
 }
 

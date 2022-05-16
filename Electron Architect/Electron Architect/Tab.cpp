@@ -182,7 +182,7 @@ void Tab::UpdateCamera()
 		Vector2 delta = GetMouseDelta();
 		delta.x = (float)((int)(delta.x / ((float)g_gridSize * camera.zoom)) * g_gridSize);
 		delta.y = (float)((int)(delta.y / ((float)g_gridSize * camera.zoom)) * g_gridSize);
-		camera.target = camera.target - delta;
+		camera.target = camera.target + delta;
 	}
 	else
 	{
