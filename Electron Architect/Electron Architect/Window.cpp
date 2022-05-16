@@ -626,24 +626,26 @@ void Window::IncrementTick()
 void Window::UpdateCursorPos()
 {
     cursorUIPos = IVec2(GetMouseX(), GetMouseY());
-    if (!tabs.empty())
-    {
-        cursorPos = IVec2(
-            (int)(GetMouseX() / CurrentTab().camera.zoom) + (int)CurrentTab().camera.target.x,
-            (int)(GetMouseY() / CurrentTab().camera.zoom) + (int)CurrentTab().camera.target.y
-        );
-    }
-    else
-        cursorPos = IVec2(GetMouseX(), GetMouseY());
 
+    if (!tabs.empty())
+        cursorPos = IVec2(GetScreenToWorld2D(GetMousePosition(), CurrentTab().camera));
+    else
+        cursorPos = cursorUIPos;
+
+    // Snap
     cursorPos /= g_gridSize;
     cursorPos *= g_gridSize;
     {
         constexpr int halfgrid = g_gridSize / 2;
-        if (cursorPos.x < 0) cursorPos.x -= halfgrid;
-        else                 cursorPos.x += halfgrid;
-        if (cursorPos.y < 0) cursorPos.y -= halfgrid;
-        else                 cursorPos.y += halfgrid;
+        if (cursorPos.x < 0)
+            cursorPos.x -= halfgrid;
+        else
+            cursorPos.x += halfgrid;
+
+        if (cursorPos.y < 0)
+            cursorPos.y -= halfgrid;
+        else
+            cursorPos.y += halfgrid;
     }
 
     b_cursorMoved = cursorPosPrev != cursorPos;
@@ -1032,18 +1034,18 @@ Color Window::ExtraParamColor() const
 
 void Window::DrawTooltipAtCursor(const std::string& text, Color color)
 {
-    EndMode2D();
+    CurrentTab().Set2DMode(false);
     DrawTextIV(text.c_str(), cursorUIPos + IVec2(16), FontSize(), color);
     if (!tabs.empty())
-        BeginMode2D(CurrentTab().camera);
+        CurrentTab().Set2DMode(true);
 }
 
 void Window::DrawTooltipAtCursor_Shadowed(const std::string& text, Color color)
 {
-    EndMode2D();
+    CurrentTab().Set2DMode(false);
     DrawTextShadowedIV(text, cursorUIPos + IVec2(16), FontSize(), color, UIColor(UIColorID::UI_COLOR_BACKGROUND));
     if (!tabs.empty())
-        BeginMode2D(CurrentTab().camera);
+        CurrentTab().Set2DMode(true);
 }
 
 Color ConfigStrToColor(const std::string& str)
@@ -1127,6 +1129,11 @@ void Window::ReloadPanes()
         toolPaneRec.h = windowHeight;
 
     ReloadToolPane();
+}
+
+IVec2 Window::WindowExtents() const
+{
+    return IVec2(windowWidth, windowHeight);
 }
 
 void Window::SaveConfig() const
@@ -1666,7 +1673,7 @@ void Window::DrawToolPane()
 }
 void Window::CleanConsolePane()
 {
-    EndMode2D(); // In case
+    CurrentTab().Set2DMode(false); // In case
     DrawRectangleIRect(consolePaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
     const int titleHeight = FontSize() * 2;
     IRect box(consolePaneRec.x, consolePaneRec.y, consolePaneRec.w, titleHeight);
@@ -1739,7 +1746,7 @@ void Window::ClearLog()
 }
 void Window::CleanPropertiesPane()
 {
-    EndMode2D(); // In case
+    CurrentTab().Set2DMode(false);  // In case
     DrawRectangleIRect(propertiesPaneRec, UIColor(UIColorID::UI_COLOR_BACKGROUND1));
     DrawRectangleLinesIRect(ExpandIRect(propertiesPaneRec), UIColor(UIColorID::UI_COLOR_BACKGROUND2));
     propertyNumber = 0;

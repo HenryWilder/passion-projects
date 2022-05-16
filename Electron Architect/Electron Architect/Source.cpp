@@ -128,7 +128,7 @@ int main()
 
             if (!inMenu)
             {
-                BeginMode2D(window.CurrentTab().camera);
+                window.CurrentTab().Set2DMode(true);
 
                 window.DrawGrid();
 
@@ -138,7 +138,7 @@ int main()
             // Draw
             window.DrawTool();
 
-            EndMode2D(); // Just in case
+            window.CurrentTab().Set2DMode(false); // Just in case
 
             // Panels
 

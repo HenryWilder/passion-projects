@@ -144,6 +144,19 @@ void Tab::DrawBridgePreview(ElbowConfig elbow, Color color) const
 	}
 }
 
+void Tab::Set2DMode(bool value)
+{
+	static bool in2DMode = false;
+	if (in2DMode != value)
+	{
+		in2DMode = value;
+		if (value)
+			BeginMode2D(camera);
+		else
+			EndMode2D();
+	}
+}
+
 void Tab::UpdateCamera()
 {
 	if (GetMouseWheelMove() > 0 && camera.zoom < 2.0f)
@@ -152,6 +165,6 @@ void Tab::UpdateCamera()
 	else if (GetMouseWheelMove() < 0 && camera.zoom > 0.125f)
 		camera.zoom /= 2;
 
-	camera.target.x += (float)(((int)IsKeyDown(KEY_RIGHT) - (int)IsKeyDown(KEY_LEFT)) * g_gridSize);
-	camera.target.y += (float)(((int)IsKeyDown(KEY_DOWN) - (int)IsKeyDown(KEY_UP)) * g_gridSize);
+	camera.target.x += (float)(((int)IsKeyDown(KEY_RIGHT) - (int)IsKeyDown(KEY_LEFT)) * g_gridSize) / std::min(camera.zoom, 1.0f);
+	camera.target.y += (float)(((int)IsKeyDown(KEY_DOWN)  - (int)IsKeyDown(KEY_UP))   * g_gridSize) / std::min(camera.zoom, 1.0f);
 }

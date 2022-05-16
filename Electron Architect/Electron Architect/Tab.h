@@ -79,4 +79,6 @@ public:
 	void DrawBridgePreview(ElbowConfig elbow, Color color) const;
 
 	void UpdateCamera();
+
+	void Set2DMode(bool value);
 };

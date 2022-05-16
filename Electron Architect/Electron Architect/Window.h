@@ -222,4 +222,6 @@ public:
     void PushPropertySection_Selection(const std::string& name, const std::vector<Node*>& value);
     void PushPropertySection_Group(const std::string& name, Group* value);
     void DrawToolProperties();
+
+    IVec2 WindowExtents() const;
 };
