@@ -340,11 +340,13 @@ Wire* Graph::CreateWire(Node* start, Node* end, ElbowConfig elbowConfig)
     Log(LogType::attempt, "Wiring nodes");
     if (!start || !end)
     {
+        _ASSERT_EXPR(false, L"Cannot wire to null");
         Log(LogType::error, "Cannot wire to null");
         exit(1);
     }
     if (start == end)
     {
+        _ASSERT_EXPR(false, L"Cannot wire to self");
         Log(LogType::error, "Cannot wire to self");
         exit(1);
     }
@@ -392,16 +394,19 @@ Wire* Graph::ReverseWire(Wire* wire)
     Log(LogType::attempt, "Reversing wire");
     if (!wire)
     {
+        _ASSERT_EXPR(false, L"Cannot reverse null");
         Log(LogType::error, "Cannot reverse null");
         exit(1);
     }
     if (!wire->start)
     {
+        _ASSERT_EXPR(false, L"Wire start was null");
         Log(LogType::error, "Wire start was null");
         exit(1);
     }
     if (!wire->end)
     {
+        _ASSERT_EXPR(false, L"Wire end was null");
         Log(LogType::error, "Wire end was null");
         exit(1);
     }

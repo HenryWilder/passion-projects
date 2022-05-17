@@ -146,7 +146,7 @@ void PenTool::Update(Window& window, bool allowHover)
         dragging = false;
 
         // Create connection
-        if (dragMode == DragType::drag_connect)
+        if (dragMode == DragType::drag_connect && currentWireStart != window.hoveredNode)
         {
             if (window.hoveredNode)
             {
