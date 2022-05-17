@@ -212,16 +212,9 @@
     <ClCompile Include="Wire.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="icons16x.png" />
+    <Image Include="icons32x.png" />
     <Image Include="program_icon.png" />
-    <Image Include="icons_blueprint16x.png" />
-    <Image Include="icons_gate16x.png" />
-    <Image Include="icons_mode16x.png" />
-    <Image Include="icons_gate32x.png" />
-    <Image Include="icons_mode32x.png" />
-    <Image Include="icon_blueprints16x.png" />
-    <Image Include="icon_blueprints32x.png" />
-    <Image Include="icon_clipboard16x.png" />
-    <Image Include="icon_clipboard32x.png" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Blueprint.h" />
@@ -229,15 +222,8 @@
     <ClInclude Include="Component.h" />
     <ClInclude Include="Group.h" />
     <ClInclude Include="HUtility.h" />
-    <ClInclude Include="icons_blueprint16x.h" />
-    <ClInclude Include="icons_gate16x.h" />
-    <ClInclude Include="icons_gate32x.h" />
-    <ClInclude Include="icons_mode16x.h" />
-    <ClInclude Include="icons_mode32x.h" />
-    <ClInclude Include="icon_blueprints16x.h" />
-    <ClInclude Include="icon_blueprints32x.h" />
-    <ClInclude Include="icon_clipboard16x.h" />
-    <ClInclude Include="icon_clipboard32x.h" />
+    <ClInclude Include="icons16x.h" />
+    <ClInclude Include="icons32x.h" />
     <ClInclude Include="IVec.h" />
     <ClInclude Include="Tool.h" />
     <ClInclude Include="Graph.h" />

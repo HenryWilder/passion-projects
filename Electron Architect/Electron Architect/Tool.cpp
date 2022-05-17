@@ -44,6 +44,7 @@ const std::string ModeName(Mode mode)
     case Mode::BUTTON: return "Button";
     case Mode::PASTE: return "Paste";
     case Mode::BP_SELECT: return "Blueprint Select";
+    case Mode::SETTINGS: return "Settings";
     default:
         _ASSERT_EXPR(false, L"Missing specialization for mode name");
         return "ERROR";
@@ -1099,4 +1100,27 @@ void BlueprintMenu::DrawProperties(Window& window)
                 window.PushProperty("\tName", "[blank]");
         }
     }
+}
+
+SettingMenu::SettingMenu() {}
+SettingMenu::~SettingMenu() {}
+ModeType SettingMenu::GetModeType() const
+{
+    return ModeType::Menu;
+}
+Mode SettingMenu::GetMode() const
+{
+    return Mode::SETTINGS;
+}
+void SettingMenu::Update(Window& window, bool allowHover)
+{
+
+}
+void SettingMenu::Draw(Window& window)
+{
+    DrawText("Settings menu [WIP]", 0, 0, window.FontSize(), MAGENTA);
+}
+void SettingMenu::DrawProperties(Window& window)
+{
+
 }

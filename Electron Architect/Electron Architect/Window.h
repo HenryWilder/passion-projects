@@ -37,14 +37,8 @@ struct Window
     ~Window();
 
 private:
-    Texture2D blueprintIcon16x;
-    Texture2D blueprintIcon32x;
-    Texture2D clipboardIcon16x;
-    Texture2D clipboardIcon32x;
-    Texture2D modeIcons16x;
-    Texture2D modeIcons32x;
-    Texture2D gateIcons16x;
-    Texture2D gateIcons32x;
+    Texture2D iconSheet16x;
+    Texture2D iconSheet32x;
 public:
 
     int windowWidth;
@@ -98,10 +92,11 @@ public:
     const ColorButton* ButtonFromParameter(uint8_t param) const;
     IconButton blueprintsButton;
     IconButton clipboardButton;
+    IconButton settingsButton;
     TextButton toolPaneSizeButton;
     TextButton propertiesToggleButton;
     TextButton consoleToggleButton;
-    Button* const allButtons[28];
+    Button* const allButtons[29];
     IRect toolPaneRec;
     bool toolPaneSizeState = true;
     bool consoleOn = true;

@@ -30,6 +30,7 @@ enum class Mode
 
     // Menu
     BP_SELECT,
+    SETTINGS,
 };
 
 const std::string GateName(Gate gate);
@@ -56,6 +57,7 @@ constexpr ModeType TypeOfMode(Mode mode)
         return ModeType::Overlay;
 
     case Mode::BP_SELECT:
+    case Mode::SETTINGS:
         return ModeType::Menu;
     }
 }
@@ -165,4 +167,17 @@ struct BlueprintMenu : public Tool
     void DrawProperties(Window& window) final;
 
     Blueprint* hovering;
+};
+
+struct SettingMenu : public Tool
+{
+    SettingMenu();
+    ~SettingMenu();
+
+    ModeType GetModeType() const final;
+    Mode GetMode() const final;
+
+    void Update(Window& window, bool allowHover) final;
+    void Draw(Window& window) final;
+    void DrawProperties(Window& window) final;
 };

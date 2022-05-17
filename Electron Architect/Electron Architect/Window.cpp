@@ -15,14 +15,8 @@
 #include "Tool.h"
 #include "Window.h"
 
-#include "icon_blueprints16x.h"
-#include "icon_blueprints32x.h"
-#include "icon_clipboard16x.h"
-#include "icon_clipboard32x.h"
-#include "icons_gate16x.h"
-#include "icons_gate32x.h"
-#include "icons_mode16x.h"
-#include "icons_mode32x.h"
+#include "icons16x.h"
+#include "icons32x.h"
 
 #define MEMORY_IMAGE(name) CLITERAL(Image){(name##_DATA),(name##_WIDTH),(name##_HEIGHT),1,(name##_FORMAT)}
 
@@ -58,8 +52,8 @@ Window::Window() :
             "Hold [ctrl] while creating a wire to reverse it.\n"
             "Press [r] to cycle through wire joints.",
             [this]() { SetMode(Mode::PEN); },
-            IVec2(0, 0),
-            &modeIcons16x),
+            IVec2(2, 0),
+            &iconSheet16x),
 
         IconButton(
             IVec2(),
@@ -82,8 +76,8 @@ Window::Window() :
             "    if horizontally same, top to bottom\n"
             "Press [r] to cycle through bridge joints.",
             [this]() { SetMode(Mode::EDIT); },
-            IVec2(1, 0),
-            &modeIcons16x),
+            IVec2(3, 0),
+            &iconSheet16x),
 
         IconButton(
             IVec2(),
@@ -92,8 +86,8 @@ Window::Window() :
             "[shift]+[left click] to bypass the node without\n"
             "  erasing the wires connected to it.",
             [this]() { SetMode(Mode::ERASE); },
-            IVec2(0, 1),
-            &modeIcons16x),
+            IVec2(2, 1),
+            &iconSheet16x),
 
         IconButton(
             IVec2(),
@@ -101,8 +95,8 @@ Window::Window() :
             "[left click] an interactable node to toggle it on/off.\n"
             "  A node is interactable if it has no inputs.",
             [this]() { SetMode(Mode::INTERACT); },
-            IVec2(1, 1),
-            & modeIcons16x),
+            IVec2(3, 1),
+            &iconSheet16x),
     },
     gateButtons{
         IconButton(
@@ -112,7 +106,7 @@ Window::Window() :
             "Outputs false otherwise.",
             [this]() { SetGate(Gate::OR); },
             IVec2(0,0),
-            &gateIcons16x),
+            &iconSheet16x),
 
         IconButton(
             IVec2(),
@@ -121,7 +115,7 @@ Window::Window() :
             "Outputs false otherwise.",
             [this]() { SetGate(Gate::AND); },
             IVec2(1,0),
-            &gateIcons16x),
+            &iconSheet16x),
 
         IconButton(
             IVec2(),
@@ -130,7 +124,7 @@ Window::Window() :
             "Outputs true otherwise.",
             [this]() { SetGate(Gate::NOR); },
             IVec2(0,1),
-            &gateIcons16x),
+            &iconSheet16x),
 
         IconButton(
             IVec2(),
@@ -140,7 +134,7 @@ Window::Window() :
             "Order of inputs does not matter.",
             [this]() { SetGate(Gate::XOR); },
             IVec2(1,1),
-            &gateIcons16x),
+            &iconSheet16x),
 
         IconButton(
             IVec2(),
@@ -150,7 +144,7 @@ Window::Window() :
             "Order of inputs does not matter.",
             [this]() { SetGate(Gate::RESISTOR); },
             IVec2(0,2),
-            &gateIcons16x),
+            &iconSheet16x),
 
         IconButton(
             IVec2(),
@@ -163,7 +157,7 @@ Window::Window() :
             "Outputs false otherwise.",
             [this]() { SetGate(Gate::CAPACITOR); },
             IVec2(1,2),
-            &gateIcons16x),
+            &iconSheet16x),
 
         IconButton(
             IVec2(),
@@ -172,7 +166,7 @@ Window::Window() :
             "Lights up with the selected color when powered.",
             [this]() { SetGate(Gate::LED); },
             IVec2(0,3),
-            &gateIcons16x),
+            &iconSheet16x),
 
         IconButton(
             IVec2(),
@@ -183,7 +177,7 @@ Window::Window() :
             "for delay greater than 1 tick.",
             [this]() { SetGate(Gate::DELAY); },
             IVec2(1,3),
-            &gateIcons16x),
+            &iconSheet16x),
 
         IconButton(
             IVec2(),
@@ -194,7 +188,7 @@ Window::Window() :
             "  entrypoints for graph traversal.",
             [this]() { SetGate(Gate::BATTERY); },
             IVec2(0,4),
-            &gateIcons16x),
+            &iconSheet16x),
     },
     paramButtons{
         ColorButton(
@@ -282,16 +276,24 @@ ColorButton(
         "Blueprints",
         "@TODO",
         [this]() { SetMode(Mode::BP_SELECT); },
-        IVec2::Zero(),
-        & blueprintIcon16x
+        IVec2(2,2),
+        &iconSheet16x
     ),
     clipboardButton(
         IVec2(),
         "Clipboard (ctrl+c to copy, ctrl+v to paste)",
         "@TODO",
         [this]() { if (this->IsClipboardValid()) SetMode(Mode::PASTE); },
-        IVec2::Zero(),
-        & clipboardIcon16x
+        IVec2(3,2),
+        &iconSheet16x
+    ),
+    settingsButton(
+        IVec2(),
+        "Settings",
+        "@TODO",
+        [this]() { SetMode(Mode::SETTINGS); },
+        IVec2(2, 3),
+        &iconSheet16x
     ),
     toolPaneSizeButton(
         IVec2(0),
@@ -343,6 +345,7 @@ ColorButton(
         &paramButtons[9],
         &blueprintsButton,
         &clipboardButton,
+        &settingsButton,
         &toolPaneSizeButton,
         &propertiesToggleButton,
         &consoleToggleButton,
@@ -353,14 +356,8 @@ ColorButton(
     SetExitKey(0);
     SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
 
-    blueprintIcon16x = LoadTextureFromImage(MEMORY_IMAGE(ICON_BLUEPRINTS16X));
-    blueprintIcon32x = LoadTextureFromImage(MEMORY_IMAGE(ICON_BLUEPRINTS32X));
-    clipboardIcon16x = LoadTextureFromImage(MEMORY_IMAGE(ICON_CLIPBOARD16X));
-    clipboardIcon32x = LoadTextureFromImage(MEMORY_IMAGE(ICON_CLIPBOARD32X));
-    modeIcons16x = LoadTextureFromImage(MEMORY_IMAGE(ICONS_MODE16X));
-    modeIcons32x = LoadTextureFromImage(MEMORY_IMAGE(ICONS_MODE32X));
-    gateIcons16x = LoadTextureFromImage(MEMORY_IMAGE(ICONS_GATE16X));
-    gateIcons32x = LoadTextureFromImage(MEMORY_IMAGE(ICONS_GATE32X));
+    iconSheet16x = LoadTextureFromImage(MEMORY_IMAGE(ICONS16X));
+    iconSheet32x = LoadTextureFromImage(MEMORY_IMAGE(ICONS32X));
 
     activeTab = 0;
     tabs.push_back(new Tab(this, "Unnamed graph"));
@@ -387,14 +384,8 @@ Window::~Window()
     if (!!overlay)
         delete overlay;
 
-    UnloadTexture(blueprintIcon16x);
-    UnloadTexture(blueprintIcon32x);
-    UnloadTexture(clipboardIcon16x);
-    UnloadTexture(clipboardIcon32x);
-    UnloadTexture(modeIcons16x);
-    UnloadTexture(modeIcons32x);
-    UnloadTexture(gateIcons16x);
-    UnloadTexture(gateIcons32x);
+    UnloadTexture(iconSheet16x);
+    UnloadTexture(iconSheet32x);
 
     CloseWindow();
 }
@@ -523,14 +514,15 @@ void Window::SetMode(Mode newMode)
                 overlay = nullptr;
                 break;
 
-            case Mode::PEN:         overlay = new PenTool; break;
-            case Mode::EDIT:        overlay = new EditTool; break;
-            case Mode::ERASE:       overlay = new EraseTool; break;
-            case Mode::INTERACT:    overlay = new InteractTool; break;
+            case Mode::PEN:         overlay = new PenTool;       break;
+            case Mode::EDIT:        overlay = new EditTool;      break;
+            case Mode::ERASE:       overlay = new EraseTool;     break;
+            case Mode::INTERACT:    overlay = new InteractTool;  break;
 
-            case Mode::PASTE:       overlay = new PasteOverlay; break;
+            case Mode::PASTE:       overlay = new PasteOverlay;  break;
 
             case Mode::BP_SELECT:   overlay = new BlueprintMenu; break;
+            case Mode::SETTINGS:    overlay = new SettingMenu;   break;
             }
         }
         else // Mode is basic; no overlay
@@ -1285,26 +1277,26 @@ void Window::ReloadConfig()
     case 1:
         for (IconButton& b : modeButtons)
         {
-            b.textureSheet = &modeIcons16x;
+            b.textureSheet = &iconSheet16x;
         }
         for (IconButton& b : gateButtons)
         {
-            b.textureSheet = &gateIcons16x;
+            b.textureSheet = &iconSheet16x;
         }
-        blueprintsButton.textureSheet = &blueprintIcon16x;
-        clipboardButton.textureSheet = &clipboardIcon16x;
+        blueprintsButton.textureSheet = &iconSheet16x;
+        clipboardButton.textureSheet = &iconSheet16x;
         break;
     case 2:
         for (IconButton& b : modeButtons)
         {
-            b.textureSheet = &modeIcons32x;
+            b.textureSheet = &iconSheet32x;
         }
         for (IconButton& b : gateButtons)
         {
-            b.textureSheet = &gateIcons32x;
+            b.textureSheet = &iconSheet32x;
         }
-        blueprintsButton.textureSheet = &blueprintIcon32x;
-        clipboardButton.textureSheet = &clipboardIcon32x;
+        blueprintsButton.textureSheet = &iconSheet32x;
+        clipboardButton.textureSheet = &iconSheet32x;
         break;
     }
 
@@ -1535,6 +1527,8 @@ void Window::ReloadToolPane()
         paramButtons[8].relativePos         = IVec2(1, 8);
         paramButtons[9].relativePos         = IVec2(2, 8);
 
+        settingsButton.relativePos          = IVec2(1, 13);
+
         toolPaneSizeButton.buttonText = "-";
     }
     else
@@ -1567,6 +1561,10 @@ void Window::ReloadToolPane()
         {
             paramButtons[j].relativePos = IVec2(0, i++);
         }
+
+        i++;
+
+        settingsButton.relativePos = IVec2(0, i++);
 
         toolPaneSizeButton.buttonText = "+";
     }
