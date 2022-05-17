@@ -173,7 +173,7 @@ void Tab::UpdateCamera()
 {
 	camera.offset = owningWindow->WindowExtents() / 2;
 
-	if (GetMouseWheelMove() > 0 && camera.zoom < 2.0f)
+	if (GetMouseWheelMove() > 0 && camera.zoom < 4.0f)
 		camera.zoom *= 2;
 
 	else if (GetMouseWheelMove() < 0 && camera.zoom > 0.125f)

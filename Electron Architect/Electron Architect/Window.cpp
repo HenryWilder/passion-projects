@@ -618,6 +618,7 @@ void Window::ClearOverlayMode()
 
 void Window::IncrementTick()
 {
+
     ++tickFrame;
     tickFrame %= framesPerTick;
     tickThisFrame = tickFrame == 0;
@@ -633,20 +634,7 @@ void Window::UpdateCursorPos()
         cursorPos = cursorUIPos;
 
     // Snap
-    cursorPos /= g_gridSize;
-    cursorPos *= g_gridSize;
-    {
-        constexpr int halfgrid = g_gridSize / 2;
-        if (cursorPos.x < 0)
-            cursorPos.x -= halfgrid;
-        else
-            cursorPos.x += halfgrid;
-
-        if (cursorPos.y < 0)
-            cursorPos.y -= halfgrid;
-        else
-            cursorPos.y += halfgrid;
-    }
+    cursorPos = IVec2(std::roundf((float)cursorPos.x / (float)g_gridSize), std::roundf((float)cursorPos.y / (float)g_gridSize)) * g_gridSize;
 
     b_cursorMoved = cursorPosPrev != cursorPos;
 }
@@ -975,11 +963,11 @@ void Window::DrawGrid(int gridSize) const
     if (!tabs.empty())
     {
         Vector2 start = GetScreenToWorld2D({ 0,0 }, CurrentTab().camera);
-        start.x = std::floor(start.x / (float)gridSize) * (float)gridSize;
-        start.y = std::floor(start.y / (float)gridSize) * (float)gridSize;
+        start.x = std::floor(start.x / (float)gridSize) * (float)gridSize - gridSize / 2;
+        start.y = std::floor(start.y / (float)gridSize) * (float)gridSize - gridSize / 2;
         Vector2 end = GetScreenToWorld2D({ (float)windowWidth, (float)windowHeight }, CurrentTab().camera);
-        end.x = std::ceil(end.x / (float)gridSize) * (float)gridSize;
-        end.y = std::ceil(end.y / (float)gridSize) * (float)gridSize;
+        end.x = std::ceil(end.x / (float)gridSize) * (float)gridSize + gridSize / 2;
+        end.y = std::ceil(end.y / (float)gridSize) * (float)gridSize + gridSize / 2;
         Rectangle bounds = { start.x, start.y, end.x - start.x, end.y - start.y };
 
         // "If the number of world pixels compacted into a single screen pixel equal or exceed the pixels between gridlines"
