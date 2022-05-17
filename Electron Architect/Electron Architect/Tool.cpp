@@ -131,9 +131,9 @@ void PenTool::Update(Window& window, bool allowHover)
 
                 // Reverse wire direction when holding ctrl
                 if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL))
-                    nodes = { oldNode, newNode };
-                else
                     nodes = { newNode, oldNode };
+                else
+                    nodes = { oldNode, newNode };
 
                 window.CurrentTab().graph->CreateWire(nodes.first, nodes.second, window.currentWireElbowConfig);
             }
