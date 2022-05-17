@@ -555,5 +555,27 @@ inline Blueprint nativeBlueprints[] =
             WireBP(035, 025, ElbowConfig::diagonalA),
             WireBP(036, 026, ElbowConfig::diagonalA),
             WireBP(037, 027, ElbowConfig::diagonalA),
+
+            WireBP(020, 060, ElbowConfig::diagonalB),
+            WireBP(021, 060, ElbowConfig::diagonalB),
+            WireBP(022, 060, ElbowConfig::diagonalB),
+            WireBP(023, 060, ElbowConfig::diagonalB),
+            WireBP(024, 060, ElbowConfig::diagonalB),
+            WireBP(025, 060, ElbowConfig::diagonalB),
+            WireBP(026, 060, ElbowConfig::diagonalB),
+            WireBP(027, 060, ElbowConfig::diagonalB),
+
+            WireBP(050, 063, ElbowConfig::diagonalB),
+            WireBP(051, 063, ElbowConfig::diagonalB),
+            WireBP(052, 063, ElbowConfig::diagonalB),
+            WireBP(053, 063, ElbowConfig::diagonalB),
+            WireBP(054, 063, ElbowConfig::diagonalB),
+            WireBP(055, 063, ElbowConfig::diagonalB),
+            WireBP(056, 063, ElbowConfig::diagonalB),
+            WireBP(057, 063, ElbowConfig::diagonalB),
+
+            WireBP(060, 061, ElbowConfig::vertical),
+            WireBP(063, 061, ElbowConfig::vertical),
+            WireBP(061, 062, ElbowConfig::vertical),
         }),
 };
