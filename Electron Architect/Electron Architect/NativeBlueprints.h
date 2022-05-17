@@ -5,43 +5,36 @@
 inline Blueprint nativeBlueprints[] =
 {
     Blueprint(
-        "NAND Gate",
-        // Nodes
-        {
-            NodeBP(true, Gate::AND,  IVec2(0,0) * g_gridSize),
-            NodeBP(true, Gate::NOR,  IVec2(1,0) * g_gridSize),
-        },
-        // Wires
-        {
-            WireBP(0, 1, ElbowConfig::horizontal),
-        }),
-    Blueprint(
-        "XNOR Gate",
-        // Nodes
-        {
-            NodeBP(true, Gate::XOR,  IVec2(0,0) * g_gridSize),
-            NodeBP(true, Gate::NOR,  IVec2(1,0) * g_gridSize),
-        },
-        // Wires
-        {
-            WireBP(0, 1, ElbowConfig::horizontal),
-        }),
-    Blueprint(
         "Switch",
-        // Nodes
         {
             NodeBP("In",        true, Gate::OR,  IVec2(0,0)* g_gridSize),
             NodeBP("Interface", true, Gate::OR,  IVec2(1,0)* g_gridSize),
             NodeBP("Out",       true, Gate::AND, IVec2(2,0)* g_gridSize),
         },
-        // Wires
         {
             WireBP(0, 2, ElbowConfig::horizontal),
             WireBP(1, 2, ElbowConfig::horizontal),
         }),
+
+    Blueprint(
+        "Basic Circuit",
+        {
+            NodeBP("Power cell", false, Gate::BATTERY, IVec2(0,3)* g_gridSize),
+            NodeBP("Switch state controller", true, Gate::OR, IVec2(2,0)* g_gridSize),
+            NodeBP("Switch interface", false, Gate::AND, IVec2(2,1)* g_gridSize),
+            NodeBP("Lamp", false, Gate::LED, 4, IVec2(4,3)* g_gridSize),
+            NodeBP(false, Gate::OR, IVec2(2,5)* g_gridSize),
+        },
+        {
+            WireBP(0, 2, ElbowConfig::horizontal),
+            WireBP(1, 2, ElbowConfig::vertical),
+            WireBP(2, 3, ElbowConfig::vertical),
+            WireBP(3, 4, ElbowConfig::horizontal),
+            WireBP(4, 0, ElbowConfig::vertical),
+        }),
+
     Blueprint(
         "Gated SR Latch",
-        // Nodes
         {
             NodeBP("Enable", true, Gate::NOR, IVec2(0,1) * g_gridSize), // NOR instead of OR to prevent uninitialized-flicker
 
@@ -59,7 +52,6 @@ inline Blueprint nativeBlueprints[] =
             NodeBP("Q", false, Gate::NOR, IVec2(4,0)* g_gridSize),
             NodeBP("Q (Out)", true, Gate::NOR, IVec2(4,1)* g_gridSize),
         },
-        // Wires
         {
             WireBP(0, 2, ElbowConfig::diagonalA),
             WireBP(1, 3, ElbowConfig::diagonalA),
@@ -74,9 +66,51 @@ inline Blueprint nativeBlueprints[] =
             WireBP(8, 7, ElbowConfig::diagonalA),
             WireBP(9, 6, ElbowConfig::diagonalA),
         }),
+
     Blueprint(
-        "1-to-2 Byte Multiplexer",
-        // Nodes
+        "2-to-1 Bit Multiplexer (MUX)",
+        {
+            NodeBP("I0", true, Gate::OR, IVec2(0,0) * g_gridSize),
+            NodeBP(false, Gate::AND, IVec2(1,0) * g_gridSize),
+            NodeBP("I1", true, Gate::OR, IVec2(0,1) * g_gridSize),
+            NodeBP(false, Gate::AND, IVec2(1,1) * g_gridSize),
+            NodeBP("O", true, Gate::OR, IVec2(2,1) * g_gridSize),
+            NodeBP("A", true, Gate::OR, IVec2(1,2)* g_gridSize),
+            NodeBP("A'", false, Gate::NOR, IVec2(0,2)* g_gridSize),
+        },
+        {
+            WireBP(0, 1, ElbowConfig::horizontal),
+            WireBP(2, 3, ElbowConfig::horizontal),
+            WireBP(1, 4, ElbowConfig::diagonalA),
+            WireBP(3, 4, ElbowConfig::diagonalA),
+            WireBP(5, 5, ElbowConfig::horizontal),
+            WireBP(5, 1, ElbowConfig::vertical),
+            WireBP(6, 3, ElbowConfig::diagonalB),
+        }),
+
+    Blueprint(
+        "1-to-2 Bit Multiplexer (MUX)",
+        {
+            NodeBP("O0", true, Gate::OR, IVec2(2,0) * g_gridSize),
+            NodeBP(false, Gate::AND, IVec2(1,0) * g_gridSize),
+            NodeBP("O1", true, Gate::OR, IVec2(2,1) * g_gridSize),
+            NodeBP(false, Gate::AND, IVec2(1,1) * g_gridSize),
+            NodeBP("I", true, Gate::OR, IVec2(0,1) * g_gridSize),
+            NodeBP("A", true, Gate::OR, IVec2(1,2)* g_gridSize),
+            NodeBP("A'", false, Gate::NOR, IVec2(2,2)* g_gridSize),
+        },
+        {
+            WireBP(1, 0, ElbowConfig::horizontal),
+            WireBP(3, 2, ElbowConfig::horizontal),
+            WireBP(4, 1, ElbowConfig::diagonalB),
+            WireBP(4, 3, ElbowConfig::diagonalB),
+            WireBP(5, 6, ElbowConfig::horizontal),
+            WireBP(5, 1, ElbowConfig::vertical),
+            WireBP(6, 3, ElbowConfig::diagonalB),
+        }),
+
+    Blueprint(
+        "2-to-1 Byte Multiplexer (MUX)",
         {
             NodeBP("I0_1", true, Gate::OR, IVec2(0,000) * g_gridSize),
             NodeBP("I0_2", true, Gate::OR, IVec2(0,001) * g_gridSize),
@@ -183,9 +217,9 @@ inline Blueprint nativeBlueprints[] =
             WireBP(051, 036, ElbowConfig::diagonalB),
             WireBP(051, 037, ElbowConfig::diagonalB),
         }),
+
     Blueprint(
-        "2-to-1 Byte Multiplexer",
-        // Nodes
+        "1-to-2 Byte Multiplexer (MUX)",
         {
             NodeBP("O0_1", true, Gate::OR, IVec2(2,000) * g_gridSize),
             NodeBP("O0_2", true, Gate::OR, IVec2(2,001) * g_gridSize),
@@ -292,33 +326,31 @@ inline Blueprint nativeBlueprints[] =
             WireBP(051, 036, ElbowConfig::diagonalB),
             WireBP(051, 037, ElbowConfig::diagonalB),
         }),
+
     Blueprint(
         "Half-Adder",
-        // Nodes
         {
             NodeBP("B", true, Gate::OR,  IVec2(0,1)* g_gridSize),
             NodeBP("A", true, Gate::OR,  IVec2(0,0)* g_gridSize),
             NodeBP("Sum", true, Gate::XOR, IVec2(1,0)* g_gridSize),
             NodeBP("Carry", true, Gate::AND, IVec2(1,1)* g_gridSize),
         },
-        // Wires
         {
             WireBP(0, 2, ElbowConfig::horizontal),
             WireBP(1, 2, ElbowConfig::horizontal),
             WireBP(0, 3, ElbowConfig::vertical),
             WireBP(1, 3, ElbowConfig::vertical),
         }),
+
     Blueprint(
         "Half-Subtractor",
-        // Nodes
         {
-            NodeBP("A", true,  Gate::OR,  IVec2(0,0)* g_gridSize), // A
-            NodeBP("B", true,  Gate::OR,  IVec2(0,1)* g_gridSize), // B
+            NodeBP("A", true,  Gate::OR,  IVec2(0,0)* g_gridSize),
+            NodeBP("B", true,  Gate::OR,  IVec2(0,1)* g_gridSize),
             NodeBP(false, Gate::NOR, IVec2(1,1) * g_gridSize),
-            NodeBP("Difference", true,  Gate::XOR, IVec2(2,0) * g_gridSize), // Difference
-            NodeBP("Borrow", true,  Gate::AND, IVec2(2,1) * g_gridSize), // Borrow
+            NodeBP("Difference", true,  Gate::XOR, IVec2(2,0) * g_gridSize),
+            NodeBP("Borrow", true,  Gate::AND, IVec2(2,1) * g_gridSize),
         },
-        // Wires
         {
             WireBP(0, 2, ElbowConfig::vertical),
             WireBP(0, 3, ElbowConfig::horizontal),
@@ -326,9 +358,9 @@ inline Blueprint nativeBlueprints[] =
             WireBP(1, 4, ElbowConfig::vertical),
             WireBP(2, 4, ElbowConfig::vertical),
         }),
+
     Blueprint(
         "Full-Adder",
-        // Nodes
         {
             NodeBP("A", true,  Gate::OR,  IVec2(0,0)* g_gridSize),
             NodeBP("B", true,  Gate::OR,  IVec2(0,1)* g_gridSize),
@@ -339,7 +371,6 @@ inline Blueprint nativeBlueprints[] =
             NodeBP(false, Gate::AND, IVec2(2,1) * g_gridSize),
             NodeBP("Carry Out", true,  Gate::OR,  IVec2(3,1)* g_gridSize),
         },
-        // Wires
         {
             WireBP(0, 3, ElbowConfig::horizontal),
             WireBP(1, 3, ElbowConfig::horizontal),
@@ -352,9 +383,9 @@ inline Blueprint nativeBlueprints[] =
             WireBP(6, 7, ElbowConfig::vertical),
             WireBP(4, 7, ElbowConfig::horizontal),
         }),
+
     Blueprint(
         "Full-Subtractor",
-        // Nodes
         {
             NodeBP("A", true,  Gate::OR,  IVec2(0,0)* g_gridSize),
             NodeBP("B", true,  Gate::OR,  IVec2(0,1)* g_gridSize),
@@ -367,7 +398,6 @@ inline Blueprint nativeBlueprints[] =
             NodeBP(false, Gate::NOR, IVec2(3,0) * g_gridSize),
             NodeBP("Borrow Out", true,  Gate::OR,  IVec2(4,1)* g_gridSize),
         },
-        // Wires
         {
             WireBP(0, 3, ElbowConfig::vertical),
             WireBP(1, 5, ElbowConfig::vertical),
@@ -381,5 +411,31 @@ inline Blueprint nativeBlueprints[] =
             WireBP(4, 6, ElbowConfig::vertical),
             WireBP(5, 9, ElbowConfig::vertical),
             WireBP(7, 9, ElbowConfig::vertical),
+        }),
+
+    Blueprint(
+        "Bit Comparator",
+        {
+            NodeBP("A",        true, Gate::OR,  IVec2(0,0) * g_gridSize),
+            NodeBP("B",        true, Gate::OR,  IVec2(0,2) * g_gridSize),
+            NodeBP(           false, Gate::NOR, IVec2(1,0) * g_gridSize),
+            NodeBP(           false, Gate::NOR, IVec2(1,2) * g_gridSize),
+            NodeBP("C (A<B)", false, Gate::AND, IVec2(2,0) * g_gridSize),
+            NodeBP("E (A>B)", false, Gate::AND, IVec2(2,2) * g_gridSize),
+            NodeBP(            true, Gate::XOR, IVec2(3,1) * g_gridSize),
+            NodeBP("D (A=B)",  true, Gate::NOR, IVec2(4,1) * g_gridSize),
+        },
+        {
+            WireBP(0, 2, ElbowConfig::horizontal),
+            WireBP(2, 4, ElbowConfig::vertical),
+            WireBP(0, 5, ElbowConfig::diagonalA),
+            WireBP(5, 6, ElbowConfig::diagonalA),
+
+            WireBP(1, 3, ElbowConfig::horizontal),
+            WireBP(3, 5, ElbowConfig::vertical),
+            WireBP(1, 4, ElbowConfig::diagonalA),
+            WireBP(4, 6, ElbowConfig::diagonalA),
+
+            WireBP(6, 7, ElbowConfig::horizontal),
         }),
 };
