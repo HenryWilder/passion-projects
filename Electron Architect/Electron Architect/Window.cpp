@@ -1271,34 +1271,22 @@ void Window::ReloadConfig()
         uiScale = 1;
 
     IconButton::g_width = 16 * uiScale;
+
+    Texture2D* sheet;
     switch (uiScale)
     {
     default:
-        break;
     case 1:
-        for (IconButton& b : modeButtons)
-        {
-            b.textureSheet = &iconSheet16x;
-        }
-        for (IconButton& b : gateButtons)
-        {
-            b.textureSheet = &iconSheet16x;
-        }
-        blueprintsButton.textureSheet = &iconSheet16x;
-        clipboardButton.textureSheet = &iconSheet16x;
+        sheet = &iconSheet16x;
         break;
     case 2:
-        for (IconButton& b : modeButtons)
-        {
-            b.textureSheet = &iconSheet32x;
-        }
-        for (IconButton& b : gateButtons)
-        {
-            b.textureSheet = &iconSheet32x;
-        }
-        blueprintsButton.textureSheet = &iconSheet32x;
-        clipboardButton.textureSheet = &iconSheet32x;
+        sheet = &iconSheet32x;
         break;
+    }
+    for (Button* b : allButtons)
+    {
+        if (IconButton* ib = dynamic_cast<IconButton*>(b); !!ib)
+            ib->textureSheet = sheet;
     }
 
     ReloadPanes();
