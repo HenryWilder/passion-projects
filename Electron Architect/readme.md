@@ -14,4 +14,11 @@
 - Triangle with color dot = lamp ![image](https://user-images.githubusercontent.com/74995093/169155161-87483002-968f-4863-a4de-8679e7b684e8.png)
 
 ![image](https://user-images.githubusercontent.com/74995093/169155331-54fa60ac-84b6-41f9-8fe4-d20953214213.png)
+#### Symbol vs icon comparison
+![image](https://user-images.githubusercontent.com/74995093/169156036-df5ad545-1405-4613-8da5-c34b7c586f2c.png)
+![image](https://user-images.githubusercontent.com/74995093/169156352-eabbadc5-3cd9-4f09-86be-182437074096.png)
+
+![image](https://user-images.githubusercontent.com/74995093/169156194-3f349d09-e4df-4c5d-8116-4251c4e3a1be.png)
+![image](https://user-images.githubusercontent.com/74995093/169156406-0d2338ff-843b-4755-9d66-23ac0c436af0.png)
+
 
