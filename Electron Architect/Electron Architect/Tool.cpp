@@ -546,8 +546,8 @@ void EditTool::Update(Window& window, bool allowHover)
             {
                 selectionWIP = false;
                 if (!!window.CurrentTab().GetLastSelectionRec() &&
-                    (window.CurrentTab().GetLastSelectionRec()->w == 0 ||
-                    window.CurrentTab().GetLastSelectionRec()->h == 0))
+                     (window.CurrentTab().GetLastSelectionRec()->w == 0 ||
+                      window.CurrentTab().GetLastSelectionRec()->h == 0))
                 {
                     window.CurrentTab().PopSelectionRec();
                 }
@@ -630,21 +630,20 @@ void EditTool::Draw(Window& window)
     {
         bool actuallyBridgeable = window.CurrentTab().IsSelectionBridgeable();
 
-        bool previewBridgeable = 
-            actuallyBridgeable ||
-            (window.selectionPreview && selectionWIP &&
-            window.CurrentTab().SelectionRectCount() == 2 &&
-            window.CurrentTab().SelectionExists() &&
-                ((window.CurrentTab().selection.size() == 1 && selectionPreviewNodes.size() > 1) ||
-                 (window.CurrentTab().selection.size() > 1 && selectionPreviewNodes.size() == 1) ||
-                 (window.CurrentTab().selection.size() == selectionPreviewNodes.size())));
+        bool previewBridgeable = actuallyBridgeable; // Todo: define preview bridge
 
         if (previewBridgeable) [[unlikely]]
         {
-            DrawRectangleIRect(window.CurrentTab().SelectionRecs()[0], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
-            DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[0], UIColor(UIColorID::UI_COLOR_INPUT));
-            DrawRectangleIRect(window.CurrentTab().SelectionRecs()[1], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
-            DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[1], UIColor(UIColorID::UI_COLOR_OUTPUT));
+            for (size_t i = 0; i < window.CurrentTab().SelectionRecs().size(); ++i)
+            {
+                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[i], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
+                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[i], UIColor(UIColorID::UI_COLOR_INPUT));
+            }
+            for (size_t i = 0; i < window.CurrentTab().SelectionRecs().size(); ++i)
+            {
+                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[i], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
+                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[i], UIColor(UIColorID::UI_COLOR_OUTPUT));
+            }
 
             if (actuallyBridgeable)
                 window.CurrentTab().DrawBridgePreview(window.currentWireElbowConfig, UIColor(UIColorID::UI_COLOR_AVAILABLE));

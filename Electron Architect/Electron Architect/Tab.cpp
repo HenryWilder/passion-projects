@@ -17,70 +17,73 @@ Tab::~Tab()
 
 void Tab::UpdateBridgeCache()
 {
-	bridgeCache[0].clear();
-	bridgeCache[1].clear();
+	bridgeCache.clear();
 
-	// Must be exactly two rectangles
-	if (selectionRecs.size() != 2)
+	// Must be at two rectangles
+	if (selectionRecs.size() < 2)
 		return;
 
 	owningWindow->Log(LogType::attempt, "Updating bridge cache");
 
-	size_t cacheSizes[2] = { 0,0 };
+	std::vector<size_t> cacheSizes;
+	cacheSizes.resize(selectionRecs.size(), 0);
 	// Rule checks and cache size counting
 	{
 		size_t halfSelectionSize = selection.size() / 2;
 		for (Node* node : selection)
 		{
-			if (InBoundingBox(selectionRecs[0], node->GetPosition()))
-				cacheSizes[0]++;
-			else
+			for (size_t i = 0; i < selectionRecs.size(); ++i)
 			{
-				// Expected behavior check
-				if (!InBoundingBox(selectionRecs[1], node->GetPosition())) [[unlikely]]
+				if (InBoundingBox(selectionRecs[i], node->GetPosition()))
 				{
-					owningWindow->Log(LogType::warning, "Node in selection was in neither selection rectangle");
-					return;
-				}
-
-				cacheSizes[1]++;
-
-				// Confirmed neither is a single node, and one of them has more than half of the nodes
-				// (optimization)
-				if (cacheSizes[0] > 1 &&
-					cacheSizes[1] > 1 &&
-					(cacheSizes[0] > halfSelectionSize ||
-					 cacheSizes[1] > halfSelectionSize))
-					[[unlikely]]
-				{
-					owningWindow->Log(LogType::success, "Early exit");
-					return;
+					++cacheSizes[i];
+					break;
 				}
 			}
 		}
 
-		if (!(cacheSizes[0] > 0 && cacheSizes[1] > 0) ||
-		   (!(cacheSizes[0] == 1 && cacheSizes[1] > 1) &&
-			!(cacheSizes[1] == 1 && cacheSizes[0] > 1) &&
-			!(cacheSizes[0] == cacheSizes[1])))
+		if (!(cacheSizes[0] == 1 || cacheSizes.back() == 1))
 		{
-			owningWindow->Log(LogType::success, "No bridge can be made");
-			owningWindow->Log(LogType::info, "Selection 1 size: " + std::to_string(cacheSizes[0]));
-			owningWindow->Log(LogType::info, "Selection 2 size: " + std::to_string(cacheSizes[1]));
-			return;
+			size_t size1 = cacheSizes[0];
+			bool invalid = false;
+			for (size_t size : cacheSizes)
+			{
+				if (size != size1)
+				{
+					invalid = true;
+					break;
+				}
+			}
+			if (invalid)
+			{
+				owningWindow->Log(LogType::success, "No bridge can be made.");
+				for (size_t i = 0; i < cacheSizes.size(); ++i)
+				{
+					owningWindow->Log(LogType::info, "Selection " + std::to_string(i) + " size = " + std::to_string(cacheSizes[i]));
+				}
+				return;
+			}
 		}
 	}
 
 	// Produce cache
 	{
-		bridgeCache[0].reserve(cacheSizes[0]);
-		bridgeCache[1].reserve(cacheSizes[1]);
+		bridgeCache.reserve(cacheSizes.size());
+		for (size_t i = 0; i < cacheSizes.size(); ++i)
+		{
+			bridgeCache.push_back({});
+			bridgeCache[i].reserve(cacheSizes[i]);
+		}
 		for (Node* node : selection)
 		{
-			if (InBoundingBox(selectionRecs[0], node->GetPosition()))
-				bridgeCache[0].push_back(node);
-			else
-				bridgeCache[1].push_back(node);
+			for (size_t i = 0; i < selectionRecs.size(); ++i)
+			{
+				if (InBoundingBox(selectionRecs[i], node->GetPosition()))
+				{
+					bridgeCache[i].push_back(node);
+					break;
+				}
+			}
 		}
 
 		auto sortNodes = [](std::vector<Node*>& nodeVec) {
@@ -91,10 +94,17 @@ void Tab::UpdateBridgeCache()
 				});
 		};
 
-		std::thread a(sortNodes, std::ref(bridgeCache[0]));
-		std::thread b(sortNodes, std::ref(bridgeCache[1]));
-		a.join();
-		b.join();
+		std::vector<std::thread> sorterThreads;
+		sorterThreads.reserve(bridgeCache.size());
+		for (size_t i = 0; i < bridgeCache.size(); ++i)
+		{
+			sorterThreads.emplace_back(sortNodes, std::ref(bridgeCache[i]));
+		}
+		for (size_t i = 0; i < bridgeCache.size(); ++i)
+		{
+			sorterThreads[i].join();
+		}
+		sorterThreads.clear();
 	}
 	owningWindow->Log(LogType::success, "Bridge cache updated and valid");
 }
@@ -103,29 +113,37 @@ void Tab::BridgeSelection(ElbowConfig elbow)
 {
 	_ASSERT_EXPR(IsSelectionBridgeable(), L"Selection is not bridgable");
 
-	if (bridgeCache[0].size() == bridgeCache[1].size())
+	if (bridgeCache[0].size() == 1)
 	{
-		for (size_t i = 0; i < bridgeCache[0].size(); ++i)
+		for (size_t i = 1; i < bridgeCache.size(); ++i)
 		{
-			graph->CreateWire(bridgeCache[0][i], bridgeCache[1][i], elbow);
+			for (size_t j = 0; j < bridgeCache[i].size(); ++j)
+			{
+				graph->CreateWire(bridgeCache[0].back(), bridgeCache[i][j], elbow);
+			}
 		}
 	}
-	else if (bridgeCache[0].size() == 1)
+	else if (bridgeCache.back().size() == 1)
 	{
-		for (size_t i = 0; i < bridgeCache[1].size(); ++i)
+		for (size_t i = 0; i < bridgeCache.size() - 1; ++i)
 		{
-			graph->CreateWire(bridgeCache[0][0], bridgeCache[1][i], elbow);
+			for (size_t j = 0; j < bridgeCache[i].size(); ++j)
+			{
+				graph->CreateWire(bridgeCache[i][j], bridgeCache.back().back(), elbow);
+			}
 		}
 	}
-	else if (bridgeCache[1].size() == 1)
+	else // Already know it passed the "IsSelectionBridgeable()" checks
 	{
-		for (size_t i = 0; i < bridgeCache[0].size(); ++i)
+		for (size_t i = 1; i < bridgeCache[0].size() - 1; ++i)
 		{
-			graph->CreateWire(bridgeCache[0][i], bridgeCache[1][0], elbow);
+			for (size_t j = 0; j < bridgeCache[i].size(); ++j)
+			{
+				graph->CreateWire(bridgeCache[i - 1][j], bridgeCache[i][j], elbow);
+			}
 		}
 	}
-	bridgeCache[0].clear();
-	bridgeCache[1].clear();
+	bridgeCache.clear();
 }
 
 void Tab::DrawBridgePreview(ElbowConfig elbow, Color color) const

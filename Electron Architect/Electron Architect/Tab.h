@@ -19,7 +19,7 @@ private:
 	// Note: Make sure not to modify this without updating the bridge cache!
 	std::vector<IRect> selectionRecs;
 public:
-	std::vector<Node*> bridgeCache[2];
+	std::vector<std::vector<Node*>> bridgeCache;
 
 	inline bool SelectionExists() const
 	{
@@ -66,14 +66,13 @@ public:
 	{
 		selection.clear();
 		selectionRecs.clear();
-		bridgeCache[0].clear();
-		bridgeCache[1].clear();
+		bridgeCache.clear();
 	}
 
 	void UpdateBridgeCache();
 	inline bool IsSelectionBridgeable() const
 	{
-		return !bridgeCache[0].empty();
+		return !bridgeCache.empty();
 	}
 	void BridgeSelection(ElbowConfig elbow);
 	void DrawBridgePreview(ElbowConfig elbow, Color color) const;
