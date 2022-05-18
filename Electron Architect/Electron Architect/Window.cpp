@@ -495,6 +495,9 @@ void Window::SetMode(Mode newMode)
         (base ? ModeName(base->GetMode()) : "null") + "; overlay: " +
         (overlay ? ModeName(overlay->GetMode()) : "null") + " } to " + ModeName(newMode));
 
+    if (!!base && base->GetMode() == Mode::EDIT && TypeOfMode(newMode) == ModeType::Basic && newMode != Mode::EDIT)
+        ClearSelection();
+
     b_cursorMoved = true;
 
     if (!!overlay ? newMode != overlay->GetMode() : TypeOfMode(newMode) != ModeType::Basic)

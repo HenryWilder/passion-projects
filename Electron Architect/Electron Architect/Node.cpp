@@ -40,7 +40,7 @@ void Node::SetY(int y)
 
 bool Node::HasName() const
 {
-    return !m_name.empty();
+    return !m_name.empty() && m_name[0] != '\0';
 }
 
 const std::string& Node::GetName() const

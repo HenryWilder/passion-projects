@@ -729,7 +729,10 @@ void EditTool::DrawProperties(Window& window)
     if (window.SelectionExists() && window.CurrentTab().SelectionSize() > 1)
         window.PushPropertySection_Selection("Selection", window.CurrentTab().selection);
     else if (window.CurrentTab().SelectionSize() == 1)
+    {
+        _ASSERT_EXPR(!!window.CurrentTab().selection[0], L"Cannot show properties for null");
         window.PushPropertySection_Node("Selected node", window.CurrentTab().selection[0]);
+    }
     // Node hover stats
     window.PushPropertySection_Node("Hovered node", window.hoveredNode);
     // Joint hover stats
