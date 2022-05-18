@@ -104,7 +104,9 @@ int main()
 
         window.UpdateCamera();
 
-        window.CheckHotkeys();
+        // Ignore hotkeys while renaming groups
+        if (!(window.GetBaseMode() == Mode::EDIT && dynamic_cast<EditTool*>(window.GetBaseTool())->renamingGroup))
+            window.CheckHotkeys();
 
         // UI buttons
         if (window.GetModeType() == ModeType::Basic && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))

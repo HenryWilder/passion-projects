@@ -115,6 +115,16 @@ public:
 
     void DrawUIIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint) const;
 
+    inline Tool* GetBaseTool()
+    {
+        return base;
+    }
+    inline Tool* GetTool()
+    {
+        if (!!overlay)
+            return overlay;
+        return base;
+    }
     Mode GetBaseMode();
     Mode GetMode();
     ModeType GetModeType();
