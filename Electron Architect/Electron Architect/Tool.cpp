@@ -941,9 +941,12 @@ void InteractTool::Draw(Window& window)
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
     window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
+    // The set of all start nodes contains the set of all interactive nodes
+    // The set of all interactive nodes does not contain all start nodes
     for (const Node* node : window.CurrentTab().graph->GetStartNodes())
     {
-        node->DrawStateless(UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        if (node->IsOutputOnly())
+            node->DrawStateless(UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 
     if (!!window.hoveredNode)
