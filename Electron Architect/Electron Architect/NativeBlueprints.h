@@ -34,9 +34,28 @@ inline Blueprint nativeBlueprints[] =
         }),
 
     Blueprint(
+        "SR Latch",
+        {
+            NodeBP("Reset", true, Gate::OR, IVec2(0,0) * g_gridSize),
+            NodeBP("Set", true, Gate::OR,  IVec2(0,1)* g_gridSize),
+            NodeBP(false, Gate::OR,  IVec2(1,0) * g_gridSize),
+            NodeBP(false, Gate::OR,  IVec2(1,1) * g_gridSize),
+            NodeBP("Q", false, Gate::NOR, IVec2(2,0)* g_gridSize),
+            NodeBP("Q'", true, Gate::NOR, IVec2(2,1)* g_gridSize),
+        },
+        {
+            WireBP(0, 2, ElbowConfig::horizontal),
+            WireBP(1, 3, ElbowConfig::horizontal),
+            WireBP(2, 4, ElbowConfig::horizontal),
+            WireBP(3, 5, ElbowConfig::horizontal),
+            WireBP(4, 3, ElbowConfig::diagonalA),
+            WireBP(5, 2, ElbowConfig::diagonalA),
+        }),
+        
+    Blueprint(
         "Gated SR Latch",
         {
-            NodeBP("Enable", true, Gate::NOR, IVec2(0,1) * g_gridSize), // NOR instead of OR to prevent uninitialized-flicker
+            NodeBP("Enable", true, Gate::OR, IVec2(0,1) * g_gridSize),
 
             NodeBP("Set", true, Gate::OR,  IVec2(0,0)* g_gridSize),
 
@@ -65,6 +84,41 @@ inline Blueprint nativeBlueprints[] =
             WireBP(7, 9, ElbowConfig::diagonalA),
             WireBP(8, 7, ElbowConfig::diagonalA),
             WireBP(9, 6, ElbowConfig::diagonalA),
+        }),
+
+    Blueprint(
+        "D Latch",
+        {
+            NodeBP("D", true, Gate::OR, IVec2(0,0) * g_gridSize),
+            NodeBP("E", true, Gate::OR, IVec2(0,1) * g_gridSize),
+            NodeBP(false, Gate::AND, IVec2(1,0) * g_gridSize),
+            NodeBP(false, Gate::AND, IVec2(1,1) * g_gridSize),
+            NodeBP(false, Gate::NOR, IVec2(2,0) * g_gridSize),
+            NodeBP(false, Gate::NOR, IVec2(2,1) * g_gridSize),
+            NodeBP(false, Gate::AND, IVec2(3,0) * g_gridSize),
+            NodeBP(false, Gate::AND, IVec2(3,1) * g_gridSize),
+            NodeBP(false, Gate::NOR, IVec2(4,0) * g_gridSize),
+            NodeBP(false, Gate::NOR, IVec2(4,1) * g_gridSize),
+            NodeBP("Q Out", true, Gate::OR, IVec2(5,0) * g_gridSize),
+            NodeBP("Q'", true, Gate::OR, IVec2(5,1) * g_gridSize),
+        },
+        {
+            WireBP(0, 2, ElbowConfig::horizontal),
+            WireBP(1, 3, ElbowConfig::horizontal),
+            WireBP(2, 4, ElbowConfig::horizontal),
+            WireBP(3, 5, ElbowConfig::horizontal),
+            WireBP(4, 6, ElbowConfig::horizontal),
+            WireBP(5, 7, ElbowConfig::horizontal),
+            WireBP(6, 8, ElbowConfig::horizontal),
+            WireBP(7, 9, ElbowConfig::horizontal),
+            WireBP(8, 10, ElbowConfig::horizontal),
+            WireBP(9, 11, ElbowConfig::horizontal),
+
+            WireBP(1, 2, ElbowConfig::diagonalB),
+            WireBP(4, 3, ElbowConfig::diagonalB),
+
+            WireBP(8, 7, ElbowConfig::diagonalB),
+            WireBP(9, 6, ElbowConfig::diagonalB),
         }),
 
     Blueprint(

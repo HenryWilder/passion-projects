@@ -166,6 +166,7 @@ struct BlueprintMenu : public Tool
     void Draw(Window& window) final;
     void DrawProperties(Window& window) final;
 
+    IRect hoveredRec{0};
     Blueprint* hovering;
 };
 

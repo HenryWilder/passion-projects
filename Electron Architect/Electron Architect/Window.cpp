@@ -289,7 +289,7 @@ ColorButton(
     ),
     settingsButton(
         IVec2(),
-        "Settings",
+        "Settings (WIP)",
         "@TODO",
         [this]() { SetMode(Mode::SETTINGS); },
         IVec2(2, 3),

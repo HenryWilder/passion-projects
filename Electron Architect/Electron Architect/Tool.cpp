@@ -44,7 +44,7 @@ const std::string ModeName(Mode mode)
     case Mode::BUTTON: return "Button";
     case Mode::PASTE: return "Paste";
     case Mode::BP_SELECT: return "Blueprint Select";
-    case Mode::SETTINGS: return "Settings";
+    case Mode::SETTINGS: return "Settings (WIP)";
     default:
         _ASSERT_EXPR(false, L"Missing specialization for mode name");
         return "ERROR";
@@ -995,11 +995,12 @@ void BlueprintMenu::Update(Window& window, bool allowHover)
     // Maybe that's not the best idea...
 
     constexpr int halfGrid = g_gridSize / 2;
-    if (window.b_cursorMoved)
+    if (allowHover && !window.CursorInUIBounds(hoveredRec))
     {
         IVec2 pos(0, Button::g_width);
         int maxY = 0; // I know there must be a better algorithm, but this will at least be progress.
         hovering = nullptr;
+        hoveredRec = IRect(0);
         for (Blueprint* bp : window.CurrentTab().graph->GetBlueprints())
         {
             IRect rec = bp->GetSelectionPreviewRect(pos);
@@ -1010,13 +1011,18 @@ void BlueprintMenu::Update(Window& window, bool allowHover)
             }
 
             if (window.CursorInUIBounds(rec))
+            {
                 hovering = bp;
+                hoveredRec = rec;
+                break;
+            }
 
             pos += rec.width;
             int recBottom = rec.y + rec.h;
             maxY = std::max(maxY, recBottom);
         }
-}
+    }
+
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !!hovering)
     {
         window.clipboard = hovering;
