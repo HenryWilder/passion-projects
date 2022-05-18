@@ -928,10 +928,7 @@ void InteractTool::Update(Window& window, bool allowHover)
     else
         window.hoveredNode = window.CurrentTab().graph->FindNodeAtPos(window.cursorPos);
 
-    if (!!window.hoveredNode && !window.hoveredNode->IsOutputOnly())
-        window.hoveredNode = nullptr;
-
-    if (!!window.hoveredNode && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+    if (!!window.hoveredNode && window.hoveredNode->IsInteractive() && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         window.hoveredNode->SetGate(window.hoveredNode->GetGate() == Gate::NOR ? Gate::OR : Gate::NOR);
 
     
@@ -945,11 +942,11 @@ void InteractTool::Draw(Window& window)
     // The set of all interactive nodes does not contain all start nodes
     for (const Node* node : window.CurrentTab().graph->GetStartNodes())
     {
-        if (node->IsOutputOnly())
+        if (node->IsInteractive())
             node->DrawStateless(UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 
-    if (!!window.hoveredNode)
+    if (!!window.hoveredNode && window.hoveredNode->IsInteractive())
     {
         window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_CAUTION), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }

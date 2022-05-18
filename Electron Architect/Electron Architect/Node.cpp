@@ -191,6 +191,11 @@ bool Node::IsPassthrough() const
     return m_gate == Gate::OR && GetInputCount() == 1 && GetOutputCount() > 0;
 }
 
+bool Node::IsInteractive() const
+{
+    return IsOutputOnly() && (m_gate == Gate::OR || m_gate == Gate::NOR);
+}
+
 void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
 {
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
