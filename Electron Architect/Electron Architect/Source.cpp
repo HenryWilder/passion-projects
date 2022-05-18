@@ -87,7 +87,7 @@ int main()
         if (save_thread.joinable())
             save_thread.join();
 
-        if ((GetTime() - lastAutoSaveTime) > 10.0)
+        if ((GetTime() - lastAutoSaveTime) > 60.0)
         {
             lastAutoSaveTime = GetTime();
             save_thread = std::thread(autosave);
