@@ -1,3 +1,4 @@
+#include <thread>
 #include <raylib.h>
 #include <fstream>
 #include <filesystem>
@@ -70,7 +71,10 @@ int main()
         }
     }
 
-    double lastAutoSaveTime = 0;
+    std::atomic_bool saving = false;
+    double lastAutoSaveTime = 0.0;
+
+    std::thread save_thread;
 
     while (!WindowShouldClose())
     {
@@ -78,10 +82,15 @@ int main()
         *   Simulate frame and update variables
         ******************************************/
 
-        if ((GetTime() - lastAutoSaveTime) > 60.0)
+        auto autosave = [&window, &saving]() { saving = true; window.CurrentTab().graph->Save("session.cg"); saving = false; };
+
+        if (save_thread.joinable())
+            save_thread.join();
+
+        if ((GetTime() - lastAutoSaveTime) > 10.0)
         {
-            window.CurrentTab().graph->Save("session.cg");
             lastAutoSaveTime = GetTime();
+            save_thread = std::thread(autosave);
         }
 
         if (IsWindowResized())
@@ -109,14 +118,17 @@ int main()
         }
 
         // Input
-        window.UpdateTool();
+        if (!saving) // Can't risk editing mid-save
+            window.UpdateTool();
 
     EVAL:
         window.cursorPosPrev = window.cursorPos;
         if (window.CurrentTab().graph->IsOrderDirty())
             window.tickThisFrame = !(window.tickFrame = 0);
-        if (window.tickThisFrame)
+        if (window.tickThisFrame && (saving ? !window.CurrentTab().graph->IsOrderDirty() : true))
+        {
             window.CurrentTab().graph->Evaluate();
+        }
 
         /******************************************
         *   Draw the frame
@@ -219,6 +231,11 @@ int main()
                         window.FontSize(),
                         UIColor(UIColorID::UI_COLOR_FOREGROUND),
                         UIColor(UIColorID::UI_COLOR_BACKGROUND));
+
+                if (saving)
+                {
+                    DrawText("Saving...", Button::g_width * 3, Button::g_width, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                }
             }
 
         } EndDrawing();
