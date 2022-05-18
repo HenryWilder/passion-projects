@@ -1,3 +1,4 @@
+#include <regex>
 #include <thread>
 #include <unordered_set>
 #include <fstream>
@@ -759,13 +760,30 @@ void Graph::FindNodesInRect(std::vector<Node*>& result, IRect rec) const
 void Graph::StoreBlueprint(Blueprint* bp)
 {
     Blueprint* copy = new Blueprint(*bp);
-    for (Blueprint* existing : blueprints)
+
+    // Ensure unique name
     {
-        if (existing->name == copy->name)
+        bool exists = false;
+        for (Blueprint* existing : blueprints)
         {
-            copy->name.append(" (1)");
+            if (existing->name == copy->name)
+            {
+                exists = true;
+                break;
+            }
+        }
+        if (exists)
+        {
+            std::regex matchPattern(copy->name + " \\([0-9]+\\)");
+            auto countRule = [&matchPattern](Blueprint* existing)
+            {
+                return std::regex_match(existing->name, matchPattern);
+            };
+            size_t matching = 1 + std::count_if(blueprints.begin(), blueprints.end(), countRule);
+            copy->name.append(" (" + std::to_string(matching) + ")");
         }
     }
+
     blueprints.push_back(copy);
     Log(LogType::success, "Stored blueprint " + copy->name);
 }

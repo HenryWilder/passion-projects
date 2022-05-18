@@ -687,7 +687,7 @@ void Window::SaveBlueprint()
     if (!IsClipboardValid())
         return;
     CurrentTab().graph->StoreBlueprint(clipboard);
-    clipboard->Save();
+    CurrentTab().graph->GetBlueprints().back()->Save();
 }
 
 bool Window::IsClipboardValid() const
