@@ -342,13 +342,13 @@ Wire* Graph::CreateWire(Node* start, Node* end, ElbowConfig elbowConfig)
     {
         _ASSERT_EXPR(false, L"Cannot wire to null");
         Log(LogType::error, "Cannot wire to null");
-        exit(1);
+        return nullptr;
     }
     if (start == end)
     {
         _ASSERT_EXPR(false, L"Cannot wire to self");
         Log(LogType::error, "Cannot wire to self");
-        exit(1);
+        return nullptr;
     }
 
     // Duplicate guard

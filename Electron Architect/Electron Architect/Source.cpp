@@ -70,11 +70,19 @@ int main()
         }
     }
 
+    double lastAutoSaveTime = 0;
+
     while (!WindowShouldClose())
     {
         /******************************************
         *   Simulate frame and update variables
         ******************************************/
+
+        if ((GetTime() - lastAutoSaveTime) > 60.0)
+        {
+            window.CurrentTab().graph->Save("session.cg");
+            lastAutoSaveTime = GetTime();
+        }
 
         if (IsWindowResized())
             window.UpdateSize();
