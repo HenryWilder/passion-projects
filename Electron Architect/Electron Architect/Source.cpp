@@ -82,15 +82,17 @@ int main()
         *   Simulate frame and update variables
         ******************************************/
 
-        auto autosave = [&window, &saving]() { saving = true; window.CurrentTab().graph->Save("session.cg"); saving = false; };
+        auto saveLambda = [&window, &saving]() { saving = true; window.CurrentTab().graph->Save("session.cg"); saving = false; };
 
         if (save_thread.joinable())
             save_thread.join();
 
-        if ((GetTime() - lastAutoSaveTime) > 60.0)
+        // Save file
+        if ((GetTime() - lastAutoSaveTime > 60.0) ||
+            ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) && IsKeyPressed(KEY_S) && window.GetMode() != Mode::PASTE))
         {
             lastAutoSaveTime = GetTime();
-            save_thread = std::thread(autosave);
+            save_thread = std::thread(saveLambda);
         }
 
         if (IsWindowResized())
@@ -234,7 +236,7 @@ int main()
 
                 if (saving)
                 {
-                    DrawText("Saving...", Button::g_width * 3, Button::g_width, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+                    DrawText("Saving...", Button::g_width * 4, Button::g_width, window.FontSize(), UIColor(UIColorID::UI_COLOR_FOREGROUND));
                 }
             }
 

@@ -768,14 +768,12 @@ void Window::CheckHotkeys()
             MakeGroupFromSelection();
 
         // Save
-        if (IsKeyPressed(KEY_S))
+        if (IsKeyPressed(KEY_S) && GetMode() == Mode::PASTE)
         {
             // Save blueprint
-            if (GetMode() == Mode::PASTE)
-                SaveBlueprint();
+            SaveBlueprint();
 
-            // Save file
-            else CurrentTab().graph->Save(TextFormat("%s.cg", CurrentTab().graph->GetName()));
+            // File save has been moved to main function
         }
 
         return; // Don't miscommunicate to the user!!
