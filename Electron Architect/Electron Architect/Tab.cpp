@@ -8,7 +8,8 @@
 Tab::Tab(Window* owner, const char* name) :
 	owningWindow(owner),
 	camera{ .offset{ 0,0 }, .target{ 0,0 }, .rotation{ 0 }, .zoom{ 1 } },
-	graph(new Graph(this, name)) {}
+	graph(new Graph(this, name)),
+	cachedBridgeType(WireBridgeType::none) {}
 
 Tab::~Tab()
 {
@@ -18,6 +19,7 @@ Tab::~Tab()
 void Tab::UpdateBridgeCache()
 {
 	bridgeCache.clear();
+	cachedBridgeType = WireBridgeType::none;
 
 	// Must be at two rectangles
 	if (selectionRecs.size() < 2)
@@ -27,7 +29,7 @@ void Tab::UpdateBridgeCache()
 
 	std::vector<size_t> cacheSizes;
 	cacheSizes.resize(selectionRecs.size(), 0);
-	// Rule checks and cache size counting
+	// Cache size counting
 	{
 		size_t halfSelectionSize = selection.size() / 2;
 		for (Node* node : selection)
@@ -42,7 +44,11 @@ void Tab::UpdateBridgeCache()
 			}
 		}
 
-		if (!(cacheSizes[0] == 1 || cacheSizes.back() == 1))
+		if (cacheSizes[0] == 1)
+			cachedBridgeType = WireBridgeType::one_to_many;
+		else if (cacheSizes.back() == 1)
+			cachedBridgeType = WireBridgeType::many_to_one;
+		else
 		{
 			size_t size1 = cacheSizes[0];
 			bool invalid = false;
@@ -63,17 +69,21 @@ void Tab::UpdateBridgeCache()
 				}
 				return;
 			}
+			else
+				cachedBridgeType = WireBridgeType::even;
 		}
 	}
 
 	// Produce cache
 	{
 		bridgeCache.reserve(cacheSizes.size());
+
 		for (size_t i = 0; i < cacheSizes.size(); ++i)
 		{
 			bridgeCache.push_back({});
 			bridgeCache[i].reserve(cacheSizes[i]);
 		}
+
 		for (Node* node : selection)
 		{
 			for (size_t i = 0; i < selectionRecs.size(); ++i)
@@ -113,8 +123,14 @@ void Tab::BridgeSelection(ElbowConfig elbow)
 {
 	_ASSERT_EXPR(IsSelectionBridgeable(), L"Selection is not bridgable");
 
-	if (bridgeCache[0].size() == 1)
+	switch (cachedBridgeType)
 	{
+	default:
+	case WireBridgeType::none:
+		_ASSERT_EXPR(false, L"Bad bridge type");
+		break;
+
+	case WireBridgeType::one_to_many:
 		for (size_t i = 1; i < bridgeCache.size(); ++i)
 		{
 			for (size_t j = 0; j < bridgeCache[i].size(); ++j)
@@ -122,9 +138,9 @@ void Tab::BridgeSelection(ElbowConfig elbow)
 				graph->CreateWire(bridgeCache[0].back(), bridgeCache[i][j], elbow);
 			}
 		}
-	}
-	else if (bridgeCache.back().size() == 1)
-	{
+		break;
+
+	case WireBridgeType::many_to_one:
 		for (size_t i = 0; i < bridgeCache.size() - 1; ++i)
 		{
 			for (size_t j = 0; j < bridgeCache[i].size(); ++j)
@@ -132,9 +148,9 @@ void Tab::BridgeSelection(ElbowConfig elbow)
 				graph->CreateWire(bridgeCache[i][j], bridgeCache.back().back(), elbow);
 			}
 		}
-	}
-	else // Already know it passed the "IsSelectionBridgeable()" checks
-	{
+		break;
+
+	case WireBridgeType::even:
 		for (size_t i = 1; i < bridgeCache.size(); ++i)
 		{
 			_ASSERT_EXPR(bridgeCache[i - 1].size() == bridgeCache[i].size(), L"Cache size mismatch!");
@@ -143,16 +159,24 @@ void Tab::BridgeSelection(ElbowConfig elbow)
 				graph->CreateWire(bridgeCache[i - 1][j], bridgeCache[i][j], elbow);
 			}
 		}
+		break;
 	}
-	bridgeCache.clear();
+
+	ClearSelection();
 }
 
 void Tab::DrawBridgePreview(ElbowConfig elbow, Color color) const
 {
 	_ASSERT_EXPR(IsSelectionBridgeable(), L"Selection is not bridgable");
 
-	if (bridgeCache[0].size() == 1)
+	switch (cachedBridgeType)
 	{
+	default:
+	case WireBridgeType::none:
+		_ASSERT_EXPR(false, L"Bad bridge type");
+		break;
+
+	case WireBridgeType::one_to_many:
 		for (size_t i = 1; i < bridgeCache.size(); ++i)
 		{
 			for (size_t j = 0; j < bridgeCache[i].size(); ++j)
@@ -160,9 +184,9 @@ void Tab::DrawBridgePreview(ElbowConfig elbow, Color color) const
 				Wire(bridgeCache[0].back(), bridgeCache[i][j], elbow).Draw(color);
 			}
 		}
-	}
-	else if (bridgeCache.back().size() == 1)
-	{
+		break;
+
+	case WireBridgeType::many_to_one:
 		for (size_t i = 0; i < bridgeCache.size() - 1; ++i)
 		{
 			for (size_t j = 0; j < bridgeCache[i].size(); ++j)
@@ -170,10 +194,9 @@ void Tab::DrawBridgePreview(ElbowConfig elbow, Color color) const
 				Wire(bridgeCache[i][j], bridgeCache.back().back(), elbow).Draw(color);
 			}
 		}
-	}
-	else // Already know it passed the "IsSelectionBridgeable()" checks
-	{
+		break;
 
+	case WireBridgeType::even:
 		for (size_t i = 1; i < bridgeCache.size(); ++i)
 		{
 			_ASSERT_EXPR(bridgeCache[i - 1].size() == bridgeCache[i].size(), L"Cache size mismatch!");
@@ -182,6 +205,7 @@ void Tab::DrawBridgePreview(ElbowConfig elbow, Color color) const
 				Wire(bridgeCache[i - 1][j], bridgeCache[i][j], elbow).Draw(color);
 			}
 		}
+		break;
 	}
 }
 

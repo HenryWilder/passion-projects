@@ -634,44 +634,54 @@ void EditTool::Draw(Window& window)
 
         if (previewBridgeable && !selectionWIP) [[unlikely]]
         {
-            if (window.CurrentTab().bridgeCache[0].size() == 1)
+            // Draw colored selection rectangle preview
             {
-                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[0], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
-                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[0], UIColor(UIColorID::UI_COLOR_INPUT));
-                for (size_t i = 1; i < window.CurrentTab().SelectionRecs().size(); ++i)
+                const Color inputOutlineColor = UIColor(UIColorID::UI_COLOR_INPUT);
+                const Color inputFillColor = ColorAlpha(inputOutlineColor, 0.5);
+                const Color outputOutlineColor = UIColor(UIColorID::UI_COLOR_OUTPUT);
+                const Color outputFillColor = ColorAlpha(outputOutlineColor, 0.5);
+
+                auto DrawColoredOutlineRect = [](const IRect& rec, const Color& fill, const Color& outline)
                 {
-                    DrawRectangleIRect(window.CurrentTab().SelectionRecs()[i], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
-                    DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[i], UIColor(UIColorID::UI_COLOR_OUTPUT));
-                }
-            }
-            else if (window.CurrentTab().bridgeCache.back().size() == 1)
-            {
-                for (size_t i = 0; i < window.CurrentTab().SelectionRecs().size() - 1; ++i)
+                    DrawRectangleIRect(rec, fill);
+                    DrawRectangleLinesIRect(rec, outline);
+                };
+
+                switch (window.CurrentTab().cachedBridgeType)
                 {
-                    DrawRectangleIRect(window.CurrentTab().SelectionRecs()[i], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
-                    DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[i], UIColor(UIColorID::UI_COLOR_INPUT));
+                default:
+                case WireBridgeType::none:
+                    _ASSERT_EXPR(false, L"Bad bridge type");
+                    break;
+
+                case WireBridgeType::one_to_many:
+                    DrawColoredOutlineRect(window.CurrentTab().SelectionRecs()[0], inputFillColor, inputOutlineColor);
+                    for (size_t i = 1; i < window.CurrentTab().SelectionRecs().size(); ++i)
+                    {
+                        DrawColoredOutlineRect(window.CurrentTab().SelectionRecs()[i], outputFillColor, outputOutlineColor);
+                    }
+                    break;
+
+                case WireBridgeType::many_to_one:
+                    for (size_t i = 0; i < window.CurrentTab().SelectionRecs().size() - 1; ++i)
+                    {
+                        DrawColoredOutlineRect(window.CurrentTab().SelectionRecs()[i], inputFillColor, inputOutlineColor);
+                    }
+                    DrawColoredOutlineRect(window.CurrentTab().SelectionRecs().back(), outputFillColor, outputOutlineColor);
+                    break;
+
+                case WireBridgeType::even:
+                    const Color specialOutlineColor = UIColor(UIColorID::UI_COLOR_SPECIAL);
+                    const Color specialFillColor = ColorAlpha(specialOutlineColor, 0.5);
+
+                    DrawColoredOutlineRect(window.CurrentTab().SelectionRecs()[0], inputFillColor, inputOutlineColor);
+                    for (size_t i = 1; i < window.CurrentTab().SelectionRecs().size() - 1; ++i)
+                    {
+                        DrawColoredOutlineRect(window.CurrentTab().SelectionRecs()[i], specialFillColor, specialOutlineColor);
+                    }
+                    DrawColoredOutlineRect(window.CurrentTab().SelectionRecs().back(), outputFillColor, outputOutlineColor);
+                    break;
                 }
-                DrawRectangleIRect(window.CurrentTab().SelectionRecs().back(), ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
-                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs().back(), UIColor(UIColorID::UI_COLOR_OUTPUT));
-            }
-            else if (window.CurrentTab().bridgeCache.size() == 2)
-            {
-                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[0], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
-                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[0], UIColor(UIColorID::UI_COLOR_INPUT));
-                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[1], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
-                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[1], UIColor(UIColorID::UI_COLOR_OUTPUT));
-            }
-            else // Already know it passed the "IsSelectionBridgeable()" checks
-            {
-                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[0], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
-                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[0], UIColor(UIColorID::UI_COLOR_INPUT));
-                for (size_t i = 1; i < window.CurrentTab().SelectionRecs().size() - 1; ++i)
-                {
-                    DrawRectangleIRect(window.CurrentTab().SelectionRecs()[i], ColorAlpha(UIColor(UIColorID::UI_COLOR_SPECIAL), 0.5));
-                    DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[i], UIColor(UIColorID::UI_COLOR_SPECIAL));
-                }
-                DrawRectangleIRect(window.CurrentTab().SelectionRecs().back(), ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
-                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs().back(), UIColor(UIColorID::UI_COLOR_OUTPUT));
             }
 
             if (actuallyBridgeable)

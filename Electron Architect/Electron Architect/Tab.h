@@ -5,6 +5,14 @@ class Node;
 class Graph;
 struct Window;
 
+enum class WireBridgeType
+{
+	none, // No bridge possible (uneven selection counts + the first & last selections contain multiple nodes)
+	one_to_many, // One node as input to many output nodes
+	many_to_one, // Many nodes as input to one output node
+	even, // All selections in the bridge contain equal nodes
+};
+
 struct Tab
 {
 	Tab(Window* owner, const char* name = "Unnamed graph");
@@ -20,6 +28,7 @@ private:
 	std::vector<IRect> selectionRecs;
 public:
 	std::vector<std::vector<Node*>> bridgeCache;
+	WireBridgeType cachedBridgeType;
 
 	inline bool SelectionExists() const
 	{
@@ -67,6 +76,7 @@ public:
 		selection.clear();
 		selectionRecs.clear();
 		bridgeCache.clear();
+		cachedBridgeType = WireBridgeType::none;
 	}
 
 	void UpdateBridgeCache();
