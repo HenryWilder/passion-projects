@@ -151,26 +151,36 @@ void Tab::DrawBridgePreview(ElbowConfig elbow, Color color) const
 {
 	_ASSERT_EXPR(IsSelectionBridgeable(), L"Selection is not bridgable");
 
-	if (bridgeCache[0].size() == bridgeCache[1].size())
+	if (bridgeCache[0].size() == 1)
 	{
-		for (size_t i = 0; i < bridgeCache[0].size(); ++i)
+		for (size_t i = 1; i < bridgeCache.size(); ++i)
 		{
-			Wire(bridgeCache[0][i], bridgeCache[1][i], elbow).Draw(color);
+			for (size_t j = 0; j < bridgeCache[i].size(); ++j)
+			{
+				Wire(bridgeCache[0].back(), bridgeCache[i][j], elbow).Draw(color);
+			}
 		}
 	}
-	else if (bridgeCache[0].size() == 1)
+	else if (bridgeCache.back().size() == 1)
 	{
-		for (size_t i = 0; i < bridgeCache[1].size(); ++i)
+		for (size_t i = 0; i < bridgeCache.size() - 1; ++i)
 		{
-			Wire(bridgeCache[0][0], bridgeCache[1][i], elbow).Draw(color);
-			graph->CreateWire(bridgeCache[0][0], bridgeCache[1][i], elbow);
+			for (size_t j = 0; j < bridgeCache[i].size(); ++j)
+			{
+				Wire(bridgeCache[i][j], bridgeCache.back().back(), elbow).Draw(color);
+			}
 		}
 	}
-	else if (bridgeCache[1].size() == 1)
+	else // Already know it passed the "IsSelectionBridgeable()" checks
 	{
-		for (size_t i = 0; i < bridgeCache[0].size(); ++i)
+
+		for (size_t i = 1; i < bridgeCache.size(); ++i)
 		{
-			Wire(bridgeCache[0][i], bridgeCache[1][0], elbow).Draw(color);
+			_ASSERT_EXPR(bridgeCache[i - 1].size() == bridgeCache[i].size(), L"Cache size mismatch!");
+			for (size_t j = 0; j < bridgeCache[i].size(); ++j)
+			{
+				Wire(bridgeCache[i - 1][j], bridgeCache[i][j], elbow).Draw(color);
+			}
 		}
 	}
 }
