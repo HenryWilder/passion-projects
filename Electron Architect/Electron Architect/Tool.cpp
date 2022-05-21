@@ -405,10 +405,11 @@ void EditTool::Update(Window& window, bool allowHover)
     {
         auto [minx, maxx] = std::minmax(window.cursorPos.x, selectionStart.x);
         auto [miny, maxy] = std::minmax(window.cursorPos.y, selectionStart.y);
+        IVec2 min(minx, miny), max(maxx, maxy);
         if (!window.CurrentTab().GetLastSelectionRec())
-            window.CurrentTab().AddSelectionRec(IRect(1));
-        window.CurrentTab().GetLastSelectionRec()->w = maxx - (window.CurrentTab().GetLastSelectionRec()->x = minx);
-        window.CurrentTab().GetLastSelectionRec()->h = maxy - (window.CurrentTab().GetLastSelectionRec()->y = miny);
+            window.CurrentTab().AddSelectionRec(IRect(min, max - min));
+        else
+            window.CurrentTab().GetLastSelectionRec()->wh = min - (window.CurrentTab().GetLastSelectionRec()->xy = max);
     }
     // Node
     else if (!!nodeBeingDragged)
@@ -545,12 +546,7 @@ void EditTool::Update(Window& window, bool allowHover)
             else if (selectionWIP)
             {
                 selectionWIP = false;
-                if (!!window.CurrentTab().GetLastSelectionRec() &&
-                     (window.CurrentTab().GetLastSelectionRec()->w == 0 ||
-                      window.CurrentTab().GetLastSelectionRec()->h == 0))
-                {
-                    window.CurrentTab().PopSelectionRec();
-                }
+                window.CurrentTab().ConfirmLastSelectionRec();
                 window.CurrentTab().selection.clear();
                 if (window.IsSelectionRectValid())
                 {

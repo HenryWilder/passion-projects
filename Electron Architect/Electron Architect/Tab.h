@@ -63,8 +63,15 @@ public:
 
 	inline void AddSelectionRec(IRect rec)
 	{
-		if (rec.w > 0 && rec.h > 0)
-			selectionRecs.push_back(rec);
+		selectionRecs.push_back(rec);
+	}
+	inline void ConfirmLastSelectionRec()
+	{
+		if (selectionRecs.back().w < g_gridSize ||
+			selectionRecs.back().h < g_gridSize)
+		{
+			selectionRecs.pop_back();
+		}
 	}
 	inline void PopSelectionRec()
 	{
