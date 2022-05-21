@@ -632,17 +632,46 @@ void EditTool::Draw(Window& window)
 
         bool previewBridgeable = actuallyBridgeable; // Todo: define preview bridge
 
-        if (previewBridgeable) [[unlikely]]
+        if (previewBridgeable && !selectionWIP) [[unlikely]]
         {
-            for (size_t i = 0; i < window.CurrentTab().SelectionRecs().size(); ++i)
+            if (window.CurrentTab().bridgeCache[0].size() == 1)
             {
-                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[i], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
-                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[i], UIColor(UIColorID::UI_COLOR_INPUT));
+                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[0], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
+                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[0], UIColor(UIColorID::UI_COLOR_INPUT));
+                for (size_t i = 1; i < window.CurrentTab().SelectionRecs().size(); ++i)
+                {
+                    DrawRectangleIRect(window.CurrentTab().SelectionRecs()[i], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
+                    DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[i], UIColor(UIColorID::UI_COLOR_OUTPUT));
+                }
             }
-            for (size_t i = 0; i < window.CurrentTab().SelectionRecs().size(); ++i)
+            else if (window.CurrentTab().bridgeCache.back().size() == 1)
             {
-                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[i], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
-                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[i], UIColor(UIColorID::UI_COLOR_OUTPUT));
+                for (size_t i = 0; i < window.CurrentTab().SelectionRecs().size() - 1; ++i)
+                {
+                    DrawRectangleIRect(window.CurrentTab().SelectionRecs()[i], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
+                    DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[i], UIColor(UIColorID::UI_COLOR_INPUT));
+                }
+                DrawRectangleIRect(window.CurrentTab().SelectionRecs().back(), ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
+                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs().back(), UIColor(UIColorID::UI_COLOR_OUTPUT));
+            }
+            else if (window.CurrentTab().bridgeCache.size() == 2)
+            {
+                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[0], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
+                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[0], UIColor(UIColorID::UI_COLOR_INPUT));
+                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[1], ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
+                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[1], UIColor(UIColorID::UI_COLOR_OUTPUT));
+            }
+            else // Already know it passed the "IsSelectionBridgeable()" checks
+            {
+                DrawRectangleIRect(window.CurrentTab().SelectionRecs()[0], ColorAlpha(UIColor(UIColorID::UI_COLOR_INPUT), 0.5));
+                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[0], UIColor(UIColorID::UI_COLOR_INPUT));
+                for (size_t i = 1; i < window.CurrentTab().SelectionRecs().size() - 1; ++i)
+                {
+                    DrawRectangleIRect(window.CurrentTab().SelectionRecs()[i], ColorAlpha(UIColor(UIColorID::UI_COLOR_SPECIAL), 0.5));
+                    DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs()[i], UIColor(UIColorID::UI_COLOR_SPECIAL));
+                }
+                DrawRectangleIRect(window.CurrentTab().SelectionRecs().back(), ColorAlpha(UIColor(UIColorID::UI_COLOR_OUTPUT), 0.5));
+                DrawRectangleLinesIRect(window.CurrentTab().SelectionRecs().back(), UIColor(UIColorID::UI_COLOR_OUTPUT));
             }
 
             if (actuallyBridgeable)
