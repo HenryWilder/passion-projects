@@ -135,8 +135,9 @@ void Tab::BridgeSelection(ElbowConfig elbow)
 	}
 	else // Already know it passed the "IsSelectionBridgeable()" checks
 	{
-		for (size_t i = 1; i < bridgeCache[0].size() - 1; ++i)
+		for (size_t i = 1; i < bridgeCache.size(); ++i)
 		{
+			_ASSERT_EXPR(bridgeCache[i - 1].size() == bridgeCache[i].size(), L"Cache size mismatch!");
 			for (size_t j = 0; j < bridgeCache[i].size(); ++j)
 			{
 				graph->CreateWire(bridgeCache[i - 1][j], bridgeCache[i][j], elbow);
