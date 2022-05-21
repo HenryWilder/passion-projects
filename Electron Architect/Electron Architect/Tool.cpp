@@ -632,6 +632,12 @@ void EditTool::Draw(Window& window)
 
         bool previewBridgeable = actuallyBridgeable; // Todo: define preview bridge
 
+        auto DrawColoredOutlineRect = [](const IRect& rec, const Color& fill, const Color& outline)
+        {
+            DrawRectangleIRect(rec, fill);
+            DrawRectangleLinesIRect(rec, outline);
+        };
+
         if (previewBridgeable && !selectionWIP) [[unlikely]]
         {
             // Draw colored selection rectangle preview
@@ -640,12 +646,6 @@ void EditTool::Draw(Window& window)
                 const Color inputFillColor = ColorAlpha(inputOutlineColor, 0.5);
                 const Color outputOutlineColor = UIColor(UIColorID::UI_COLOR_OUTPUT);
                 const Color outputFillColor = ColorAlpha(outputOutlineColor, 0.5);
-
-                auto DrawColoredOutlineRect = [](const IRect& rec, const Color& fill, const Color& outline)
-                {
-                    DrawRectangleIRect(rec, fill);
-                    DrawRectangleLinesIRect(rec, outline);
-                };
 
                 switch (window.CurrentTab().cachedBridgeType)
                 {
@@ -689,10 +689,11 @@ void EditTool::Draw(Window& window)
         }
         else [[likely]]
         {
+            const Color basicOutlineColor = UIColor(UIColorID::UI_COLOR_BACKGROUND2);
+            const Color basicFillColor = ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5);
             for (const IRect& rec : window.CurrentTab().SelectionRecs())
             {
-                DrawRectangleIRect(rec, ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND1), 0.5));
-                DrawRectangleLinesIRect(rec, UIColor(UIColorID::UI_COLOR_BACKGROUND2));
+                DrawColoredOutlineRect(rec, basicFillColor, basicOutlineColor);
             }
         }
     }
