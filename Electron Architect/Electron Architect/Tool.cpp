@@ -788,13 +788,7 @@ ModeType EraseTool::GetModeType() const { return ModeType::Basic; }
 Mode EraseTool::GetMode() const { return Mode::ERASE; }
 void EraseTool::Update(Window& window, bool allowHover)
 {
-    if (!allowHover)
-    {
-        window.hoveredWire = nullptr;
-        window.hoveredNode = nullptr;
-        window.hoveredGroup = nullptr;
-    }
-    else if (window.b_cursorMoved)
+    auto UpdateHovered = [&window]()
     {
         window.hoveredGroup = nullptr;
         window.hoveredWire = nullptr;
@@ -805,33 +799,57 @@ void EraseTool::Update(Window& window, bool allowHover)
             if (!window.hoveredWire)
                 window.hoveredGroup = window.CurrentTab().graph->FindGroupAtPos(window.cursorPos);
         }
-    }
+    };
 
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    if (!allowHover)
     {
+        window.hoveredWire = nullptr;
+        window.hoveredNode = nullptr;
+        window.hoveredGroup = nullptr;
+    }
+    else if (window.b_cursorMoved)
+        UpdateHovered();
+
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+    {
+        bool shift = (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT));
+        bool alt = (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT));
+
+        // Note that shift has been made to block regular erasing. This is to prevent the continuous,
+        // destructive erasing from ocurring when the user has bypassed a node.
+
+        // Erase node
         if (!!window.hoveredNode)
         {
             // Special erase
-            if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
-                window.hoveredNode->IsSpecialErasable())
+            if (window.hoveredNode->IsSpecialErasable() && shift)
                 window.CurrentTab().graph->BypassNode(window.hoveredNode);
+
             // Complex bipass
-            else if (
-                (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
-                (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)) &&
-                window.hoveredNode->IsComplexBipassable())
+            else if (window.hoveredNode->IsComplexBipassable() && shift && alt)
                 window.CurrentTab().graph->BypassNode_Complex(window.hoveredNode);
-            else
+
+            // Regular erase
+            else if (!shift)
                 window.CurrentTab().graph->DestroyNode(window.hoveredNode);
         }
-        else if (!!window.hoveredWire)
+
+        // Erase wire
+        else if (!!window.hoveredWire && !shift)
             window.CurrentTab().graph->DestroyWire(window.hoveredWire);
-        else if (!!window.hoveredGroup)
+
+        // Erase group
+        else if (!!window.hoveredGroup && !shift)
             window.CurrentTab().graph->DestroyGroup(window.hoveredGroup);
 
-        window.hoveredNode = nullptr;
-        window.hoveredWire = nullptr;
-        window.hoveredGroup = nullptr;
+        if (allowHover)
+            UpdateHovered();
+        else
+        {
+            window.hoveredWire = nullptr;
+            window.hoveredNode = nullptr;
+            window.hoveredGroup = nullptr;
+        }
     }
 }
 void EraseTool::Draw(Window& window)
