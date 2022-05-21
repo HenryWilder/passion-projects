@@ -344,6 +344,7 @@ void EditTool::Update(Window& window, bool allowHover)
     // Press
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
+        // Drag group corner
         if (groupCorner.Valid())
         {
             draggingGroupCorner = true;
@@ -357,7 +358,9 @@ void EditTool::Update(Window& window, bool allowHover)
         // A node outside of the selection has been pressed (select exclusively it)
         else if (!!window.hoveredNode)
         {
-            window.CurrentTab().selection.clear();
+            // Add to selection when holding ctrl
+            if (!(IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)))
+                window.CurrentTab().selection.clear();
             window.CurrentTab().selection.push_back(window.hoveredNode);
             nodeBeingDragged = window.hoveredNode;
             wireBeingDragged = nullptr;
@@ -375,7 +378,7 @@ void EditTool::Update(Window& window, bool allowHover)
         // Create a new selection rectangle
         else if (window.IsSelectionRectValid() && (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)))
         {
-            window.CurrentTab().AddSelectionRec(IRect(window.cursorPos, 1));
+            window.CurrentTab().AddSelectionRec(IRect(0));
             fallbackPos = window.cursorPos;
             if (selectionWIP = !(nodeBeingDragged || wireBeingDragged || draggingGroup || draggingGroupCorner))
                 selectionStart = window.cursorPos;
@@ -397,19 +400,20 @@ void EditTool::Update(Window& window, bool allowHover)
             fallbackPos = window.cursorPos;
             if (selectionWIP = !(nodeBeingDragged || wireBeingDragged || draggingGroup || draggingGroupCorner))
                 selectionStart = window.cursorPos;
+
+            if (selectionWIP)
+                window.CurrentTab().AddSelectionRec(IRect(0));
         }
     }
 
     // Selection
     if (selectionWIP)
     {
+        _ASSERT_EXPR(window.CurrentTab().SelectionRectExists(), L"Selection cannot be in progress without a rectangle");
         auto [minx, maxx] = std::minmax(window.cursorPos.x, selectionStart.x);
         auto [miny, maxy] = std::minmax(window.cursorPos.y, selectionStart.y);
         IVec2 min(minx, miny), max(maxx, maxy);
-        if (!window.CurrentTab().GetLastSelectionRec())
-            window.CurrentTab().AddSelectionRec(IRect(min, max - min));
-        else
-            window.CurrentTab().GetLastSelectionRec()->wh = min - (window.CurrentTab().GetLastSelectionRec()->xy = max);
+        window.CurrentTab().GetLastSelectionRec()->wh = max - (window.CurrentTab().GetLastSelectionRec()->xy = min);
     }
     // Node
     else if (!!nodeBeingDragged)

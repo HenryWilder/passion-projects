@@ -67,8 +67,9 @@ public:
 	}
 	inline void ConfirmLastSelectionRec()
 	{
-		if (selectionRecs.back().w < g_gridSize ||
-			selectionRecs.back().h < g_gridSize)
+		if (!selectionRecs.empty() &&
+			(selectionRecs.back().w <= g_gridSize ||
+			 selectionRecs.back().h <= g_gridSize))
 		{
 			selectionRecs.pop_back();
 		}
