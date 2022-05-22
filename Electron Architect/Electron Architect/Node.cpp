@@ -223,7 +223,7 @@ void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
         switch (gate)
         {
         case Gate::OR:
-            DrawIcon<32>(g_nodeIcons, IVec2(0, 0), topleft, foreGround);
+            DrawIconPro<32>(g_nodeIcons, IVec2(0, 0), topleft, 0.5f, foreGround);
             //DrawCircleIV(position, nodeRadius, foreGround);
             return;
         case Gate::NOR:

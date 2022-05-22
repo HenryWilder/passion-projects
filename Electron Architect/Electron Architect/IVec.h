@@ -246,6 +246,15 @@ inline void BeginScissorMode(IRect area)
 }
 
 template<int W, int H = W>
+void DrawIconPro(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, float scale, Color tint)
+{
+    DrawTexturePro(iconSheet,
+        Rectangle{ (float)iconColRow.x * (float)W, (float)iconColRow.y * (float)H, (float)W, (float)H },
+        Rectangle{ (float)pos.x, (float)pos.y, (float)W * scale, (float)H * scale },
+        Vector2{ 0, 0 }, 0.0f, tint);
+}
+
+template<int W, int H = W>
 void DrawIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint)
 {
     BeginScissorMode(pos.x, pos.y, W, H);
