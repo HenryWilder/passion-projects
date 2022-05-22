@@ -47,7 +47,10 @@ void Wire::Draw(Color color) const
 }
 void Wire::DrawElbow(IVec2 pos, Color color)
 {
-    DrawCircleIV(pos, g_elbowRadius, color);
+    DrawRectanglePro(
+        Rectangle{ (float)pos.x, (float)pos.y, g_elbowRadius, g_elbowRadius },
+        Vector2{ g_elbowRadius / 2, g_elbowRadius / 2 },
+        45.0f, color);
 }
 void Wire::DrawElbow(Color color) const
 {

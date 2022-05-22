@@ -722,7 +722,7 @@ void EditTool::Draw(Window& window)
         {
             IVec2 p = window.hoveredWire->GetLegalElbowPosition(configOrder[i]);
             Wire::Draw(window.hoveredWire->GetStartPos(), p, window.hoveredWire->GetEndPos(), ColorAlpha(UIColor(UIColorID::UI_COLOR_AVAILABLE), 0.25f));
-            DrawCircle(p.x, p.y, Wire::g_elbowRadius, ColorAlpha(UIColor(UIColorID::UI_COLOR_AVAILABLE), 0.5f));
+            Wire::DrawElbow(p, ColorAlpha(UIColor(UIColorID::UI_COLOR_AVAILABLE), 0.5f));
         }
 
         window.hoveredWire->Draw(UIColor(UIColorID::UI_COLOR_AVAILABLE));

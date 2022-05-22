@@ -3,20 +3,24 @@
 #include "Node.h"
 #include "nodeIcons.h"
 #include "nodeIconsNTD.h"
+#include "nodeIconsHighlight.h"
 
 Texture2D g_nodeIcons;
 Texture2D g_nodeIconsNTD;
+Texture2D g_nodeIconsHighlight;
 
 void InitNodeIcons()
 {
     g_nodeIcons = LoadTextureFromImage(MEMORY_IMAGE(NODEICONS));
     g_nodeIconsNTD = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSNTD));
+    g_nodeIconsHighlight = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSHIGHLIGHT));
 }
 
 void FreeNodeIcons()
 {
     UnloadTexture(g_nodeIcons);
     UnloadTexture(g_nodeIconsNTD);
+    UnloadTexture(g_nodeIconsHighlight);
 }
 
 IVec2 Node::GetPosition() const
@@ -213,26 +217,28 @@ bool Node::IsInteractive() const
     return IsOutputOnly() && (m_gate == Gate::OR || m_gate == Gate::NOR);
 }
 
-void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
+void Node::Draw(IVec2 position, Gate gate, Color foreground, Color background)
 {
     //constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
-    IVec2 topleft = position - IVec2(4);
-    // Past Henry: DrawIcon isn't working here because scissor mode seems to ignore the camera!! Try something else...
+    IVec2 topleft = position - IVec2(g_gridSize / 2);
     if (gate == Gate::OR || gate == Gate::NOR || gate == Gate::XOR)
     {
         switch (gate)
         {
         case Gate::OR:
-            DrawIconPro<32>(g_nodeIcons, IVec2(0, 0), topleft, 0.25f, foreGround);
+            DrawIconPro<32>(g_nodeIconsHighlight, IVec2(0, 0), topleft, 0.25f, background);
+            DrawIconPro<32>(g_nodeIcons, IVec2(0, 0), topleft, 0.25f, foreground);
             //DrawCircleIV(position, nodeRadius, foreGround);
             return;
         case Gate::NOR:
-            DrawIconPro<32>(g_nodeIcons, IVec2(1, 0), topleft, 0.25f, foreGround);
+            DrawIconPro<32>(g_nodeIconsHighlight, IVec2(1, 0), topleft, 0.25f, background);
+            DrawIconPro<32>(g_nodeIcons, IVec2(1, 0), topleft, 0.25f, foreground);
             //DrawCircleIV(position, nodeRadius, foreGround);
             //DrawCircleIV(position, nodeRadius - 1.0f, background);
             return;
         case Gate::XOR:
-            DrawIconPro<32>(g_nodeIcons, IVec2(2, 0), topleft, 0.25f, foreGround);
+            DrawIconPro<32>(g_nodeIconsHighlight, IVec2(2, 0), topleft, 0.25f, background);
+            DrawIconPro<32>(g_nodeIcons, IVec2(2, 0), topleft, 0.25f, foreground);
             //DrawCircleIV(position, nodeRadius + 1.0f, foreGround);
             //DrawCircleIV(position, nodeRadius, background);
             //DrawCircleIV(position, nodeRadius - 1.0f, foreGround);
@@ -245,28 +251,33 @@ void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
         switch (gate)
         {
         case Gate::AND:
-            DrawIconPro<32>(g_nodeIcons, IVec2(3, 0), topleft, 0.25f, foreGround);
+            DrawIconPro<32>(g_nodeIconsHighlight, IVec2(3, 0), topleft, 0.25f, background);
+            DrawIconPro<32>(g_nodeIcons, IVec2(3, 0), topleft, 0.25f, foreground);
             //DrawRectangleIRect(rec, foreGround);
             return;
         case Gate::RESISTOR:
-            DrawIconPro<32>(g_nodeIcons, IVec2(0, 1), topleft, 0.25f, foreGround);
+            DrawIconPro<32>(g_nodeIconsHighlight, IVec2(0, 1), topleft, 0.25f, background);
+            DrawIconPro<32>(g_nodeIcons, IVec2(0, 1), topleft, 0.25f, foreground);
             //DrawRectangleIRect(rec, foreGround);
             //DrawRectangleIRect(ShrinkIRect(rec), background);
             return;
         case Gate::CAPACITOR:
-            DrawIconPro<32>(g_nodeIcons, IVec2(1, 1), topleft, 0.25f, foreGround);
+            DrawIconPro<32>(g_nodeIconsHighlight, IVec2(1, 1), topleft, 0.25f, background);
+            DrawIconPro<32>(g_nodeIcons, IVec2(1, 1), topleft, 0.25f, foreground);
             //DrawRectangleIRect(ExpandIRect(rec), foreGround);
             //DrawRectangleIRect(rec, background);
             //DrawRectangleIRect(ShrinkIRect(rec), foreGround);
             return;
         case Gate::DELAY:
-            DrawIconPro<32>(g_nodeIcons, IVec2(3, 1), topleft, 0.25f, foreGround);
+            DrawIconPro<32>(g_nodeIconsHighlight, IVec2(3, 1), topleft, 0.25f, background);
+            DrawIconPro<32>(g_nodeIcons, IVec2(3, 1), topleft, 0.25f, foreground);
             //DrawRectangleIRect(ExpandIRect(rec), foreGround);
             //DrawRectangleIRect(rec, background);
             //DrawLine(rec.x, rec.y + rec.h / 2, rec.x + rec.w, rec.y + rec.h / 2, foreGround);
             return;
         case Gate::BATTERY:
-            DrawIconPro<32>(g_nodeIcons, IVec2(0, 2), topleft, 0.25f, foreGround);
+            DrawIconPro<32>(g_nodeIconsHighlight, IVec2(0, 2), topleft, 0.25f, background);
+            DrawIconPro<32>(g_nodeIcons, IVec2(0, 2), topleft, 0.25f, foreground);
             //DrawRectangleIRect(ExpandIRect(rec), foreGround);
             //int halfHeight = rec.h / 2;
             //IRect halfRec = rec;
@@ -278,7 +289,8 @@ void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
     }
     else if (gate == Gate::LED)
     {
-        DrawIconPro<32>(g_nodeIcons, IVec2(2, 1), topleft, 0.25f, foreGround);
+        DrawIconPro<32>(g_nodeIconsHighlight, IVec2(2, 1), topleft, 0.25f, background);
+        DrawIconPro<32>(g_nodeIcons, IVec2(2, 1), topleft, 0.25f, foreground);
 
         //static const float unitVerts[] =
         //{
@@ -319,16 +331,19 @@ void Node::Draw(Color foreground, Color background, Color CapacitorInactive) con
 
     if (m_gate == Gate::RESISTOR)
     {
-        DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, g_resistanceBands[GetResistance()]);
-        DrawRectangle(GetX() - nodeRadius + 2, GetY() - nodeRadius + 2, nodeRadius * 2 - 4, nodeRadius * 2 - 4, background);
+        DrawIconPro<32>(g_nodeIconsNTD, IVec2(0, 1), m_position - IVec2(g_gridSize / 2), 0.25f, g_resistanceBands[GetResistance()]);
+        //DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, g_resistanceBands[GetResistance()]);
+        //DrawRectangle(GetX() - nodeRadius + 2, GetY() - nodeRadius + 2, nodeRadius * 2 - 4, nodeRadius * 2 - 4, background);
     }
     else if (m_gate == Gate::LED)
     {
-        DrawCircleIV(m_position, 1.0f, g_resistanceBands[GetColorIndex()]);
+        DrawIconPro<32>(g_nodeIconsNTD, IVec2(2, 1), m_position - IVec2(g_gridSize / 2), 0.25f, g_resistanceBands[GetColorIndex()]);
+        //DrawCircleIV(m_position, 1.0f, g_resistanceBands[GetColorIndex()]);
     }
     else if (m_gate == Gate::CAPACITOR)
     {
-        DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, ColorAlpha(CapacitorInactive, 1.0f - GetChargePercent()));
+        DrawIconPro<32>(g_nodeIconsNTD, IVec2(1, 1), m_position - IVec2(g_gridSize / 2), 0.25f, ColorAlpha(CapacitorInactive, 1.0f - GetChargePercent()));
+        //DrawRectangle(GetX() - nodeRadius + 1, GetY() - nodeRadius + 1, nodeRadius * 2 - 2, nodeRadius * 2 - 2, ColorAlpha(CapacitorInactive, 1.0f - GetChargePercent()));
     }
 }
 

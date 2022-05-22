@@ -215,6 +215,7 @@
     <Image Include="icons16x.png" />
     <Image Include="icons32x.png" />
     <Image Include="nodeIcons.png" />
+    <Image Include="nodeIconsHighlight.png" />
     <Image Include="nodeIconsNTD.png" />
     <Image Include="program_icon.png" />
   </ItemGroup>
@@ -228,6 +229,7 @@
     <ClInclude Include="icons32x.h" />
     <ClInclude Include="IVec.h" />
     <ClInclude Include="nodeIcons.h" />
+    <ClInclude Include="nodeIconsHighlight.h" />
     <ClInclude Include="nodeIconsNTD.h" />
     <ClInclude Include="Tool.h" />
     <ClInclude Include="Graph.h" />

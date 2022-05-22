@@ -80,6 +80,9 @@
     <Image Include="nodeIconsNTD.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="nodeIconsHighlight.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Node.h">
@@ -140,6 +143,9 @@
       <Filter>Images As Code</Filter>
     </ClInclude>
     <ClInclude Include="nodeIconsNTD.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeIconsHighlight.h">
       <Filter>Images As Code</Filter>
     </ClInclude>
   </ItemGroup>
