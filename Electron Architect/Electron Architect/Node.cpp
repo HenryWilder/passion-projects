@@ -215,24 +215,24 @@ bool Node::IsInteractive() const
 
 void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
 {
-    constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
-    IVec2 topleft = position - IVec2(nodeRadius);
+    //constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
+    IVec2 topleft = position - IVec2(4);
     // Past Henry: DrawIcon isn't working here because scissor mode seems to ignore the camera!! Try something else...
     if (gate == Gate::OR || gate == Gate::NOR || gate == Gate::XOR)
     {
         switch (gate)
         {
         case Gate::OR:
-            DrawIconPro<32>(g_nodeIcons, IVec2(0, 0), topleft, 0.5f, foreGround);
+            DrawIconPro<32>(g_nodeIcons, IVec2(0, 0), topleft, 0.25f, foreGround);
             //DrawCircleIV(position, nodeRadius, foreGround);
             return;
         case Gate::NOR:
-            DrawIcon<32>(g_nodeIcons, IVec2(1, 0), topleft, foreGround);
+            DrawIconPro<32>(g_nodeIcons, IVec2(1, 0), topleft, 0.25f, foreGround);
             //DrawCircleIV(position, nodeRadius, foreGround);
             //DrawCircleIV(position, nodeRadius - 1.0f, background);
             return;
         case Gate::XOR:
-            DrawIcon<32>(g_nodeIcons, IVec2(2, 0), topleft, foreGround);
+            DrawIconPro<32>(g_nodeIcons, IVec2(2, 0), topleft, 0.25f, foreGround);
             //DrawCircleIV(position, nodeRadius + 1.0f, foreGround);
             //DrawCircleIV(position, nodeRadius, background);
             //DrawCircleIV(position, nodeRadius - 1.0f, foreGround);
@@ -241,63 +241,69 @@ void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
     }
     else if (gate == Gate::AND || gate == Gate::RESISTOR || gate == Gate::CAPACITOR || gate == Gate::DELAY || gate == Gate::BATTERY)
     {
-        IRect rec(position - IVec2(nodeRadius), nodeRadius * 2);
+        //IRect rec(position - IVec2(nodeRadius), nodeRadius * 2);
         switch (gate)
         {
         case Gate::AND:
-            DrawIcon<32>(g_nodeIcons, IVec2(3, 0), topleft, foreGround);
+            DrawIconPro<32>(g_nodeIcons, IVec2(3, 0), topleft, 0.25f, foreGround);
             //DrawRectangleIRect(rec, foreGround);
             return;
         case Gate::RESISTOR:
-            DrawRectangleIRect(rec, foreGround);
-            DrawRectangleIRect(ShrinkIRect(rec), background);
+            DrawIconPro<32>(g_nodeIcons, IVec2(0, 1), topleft, 0.25f, foreGround);
+            //DrawRectangleIRect(rec, foreGround);
+            //DrawRectangleIRect(ShrinkIRect(rec), background);
             return;
         case Gate::CAPACITOR:
-            DrawRectangleIRect(ExpandIRect(rec), foreGround);
-            DrawRectangleIRect(rec, background);
-            DrawRectangleIRect(ShrinkIRect(rec), foreGround);
+            DrawIconPro<32>(g_nodeIcons, IVec2(1, 1), topleft, 0.25f, foreGround);
+            //DrawRectangleIRect(ExpandIRect(rec), foreGround);
+            //DrawRectangleIRect(rec, background);
+            //DrawRectangleIRect(ShrinkIRect(rec), foreGround);
             return;
         case Gate::DELAY:
-            DrawRectangleIRect(ExpandIRect(rec), foreGround);
-            DrawRectangleIRect(rec, background);
-            DrawLine(rec.x, rec.y + rec.h / 2, rec.x + rec.w, rec.y + rec.h / 2, foreGround);
+            DrawIconPro<32>(g_nodeIcons, IVec2(3, 1), topleft, 0.25f, foreGround);
+            //DrawRectangleIRect(ExpandIRect(rec), foreGround);
+            //DrawRectangleIRect(rec, background);
+            //DrawLine(rec.x, rec.y + rec.h / 2, rec.x + rec.w, rec.y + rec.h / 2, foreGround);
             return;
         case Gate::BATTERY:
-            DrawRectangleIRect(ExpandIRect(rec), foreGround);
-            int halfHeight = rec.h / 2;
-            IRect halfRec = rec;
-            halfRec.h = halfHeight;
-            halfRec.y += halfHeight;
-            DrawRectangleIRect(halfRec, background);
+            DrawIconPro<32>(g_nodeIcons, IVec2(0, 2), topleft, 0.25f, foreGround);
+            //DrawRectangleIRect(ExpandIRect(rec), foreGround);
+            //int halfHeight = rec.h / 2;
+            //IRect halfRec = rec;
+            //halfRec.h = halfHeight;
+            //halfRec.y += halfHeight;
+            //DrawRectangleIRect(halfRec, background);
             return;
         }
     }
     else if (gate == Gate::LED)
     {
-        static const float unitVerts[] =
-        {
-            0,
-            nodeRadius * 1.5f,
-            nodeRadius * sinf(2 * PI / 3) * 1.5f,
-            nodeRadius * cosf(2 * PI / 3) * 1.5f,
-            nodeRadius * sinf(4 * PI / 3) * 1.5f,
-            nodeRadius * cosf(4 * PI / 3) * 1.5f
-        };
+        DrawIconPro<32>(g_nodeIcons, IVec2(2, 1), topleft, 0.25f, foreGround);
 
-        Vector2 tri[3] { position, position, position };
-        tri[0].x += unitVerts[0];
-        tri[0].y += unitVerts[1];
-        tri[1].x += unitVerts[2];
-        tri[1].y += unitVerts[3];
-        tri[2].x += unitVerts[4];
-        tri[2].y += unitVerts[5];
-        
-        switch (gate)
-        {
-        case Gate::LED:
-            DrawTriangle(tri[0], tri[1], tri[2], foreGround);
-            return;
-        }
+        //static const float unitVerts[] =
+        //{
+        //    0,
+        //    nodeRadius * 1.5f,
+        //    nodeRadius * sinf(2 * PI / 3) * 1.5f,
+        //    nodeRadius * cosf(2 * PI / 3) * 1.5f,
+        //    nodeRadius * sinf(4 * PI / 3) * 1.5f,
+        //    nodeRadius * cosf(4 * PI / 3) * 1.5f
+        //};
+        //
+        //Vector2 tri[3] { position, position, position };
+        //tri[0].x += unitVerts[0];
+        //tri[0].y += unitVerts[1];
+        //tri[1].x += unitVerts[2];
+        //tri[1].y += unitVerts[3];
+        //tri[2].x += unitVerts[4];
+        //tri[2].y += unitVerts[5];
+        //
+        //switch (gate)
+        //{
+        //case Gate::LED:
+        //    DrawTriangle(tri[0], tri[1], tri[2], foreGround);
+        //    return;
+        //}
     }
     else
         _ASSERT_EXPR(false, L"Gate type not given specialize draw method");
