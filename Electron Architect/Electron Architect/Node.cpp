@@ -217,6 +217,7 @@ void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
 {
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
     IVec2 topleft = position - IVec2(nodeRadius);
+    // Past Henry: DrawIcon isn't working here because scissor mode seems to ignore the camera!! Try something else...
     if (gate == Gate::OR || gate == Gate::NOR || gate == Gate::XOR)
     {
         switch (gate)
