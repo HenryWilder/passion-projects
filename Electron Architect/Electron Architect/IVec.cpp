@@ -1,3 +1,19 @@
+#include <raylib.h>     // Declares module functions
+
+// Check if config flags have been externally provided on compilation line
+#if !defined(EXTERNAL_CONFIG_FLAGS)
+#include <config.h>         // Defines module configuration flags
+#endif
+
+#if defined(SUPPORT_MODULE_RSHAPES)
+
+#include <rlgl.h>       // OpenGL abstraction layer to OpenGL 1.1, 2.1, 3.3+ or ES2
+
+#include <math.h>       // Required for: sinf(), asinf(), cosf(), acosf(), sqrtf(), fabsf()
+#include <float.h>      // Required for: FLT_EPSILON
+
+#endif
+
 #include "HUtility.h"
 #include "IVec.h"
 
@@ -116,33 +132,6 @@ bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2)
     }
 }
 
-void DrawLineIV(IVec2 start, IVec2 end, Color color)
-{
-    DrawLine(start.x, start.y, end.x, end.y, color);
-}
-void DrawLineIV(IVec2 start, Width width, Color color)
-{
-    DrawLine(start.x, start.y, start.x + width.x, start.y, color);
-}
-void DrawLineIV(IVec2 start, Height height, Color color)
-{
-    DrawLine(start.x, start.y, start.x, start.y + height.y, color);
-}
-void DrawCircleIV(IVec2 origin, float radius, Color color)
-{
-    DrawCircle(origin.x, origin.y, radius, color);
-}
-
-void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint)
-{
-    DrawTexture(texture, pos.x, pos.y, tint);
-}
-
-void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color)
-{
-    DrawText(text, pos.x, pos.y, fontSize, color);
-}
-
 IRect IRectFromTwoPoints(IVec2 a, IVec2 b)
 {
     auto[minx, maxx] = std::minmax(a.x, b.x);
@@ -159,19 +148,27 @@ bool InBoundingBox(IRect bounds, IVec2 pt)
         pt.y <  bounds.y + bounds.h;
 }
 
-void DrawRectangleIRect(IRect rec, Color color)
-{
-    DrawRectangle(rec.x, rec.y, rec.w, rec.h, color);
-}
-
 void DrawRectangleLinesIRect(IRect rec, Color color)
 {
-    DrawRectangleLines(rec.x, rec.y, rec.w, rec.h, color);
-}
+    int left = rec.x + 1;
+    int right = rec.Right();
+    int top = rec.y + 1;
+    int bottom = rec.Bottom();
 
-void BeginScissorMode(IRect area)
-{
-    BeginScissorMode(area.x, area.y, area.w, area.h);
+    rlBegin(RL_LINES);
+        rlColor4ub(color.r, color.g, color.b, color.a);
+        rlVertex2i(left, top);
+        rlVertex2i(right, top);
+
+        rlVertex2i(right, top);
+        rlVertex2i(right, bottom);
+
+        rlVertex2i(right, bottom);
+        rlVertex2i(left, bottom);
+
+        rlVertex2i(left, bottom);
+        rlVertex2i(left, top);
+    rlEnd();
 }
 
 IRect& IRect::Expand(int outline)
@@ -181,9 +178,4 @@ IRect& IRect::Expand(int outline)
     w += outline * 2;
     h += outline * 2;
     return *this;
-}
-
-IRect& IRect::Shrink(int outline)
-{
-    return Expand(-outline);
 }

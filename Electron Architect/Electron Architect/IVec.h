@@ -116,12 +116,30 @@ IVec2 IVec2Scale_f(IVec2 a, float b);
 
 bool CheckCollisionIVecPointLine(IVec2 pt, IVec2 p1, IVec2 p2);
 
-void DrawLineIV(IVec2 start, IVec2 end, Color color);
-void DrawLineIV(IVec2 start, Width width, Color color);
-void DrawLineIV(IVec2 start, Height height, Color color);
-void DrawCircleIV(IVec2 origin, float radius, Color color);
-void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint);
-void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color);
+inline void DrawLineIV(IVec2 start, IVec2 end, Color color)
+{
+    DrawLine(start.x, start.y, end.x, end.y, color);
+}
+inline void DrawLineIV(IVec2 start, Width width, Color color)
+{
+    DrawLine(start.x, start.y, start.x + width.x, start.y, color);
+}
+inline void DrawLineIV(IVec2 start, Height height, Color color)
+{
+    DrawLine(start.x, start.y, start.x, start.y + height.y, color);
+}
+inline void DrawCircleIV(IVec2 origin, float radius, Color color)
+{
+    DrawCircle(origin.x, origin.y, radius, color);
+}
+inline void DrawTextureIV(Texture2D texture, IVec2 pos, Color tint)
+{
+    DrawTexture(texture, pos.x, pos.y, tint);
+}
+inline void DrawTextIV(const char* text, IVec2 pos, int fontSize, Color color)
+{
+    DrawText(text, pos.x, pos.y, fontSize, color);
+}
 
 struct IRect
 {
@@ -152,33 +170,36 @@ struct IRect
         struct { IVec2 position, extents; };
     };
 
-    constexpr int Right()  { return x + w; }
-    constexpr int Bottom() { return y + h; }
+    inline constexpr int Right()  { return x + w; }
+    inline constexpr int Bottom() { return y + h; }
     // Top-left
-    constexpr IVec2 TL() { return xy; }
+    inline constexpr IVec2 TL() { return xy; }
     // Top-right
-    constexpr IVec2 TR() { return xy + width; }
+    inline constexpr IVec2 TR() { return xy + width; }
     // Bottom-left
-    constexpr IVec2 BL() { return xy + height; }
+    inline constexpr IVec2 BL() { return xy + height; }
     // Bottom-right
-    constexpr IVec2 BR() { return xy + wh; }
+    inline constexpr IVec2 BR() { return xy + wh; }
 
-    constexpr operator Rectangle() { return Rectangle{ (float)x, (float)y, (float)w, (float)h }; }
+    inline constexpr operator Rectangle() { return Rectangle{ (float)x, (float)y, (float)w, (float)h }; }
 
-    constexpr operator Width() { return Width(w); }
-    constexpr operator Height() { return Height(h); }
+    inline constexpr operator Width() { return Width(w); }
+    inline constexpr operator Height() { return Height(h); }
 
     IRect& Expand(int outline = 1);
-    IRect& Shrink(int outline = 1);
+    inline IRect& Shrink(int outline = 1)
+    {
+        return Expand(-outline);
+    }
 
     // Abuse as min and max instead of width and height
     // Returns an IRect with INT_MIN and INT_MAX components for comparing
-    static consteval IRect Abused()
+    inline static consteval IRect Abused()
     {
         return IRect(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
     }
     // Changes width and height from being abused maxx and maxy into normal width/height
-    void DeAbuse()
+    inline void DeAbuse()
     {
         w = maxx - minx;
         h = maxy - miny;
@@ -197,7 +218,7 @@ constexpr IRect operator-(IRect a, Height b) { return IRect(a.x, a.y, a.w, a.h -
 constexpr IRect operator*(IRect a, Height b) { return IRect(a.x, a.y, a.w, a.h * b.y); }
 constexpr IRect operator/(IRect a, Height b) { return IRect(a.x, a.y, a.w, a.h / b.y); }
 
-constexpr IRect ExpandIRect(IRect rec, int outline = 1)
+inline constexpr IRect ExpandIRect(IRect rec, int outline = 1)
 {
     return IRect(
         rec.x - outline,
@@ -212,13 +233,20 @@ inline constexpr IRect ShrinkIRect(IRect rec, int outline = 1)
 
 bool InBoundingBox(IRect bounds, IVec2 pt);
 
-void DrawRectangleIRect(IRect rec, Color color);
+inline void DrawRectangleIRect(IRect rec, Color color)
+{
+    DrawRectangle(rec.x, rec.y, rec.w, rec.h, color);
+}
+
 void DrawRectangleLinesIRect(IRect rec, Color color);
 
-void BeginScissorMode(IRect area);
+inline void BeginScissorMode(IRect area)
+{
+    BeginScissorMode(area.x, area.y, area.w, area.h);
+}
 
 template<int W, int H = W>
-void DrawIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint)
+inline void DrawIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint)
 {
     BeginScissorMode(pos.x, pos.y, W, H);
     DrawTexture(iconSheet,

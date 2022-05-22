@@ -53,3 +53,10 @@ struct Wire
     void UpdateElbowToLegal();
     void SnapElbowToLegal(IVec2 pos);
 };
+
+inline bool CheckCollisionIVecPointWire(const IVec2& pt, const Wire* wire)
+{
+    return
+        CheckCollisionIVecPointLine(pt, wire->GetStartPos(), wire->GetElbowPos()) ||
+        CheckCollisionIVecPointLine(pt, wire->GetElbowPos(), wire->GetEndPos  ());
+}

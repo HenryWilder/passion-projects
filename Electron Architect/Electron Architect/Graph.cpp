@@ -729,19 +729,18 @@ Wire* Graph::FindWireAtPos(IVec2 pos) const
 {
     for (Wire* wire : wires)
     {
-        if (CheckCollisionIVecPointLine(pos, wire->GetStartPos(), wire->GetElbowPos()) ||
-            CheckCollisionIVecPointLine(pos, wire->GetElbowPos(), wire->GetEndPos()))
-        {
+        if (CheckCollisionIVecPointWire(pos, wire))
             return wire;
-        }
     }
     return nullptr;
 }
 Wire* Graph::FindWireElbowAtPos(IVec2 pos) const
 {
-    auto it = std::find_if(wires.begin(), wires.end(), [&pos](Wire* wire) { return wire->elbow == pos; });
-    if (it != wires.end())
-        return *it;
+    for (Wire* wire : wires)
+    {
+        if (wire->elbow == pos)
+            return wire;
+    }
     return nullptr;
 }
 
@@ -749,10 +748,48 @@ void Graph::FindNodesInRect(std::vector<Node*>& result, IRect rec) const
 {
     // Exclusive bounds
     IRect bounds = ShrinkIRect(rec);
+    auto pred = [&bounds](Node* node) { return InBoundingBox(bounds, node->GetPosition()); };
+    size_t countInRect = std::count_if(nodes.begin(), nodes.end(), pred);
+    result.reserve(result.size() + countInRect);
     for (Node* node : nodes)
     {
         if (InBoundingBox(bounds, node->GetPosition()))
             result.push_back(node);
+    }
+}
+void Graph::FindNodesInMultiRect(std::vector<Node*>& result, const std::vector<IRect>& rec) const
+{
+    // Exclusive bounds
+    std::vector<IRect> bounds;
+    bounds.reserve(rec.size());
+    for (const IRect& bound : rec)
+    {
+        bounds.push_back(ShrinkIRect(bound));
+    }
+
+    size_t countInRect = 0;
+    for (Node* node : nodes)
+    {
+        for (const IRect& bound : bounds)
+        {
+            if (InBoundingBox(bound, node->GetPosition()))
+            {
+                ++countInRect;
+                break;
+            }
+        }
+    }
+    result.reserve(result.size() + countInRect);
+    for (Node* node : nodes)
+    {
+        for (const IRect& bound : bounds)
+        {
+            if (InBoundingBox(bound, node->GetPosition()))
+            {
+                result.push_back(node);
+                break;
+            }
+        }
     }
 }
 
