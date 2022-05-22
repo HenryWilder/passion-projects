@@ -256,7 +256,7 @@ void Node::Draw(Color foreground, Color background, Color CapacitorInactive) con
         case Gate::CAPACITOR:   textureSheetPos = IVec2(1, 1); color = ColorAlpha(CapacitorInactive, 1.0f - GetChargePercent()); break;
         case Gate::LED:         textureSheetPos = IVec2(2, 1); color = g_resistanceBands[GetColorIndex()]; break;
         }
-        DrawIconPro<32>(g_nodeIconsNTD, IVec2(0, 1), m_position - IVec2(g_gridSize / 2), 0.25f, color);
+        DrawIconPro<32>(g_nodeIconsNTD, textureSheetPos, m_position - IVec2(g_gridSize / 2), 0.25f, color);
     }
 }
 
