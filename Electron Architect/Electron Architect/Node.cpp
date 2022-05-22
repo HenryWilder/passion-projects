@@ -216,21 +216,25 @@ bool Node::IsInteractive() const
 void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
 {
     constexpr int nodeRadius = static_cast<int>(g_nodeRadius);
+    IVec2 topleft = position - IVec2(nodeRadius);
     if (gate == Gate::OR || gate == Gate::NOR || gate == Gate::XOR)
     {
         switch (gate)
         {
         case Gate::OR:
-            DrawCircleIV(position, nodeRadius, foreGround);
+            DrawIcon<32>(g_nodeIcons, IVec2(0, 0), topleft, foreGround);
+            //DrawCircleIV(position, nodeRadius, foreGround);
             return;
         case Gate::NOR:
-            DrawCircleIV(position, nodeRadius, foreGround);
-            DrawCircleIV(position, nodeRadius - 1.0f, background);
+            DrawIcon<32>(g_nodeIcons, IVec2(1, 0), topleft, foreGround);
+            //DrawCircleIV(position, nodeRadius, foreGround);
+            //DrawCircleIV(position, nodeRadius - 1.0f, background);
             return;
         case Gate::XOR:
-            DrawCircleIV(position, nodeRadius + 1.0f, foreGround);
-            DrawCircleIV(position, nodeRadius, background);
-            DrawCircleIV(position, nodeRadius - 1.0f, foreGround);
+            DrawIcon<32>(g_nodeIcons, IVec2(2, 0), topleft, foreGround);
+            //DrawCircleIV(position, nodeRadius + 1.0f, foreGround);
+            //DrawCircleIV(position, nodeRadius, background);
+            //DrawCircleIV(position, nodeRadius - 1.0f, foreGround);
             return;
         }
     }
@@ -240,7 +244,8 @@ void Node::Draw(IVec2 position, Gate gate, Color foreGround, Color background)
         switch (gate)
         {
         case Gate::AND:
-            DrawRectangleIRect(rec, foreGround);
+            DrawIcon<32>(g_nodeIcons, IVec2(3, 0), topleft, foreGround);
+            //DrawRectangleIRect(rec, foreGround);
             return;
         case Gate::RESISTOR:
             DrawRectangleIRect(rec, foreGround);

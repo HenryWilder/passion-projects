@@ -246,7 +246,7 @@ inline void BeginScissorMode(IRect area)
 }
 
 template<int W, int H = W>
-inline void DrawIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint)
+void DrawIcon(Texture2D iconSheet, IVec2 iconColRow, IVec2 pos, Color tint)
 {
     BeginScissorMode(pos.x, pos.y, W, H);
     DrawTexture(iconSheet,
