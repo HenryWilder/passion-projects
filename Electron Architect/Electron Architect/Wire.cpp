@@ -1,19 +1,3 @@
-#include <raylib.h>     // Declares module functions
-
-// Check if config flags have been externally provided on compilation line
-#if !defined(EXTERNAL_CONFIG_FLAGS)
-#include <config.h>         // Defines module configuration flags
-#endif
-
-#if defined(SUPPORT_MODULE_RSHAPES)
-
-#include <rlgl.h>       // OpenGL abstraction layer to OpenGL 1.1, 2.1, 3.3+ or ES2
-
-#include <math.h>       // Required for: sinf(), asinf(), cosf(), acosf(), sqrtf(), fabsf()
-#include <float.h>      // Required for: FLT_EPSILON
-
-#endif
-
 #include "HUtility.h"
 #include "Node.h"
 #include "Wire.h"
@@ -40,15 +24,8 @@ bool Wire::GetState() const
 }
 void Wire::Draw(IVec2 start, IVec2 joint, IVec2 end, Color color)
 {
-    rlBegin(RL_LINES);
-        rlColor4ub(color.r, color.g, color.b, color.a);
-        rlVertex2i(start.x, start.y);
-        rlVertex2i(joint.x, joint.y);
-        rlVertex2i(end.x, end.y);
-    rlEnd();
-
     DrawLineIV(start, joint, color);
-    //DrawLineIV(joint, end, color);
+    DrawLineIV(joint, end, color);
 }
 void Wire::Draw(Color color) const
 {

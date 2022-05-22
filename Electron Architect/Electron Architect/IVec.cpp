@@ -1,19 +1,3 @@
-#include <raylib.h>     // Declares module functions
-
-// Check if config flags have been externally provided on compilation line
-#if !defined(EXTERNAL_CONFIG_FLAGS)
-#include <config.h>         // Defines module configuration flags
-#endif
-
-#if defined(SUPPORT_MODULE_RSHAPES)
-
-#include <rlgl.h>       // OpenGL abstraction layer to OpenGL 1.1, 2.1, 3.3+ or ES2
-
-#include <math.h>       // Required for: sinf(), asinf(), cosf(), acosf(), sqrtf(), fabsf()
-#include <float.h>      // Required for: FLT_EPSILON
-
-#endif
-
 #include "HUtility.h"
 #include "IVec.h"
 
@@ -155,20 +139,10 @@ void DrawRectangleLinesIRect(IRect rec, Color color)
     int top = rec.y + 1;
     int bottom = rec.Bottom();
 
-    rlBegin(RL_LINES);
-        rlColor4ub(color.r, color.g, color.b, color.a);
-        rlVertex2i(left, top);
-        rlVertex2i(right, top);
-
-        rlVertex2i(right, top);
-        rlVertex2i(right, bottom);
-
-        rlVertex2i(right, bottom);
-        rlVertex2i(left, bottom);
-
-        rlVertex2i(left, bottom);
-        rlVertex2i(left, top);
-    rlEnd();
+    DrawLineIV(rec.TL(), rec.height, color);
+    DrawLineIV(rec.TL(), rec.width, color);
+    DrawLineIV(rec.TR(), rec.height, color);
+    DrawLineIV(rec.BL(), rec.width, color);
 }
 
 IRect& IRect::Expand(int outline)
