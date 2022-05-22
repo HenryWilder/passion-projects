@@ -3,16 +3,19 @@
 #include "Node.h"
 #include "nodeIcons.h"
 #include "nodeIconsNTD.h"
+#include "nodeIconsBackground.h"
 #include "nodeIconsHighlight.h"
 
 Texture2D g_nodeIcons;
 Texture2D g_nodeIconsNTD;
+Texture2D g_nodeIconsBackground;
 Texture2D g_nodeIconsHighlight;
 
 void InitNodeIcons()
 {
     g_nodeIcons = LoadTextureFromImage(MEMORY_IMAGE(NODEICONS));
     g_nodeIconsNTD = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSNTD));
+    g_nodeIconsBackground = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSBACKGROUND));
     g_nodeIconsHighlight = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSHIGHLIGHT));
 }
 
@@ -20,6 +23,7 @@ void FreeNodeIcons()
 {
     UnloadTexture(g_nodeIcons);
     UnloadTexture(g_nodeIconsNTD);
+    UnloadTexture(g_nodeIconsBackground);
     UnloadTexture(g_nodeIconsHighlight);
 }
 
@@ -235,8 +239,28 @@ void Node::Draw(IVec2 position, Gate gate, Color foreground, Color background)
     case Gate::DELAY:       textureSheetPos = IVec2(3,1); break;
     case Gate::BATTERY:     textureSheetPos = IVec2(0,2); break;
     }
-    DrawIconPro<32>(g_nodeIconsHighlight, textureSheetPos, topleft, 0.25f, background);
+    DrawIconPro<32>(g_nodeIconsBackground, textureSheetPos, topleft, 0.25f, background);
     DrawIconPro<32>(g_nodeIcons, textureSheetPos, topleft, 0.25f, foreground);
+}
+void Node::DrawHighlight(IVec2 position, Gate gate, Color highlight)
+{
+    IVec2 topleft = position - IVec2(g_gridSize / 2);
+
+    IVec2 textureSheetPos;
+    switch (gate)
+    {
+    default: _ASSERT_EXPR(false, L"Gate type not given specialize draw method");
+    case Gate::OR:          textureSheetPos = IVec2(0, 0); break;
+    case Gate::NOR:         textureSheetPos = IVec2(1, 0); break;
+    case Gate::AND:         textureSheetPos = IVec2(2, 0); break;
+    case Gate::XOR:         textureSheetPos = IVec2(3, 0); break;
+    case Gate::RESISTOR:    textureSheetPos = IVec2(0, 1); break;
+    case Gate::CAPACITOR:   textureSheetPos = IVec2(1, 1); break;
+    case Gate::LED:         textureSheetPos = IVec2(2, 1); break;
+    case Gate::DELAY:       textureSheetPos = IVec2(3, 1); break;
+    case Gate::BATTERY:     textureSheetPos = IVec2(0, 2); break;
+    }
+    DrawIconPro<32>(g_nodeIconsHighlight, textureSheetPos, topleft, 0.25f, highlight);
 }
 void Node::Draw(Color foreground, Color background, Color CapacitorInactive) const
 {

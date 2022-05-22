@@ -68,8 +68,13 @@ public:
     bool IsPassthrough() const;
     bool IsInteractive() const;
 
-    static void Draw(IVec2 position, Gate gate, Color foreGround, Color background);
+    static void Draw(IVec2 position, Gate gate, Color foreground, Color background);
+    static void DrawHighlight(IVec2 position, Gate gate,Color highlight);
     void Draw(Color foreground, Color background, Color CapacitorInactive) const;
+    inline void DrawHighlight(Color highlight) const
+    {
+        DrawHighlight(m_position, m_gate, highlight);
+    }
     // For drawing when there is no such thing as active vs inactive
     inline void DrawStateless(Color foreground, Color background) const
     {

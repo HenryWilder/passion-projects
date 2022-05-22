@@ -600,6 +600,14 @@ void EditTool::Update(Window& window, bool allowHover)
         window.CurrentTab().BridgeSelection(window.currentWireElbowConfig);
         window.ClearSelection();
     }
+
+    if (IsKeyPressed(KEY_R))
+    {
+        if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+            --window.currentWireElbowConfig;
+        else
+            ++window.currentWireElbowConfig;
+    }
 }
 void EditTool::Draw(Window& window)
 {
@@ -699,16 +707,6 @@ void EditTool::Draw(Window& window)
     }
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
 
-    // Selection
-    for (Node* node : window.CurrentTab().selection)
-    {
-        DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, UIColor(UIColorID::UI_COLOR_AVAILABLE));
-    }
-    for (Node* node : selectionPreviewNodes)
-    {
-        DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, UIColor(UIColorID::UI_COLOR_AVAILABLE));
-    }
-
     if (!!window.hoveredWire)
     {
         constexpr ElbowConfig configOrder[] =
@@ -754,12 +752,17 @@ void EditTool::Draw(Window& window)
             "Otherwise, nodes will only be swapped.", UIColor(UIColorID::UI_COLOR_SPECIAL));
     }
 
-    if (IsKeyPressed(KEY_R))
+
+    // Selection
+    for (Node* node : window.CurrentTab().selection)
     {
-        if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
-            --window.currentWireElbowConfig;
-        else
-            ++window.currentWireElbowConfig;
+        node->DrawHighlight(UIColor(UIColorID::UI_COLOR_AVAILABLE));
+        //DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, UIColor(UIColorID::UI_COLOR_AVAILABLE));
+    }
+    for (Node* node : selectionPreviewNodes)
+    {
+        node->DrawHighlight(UIColor(UIColorID::UI_COLOR_AVAILABLE));
+        //DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
 }
 void EditTool::DrawProperties(Window& window)

@@ -16,6 +16,7 @@ int main()
     const char* files[] = {
         "nodeIcons",
         "nodeIconsNTD",
+        "nodeIconsBackground",
         "nodeIconsHighlight",
     };
 
