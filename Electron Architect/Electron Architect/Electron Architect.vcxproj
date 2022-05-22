@@ -214,10 +214,6 @@
   <ItemGroup>
     <Image Include="icons16x.png" />
     <Image Include="icons32x.png" />
-    <Image Include="nodeIcons.png" />
-    <Image Include="nodeIconsBackground.png" />
-    <Image Include="nodeIconsHighlight.png" />
-    <Image Include="nodeIconsNTD.png" />
     <Image Include="program_icon.png" />
   </ItemGroup>
   <ItemGroup>

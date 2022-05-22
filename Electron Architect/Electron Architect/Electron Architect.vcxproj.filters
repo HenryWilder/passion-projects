@@ -74,18 +74,6 @@
     <Image Include="icons32x.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="nodeIcons.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="nodeIconsNTD.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="nodeIconsHighlight.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="nodeIconsBackground.png">
-      <Filter>Resource Files</Filter>
-    </Image>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Node.h">
