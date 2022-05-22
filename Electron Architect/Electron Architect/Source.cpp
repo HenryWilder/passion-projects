@@ -71,6 +71,8 @@ int main()
         }
     }
 
+    InitNodeIcons();
+
     std::atomic_bool saving = false;
     double lastAutoSaveTime = 0.0;
 
@@ -250,6 +252,8 @@ int main()
     ******************************************/
 
     window.SaveConfig();
+
+    FreeNodeIcons();
 
 	return 0;
 }

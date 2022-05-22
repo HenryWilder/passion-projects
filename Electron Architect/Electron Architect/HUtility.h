@@ -16,6 +16,7 @@
 #define ASSERTION_FAILSAFE if (false)
 #endif
 #define ASSERT_SPECIALIZATION(being_specialized) default: _ASSERT_EXPR(false, L"Missing " being_specialized L" specialization for encountered case"); break
+#define MEMORY_IMAGE(name) CLITERAL(Image){(name##_DATA),(name##_WIDTH),(name##_HEIGHT),1,(name##_FORMAT)}
 
 constexpr int g_gridSize = 8;
 

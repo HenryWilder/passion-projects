@@ -74,6 +74,12 @@
     <Image Include="icons32x.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="nodeIcons.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="nodeIconsNTD.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Node.h">
@@ -128,6 +134,12 @@
       <Filter>Images As Code</Filter>
     </ClInclude>
     <ClInclude Include="icons32x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeIcons.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeIconsNTD.h">
       <Filter>Images As Code</Filter>
     </ClInclude>
   </ItemGroup>

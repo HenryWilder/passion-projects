@@ -18,6 +18,9 @@ enum class Gate : char
     BATTERY = '#',
 };
 
+void InitNodeIcons();
+void FreeNodeIcons();
+
 class Node
 {
 public:

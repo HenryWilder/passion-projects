@@ -1,6 +1,23 @@
 #include "HUtility.h"
 #include "Wire.h"
 #include "Node.h"
+#include "nodeIcons.h"
+#include "nodeIconsNTD.h"
+
+Texture2D g_nodeIcons;
+Texture2D g_nodeIconsNTD;
+
+void InitNodeIcons()
+{
+    g_nodeIcons = LoadTextureFromImage(MEMORY_IMAGE(NODEICONS));
+    g_nodeIconsNTD = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSNTD));
+}
+
+void FreeNodeIcons()
+{
+    UnloadTexture(g_nodeIcons);
+    UnloadTexture(g_nodeIconsNTD);
+}
 
 IVec2 Node::GetPosition() const
 {

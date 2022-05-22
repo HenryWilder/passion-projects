@@ -18,8 +18,6 @@
 #include "icons16x.h"
 #include "icons32x.h"
 
-#define MEMORY_IMAGE(name) CLITERAL(Image){(name##_DATA),(name##_WIDTH),(name##_HEIGHT),1,(name##_FORMAT)}
-
 Blueprint g_clipboardBP;
 
 void DrawTextShadowedIV(const std::string& text, IVec2 pos, int fontSize, Color color, Color shadow)

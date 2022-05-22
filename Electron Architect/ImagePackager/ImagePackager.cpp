@@ -14,8 +14,8 @@ int main()
     InitWindow(1280, 720, "Test");
     
     const char* files[] = {
-        "icons16x",
-        "icons32x",
+        "nodeIcons",
+        "nodeIconsNTD",
     };
 
     for (const char* f : files)
