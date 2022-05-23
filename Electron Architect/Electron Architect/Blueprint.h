@@ -63,7 +63,7 @@ public:
     std::vector<NodeBP> nodes;
     std::vector<WireBP> wires;
 
-    void DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const;
+    void DrawSelectionPreview(float zoom, IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const;
     IRect GetSelectionPreviewRect(IVec2 pos) const;
 
     void Save() const;

@@ -1038,7 +1038,7 @@ void PasteOverlay::Draw(Window& window)
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
     window.CurrentTab().graph->DrawNodes(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
-    window.clipboard->DrawSelectionPreview(window.cursorPos - IVec2(g_gridSize), ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND2), 0.5f), UIColor(UIColorID::UI_COLOR_FOREGROUND2), UIColor(UIColorID::UI_COLOR_BACKGROUND2), UIColor(UIColorID::UI_COLOR_FOREGROUND3), window.pastePreviewLOD);
+    window.clipboard->DrawSelectionPreview(window.CurrentTab().camera.zoom, window.cursorPos - IVec2(g_gridSize), ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND2), 0.5f), UIColor(UIColorID::UI_COLOR_FOREGROUND2), UIColor(UIColorID::UI_COLOR_BACKGROUND2), UIColor(UIColorID::UI_COLOR_FOREGROUND3), window.pastePreviewLOD);
 }
 void PasteOverlay::DrawProperties(Window& window)
 {
@@ -1134,7 +1134,7 @@ void BlueprintMenu::Draw(Window& window)
             foregroundIO = UIColor(UIColorID::UI_COLOR_FOREGROUND3);
         }
 
-        bp->DrawSelectionPreview(pos, background, foreground, foregroundIO, ColorAlpha(foreground, 0.25f), window.blueprintLOD);
+        bp->DrawSelectionPreview(window.CurrentTab().camera.zoom, pos, background, foreground, foregroundIO, ColorAlpha(foreground, 0.25f), window.blueprintLOD);
         DrawRectangleLines(rec.x, rec.y, rec.w, rec.h, foreground);
 
         pos += rec.width;

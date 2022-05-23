@@ -1471,6 +1471,7 @@ void Window::PushPropertySection_Group(const std::string& name, Group* value)
 void Window::DrawClipboardPreview() const
 {
     clipboard->DrawSelectionPreview(
+        CurrentTab().camera.zoom,
         clipboardButton.Bounds().BR() + FontPadding(),
         UIColor(UIColorID::UI_COLOR_BACKGROUND1),
         UIColor(UIColorID::UI_COLOR_FOREGROUND3),

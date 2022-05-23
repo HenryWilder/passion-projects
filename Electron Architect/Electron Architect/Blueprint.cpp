@@ -137,7 +137,7 @@ Blueprint::Blueprint(const std::vector<Node*>& src)
     wireThread.join();
 }
 
-void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const
+void Blueprint::DrawSelectionPreview(float zoom, IVec2 pos, Color backgroundColor, Color nodeColor, Color ioNodeColor, Color wireColor, uint8_t lod) const
 {
     IVec2 offset = pos + IVec2(g_gridSize);
     DrawRectangleIRect(GetSelectionPreviewRect(pos), backgroundColor);
@@ -178,7 +178,7 @@ void Blueprint::DrawSelectionPreview(IVec2 pos, Color backgroundColor, Color nod
                 color = ioNodeColor;
             else
                 color = nodeColor;
-            Node::Draw(1, node_bp.relativePosition + offset, node_bp.gate, color, backgroundColor);
+            Node::Draw(zoom, node_bp.relativePosition + offset, node_bp.gate, color, backgroundColor);
         }
         break;
     case 2: // All nodes are circles, io are colored
