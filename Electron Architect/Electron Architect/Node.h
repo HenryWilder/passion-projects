@@ -68,17 +68,17 @@ public:
     bool IsPassthrough() const;
     bool IsInteractive() const;
 
-    static void Draw(IVec2 position, Gate gate, Color foreground, Color background);
-    static void DrawHighlight(IVec2 position, Gate gate,Color highlight);
-    void Draw(Color foreground, Color background, Color CapacitorInactive) const;
-    inline void DrawHighlight(Color highlight) const
+    static void Draw(float zoom, IVec2 position, Gate gate, Color foreground, Color background);
+    static void DrawHighlight(float zoom, IVec2 position, Gate gate,Color highlight);
+    void Draw(float zoom, Color foreground, Color background, Color CapacitorInactive) const;
+    inline void DrawHighlight(float zoom, Color highlight) const
     {
-        DrawHighlight(m_position, m_gate, highlight);
+        DrawHighlight(zoom, m_position, m_gate, highlight);
     }
     // For drawing when there is no such thing as active vs inactive
-    inline void DrawStateless(Color foreground, Color background) const
+    inline void DrawStateless(float zoom, Color foreground, Color background) const
     {
-        Draw(m_position, m_gate, foreground, background);
+        Draw(zoom, m_position, m_gate, foreground, background);
     }
 
     bool WireIsInput(Wire* wire) const;

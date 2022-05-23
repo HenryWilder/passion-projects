@@ -676,7 +676,7 @@ void Graph::DrawWires(Color colorActive, Color colorInactive) const
         wire->Draw(wire->start->GetState() ? colorActive : colorInactive);
     }
 }
-void Graph::DrawNodes(Color colorActive, Color colorInactive) const
+void Graph::DrawNodes(float zoom, Color colorActive, Color colorInactive) const
 {
     constexpr int nodeRadius = (int)Node::g_nodeRadius;
     for (Node* node : nodes)
@@ -705,7 +705,7 @@ void Graph::DrawNodes(Color colorActive, Color colorInactive) const
             }
         }
         else [[likely]]
-            node->Draw(node->GetState() ? colorActive : colorInactive, UIColor(UIColorID::UI_COLOR_BACKGROUND), colorInactive);
+            node->Draw(zoom, node->GetState() ? colorActive : colorInactive, UIColor(UIColorID::UI_COLOR_BACKGROUND), colorInactive);
     }
 }
 void Graph::DrawGroups() const

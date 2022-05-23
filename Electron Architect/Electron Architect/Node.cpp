@@ -1,30 +1,112 @@
 #include "HUtility.h"
 #include "Wire.h"
 #include "Node.h"
-#include "nodeIcons.h"
-#include "nodeIconsNTD.h"
-#include "nodeIconsBackground.h"
-#include "nodeIconsHighlight.h"
 
-Texture2D g_nodeIcons;
-Texture2D g_nodeIconsNTD;
-Texture2D g_nodeIconsBackground;
-Texture2D g_nodeIconsHighlight;
+#include "nodeicons/code/nodeIconsBasic8x.h"
+#include "nodeicons/code/nodeIconsNTD8x.h"
+#include "nodeicons/code/nodeIconsBackground8x.h"
+#include "nodeicons/code/nodeIconsHighlight8x.h"
+#include "nodeicons/code/nodeIconsBasic16x.h"
+#include "nodeicons/code/nodeIconsNTD16x.h"
+#include "nodeicons/code/nodeIconsBackground16x.h"
+#include "nodeicons/code/nodeIconsHighlight16x.h"
+#include "nodeicons/code/nodeIconsBasic32x.h"
+#include "nodeicons/code/nodeIconsNTD32x.h"
+#include "nodeicons/code/nodeIconsBackground32x.h"
+#include "nodeicons/code/nodeIconsHighlight32x.h"
+
+enum class NodeIconType
+{
+    Basic,
+    NTD,
+    Background,
+    Highlight,
+};
+enum class NodeIconScale
+{
+    x8,
+    x16,
+    x32,
+};
+Texture2D g_nodeIcons[4][3];
+Texture2D& NodeIcon(NodeIconType type, NodeIconScale scale)
+{
+    return g_nodeIcons[(int)type][(int)scale];
+}
+
+void DrawNodeIcon(IVec2 pos, NodeIconType type, float zoom, Gate gate, Color tint)
+{
+    NodeIconScale scale;
+    int width = 8 * zoom;
+
+    Rectangle dest;
+    dest.x = (float)pos.x;
+    dest.y = (float)pos.y;
+    dest.width = dest.height = (float)width / zoom;
+
+    if (zoom < 1.0f)
+    {
+        DrawRectangleRec(dest, tint);
+        return;
+    }
+
+    switch ((int)(zoom))
+    {
+    default:
+    case 1: scale = NodeIconScale::x8;  break;
+    case 2: scale = NodeIconScale::x16; break;
+    case 4: scale = NodeIconScale::x32; break;
+    }
+
+    const Texture2D& tex = NodeIcon(type, scale);
+    IVec2 textureSheetPos;
+    switch (gate)
+    {
+    default: _ASSERT_EXPR(false, L"Gate type not given specialize draw method");
+    case Gate::OR:          textureSheetPos = IVec2(0, 0); break;
+    case Gate::NOR:         textureSheetPos = IVec2(1, 0); break;
+    case Gate::AND:         textureSheetPos = IVec2(2, 0); break;
+    case Gate::XOR:         textureSheetPos = IVec2(3, 0); break;
+    case Gate::RESISTOR:    textureSheetPos = IVec2(0, 1); break;
+    case Gate::CAPACITOR:   textureSheetPos = IVec2(1, 1); break;
+    case Gate::LED:         textureSheetPos = IVec2(2, 1); break;
+    case Gate::DELAY:       textureSheetPos = IVec2(3, 1); break;
+    case Gate::BATTERY:     textureSheetPos = IVec2(0, 2); break;
+    }
+
+    Rectangle src;
+    src.x = (float)width * (float)textureSheetPos.x;
+    src.y = (float)width * (float)textureSheetPos.y;
+    src.width = src.height  = (float)width;
+
+    DrawTexturePro(tex, src, dest, { 0 }, 0.0f, tint);
+}
 
 void InitNodeIcons()
 {
-    g_nodeIcons = LoadTextureFromImage(MEMORY_IMAGE(NODEICONS));
-    g_nodeIconsNTD = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSNTD));
-    g_nodeIconsBackground = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSBACKGROUND));
-    g_nodeIconsHighlight = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSHIGHLIGHT));
+    NodeIcon(NodeIconType::Basic,       NodeIconScale::x8 ) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSBASIC8X ));
+    NodeIcon(NodeIconType::Basic,       NodeIconScale::x16) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSBASIC16X));
+    NodeIcon(NodeIconType::Basic,       NodeIconScale::x32) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSBASIC32X));
+    NodeIcon(NodeIconType::NTD,         NodeIconScale::x8 ) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSNTD8X ));
+    NodeIcon(NodeIconType::NTD,         NodeIconScale::x16) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSNTD16X));
+    NodeIcon(NodeIconType::NTD,         NodeIconScale::x32) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSNTD32X));
+    NodeIcon(NodeIconType::Background,  NodeIconScale::x8 ) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSBACKGROUND8X ));
+    NodeIcon(NodeIconType::Background,  NodeIconScale::x16) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSBACKGROUND16X));
+    NodeIcon(NodeIconType::Background,  NodeIconScale::x32) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSBACKGROUND32X));
+    NodeIcon(NodeIconType::Highlight,   NodeIconScale::x8 ) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSHIGHLIGHT8X ));
+    NodeIcon(NodeIconType::Highlight,   NodeIconScale::x16) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSHIGHLIGHT16X));
+    NodeIcon(NodeIconType::Highlight,   NodeIconScale::x32) = LoadTextureFromImage(MEMORY_IMAGE(NODEICONSHIGHLIGHT32X));
 }
 
 void FreeNodeIcons()
 {
-    UnloadTexture(g_nodeIcons);
-    UnloadTexture(g_nodeIconsNTD);
-    UnloadTexture(g_nodeIconsBackground);
-    UnloadTexture(g_nodeIconsHighlight);
+    for (auto& row : g_nodeIcons)
+    {
+        for (const Texture2D& tex : row)
+        {
+            UnloadTexture(tex);
+        }
+    }
 }
 
 IVec2 Node::GetPosition() const
@@ -221,66 +303,34 @@ bool Node::IsInteractive() const
     return IsOutputOnly() && (m_gate == Gate::OR || m_gate == Gate::NOR);
 }
 
-void Node::Draw(IVec2 position, Gate gate, Color foreground, Color background)
+void Node::Draw(float zoom, IVec2 position, Gate gate, Color foreground, Color background)
 {
     IVec2 topleft = position - IVec2(g_gridSize / 2);
-
-    IVec2 textureSheetPos;
-    switch (gate)
-    {
-    default: _ASSERT_EXPR(false, L"Gate type not given specialize draw method");
-    case Gate::OR:          textureSheetPos = IVec2(0,0); break;
-    case Gate::NOR:         textureSheetPos = IVec2(1,0); break;
-    case Gate::AND:         textureSheetPos = IVec2(2,0); break;
-    case Gate::XOR:         textureSheetPos = IVec2(3,0); break;
-    case Gate::RESISTOR:    textureSheetPos = IVec2(0,1); break;
-    case Gate::CAPACITOR:   textureSheetPos = IVec2(1,1); break;
-    case Gate::LED:         textureSheetPos = IVec2(2,1); break;
-    case Gate::DELAY:       textureSheetPos = IVec2(3,1); break;
-    case Gate::BATTERY:     textureSheetPos = IVec2(0,2); break;
-    }
-    DrawIconPro<32>(g_nodeIconsBackground, textureSheetPos, topleft, 0.25f, background);
-    DrawIconPro<32>(g_nodeIcons, textureSheetPos, topleft, 0.25f, foreground);
+    DrawNodeIcon(topleft, NodeIconType::Background, zoom, gate, background);
+    DrawNodeIcon(topleft, NodeIconType::Basic, zoom, gate, foreground);
 }
-void Node::DrawHighlight(IVec2 position, Gate gate, Color highlight)
+void Node::DrawHighlight(float zoom, IVec2 position, Gate gate, Color highlight)
 {
-    IVec2 topleft = position - IVec2(g_gridSize / 2);
-
-    IVec2 textureSheetPos;
-    switch (gate)
-    {
-    default: _ASSERT_EXPR(false, L"Gate type not given specialize draw method");
-    case Gate::OR:          textureSheetPos = IVec2(0, 0); break;
-    case Gate::NOR:         textureSheetPos = IVec2(1, 0); break;
-    case Gate::AND:         textureSheetPos = IVec2(2, 0); break;
-    case Gate::XOR:         textureSheetPos = IVec2(3, 0); break;
-    case Gate::RESISTOR:    textureSheetPos = IVec2(0, 1); break;
-    case Gate::CAPACITOR:   textureSheetPos = IVec2(1, 1); break;
-    case Gate::LED:         textureSheetPos = IVec2(2, 1); break;
-    case Gate::DELAY:       textureSheetPos = IVec2(3, 1); break;
-    case Gate::BATTERY:     textureSheetPos = IVec2(0, 2); break;
-    }
-    DrawIconPro<32>(g_nodeIconsHighlight, textureSheetPos, topleft, 0.25f, highlight);
+    DrawNodeIcon(position - IVec2(g_gridSize / 2), NodeIconType::Highlight, zoom, gate, highlight);
 }
-void Node::Draw(Color foreground, Color background, Color CapacitorInactive) const
+void Node::Draw(float zoom, Color foreground, Color background, Color CapacitorInactive) const
 {
     if (IsPassthrough())
         return;
 
-    Draw(m_position, m_gate, foreground, background);
+    Draw(zoom, m_position, m_gate, foreground, background);
 
     if (m_gate == Gate::RESISTOR || m_gate == Gate::LED || m_gate == Gate::CAPACITOR)
     {
-        IVec2 textureSheetPos;
         Color color;
         switch (m_gate)
         {
         default: _ASSERT_EXPR(false, L"NDT type in IF condition but not switch statement");
-        case Gate::RESISTOR:    textureSheetPos = IVec2(0, 1); color = g_resistanceBands[GetResistance()]; break;
-        case Gate::CAPACITOR:   textureSheetPos = IVec2(1, 1); color = ColorAlpha(CapacitorInactive, 1.0f - GetChargePercent()); break;
-        case Gate::LED:         textureSheetPos = IVec2(2, 1); color = g_resistanceBands[GetColorIndex()]; break;
+        case Gate::RESISTOR:    color = g_resistanceBands[GetResistance()]; break;
+        case Gate::CAPACITOR:   color = ColorAlpha(CapacitorInactive, 1.0f - GetChargePercent()); break;
+        case Gate::LED:         color = g_resistanceBands[GetColorIndex()]; break;
         }
-        DrawIconPro<32>(g_nodeIconsNTD, textureSheetPos, m_position - IVec2(g_gridSize / 2), 0.25f, color);
+        DrawNodeIcon(m_position - IVec2(g_gridSize / 2), NodeIconType::NTD, zoom, m_gate, color);
     }
 }
 

@@ -130,16 +130,40 @@
     <ClInclude Include="icons32x.h">
       <Filter>Images As Code</Filter>
     </ClInclude>
-    <ClInclude Include="nodeIcons.h">
+    <ClInclude Include="nodeicons\code\nodeIconsBackground8x.h">
       <Filter>Images As Code</Filter>
     </ClInclude>
-    <ClInclude Include="nodeIconsNTD.h">
+    <ClInclude Include="nodeicons\code\nodeIconsBackground16x.h">
       <Filter>Images As Code</Filter>
     </ClInclude>
-    <ClInclude Include="nodeIconsHighlight.h">
+    <ClInclude Include="nodeicons\code\nodeIconsBackground32x.h">
       <Filter>Images As Code</Filter>
     </ClInclude>
-    <ClInclude Include="nodeIconsBackground.h">
+    <ClInclude Include="nodeicons\code\nodeIconsBasic8x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeicons\code\nodeIconsBasic16x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeicons\code\nodeIconsBasic32x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeicons\code\nodeIconsHighlight8x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeicons\code\nodeIconsHighlight16x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeicons\code\nodeIconsHighlight32x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeicons\code\nodeIconsNTD8x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeicons\code\nodeIconsNTD16x.h">
+      <Filter>Images As Code</Filter>
+    </ClInclude>
+    <ClInclude Include="nodeicons\code\nodeIconsNTD32x.h">
       <Filter>Images As Code</Filter>
     </ClInclude>
   </ItemGroup>

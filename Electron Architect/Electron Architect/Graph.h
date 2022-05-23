@@ -99,7 +99,7 @@ public:
     // Draw functions
     
     void DrawWires(Color colorActive, Color colorInactive) const;
-    void DrawNodes(Color colorActive, Color colorInactive) const;
+    void DrawNodes(float zoom, Color colorActive, Color colorInactive) const;
     void DrawGroups() const;
 
     // Search functions

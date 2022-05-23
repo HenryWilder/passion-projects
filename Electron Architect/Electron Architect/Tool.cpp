@@ -208,7 +208,7 @@ void PenTool::Draw(Window& window)
             Wire::Draw(startNode->GetPosition(), elbow, end, UIColor(UIColorID::UI_COLOR_AVAILABLE));
         }
         if (!window.hoveredNode)
-            Node::Draw(end, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+            Node::Draw(window.CurrentTab().camera.zoom, end, window.gatePick, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 
     if (!!window.hoveredWire && !(IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT)))
@@ -227,7 +227,7 @@ void PenTool::Draw(Window& window)
         }
     }
 
-    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().graph->DrawNodes(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     if (!!startNode && startNode != window.hoveredNode)
     {
@@ -236,12 +236,12 @@ void PenTool::Draw(Window& window)
             color = UIColor(UIColorID::UI_COLOR_OUTPUT);
         else
             color = UIColor(UIColorID::UI_COLOR_INPUT);
-        startNode->DrawStateless(color, UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        startNode->DrawStateless(window.CurrentTab().camera.zoom, color, UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
     if (!!window.hoveredWire)
     {
-        window.hoveredWire->start->DrawStateless(UIColor(UIColorID::UI_COLOR_INPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
-        window.hoveredWire->end->DrawStateless(UIColor(UIColorID::UI_COLOR_OUTPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        window.hoveredWire->start->DrawStateless(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_INPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        window.hoveredWire->end->DrawStateless(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_OUTPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
     else if (!!window.hoveredNode)
     {
@@ -252,10 +252,10 @@ void PenTool::Draw(Window& window)
                 color = UIColor(UIColorID::UI_COLOR_INPUT);
             else
                 color = UIColor(UIColorID::UI_COLOR_OUTPUT);
-            window.hoveredNode->DrawStateless(color, UIColor(UIColorID::UI_COLOR_BACKGROUND));
+            window.hoveredNode->DrawStateless(window.CurrentTab().camera.zoom, color, UIColor(UIColorID::UI_COLOR_BACKGROUND));
         }
         else if (!currentWireStart)
-            window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+            window.hoveredNode->DrawStateless(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 }
 void PenTool::DrawProperties(Window& window)
@@ -732,16 +732,16 @@ void EditTool::Draw(Window& window)
         window.hoveredWire->DrawElbow(elbowColor);
     }
 
-    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().graph->DrawNodes(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     if (!!window.hoveredNode)
     {
-        window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_CAUTION), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        window.hoveredNode->DrawStateless(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_CAUTION), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
     if (!!window.hoveredWire)
     {
-        window.hoveredWire->start->DrawStateless(UIColor(UIColorID::UI_COLOR_INPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
-        window.hoveredWire->end->DrawStateless(UIColor(UIColorID::UI_COLOR_OUTPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        window.hoveredWire->start->DrawStateless(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_INPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        window.hoveredWire->end->DrawStateless(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_OUTPUT), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 
     if (!!nodeBeingDragged && hoveringMergable)
@@ -756,12 +756,12 @@ void EditTool::Draw(Window& window)
     // Selection
     for (Node* node : window.CurrentTab().selection)
     {
-        node->DrawHighlight(UIColor(UIColorID::UI_COLOR_AVAILABLE));
+        node->DrawHighlight(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_AVAILABLE));
         //DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
     for (Node* node : selectionPreviewNodes)
     {
-        node->DrawHighlight(UIColor(UIColorID::UI_COLOR_AVAILABLE));
+        node->DrawHighlight(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_AVAILABLE));
         //DrawCircleIV(node->GetPosition(), node->g_nodeRadius + 3, UIColor(UIColorID::UI_COLOR_AVAILABLE));
     }
 }
@@ -906,11 +906,11 @@ void EraseTool::Draw(Window& window)
         }
     }
 
-    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().graph->DrawNodes(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     if (!!window.hoveredNode)
     {
-        window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_ERROR), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        window.hoveredNode->DrawStateless(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_ERROR), UIColor(UIColorID::UI_COLOR_BACKGROUND));
         DrawCross(window.hoveredNode->GetPosition(), UIColor(UIColorID::UI_COLOR_DESTRUCTIVE));
 
         if ((IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)))
@@ -996,19 +996,19 @@ void InteractTool::Update(Window& window, bool allowHover)
 void InteractTool::Draw(Window& window)
 {
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
-    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().graph->DrawNodes(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     // The set of all start nodes contains the set of all interactive nodes
     // The set of all interactive nodes does not contain all start nodes
     for (const Node* node : window.CurrentTab().graph->GetStartNodes())
     {
         if (node->IsInteractive())
-            node->DrawStateless(UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+            node->DrawStateless(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_AVAILABLE), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 
     if (!!window.hoveredNode && window.hoveredNode->IsInteractive())
     {
-        window.hoveredNode->DrawStateless(UIColor(UIColorID::UI_COLOR_CAUTION), UIColor(UIColorID::UI_COLOR_BACKGROUND));
+        window.hoveredNode->DrawStateless(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_CAUTION), UIColor(UIColorID::UI_COLOR_BACKGROUND));
     }
 }
 void InteractTool::DrawProperties(Window& window)
@@ -1036,7 +1036,7 @@ void PasteOverlay::Update(Window& window, bool allowHover)
 void PasteOverlay::Draw(Window& window)
 {
     window.CurrentTab().graph->DrawWires(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND3));
-    window.CurrentTab().graph->DrawNodes(UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
+    window.CurrentTab().graph->DrawNodes(window.CurrentTab().camera.zoom, UIColor(UIColorID::UI_COLOR_ACTIVE), UIColor(UIColorID::UI_COLOR_FOREGROUND));
 
     window.clipboard->DrawSelectionPreview(window.cursorPos - IVec2(g_gridSize), ColorAlpha(UIColor(UIColorID::UI_COLOR_BACKGROUND2), 0.5f), UIColor(UIColorID::UI_COLOR_FOREGROUND2), UIColor(UIColorID::UI_COLOR_BACKGROUND2), UIColor(UIColorID::UI_COLOR_FOREGROUND3), window.pastePreviewLOD);
 }
