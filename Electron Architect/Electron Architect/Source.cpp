@@ -130,7 +130,10 @@ int main()
     EVAL:
         window.cursorPosPrev = window.cursorPos;
         if (window.CurrentTab().graph->IsOrderDirty())
-            window.tickThisFrame = !(window.tickFrame = 0);
+        {
+            window.tickFrame = 0;
+            window.tickThisFrame = true;
+        }
         if (window.tickThisFrame && (saving ? !window.CurrentTab().graph->IsOrderDirty() : true))
         {
             window.CurrentTab().graph->Evaluate();

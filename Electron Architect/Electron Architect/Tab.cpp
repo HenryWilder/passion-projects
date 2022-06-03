@@ -1,5 +1,6 @@
 #include <raylib.h>
 #include <thread>
+#include <string>
 #include "IVec.h"
 #include "Graph.h"
 #include "Window.h"

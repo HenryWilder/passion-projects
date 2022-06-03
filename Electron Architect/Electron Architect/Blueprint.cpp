@@ -1,5 +1,6 @@
 #include <thread>
 #include <fstream>
+#include <string>
 #include "Blueprint.h"
 
 void Blueprint::PopulateNodes(const std::vector<Node*>& src)
