@@ -31,6 +31,122 @@ enum class LogType
     error = 4,
 };
 
+struct UIStyle
+{
+    Color fontColor = UIColor(UIColorID::UI_COLOR_FOREGROUND);
+    Color backgroundColor = UIColor(UIColorID::UI_COLOR_BACKGROUND1);
+    
+    static UIStyle Title();
+    static UIStyle Subtitle();
+    static UIStyle Property();
+};
+
+struct Property
+{
+    Property()
+    {
+        memset(this, 0, sizeof(Property));
+        name = "";
+    }
+    ~Property()
+    {
+        if (value.tag == Type::ty_str)
+        {
+            if (value.s != nullptr)
+                delete[] value.s;
+        }
+        else if (value.tag == Type::ty_arr)
+        {
+            if (value.a.arr != nullptr)
+                delete[] value.a.arr;
+        }
+    }
+
+    enum class Type{ ty_bool, ty_char, ty_int, ty_flt, ty_ptr, ty_str, ty_arr };
+    std::string name;
+    struct Value
+    {
+        Value()
+        {
+            memset(this, 0, sizeof(Value));
+        }
+        Type tag;
+        union
+        {
+            bool b;
+            char c;
+            int i;
+            float f;
+            void* p; // Use as a number, not a reference
+            char* s;
+            struct
+            {
+                size_t size = 0;
+                Property* arr = nullptr;
+            } a;
+        };
+        Type TypeOf() const
+        {
+            return tag;
+        }
+        std::string ToString() const
+        {
+            switch (tag)
+            {
+            case Property::Type::ty_bool: return b ? "true" : "false";
+            case Property::Type::ty_char: return { c };
+            case Property::Type::ty_int:  return std::to_string(i);
+            case Property::Type::ty_flt:  return std::to_string(f);
+            case Property::Type::ty_ptr:  return TextFormat("0x%p", p);
+            case Property::Type::ty_str:  return s;
+            default: return "";
+            }
+        }
+    } value;
+
+    const std::string& Name() const { return name; }
+
+    template<typename T> const T& GetValue() const { static_assert(false, "No instantiation of this function exists for a property of this type"); }
+    template<> const bool GetValue<bool>() const { return value.b; }
+    template<> const char GetValue<char>() const { return value.c; }
+    template<> const int GetValue<int>() const { return value.i; }
+    template<> const float GetValue<float>() const { return value.f; }
+    template<> const void* GetValue<void*>() const { return value.p; }
+    template<> const std::string GetValue<std::string>() const { return value.s; }
+
+    size_t GetArraySize() const { return value.a.size; }
+    Property& GetArrayElementAt(size_t index) const { return value.a.arr[index]; }
+};
+template<typename T> Property CreateProperty(const std::string& name, const T& value) { static_assert(false, "No instantiation exists for a property of this type"); }
+template<> Property CreateProperty<bool>(const std::string& name, const bool& value) { return { .name{ name }, .value{ .tag{ Property::Type::ty_bool }, .b{value} } }; }
+template<> Property CreateProperty<char>(const std::string& name, const char& value) { return { .name{ name }, .value{ .tag{ Property::Type::ty_char }, .c{value} } }; }
+template<> Property CreateProperty<int>(const std::string& name, const int& value) { return { .name{ name }, .value{ .tag{ Property::Type::ty_int }, .i{value} } }; }
+template<> Property CreateProperty<float>(const std::string& name, const float& value) { return { .name{ name }, .value{ .tag{ Property::Type::ty_flt }, .f{value} } }; }
+template<class Ty> Property CreateProperty<std::add_pointer_t<Ty>>(const std::string& name, const std::add_pointer_t<Ty>& value)
+{
+    return { .name{ name }, .value{ .tag{ Property::Type::ty_ptr }, .p{value} } };
+}
+template<> Property CreateProperty<std::string>(const std::string& name, const std::string& value)
+{
+    Property prop = { .name{ name }, .value{.tag{ Property::Type::ty_str }, .s{new char[value.size() + 1]} } };
+    for (size_t i = 0; i < value.size(); ++i)
+    {
+        prop.value.s[i] = value[i];
+    }
+    prop.value.s[value.size()] = '\0';
+    return prop;
+}
+template<> Property CreateProperty<std::vector<Property>>(const std::string& name, const std::vector<Property>& value)
+{
+    Property prop = { .name{ name }, .value{.tag{ Property::Type::ty_arr }, .a{ .size{ value.size() }, .arr{ new Property[value.size()] } } } };
+    for (size_t i = 0; i < value.size(); ++i)
+    {
+        prop.value.s[i] = value[i];
+    }
+    prop.value.s[value.size()] = '\0';
+    return prop;
+}
+
 struct Window
 {
     Window();

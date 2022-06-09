@@ -1744,3 +1744,27 @@ void Window::DrawToolProperties()
     else
         base->DrawProperties(*this);
 }
+
+UIStyle UIStyle::Title()
+{
+    return {
+        .fontColor = UIColor(UIColorID::UI_COLOR_FOREGROUND),
+        .backgroundColor = UIColor(UIColorID::UI_COLOR_BACKGROUND2)
+    };
+}
+
+UIStyle UIStyle::Subtitle()
+{
+    return {
+        .fontColor = UIColor(UIColorID::UI_COLOR_FOREGROUND),
+        .backgroundColor = UIColor(UIColorID::UI_COLOR_BACKGROUND2)
+    };
+}
+
+UIStyle UIStyle::Property()
+{
+    return {
+        .fontColor = UIColor(UIColorID::UI_COLOR_FOREGROUND),
+        .backgroundColor = UIColor(UIColorID::UI_COLOR_BACKGROUND1)
+    };
+}
