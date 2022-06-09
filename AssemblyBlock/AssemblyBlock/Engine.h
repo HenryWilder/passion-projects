@@ -104,11 +104,11 @@ namespace Engine
 		inline ~Draggable() { _ASSERT_EXPR(shape, L"Draggable shape cannot be null"); delete shape; }
 
 	private:
-		void PressVerifier(void* sender, InternalEvents::MouseEventArgs e);
-		void ReleaseVerifier(void* sender, InternalEvents::MouseEventArgs e);
+		void PressVerifier(void* sender, void* e);
+		void ReleaseVerifier(void* sender, void* e);
 
-		void OnPress(void* sender, InternalEvents::MouseEventArgs e);
-		void OnRelease(void* sender, InternalEvents::MouseEventArgs e);
+		void OnPress(void* sender, void* e);
+		void OnRelease(void* sender, void* e);
 
 	protected:
 		// Called when the object is enabled

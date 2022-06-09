@@ -1,5 +1,10 @@
 #include "Engine.h"
 
+using namespace Engine;
+using namespace Events;
+using namespace Shapes;
+using namespace InternalEvents;
+
 namespace Engine
 {
 	namespace Shapes
@@ -12,11 +17,11 @@ namespace Engine
 
 	namespace InternalEvents
 	{
-		Events::Event<TickEventArgs> TickEvent;
-		Events::Event<DrawEventArgs> DrawEvent;
+		Event TickEvent;
+		Event DrawEvent;
 
-		Events::Event<MouseEventArgs> LeftMousePressEvent;
-		Events::Event<MouseEventArgs> LeftMouseReleaseEvent;
+		Event LeftMousePressEvent;
+		Event LeftMouseReleaseEvent;
 	}
 
 	using namespace InternalEvents;
@@ -46,27 +51,28 @@ namespace Engine
 	void Object::Draw() {}
 	void Object::OnDisable() {}
 
-	void Draggable::PressVerifier(void* sender, MouseEventArgs e)
+	void Draggable::PressVerifier(void* sender, void* e)
 	{
 		if (shape->CheckCollision(e.point))
 			OnPressEvent(this, e);
 	}
-	void Draggable::ReleaseVerifier(void* sender, InternalEvents::MouseEventArgs e)
+	void Draggable::ReleaseVerifier(void* sender, void* e)
 	{
 		if (shape->CheckCollision(e.point))
 			OnReleaseEvent(this, e);
 	}
-	void Draggable::OnPress(void* sender, InternalEvents::MouseEventArgs args)
+	void Draggable::OnPress(void* sender, void args)
 	{
 		held = true;
 	}
-	void Draggable::OnRelease(void* sender, InternalEvents::MouseEventArgs args)
+	void Draggable::OnRelease(void* sender, void args)
 	{
 		held = false;
 	}
 
 	void Draggable::OnEnable()
 	{
+		Delegate::FromMethod<Draggable, &Draggable::PressVerifier>(this);
 		LeftMousePressEvent.Connect(listener, [this](void* sender, MouseEventArgs args) { PressVerifier(sender, args); });
 		LeftMouseReleaseEvent.Connect(listener, [this](void* sender, MouseEventArgs args) { ReleaseVerifier(sender, args); });
 		OnPressEvent.Connect(listener, [this](void* sender, MouseEventArgs args) { OnPress(sender, args); });
