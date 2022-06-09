@@ -11,15 +11,9 @@ namespace Engine
 			virtual bool CheckCollision(Vector2 pt) const = 0;
 		};
 
-		struct UIStyle
-		{
-			Vector2 offset = { 0 };
-			Vector2 scale = { 1 };
-			Color tint = WHITE;
-		};
 		__interface IDrawable
 		{
-			virtual void Draw(UIStyle style = {}) const = 0;
+			virtual void Draw(Color tint) const = 0;
 		};
 
 		__interface Shape2D : IDrawable, IPointCollidable {};
@@ -34,7 +28,7 @@ namespace Engine
 			Rectangle2D(const Rectangle& rec) : data{ rec } {}
 			Rectangle2D(float x, float y, float width, float height) : data{ x, y, width, height } {}
 
-			void Draw(UIStyle style) const final;
+			void Draw(Color tint) const final;
 			inline bool CheckCollision(Vector2 pt) const final
 			{
 				return CheckCollisionPointRec(pt, data);
@@ -80,10 +74,12 @@ namespace Engine
 	protected:
 		// Called when the object is enabled
 		virtual void OnEnable();
+	public:
 		// Called every tick
 		virtual void Update();
 		// Called every frame
 		virtual void Draw();
+	private:
 		// Called when the object is disabled
 		virtual void OnDisable();
 	};
@@ -97,7 +93,14 @@ namespace Engine
 		bool held = false;
 
 	public:
-		inline Draggable(Shapes::Shape2D* shape, bool enabledByDefault = true) : Object(enabledByDefault), shape(shape) {}
+		template<class TShape>
+		inline Draggable(TShape&& shape, bool enabledByDefault = true) requires std::derived_from<TShape, Shapes::Shape2D>
+			: Object(enabledByDefault)
+		{
+			TShape* _shape = new TShape;
+			*_shape = shape;
+			this->shape = _shape;
+		}
 		inline ~Draggable() { _ASSERT_EXPR(shape, L"Draggable shape cannot be null"); delete shape; }
 
 	private:

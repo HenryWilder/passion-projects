@@ -40,12 +40,9 @@ namespace Engine
 			std::map<Listener*, Callback_t> m_listeners;
 
 		public:
-			~Event()
-			{
-				DisconnectAll();
-			}
+			~Event() { DisconnectAll(); }
 
-			inline void operator()(void* sender, TEventArgs args) const
+			void operator()(void* sender, TEventArgs args) const
 			{
 				for (auto it : m_listeners)
 				{

@@ -4,15 +4,9 @@ namespace Engine
 {
 	namespace Shapes
 	{
-		void Rectangle2D::Draw(UIStyle style) const
+		void Rectangle2D::Draw(Color tint) const
 		{
-			Rectangle temp = {
-				data.x + style.offset.x,
-				data.y + style.offset.y,
-				data.width * style.scale.x,
-				data.height * style.scale.y
-			};
-			DrawRectangleRec(temp, style.tint);
+			DrawRectangleRec(data, tint);
 		}
 	}
 
@@ -86,7 +80,7 @@ namespace Engine
 
 	void Draggable::Draw()
 	{
-		shape->Draw();
+		shape->Draw(RAYWHITE);
 	}
 
 	void Draggable::OnDisable()

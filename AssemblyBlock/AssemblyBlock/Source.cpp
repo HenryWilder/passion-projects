@@ -73,9 +73,8 @@ int main()
 
 	persistent = Data::Persistent();
 
-	{
-		CreateObject(Engine::Draggable(new Engine::Shapes::Rectangle2D(40, 40, 200, 300)));
-	}
+	Engine::Draggable* object = CreateObject(Engine::Draggable(Engine::Shapes::Rectangle2D(40, 40, 200, 300), true));
+	object->SetActive(true);
 
 	while (!WindowShouldClose())
 	{
@@ -93,15 +92,20 @@ int main()
 				Engine::InternalEvents::LeftMouseReleaseEvent(nullptr, mouseArgs);
 		}
 
-		Engine::InternalEvents::TickEventArgs tickArgs = { persistent.tickNumber++ };
-		Engine::InternalEvents::TickEvent(nullptr, tickArgs);
-		
+		for (Engine::Object* it : persistent.objects)
+		{
+			it->Update();
+		}
+
 		// Draw phase
 		BeginDrawing();
 		{
 			ClearBackground(BLACK);
 
-			Engine::InternalEvents::DrawEvent(nullptr, {});
+			for (Engine::Object* it : persistent.objects)
+			{
+				it->Draw();
+			}
 		}
 		EndDrawing();
 	}
