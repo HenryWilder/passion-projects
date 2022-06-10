@@ -49,7 +49,10 @@ Data::Persistent persistent;
 Data::Frame frame;
 
 template<class T>
-T* CreateObject(T&& base) requires std::derived_from<T, Engine::Object>
+concept EngineObject = std::derived_from<T, Engine::Object>;
+
+template<EngineObject T>
+T* CreateObject(T&& base)
 {
 	T* object = new T(base);
 	persistent.objects.insert(static_cast<Engine::Object*>(object));
@@ -86,10 +89,10 @@ int main()
 			Engine::InternalEvents::MouseEventArgs mouseArgs = { mousePosition };
 
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-				Engine::InternalEvents::LeftMousePressEvent(nullptr, mouseArgs);
+				Engine::InternalEvents::LeftMousePressEvent.Invoke(mouseArgs);
 
 			if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
-				Engine::InternalEvents::LeftMouseReleaseEvent(nullptr, mouseArgs);
+				Engine::InternalEvents::LeftMouseReleaseEvent.Invoke(mouseArgs);
 		}
 
 		for (Engine::Object* it : persistent.objects)

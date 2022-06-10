@@ -62,7 +62,6 @@ namespace Engine
 	class Object
 	{
 	private:	bool active = false;
-	protected:	Events::Listener listener;
 	public:		Transform transform;
 
 	public:
@@ -104,11 +103,11 @@ namespace Engine
 		inline ~Draggable() { _ASSERT_EXPR(shape, L"Draggable shape cannot be null"); delete shape; }
 
 	private:
-		void PressVerifier(void* sender, void* e);
-		void ReleaseVerifier(void* sender, void* e);
+		void PressVerifier(void* e);
+		void ReleaseVerifier(void* e);
 
-		void OnPress(void* sender, void* e);
-		void OnRelease(void* sender, void* e);
+		void OnPress(void* e);
+		void OnRelease(void* e);
 
 	protected:
 		// Called when the object is enabled
