@@ -1,8 +1,98 @@
 #include <raylib.h>
+#include <raymath.h>
 #include <fstream>
 #include <unordered_set>
-#include "Event.h"
-#include "Engine.h"
+
+Vector2 DeltaFromAnchor(Rectangle bounds, Vector2 anchor)
+{
+	return {
+		bounds.width * (anchor.x - 0.5f),
+		bounds.height * (anchor.y - 0.5f)
+	};
+}
+
+class Object
+{
+protected:
+	Vector2 position;
+
+public:
+	Object() = default;
+	Object(Vector2 position) : position(position) {}
+	Object(Vector2 anchor, Vector2 position) { SetPositionWithAnchor(anchor, position); }
+	~Object() = default;
+	Vector2 GetPosition() const { return position; }
+	// Uses center
+	void SetPosition(Vector2 position) { position = position; }
+	// Anchor is 0..1
+	void SetPositionWithAnchor(Vector2 anchor, Vector2 position)
+	{
+		this->position = Vector2Add(position, DeltaFromAnchor(GetBoundingBox(), anchor));
+	}
+	void Move(Vector2 delta) { position = Vector2Add(position, delta); }
+	virtual Rectangle GetBoundingBox() const = 0;
+	virtual void Update() = 0;
+	virtual void Draw() const = 0;
+	virtual bool CheckPointCollision(Vector2 point) const = 0;
+};
+
+class Pin : public Object
+{
+	constexpr static Vector2 extents = { 20, 40 };
+	constexpr static Vector2 halfExt = { extents.x * 0.5f, extents.y * 0.5f };
+	constexpr static Color color = GRAY;
+
+public:
+	Pin() = default;
+	Pin(Vector2 position) : Object(position) {}
+	Pin(Vector2 anchor, Vector2 position) : Object(anchor, position) {}
+	~Pin() = default;
+	Rectangle GetBoundingBox() const final
+	{
+		return { position.x - halfExt.x, position.y - halfExt.y, extents.x, extents.y };
+	}
+	void Update() final
+	{
+		// Todo
+	}
+	void Draw() const final
+	{
+		DrawRectangleRec(GetBoundingBox(), color);
+	}
+	bool CheckPointCollision(Vector2 point) const final
+	{
+		return CheckCollisionPointRec(point, GetBoundingBox());
+	}
+};
+
+class Block : public Object
+{
+	constexpr static Vector2 extents = { 150, 100 };
+	constexpr static Vector2 halfExt = { extents.x * 0.5f, extents.y * 0.5f };
+	constexpr static Color color = GRAY;
+
+public:
+	Block() = default;
+	Block(Vector2 position) : Object(position) {}
+	Block(Vector2 anchor, Vector2 position) : Object(anchor, position) {}
+	~Block() = default;
+	Rectangle GetBoundingBox() const final
+	{
+		return { position.x - halfExt.x, position.y - halfExt.y, extents.x, extents.y };
+	}
+	void Update() final
+	{
+		// Todo
+	}
+	void Draw() const final
+	{
+		DrawRectangleRec(GetBoundingBox(), color);
+	}
+	bool CheckPointCollision(Vector2 point) const final
+	{
+		return CheckCollisionPointRec(point, GetBoundingBox());
+	}
+};
 
 namespace Data
 {
@@ -29,8 +119,7 @@ namespace Data
 		{
 			// Todo
 		}
-		std::unordered_set<Engine::Object*> objects;
-		size_t tickNumber = 0;
+		std::vector<Object*> allObjects;
 	};
 
 	// Data that is cleaned and reset at the start of every frame
@@ -48,22 +137,6 @@ Data::Serial serial;
 Data::Persistent persistent;
 Data::Frame frame;
 
-template<class T>
-concept EngineObject = std::derived_from<T, Engine::Object>;
-
-template<EngineObject T>
-T* CreateObject(T&& base)
-{
-	T* object = new T(base);
-	persistent.objects.insert(static_cast<Engine::Object*>(object));
-	return object;
-}
-void Destroy(Engine::Object* instance)
-{
-	persistent.objects.erase(instance);
-	delete instance;
-}
-
 int main()
 {
 	InitWindow(1280, 720, "Assembly Block v0.0.1");
@@ -73,11 +146,16 @@ int main()
 	// Prep phase
 
 	serial = Data::Serial();
+	// Init serial
+	{
+
+	}
 
 	persistent = Data::Persistent();
-
-	Engine::Draggable* object = CreateObject(Engine::Draggable(Engine::Shapes::Rectangle2D(40, 40, 200, 300), true));
-	object->SetActive(true);
+	// Init persistent
+	{
+		persistent.allObjects.push_back(new Pin({ 0,0 }, { 100, 0 }));
+	}
 
 	while (!WindowShouldClose())
 	{
@@ -86,18 +164,23 @@ int main()
 		// Sim phase
 		{
 			Vector2 mousePosition = GetMousePosition();
-			Engine::InternalEvents::MouseEventArgs mouseArgs = { mousePosition };
 
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-				Engine::InternalEvents::LeftMousePressEvent.Invoke(mouseArgs);
-
+			{
+				for (Object* obj : persistent.allObjects)
+				{
+					obj->SetPosition(GetMousePosition());
+				}
+			}
 			if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
-				Engine::InternalEvents::LeftMouseReleaseEvent.Invoke(mouseArgs);
+			{
+
+			}
 		}
 
-		for (Engine::Object* it : persistent.objects)
+		for (Object* obj : persistent.allObjects)
 		{
-			it->Update();
+			obj->Update();
 		}
 
 		// Draw phase
@@ -105,9 +188,9 @@ int main()
 		{
 			ClearBackground(BLACK);
 
-			for (Engine::Object* it : persistent.objects)
+			for (Object* obj : persistent.allObjects)
 			{
-				it->Draw();
+				obj->Draw();
 			}
 		}
 		EndDrawing();
