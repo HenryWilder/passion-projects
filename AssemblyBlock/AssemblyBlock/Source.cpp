@@ -246,13 +246,6 @@ public:
 		return CheckPointSimpleCollision(point);
 	}
 	virtual constexpr bool IsComplexCollisionDifferentFromSimpleCollision() const { return false; }
-	virtual bool CheckPointCollision(Vector2 point) const
-	{
-		bool colliding = CheckPointSimpleCollision(point);
-		if (!colliding) return false;
-		if (IsComplexCollisionDifferentFromSimpleCollision())
-			colliding &= CheckPointComplexCollision(point);
-	}
 #pragma endregion
 
 	virtual void Update() = 0;
@@ -408,24 +401,25 @@ public:
 	}
 };
 
-class Pin : public Hoverable
+class Pin : public Focusable
 {
 public:
 	static constexpr Vector2 pinExtents = { 20, 40 };
-	static constexpr Color color_basic = GRAY;
+	static constexpr Color color_basic = DARKGRAY;
 	static constexpr Color color_hovered = LIGHTGRAY;
+	static constexpr Color color_focused = GRAY;
 
 	Pin() = default;
-	Pin(ObjectTransform trans) : Hoverable(trans) { SetRectangleExtents(transform.BoundsRef(), pinExtents); }
+	Pin(ObjectTransform trans) : Focusable(trans) { SetRectangleExtents(transform.BoundsRef(), pinExtents); }
 	~Pin() = default;
 
 	void Update() final
 	{
-		Hoverable::Update();
+		Focusable::Update();
 	}
 	void Draw() const final
 	{
-		DrawRectangleRec(transform.WorldBounds(), hovered ? color_hovered : color_basic);
+		DrawRectangleRec(transform.WorldBounds(), (focused ? color_focused : (hovered ? color_hovered : color_basic)));
 	}
 };
 
@@ -433,9 +427,9 @@ class Block : public Draggable
 {
 public:
 	static constexpr Vector2 blockExtents = { 150, 100 };
-	static constexpr Color color_basic = GRAY;
+	static constexpr Color color_basic = DARKGRAY;
 	static constexpr Color color_hovered = LIGHTGRAY;
-	static constexpr Color color_dragged = LIGHTGRAY;
+	static constexpr Color color_dragged = GRAY;
 
 	Block() = default;
 	Block(ObjectTransform trans) : Draggable(trans) { SetRectangleExtents(transform.BoundsRef(), blockExtents); }
