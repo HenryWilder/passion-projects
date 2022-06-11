@@ -133,9 +133,9 @@ public:
 	{
 		return bounds;
 	}
-	Rectangle& BoundsRef()
+	void SetExtents(Vector2 extents)
 	{
-		return bounds;
+		SetRectangleExtents(bounds, extents);
 	}
 
 	Vector2 GetLocalPosition(Vector2 anchor = { 0.5f, 0.5f }) const
@@ -410,7 +410,7 @@ public:
 	static constexpr Color color_focused = GRAY;
 
 	Pin() = default;
-	Pin(ObjectTransform trans) : Focusable(trans) { SetRectangleExtents(transform.BoundsRef(), pinExtents); }
+	Pin(ObjectTransform trans) : Focusable(trans) { transform.SetExtents(pinExtents); }
 	~Pin() = default;
 
 	void Update() final
@@ -432,7 +432,7 @@ public:
 	static constexpr Color color_dragged = GRAY;
 
 	Block() = default;
-	Block(ObjectTransform trans) : Draggable(trans) { SetRectangleExtents(transform.BoundsRef(), blockExtents); }
+	Block(ObjectTransform trans) : Draggable(trans) { transform.SetExtents(blockExtents); }
 	~Block() = default;
 
 	void Update() final
