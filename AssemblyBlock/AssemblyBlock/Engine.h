@@ -156,6 +156,7 @@ public:
 
 
 // Focuses when clicked inside; loses focus when clicked elsewhere
+// Useful for things like dropdowns or windows
 class Focusable : public FocusableBase
 {
 public:
@@ -169,6 +170,7 @@ public:
 
 
 // Focus only lasts as long as the mouse is down
+// Useful for things like sliders or spinners
 class ADDFocusable : public FocusableBase
 {
 public:
