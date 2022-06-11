@@ -42,6 +42,14 @@ void SetRectangleExtents(Rectangle& rec, Vector2 ext)
 }
 
 
+ObjectTransform::ObjectTransform(BasicTransform data)
+{
+	SetPivot(data.pivot);
+	SetLocalPosition(data.position);
+	if (!data.parent) return;
+	SetParent(*data.parent, data.positionIsWorldspace);
+}
+
 void ObjectTransform::_RemoveSelfFromParent()
 {
 	auto it = parent->children.find(this);
@@ -58,7 +66,7 @@ void ObjectTransform::RemoveParent()
 	_RemoveSelfFromParent();
 	parent = nullptr;
 }
-void ObjectTransform::SetParent(ObjectTransform& newParent)
+void ObjectTransform::SetParent_KeepLocal(ObjectTransform& newParent)
 {
 	if (parent) _RemoveSelfFromParent();
 	parent = &newParent;
@@ -67,8 +75,15 @@ void ObjectTransform::SetParent(ObjectTransform& newParent)
 void ObjectTransform::SetParent_KeepWorld(ObjectTransform& newParent)
 {
 	Vector2 worldPosition = GetWorldPosition();
-	SetParent(newParent);
+	SetParent_KeepLocal(newParent);
 	SetWorldPosition(worldPosition);
+}
+void ObjectTransform::SetParent(ObjectTransform& newParent, bool keepWorld)
+{
+	if (keepWorld)
+		SetParent_KeepWorld(newParent);
+	else
+		SetParent_KeepLocal(newParent);
 }
 
 const ObjectTransform* ObjectTransform::Parent() const
@@ -110,40 +125,49 @@ void ObjectTransform::SetExtents(Vector2 extents)
 	SetRectangleExtents(bounds, extents);
 }
 
-Vector2 ObjectTransform::GetLocalPosition(Vector2 anchor) const
+Vector2 ObjectTransform::Pivot() const
 {
-	return RectanglePosition(bounds) + LocalFromAnchor(RectangleExtents(bounds), anchor);
+	return pivot;
+}
+void ObjectTransform::SetPivot(Vector2 pivot)
+{
+	this->pivot = pivot;
 }
 
-Vector2 ObjectTransform::GetWorldPosition(Vector2 anchor) const
+Vector2 ObjectTransform::GetLocalPosition() const
 {
-	Vector2 local = GetLocalPosition(anchor);
+	return RectanglePosition(bounds) + LocalFromAnchor(RectangleExtents(bounds), pivot);
+}
+
+Vector2 ObjectTransform::GetWorldPosition() const
+{
+	Vector2 local = GetLocalPosition();
 	if (parent)
 		return local + parent->GetWorldPosition();
 	else
 		return local;
 }
 
-void ObjectTransform::SetLocalPosition(Vector2 position, Vector2 anchor)
+void ObjectTransform::SetLocalPosition(Vector2 position)
 {
-	SetRectanglePosition(bounds, position - LocalFromAnchor(RectangleExtents(bounds), anchor));
+	SetRectanglePosition(bounds, position - LocalFromAnchor(RectangleExtents(bounds), pivot));
 }
 
-void ObjectTransform::SetWorldPosition(Vector2 position, Vector2 anchor)
+void ObjectTransform::SetWorldPosition(Vector2 position)
 {
 	Vector2 localPos;
 	if (parent)
 		localPos = position - parent->GetWorldPosition();
 	else
 		localPos = position;
-	SetLocalPosition(localPos, anchor);
+	SetLocalPosition(localPos);
 }
 
 
 using namespace Data;
 
 
-Object::Object(ObjectTransform trans) : transform(trans) { transform.SetObject(this); }
+Object::Object(BasicTransform trans) : transform(trans) { transform.SetObject(this); }
 
 // Todo: make a function to get the anchor from a point on the rectangle
 bool Object::CheckPointSimpleCollision(Vector2 point) const
@@ -163,7 +187,7 @@ void Destroy(Object* object)
 }
 
 
-Hoverable::Hoverable(ObjectTransform trans) : Object(trans), hovered() {}
+Hoverable::Hoverable(BasicTransform trans) : Object(trans), hovered() {}
 
 void Hoverable::Update()
 {
@@ -174,7 +198,7 @@ void Hoverable::Update()
 }
 
 
-FocusableBase::FocusableBase(ObjectTransform trans) : Hoverable(trans) {}
+FocusableBase::FocusableBase(BasicTransform trans) : Hoverable(trans) {}
 
 void FocusableBase::OnFocus() {}
 void FocusableBase::OnLoseFocus() {}
@@ -190,7 +214,7 @@ void FocusableBase::SetFocusable(bool value)
 }
 
 
-Focusable::Focusable(ObjectTransform trans) : FocusableBase(trans) {}
+Focusable::Focusable(BasicTransform trans) : FocusableBase(trans) {}
 
 void Focusable::Update()
 {
@@ -206,7 +230,7 @@ void Focusable::Update()
 }
 
 
-ADDFocusable::ADDFocusable(ObjectTransform trans) : FocusableBase(trans) {}
+ADDFocusable::ADDFocusable(BasicTransform trans) : FocusableBase(trans) {}
 
 void ADDFocusable::Update()
 {
@@ -225,7 +249,7 @@ void ADDFocusable::Update()
 }
 
 
-Draggable::Draggable(ObjectTransform trans) : ADDFocusable(trans) {}
+Draggable::Draggable(BasicTransform trans) : ADDFocusable(trans) {}
 
 void Draggable::OnFocus()
 {

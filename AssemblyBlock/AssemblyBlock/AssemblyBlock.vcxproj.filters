@@ -13,35 +13,53 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Engine">
+      <UniqueIdentifier>{5ccea9fa-38b2-4e15-8723-1cc9286d7858}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Header Files">
+      <UniqueIdentifier>{02eb64cd-b89a-4b0d-b22b-1ef9cc637ea3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Source Files">
+      <UniqueIdentifier>{9a17fc81-1e83-40b2-8906-d1850c1aaf17}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Data.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Pin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Block.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Main.cpp">
+    <ClCompile Include="Node.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>Engine\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine.cpp">
+      <Filter>Engine\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Data.cpp">
+      <Filter>Engine\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Data.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Pin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Block.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Data.h">
+      <Filter>Engine\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine.h">
+      <Filter>Engine\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Startup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

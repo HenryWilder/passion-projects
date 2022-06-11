@@ -1,6 +1,6 @@
 #include "Block.h"
 
-Block::Block(ObjectTransform trans) : Draggable(trans) { transform.SetExtents(blockExtents); }
+Block::Block(BasicTransform trans) : Draggable(trans) { transform.SetExtents(blockExtents); }
 
 void Block::Update()
 {

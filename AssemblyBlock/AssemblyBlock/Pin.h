@@ -10,10 +10,9 @@ public:
 	static constexpr Color color_focused = GRAY;
 
 	Pin() = default;
-	Pin(ObjectTransform trans);
+	Pin(BasicTransform trans);
 	~Pin() = default;
 
 	void Update() final;
 	void Draw() const final;
 };
-

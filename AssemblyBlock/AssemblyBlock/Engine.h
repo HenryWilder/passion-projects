@@ -4,7 +4,9 @@
 #include <fstream>
 #include <set>
 #include <vector>
+#include <functional>
 #include "Data.h"
+
 
 // Extend as implemented
 inline Vector2 operator-(Vector2 v, float sub) { return Vector2SubtractValue(v, sub); }
@@ -24,29 +26,48 @@ void AddRectanglePosition(Rectangle& rec, Vector2 offset);
 void SetRectangleExtents(Rectangle& rec, Vector2 ext);
 
 
+class ObjectTransform;
+
+// Structure for constructing an ObjectTransform
+struct BasicTransform
+{
+	ObjectTransform* parent = nullptr;
+	Vector2 pivot = { .5f, .5f };
+	Vector2 position = { 0,0 };
+	bool positionIsWorldspace = false;
+};
 
 class Object;
+
 
 class ObjectTransform
 {
 private:
-	std::set<ObjectTransform*> children;
 	ObjectTransform* parent = nullptr;
 	Object* object = nullptr;
 	Rectangle bounds = { 0,0,0,0 }; // Local space
+	Vector2 pivot = { 0,0 };
+	std::set<ObjectTransform*> children;
 
 public:
-	inline auto begin() { return children.begin(); }
+	ObjectTransform() = default;
+	ObjectTransform(BasicTransform data);
+	~ObjectTransform() = default;
 
-	inline auto end() { return children.end(); }
+public:
+	_NODISCARD inline decltype(children)::iterator begin() noexcept { return children.begin(); }
+	_NODISCARD inline decltype(children)::const_iterator begin() const noexcept { return children.begin(); }
+	_NODISCARD inline decltype(children)::iterator end() noexcept { return children.end(); }
+	_NODISCARD inline decltype(children)::const_iterator end() const noexcept { return children.end(); }
 	
 private:
 	void _RemoveSelfFromParent();
 	void _AddSelfToParent();
 public:
 	void RemoveParent();
-	void SetParent(ObjectTransform& newParent);
+	void SetParent_KeepLocal(ObjectTransform& newParent);
 	void SetParent_KeepWorld(ObjectTransform& newParent);
+	void SetParent(ObjectTransform& newParent, bool keepWorld);
 
 	const ObjectTransform* Parent() const;
 
@@ -61,33 +82,89 @@ public:
 	Rectangle LocalBounds() const;
 	void SetExtents(Vector2 extents);
 
-	Vector2 GetLocalPosition(Vector2 anchor = { 0.5f, 0.5f }) const;
-	// Recursive
-	Vector2 GetWorldPosition(Vector2 anchor = { 0.5f, 0.5f }) const;
+	Vector2 Pivot() const;
+	void SetPivot(Vector2 pivot);
 
-	void SetLocalPosition(Vector2 position, Vector2 anchor = { 0.5f, 0.5f });
+	Vector2 GetLocalPosition() const;
 	// Recursive
-	void SetWorldPosition(Vector2 position, Vector2 anchor = { 0.5f, 0.5f });
+	Vector2 GetWorldPosition() const;
+
+	void SetLocalPosition(Vector2 position);
+	// Recursive
+	void SetWorldPosition(Vector2 position);
 	// Todo: add function for setting the position relative to the parent, with anchors for both the parent and the child
 
 	// Substantially cheaper than getting the position (world or local)
 	// and setting the position to that + your offset.
 	// Remember: velocity doesn't care about your position, just your direction & magnitude.
-	inline void Offset(Vector2 amount)
-	{
-		AddRectanglePosition(bounds, amount);
-	}
+	inline void Offset(Vector2 amount) { AddRectanglePosition(bounds, amount); }
 };
 
 
+
+class Component
+{
+private:
+	ObjectTransform& transform;
+	bool enabled;
+
+	virtual void OnEnable() = 0;
+	virtual void OnDisable() = 0;
+	virtual void OnUpdate() = 0;
+
+public:
+	Component(ObjectTransform& trans, bool enabledByDefault = true) :
+		transform(trans), enabled(false)
+	{
+		SetEnabled(enabledByDefault);
+	}
+
+	bool Enabled() const { return enabled; }
+	void SetEnabled(bool value)
+	{
+		if (enabled == value) return;
+
+		if (enabled = value)
+			OnEnable();
+		else
+			OnDisable();
+	}
+};
 
 class Object
 {
 public:
 	ObjectTransform transform;
+	std::vector<Component*> components;
+
+	template<typename T, typename... Args>
+	requires(std::is_base_of_v<Component, T>)
+	bool AddComponent(bool enabledByDefault, Args&&... _Val)
+	{
+		if (GetComponent<T>()) return false;
+		components.emplace(new T(transform, enabledByDefault, std::forward<Args>(_Val)...));
+		return true;
+	}
+	template<typename T>
+	T* GetComponent()
+	{
+		for (Component* c : components)
+		{
+			T* t = dynamic_cast<T*>(c);
+			if (t) return t;
+		}
+		return nullptr;
+	}
+	bool RemoveComponent(Component* what)
+	{
+		auto it = std::find(components.begin(), components.end(), what);
+		if (it == components.end()) return false;
+		components.erase(it);
+		return true;
+	}
 
 	Object() = default;
-	Object(ObjectTransform trans);
+	Object(BasicTransform trans);
 	~Object() = default;
 
 #pragma region Check collision
@@ -103,13 +180,11 @@ public:
 	virtual void Draw() const = 0;
 };
 
-template<class ObjectType>
-ObjectTransform& Instantiate(Vector2 position = { 0,0 }, Vector2 anchor = { 0.5f,0.5f })
+template<class ObjectType, typename... Args>
+ObjectTransform& Instantiate(Args&&... _Val)
 	requires std::is_base_of_v<Object, ObjectType>
 {
-	ObjectTransform trans;
-	trans.SetLocalPosition(position, anchor);
-	ObjectType* ret = new ObjectType(trans);
+	ObjectType* ret = new ObjectType(std::forward<Args>(_Val)...);
 	Data::Persistent::allObjects.push_back(ret);
 	return ret->transform;
 }
@@ -124,7 +199,7 @@ protected:
 
 public:
 	Hoverable() = default;
-	Hoverable(ObjectTransform trans);
+	Hoverable(BasicTransform trans);
 	~Hoverable() = default;
 
 	virtual void Update() override;
@@ -144,7 +219,7 @@ protected:
 
 public:
 	FocusableBase() = default;
-	FocusableBase(ObjectTransform trans);
+	FocusableBase(BasicTransform trans);
 	~FocusableBase() = default;
 
 	virtual void Update() = 0;
@@ -161,7 +236,7 @@ class Focusable : public FocusableBase
 {
 public:
 	Focusable() = default;
-	Focusable(ObjectTransform trans);
+	Focusable(BasicTransform trans);
 	~Focusable() = default;
 
 	virtual void Update() override;
@@ -175,7 +250,7 @@ class ADDFocusable : public FocusableBase
 {
 public:
 	ADDFocusable() = default;
-	ADDFocusable(ObjectTransform trans);
+	ADDFocusable(BasicTransform trans);
 	~ADDFocusable() = default;
 
 	virtual void Update() override;
@@ -198,7 +273,7 @@ protected:
 
 public:
 	Draggable() = default;
-	Draggable(ObjectTransform trans);
+	Draggable(BasicTransform trans);
 	~Draggable() = default;
 
 	virtual void Update() override;

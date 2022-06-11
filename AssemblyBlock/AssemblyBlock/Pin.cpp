@@ -1,7 +1,7 @@
 #include "Engine.h"
 #include "Pin.h"
 
-Pin::Pin(ObjectTransform trans) : ADDFocusable(trans) { transform.SetExtents(pinExtents); }
+Pin::Pin(BasicTransform trans) : ADDFocusable(trans) { transform.SetExtents(pinExtents); }
 
 void Pin::Update()
 {

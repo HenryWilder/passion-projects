@@ -10,10 +10,9 @@ public:
 	static constexpr Color color_dragged = GRAY;
 
 	Block() = default;
-	Block(ObjectTransform trans);
+	Block(BasicTransform trans);
 	~Block() = default;
 
-	void Update() final;
-	void Draw() const final;
+	void Update() override;
+	void Draw() const override;
 };
-
