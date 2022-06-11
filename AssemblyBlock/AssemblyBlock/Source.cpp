@@ -51,16 +51,15 @@ void SetRectangleExtents(Rectangle& rec, Vector2 ext)
 
 class Object;
 
-struct ObjectTransform
+class ObjectTransform
 {
 private:
 	std::set<ObjectTransform*> children;
 	ObjectTransform* parent = nullptr;
 	Object* object = nullptr;
+	Rectangle bounds = { 0,0,0,0 }; // Local space
 
 public:
-	Rectangle bounds = { 0,0,0,0 };
-
 	auto begin()
 	{
 		return children.begin();
@@ -79,7 +78,8 @@ public:
 			parent->children.erase(it);
 		}
 		parent = &newParent;
-		newParent.children.insert(this);
+		if (parent)
+			parent->children.insert(this);
 	}
 	void SetParent_KeepWorld(ObjectTransform& newParent)
 	{
@@ -101,6 +101,32 @@ public:
 		return object;
 	}
 
+private:
+	// Recursive
+	Vector2 _GetAnchorlessWorldPosition() const
+	{
+		Vector2 local = RectanglePosition(bounds);
+		if (parent)
+			return local + parent->_GetAnchorlessWorldPosition();
+		else
+			return local;
+	}
+public:
+	Rectangle WorldBounds() const
+	{
+		Rectangle ret = bounds;
+		SetRectanglePosition(ret, _GetAnchorlessWorldPosition());
+		return ret;
+	}
+	Rectangle LocalBounds() const
+	{
+		return bounds;
+	}
+	Rectangle& BoundsRef()
+	{
+		return bounds;
+	}
+
 	Vector2 GetLocalPosition(Vector2 anchor = { 0.5f, 0.5f }) const
 	{
 		return RectanglePosition(bounds) + LocalFromAnchor(RectangleExtents(bounds), anchor);
@@ -117,7 +143,7 @@ public:
 
 	void SetLocalPosition(Vector2 position, Vector2 anchor = { 0.5f, 0.5f })
 	{
-		SetRectanglePosition(bounds, position + LocalFromAnchor(RectangleExtents(bounds), anchor));
+		SetRectanglePosition(bounds, position - LocalFromAnchor(RectangleExtents(bounds), anchor));
 	}
 	// Recursive
 	void SetWorldPosition(Vector2 position, Vector2 anchor = { 0.5f, 0.5f })
@@ -129,6 +155,7 @@ public:
 			localPos = position;
 		SetLocalPosition(localPos, anchor);
 	}
+	// Todo: add function for setting the position relative to the parent, with anchors for both the parent and the child
 
 	// Substantially cheaper than getting the position (world or local)
 	// and setting the position to that + your offset.
@@ -199,7 +226,7 @@ public:
 	// Todo: make a function to get the anchor from a point on the rectangle
 	bool CheckPointSimpleCollision(Vector2 point) const
 	{
-		return CheckCollisionPointRec(point, transform.bounds);
+		return CheckCollisionPointRec(point, transform.WorldBounds());
 	}
 	// Make sure to specialize "IsComplexCollisionDifferentFromSimpleCollision"
 	// too if you specialize this function, or it will be skipped!!
@@ -378,7 +405,7 @@ public:
 	static constexpr Color color_hovered = LIGHTGRAY;
 
 	Pin() = default;
-	Pin(ObjectTransform trans) : Hoverable(trans) { SetRectangleExtents(transform.bounds, pinExtents); }
+	Pin(ObjectTransform trans) : Hoverable(trans) { SetRectangleExtents(transform.BoundsRef(), pinExtents); }
 	~Pin() = default;
 
 	void Update() final
@@ -387,7 +414,7 @@ public:
 	}
 	void Draw() const final
 	{
-		DrawRectangleRec(transform.bounds, hovered ? color_hovered : color_basic);
+		DrawRectangleRec(transform.WorldBounds(), hovered ? color_hovered : color_basic);
 	}
 };
 
@@ -400,7 +427,7 @@ public:
 	static constexpr Color color_dragged = LIGHTGRAY;
 
 	Block() = default;
-	Block(ObjectTransform trans) : Draggable(trans) { SetRectangleExtents(transform.bounds, blockExtents); }
+	Block(ObjectTransform trans) : Draggable(trans) { SetRectangleExtents(transform.BoundsRef(), blockExtents); }
 	~Block() = default;
 
 	void Update() final
@@ -409,7 +436,7 @@ public:
 	}
 	void Draw() const final
 	{
-		DrawRectangleRec(transform.bounds, (beingDragged ? color_dragged : (hovered ? color_hovered : color_basic)));
+		DrawRectangleRec(transform.WorldBounds(), (beingDragged ? color_dragged : (hovered ? color_hovered : color_basic)));
 	}
 };
 
@@ -448,12 +475,6 @@ int main()
 	// Init persistent
 	{
 		decltype(Persistent::allObjects)& objects = Persistent::allObjects;
-		auto CreateObject = [](Object* what, Vector2 localPos, Vector2 anchor)
-		{
-			Persistent::allObjects.push_back(what);
-			what->transform.SetLocalPosition(localPos, anchor);
-			return &what->transform;
-		};
 		constexpr float pinWidth = Pin::pinExtents.x;
 		constexpr float pinHeight = Pin::pinExtents.y;
 		constexpr float blockWidth = Block::blockExtents.x;
@@ -461,13 +482,10 @@ int main()
 
 		{
 			Instantiate<Pin>({ 100, 0 }, { 0, 1 });
-			Instantiate<Block>({ 100, 0 }, { 0, 1 });
-			Instantiate<Pin>({ 100, 0 }, { 0, 1 });
-
-			CreateObject(new Pin,   { 100, 0 }, { 0, 1 });
-			CreateObject(new Block, { 400, 0 }, { 0, 1 });
-			CreateObject(new Pin, { 0, blockHeight * 0.5f }, { 0.5f, 0.5f })
-				->SetParent(objects[1]->transform);
+			Instantiate<Block>({ 400, 0 }, { 0, 1 });
+			Instantiate<Pin>({}, {})
+				.SetParent(objects[1]->transform);
+			objects[2]->transform.SetLocalPosition({ blockWidth / 2, 0 }, { 0.5, 0.5f });
 		}
 	}
 
