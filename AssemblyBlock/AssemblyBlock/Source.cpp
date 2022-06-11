@@ -92,19 +92,13 @@ public:
 		parent = &newParent;
 		_AddSelfToParent();
 	}
-	void SetParent(Object* newParentObj)
-	{
-		if (newParentObj)
-			SetParent(newParentObj->transform);
-		else
-			RemoveParent();
-	}
 	void SetParent_KeepWorld(ObjectTransform& newParent)
 	{
 		Vector2 worldPosition = GetWorldPosition();
 		SetParent(newParent);
 		SetWorldPosition(worldPosition);
 	}
+
 	const ObjectTransform* Parent() const
 	{
 		return parent;
@@ -506,7 +500,7 @@ int main()
 		}
 		{
 			ObjectTransform& pin = Instantiate<Pin>();
-			pin.SetParent(objects[1]);
+			pin.SetParent(objects[1]->transform);
 			pin.SetLocalPosition({ blockWidth / 2, 0 }, { 0.5, 0.5f });
 		}
 	}
