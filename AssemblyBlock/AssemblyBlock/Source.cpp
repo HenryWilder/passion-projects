@@ -10,31 +10,100 @@ inline Vector2 operator*(Vector2 v, float scale) { return Vector2Scale(v, scale)
 inline Vector2 operator+(Vector2 v1, Vector2 v2) { return Vector2Add(v1, v2); }
 inline Vector2 operator-(Vector2 v1, Vector2 v2) { return Vector2Subtract(v1, v2); }
 inline Vector2 operator*(Vector2 v1, Vector2 v2) { return Vector2Multiply(v1, v2); }
+inline Vector2 operator/(Vector2 v1, Vector2 v2) { return Vector2Divide(v1, v2); }
 
-Vector2 DeltaFromAnchor(Vector2 extents, Vector2 anchor)
+Vector2 LocalFromAnchor(Vector2 extents, Vector2 anchor)
 {
-	return extents * (anchor - 0.5f);
+	return extents * anchor;
+}
+Vector2 AnchorFromLocal(Vector2 extents, Vector2 localPos)
+{
+	Vector2 ret;
+	ret.x = ((extents.x == 0) ? (0) : (localPos.x / extents.x));
+	ret.y = ((extents.y == 0) ? (0) : (localPos.y / extents.y));
+	return ret;
 }
 
-Rectangle RectangleFromTopLeftAndExtents(Vector2 pt, Vector2 ext)
+Vector2 RectanglePosition(Rectangle rec)
 {
-	return { pt.x, pt.y, ext.x, ext.y };
+	return { rec.x, rec.y };
 }
-Rectangle RectangleFromCenterAndExtents(Vector2 pt, Vector2 ext)
+Vector2 RectangleExtents(Rectangle rec)
 {
-	return RectangleFromTopLeftAndExtents(pt - ext * 0.5f, ext);
+	return { rec.width, rec.height };
 }
-template<float width, float height>
-Rectangle RectangleFromCenterAndExtents(Vector2 pt)
+void SetRectanglePosition(Rectangle& rec, Vector2 pos)
 {
-	constexpr Vector2 ext = Vector2{ width, height };
-	constexpr Vector2 halfExt = Vector2{ ext.x * 0.5f, ext.y * 0.5f };
-	return RectangleFromTopLeftAndExtents(pt - halfExt, ext);
+	rec.x = pos.x;
+	rec.y = pos.y;
+}
+void AddRectanglePosition(Rectangle& rec, Vector2 offset)
+{
+	rec.x += offset.x;
+	rec.y += offset.y;
+}
+void SetRectangleExtents(Rectangle& rec, Vector2 ext)
+{
+	rec.width = ext.x;
+	rec.height = ext.y;
 }
 
 class Object;
-class Pin;
-class Block;
+
+struct ObjectTransform
+{
+	const ObjectTransform* parent = nullptr;
+	const Object* object = nullptr;
+	Rectangle bounds = { 0,0,0,0 };
+
+	void SetParent_KeepLocal(const ObjectTransform& newParent)
+	{
+		parent = &newParent;
+	}
+	void SetParent_KeepWorld(const ObjectTransform& newParent)
+	{
+		Vector2 worldPosition = GetWorldPosition();
+		parent = &newParent;
+		SetWorldPosition(worldPosition);
+	}
+
+	Vector2 GetLocalPosition(Vector2 anchor = { 0.5f, 0.5f }) const
+	{
+		return RectanglePosition(bounds) + LocalFromAnchor(RectangleExtents(bounds), anchor);
+	}
+	// Recursive
+	Vector2 GetWorldPosition(Vector2 anchor = { 0.5f, 0.5f }) const
+	{
+		Vector2 local = GetLocalPosition(anchor);
+		if (parent)
+			return local + parent->GetWorldPosition();
+		else
+			return local;
+	}
+
+	void SetLocalPosition(Vector2 position, Vector2 anchor = { 0.5f, 0.5f })
+	{
+		SetRectanglePosition(bounds, position + LocalFromAnchor(RectangleExtents(bounds), anchor));
+	}
+	// Recursive
+	void SetWorldPosition(Vector2 position, Vector2 anchor = { 0.5f, 0.5f })
+	{
+		Vector2 localPos;
+		if (parent)
+			localPos = position - parent->GetWorldPosition();
+		else
+			localPos = position;
+		SetLocalPosition(localPos, anchor);
+	}
+
+	// Substantially cheaper than getting the position (world or local)
+	// and setting the position to that + your offset.
+	// Remember: velocity doesn't care about your position, just your direction & magnitude.
+	inline void Offset(Vector2 amount)
+	{
+		AddRectanglePosition(bounds, amount);
+	}
+};
 
 namespace Data
 {
@@ -85,38 +154,18 @@ using namespace Data;
 
 class Object
 {
-protected:
-	Vector2 position;
-	Vector2 extents;
-
 public:
-	Object() = default;
-	~Object() = default;
-	Object(Vector2 position, Vector2 extents) :
-		position(position), extents(extents) {}
-	Object(Vector2 anchor, Vector2 position, Vector2 extents) :
-		position(), extents(extents)
-	{
-		SetPositionWithAnchor(anchor, position);
-	}
+	ObjectTransform transform;
 
-	Vector2 GetPosition() const { return position; }
-	// Uses center
-	void SetPosition(Vector2 position) { this->position = position; }
-	virtual Rectangle GetBoundingBox() const
-	{
-		return RectangleFromCenterAndExtents(position, extents);
-	}
-	// Anchor is 0..1
-	virtual void SetPositionWithAnchor(Vector2 anchor, Vector2 position)
-	{
-		this->position = position + DeltaFromAnchor(extents, anchor);
-	}
+	Object() = default;
+	Object(ObjectTransform trans) : transform(trans) { transform.object = this; }
+	~Object() = default;
+
+#pragma region Check collision
 	// Todo: make a function to get the anchor from a point on the rectangle
-	void Move(Vector2 delta) { position = position + delta; }
 	bool CheckPointSimpleCollision(Vector2 point) const
 	{
-		return CheckCollisionPointRec(point, GetBoundingBox());
+		return CheckCollisionPointRec(point, transform.bounds);
 	}
 	// Make sure to specialize "IsComplexCollisionDifferentFromSimpleCollision"
 	// too if you specialize this function, or it will be skipped!!
@@ -128,10 +177,12 @@ public:
 	virtual bool CheckPointCollision(Vector2 point) const
 	{
 		bool colliding = CheckPointSimpleCollision(point);
-		if (!colliding) return;
+		if (!colliding) return false;
 		if (IsComplexCollisionDifferentFromSimpleCollision())
 			colliding &= CheckPointComplexCollision(point);
 	}
+#pragma endregion
+
 	virtual void Update() = 0;
 	virtual void Draw() const = 0;
 };
@@ -143,13 +194,8 @@ protected:
 
 public:
 	Hoverable() = default;
+	Hoverable(ObjectTransform trans) : Object(trans), hovered() {}
 	~Hoverable() = default;
-	Hoverable(Vector2 position, Vector2 extents) :
-		Object(position, extents),
-		hovered() {}
-	Hoverable(Vector2 anchor, Vector2 position, Vector2 extents) :
-		Object(anchor, position, extents),
-		hovered() {}
 
 	virtual void Update() override
 	{
@@ -174,11 +220,8 @@ protected:
 
 public:
 	FocusableBase() = default;
+	FocusableBase(ObjectTransform trans) : Hoverable(trans) {}
 	~FocusableBase() = default;
-	FocusableBase(Vector2 position, Vector2 extents) :
-		Hoverable(position, extents) {}
-	FocusableBase(Vector2 anchor, Vector2 position, Vector2 extents) :
-		Hoverable(anchor, position, extents) {}
 
 	virtual void Update() = 0;
 	virtual void Draw() const = 0;
@@ -190,7 +233,8 @@ public:
 	void SetFocusable(bool value)
 	{
 		b_focusable = value;
-		focused = false;
+		if (value == false)
+			focused = false;
 	}
 };
 
@@ -199,11 +243,8 @@ class Focusable : public FocusableBase
 {
 public:
 	Focusable() = default;
+	Focusable(ObjectTransform trans) : FocusableBase(trans) {}
 	~Focusable() = default;
-	Focusable(Vector2 position, Vector2 extents) :
-		FocusableBase(position, extents)  {}
-	Focusable(Vector2 anchor, Vector2 position, Vector2 extents) :
-		FocusableBase(anchor, position, extents)  {}
 
 	virtual void Update() override
 	{
@@ -225,11 +266,8 @@ class ADDFocusable : public FocusableBase
 {
 public:
 	ADDFocusable() = default;
+	ADDFocusable(ObjectTransform trans) : FocusableBase(trans) {}
 	~ADDFocusable() = default;
-	ADDFocusable(Vector2 position, Vector2 extents) :
-		FocusableBase(position, extents)  {}
-	ADDFocusable(Vector2 anchor, Vector2 position, Vector2 extents) :
-		FocusableBase(anchor, position, extents)  {}
 
 	virtual void Update() override
 	{
@@ -252,82 +290,92 @@ public:
 class Draggable : public ADDFocusable
 {
 private:
-	Vector2 dragOffset;
+	bool b_draggable = true;
+
+	void OnFocus() final
+	{
+		if (!IsDraggable()) return;
+		beingDragged = true;
+		OnStartDragging();
+	}
+	void OnLoseFocus() final
+	{
+		if (!IsDraggable()) return;
+		beingDragged = false;
+		OnStopDragging();
+	}
 
 protected:
 	bool beingDragged = false;
+	virtual void OnStartDragging() {}
+	virtual void OnStopDragging() {}
 
 public:
-	bool b_draggable = true;
-
 	Draggable() = default;
+	Draggable(ObjectTransform trans) : ADDFocusable(trans) {}
 	~Draggable() = default;
-	Draggable(Vector2 position, Vector2 extents) :
-		ADDFocusable(position, extents)  {}
-	Draggable(Vector2 anchor, Vector2 position, Vector2 extents) :
-		ADDFocusable(anchor, position, extents)  {}
 
 	virtual void Update() override
 	{
 		ADDFocusable::Update();
 		beingDragged = focused && b_draggable;
 		if (beingDragged)
-			SetPosition(Frame::cursor);
+			transform.Offset(GetMouseDelta());
 	}
 	virtual void Draw() const = 0;
+
+	bool IsDraggable() const
+	{
+		return b_draggable;
+	}
+	void SetDraggable(bool value)
+	{
+		b_draggable = value;
+		if (value == false)
+			beingDragged = false;
+	}
 };
 
 class Pin : public Hoverable
 {
-	constexpr static Vector2 pinExtents = { 20, 40 };
-	constexpr static Color color = GRAY;
-
 public:
-	Pin() = default;
-	~Pin() = default;
-	Pin(Vector2 position) :
-		Hoverable(position, pinExtents) {}
-	Pin(Vector2 anchor, Vector2 position) :
-		Hoverable(anchor, position, pinExtents) {}
+	static constexpr Vector2 pinExtents = { 20, 40 };
+	static constexpr Color color_basic = GRAY;
+	static constexpr Color color_hovered = LIGHTGRAY;
 
-	Rectangle GetBoundingBox() const final
-	{
-		return RectangleFromCenterAndExtents<pinExtents.x, pinExtents.y>(position);
-	}
+	Pin() = default;
+	Pin(ObjectTransform trans) : Hoverable(trans) { SetRectangleExtents(transform.bounds, pinExtents); }
+	~Pin() = default;
+
 	void Update() final
 	{
 		Hoverable::Update();
 	}
 	void Draw() const final
 	{
-		DrawRectangleRec(GetBoundingBox(), color);
+		DrawRectangleRec(transform.bounds, hovered ? color_hovered : color_basic);
 	}
 };
 
 class Block : public Draggable
 {
-	constexpr static Vector2 blockExtents = { 150, 100 };
-	constexpr static Color color = GRAY;
-
 public:
-	Block() = default;
-	~Block() = default;
-	Block(Vector2 position) :
-		Draggable(position, blockExtents) {}
-	Block(Vector2 anchor, Vector2 position) :
-		Draggable(anchor, position, blockExtents) {}
+	static constexpr Vector2 blockExtents = { 150, 100 };
+	static constexpr Color color_basic = GRAY;
+	static constexpr Color color_hovered = LIGHTGRAY;
+	static constexpr Color color_dragged = LIGHTGRAY;
 
-	Rectangle GetBoundingBox() const final
-	{
-		return RectangleFromCenterAndExtents<blockExtents.x, blockExtents.y>(position);
-	}
+	Block() = default;
+	Block(ObjectTransform trans) : Draggable(trans) { SetRectangleExtents(transform.bounds, blockExtents); }
+	~Block() = default;
+
 	void Update() final
 	{
 		Draggable::Update();
 	}
 	void Draw() const final
 	{
-		DrawRectangleRec(GetBoundingBox(), color);
+		DrawRectangleRec(transform.bounds, (beingDragged ? color_dragged : (hovered ? color_hovered : color_basic)));
 	}
 };
 
@@ -348,7 +396,24 @@ int main()
 	Persistent::Init();
 	// Init persistent
 	{
-		Persistent::allObjects.push_back(new Pin(Vector2{ 0,1 }, Vector2{ 100, 0 }));
+		decltype(Persistent::allObjects)& objects = Persistent::allObjects;
+		auto CreateObject = [](Object* what, Vector2 localPos, Vector2 anchor)
+		{
+			Persistent::allObjects.push_back(what);
+			what->transform.SetLocalPosition(localPos, anchor);
+			return &what->transform;
+		};
+		constexpr float pinWidth = Pin::pinExtents.x;
+		constexpr float pinHeight = Pin::pinExtents.y;
+		constexpr float blockWidth = Block::blockExtents.x;
+		constexpr float blockHeight = Block::blockExtents.y;
+
+		{
+			CreateObject(new Pin,   { 100, 0 }, { 0, 1 });
+			CreateObject(new Block, { 400, 0 }, { 0, 1 });
+			CreateObject(new Pin, { 0, blockHeight * 0.5f }, { 0.5f, 0.5f })
+				->SetParent_KeepLocal(objects[1]->transform);
+		}
 	}
 
 	while (!WindowShouldClose())
@@ -356,20 +421,6 @@ int main()
 		Data::Frame::Init();
 
 		// Sim phase
-		{
-			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-			{
-				for (Object* obj : Persistent::allObjects)
-				{
-					obj->SetPosition(Frame::cursor);
-				}
-			}
-			if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
-			{
-
-			}
-		}
-
 		for (Object* obj : Persistent::allObjects)
 		{
 			obj->Update();
@@ -378,7 +429,7 @@ int main()
 		// Draw phase
 		BeginDrawing();
 		{
-			ClearBackground(BLACK);
+			ClearBackground(RAYWHITE);
 
 			for (Object* obj : Persistent::allObjects)
 			{
