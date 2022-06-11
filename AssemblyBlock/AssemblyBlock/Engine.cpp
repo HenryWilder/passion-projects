@@ -143,6 +143,8 @@ void ObjectTransform::SetWorldPosition(Vector2 position, Vector2 anchor)
 using namespace Data;
 
 
+Object::Object(ObjectTransform trans) : transform(trans) { transform.SetObject(this); }
+
 // Todo: make a function to get the anchor from a point on the rectangle
 bool Object::CheckPointSimpleCollision(Vector2 point) const
 {
@@ -161,6 +163,8 @@ void Destroy(Object* object)
 }
 
 
+Hoverable::Hoverable(ObjectTransform trans) : Object(trans), hovered() {}
+
 void Hoverable::Update()
 {
 	hovered = CheckPointSimpleCollision(Frame::cursor);
@@ -169,6 +173,8 @@ void Hoverable::Update()
 		hovered &= CheckPointComplexCollision(Frame::cursor);
 }
 
+
+FocusableBase::FocusableBase(ObjectTransform trans) : Hoverable(trans) {}
 
 void FocusableBase::OnFocus() {}
 void FocusableBase::OnLoseFocus() {}
@@ -183,6 +189,9 @@ void FocusableBase::SetFocusable(bool value)
 		focused = false;
 }
 
+
+Focusable::Focusable(ObjectTransform trans) : FocusableBase(trans) {}
+
 void Focusable::Update()
 {
 	Hoverable::Update();
@@ -195,6 +204,9 @@ void Focusable::Update()
 			OnLoseFocus();
 	}
 }
+
+
+ADDFocusable::ADDFocusable(ObjectTransform trans) : FocusableBase(trans) {}
 
 void ADDFocusable::Update()
 {
@@ -212,6 +224,8 @@ void ADDFocusable::Update()
 	}
 }
 
+
+Draggable::Draggable(ObjectTransform trans) : ADDFocusable(trans) {}
 
 void Draggable::OnFocus()
 {

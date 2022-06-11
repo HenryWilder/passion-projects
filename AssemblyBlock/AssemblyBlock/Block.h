@@ -10,16 +10,10 @@ public:
 	static constexpr Color color_dragged = GRAY;
 
 	Block() = default;
-	Block(ObjectTransform trans) : Draggable(trans) { transform.SetExtents(blockExtents); }
+	Block(ObjectTransform trans);
 	~Block() = default;
 
-	void Update() final
-	{
-		Draggable::Update();
-	}
-	void Draw() const final
-	{
-		DrawRectangleRec(transform.WorldBounds(), (beingDragged ? color_dragged : (hovered ? color_hovered : color_basic)));
-	}
+	void Update() final;
+	void Draw() const final;
 };
 

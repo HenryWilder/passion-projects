@@ -87,7 +87,7 @@ public:
 	ObjectTransform transform;
 
 	Object() = default;
-	Object(ObjectTransform trans) : transform(trans) { transform.SetObject(this); }
+	Object(ObjectTransform trans);
 	~Object() = default;
 
 #pragma region Check collision
@@ -124,7 +124,7 @@ protected:
 
 public:
 	Hoverable() = default;
-	Hoverable(ObjectTransform trans) : Object(trans), hovered() {}
+	Hoverable(ObjectTransform trans);
 	~Hoverable() = default;
 
 	virtual void Update() override;
@@ -144,7 +144,7 @@ protected:
 
 public:
 	FocusableBase() = default;
-	FocusableBase(ObjectTransform trans) : Hoverable(trans) {}
+	FocusableBase(ObjectTransform trans);
 	~FocusableBase() = default;
 
 	virtual void Update() = 0;
@@ -161,7 +161,7 @@ class Focusable : public FocusableBase
 {
 public:
 	Focusable() = default;
-	Focusable(ObjectTransform trans) : FocusableBase(trans) {}
+	Focusable(ObjectTransform trans);
 	~Focusable() = default;
 
 	virtual void Update() override;
@@ -175,7 +175,7 @@ class ADDFocusable : public FocusableBase
 {
 public:
 	ADDFocusable() = default;
-	ADDFocusable(ObjectTransform trans) : FocusableBase(trans) {}
+	ADDFocusable(ObjectTransform trans);
 	~ADDFocusable() = default;
 
 	virtual void Update() override;
@@ -198,7 +198,7 @@ protected:
 
 public:
 	Draggable() = default;
-	Draggable(ObjectTransform trans) : ADDFocusable(trans) {}
+	Draggable(ObjectTransform trans);
 	~Draggable() = default;
 
 	virtual void Update() override;

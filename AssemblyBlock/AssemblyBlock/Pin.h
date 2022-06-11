@@ -1,7 +1,7 @@
 #pragma once
 #include "Engine.h"
 
-class Pin : public Focusable
+class Pin : public ADDFocusable
 {
 public:
 	static constexpr Vector2 pinExtents = { 20, 40 };
@@ -10,7 +10,7 @@ public:
 	static constexpr Color color_focused = GRAY;
 
 	Pin() = default;
-	Pin(ObjectTransform trans) : Focusable(trans) { transform.SetExtents(pinExtents); }
+	Pin(ObjectTransform trans);
 	~Pin() = default;
 
 	void Update() final;
