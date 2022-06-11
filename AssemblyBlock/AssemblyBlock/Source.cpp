@@ -68,18 +68,36 @@ public:
 	{
 		return children.end();
 	}
-
+	
+private:
+	void _RemoveSelfFromParent()
+	{
+		auto it = parent->children.find(this);
+		_ASSERT_EXPR(it != parent->children.end(), L"Parent must have this as a child");
+		parent->children.erase(it);
+	}
+	void _AddSelfToParent()
+	{
+		parent->children.insert(this);
+	}
+public:
+	void RemoveParent()
+	{
+		_RemoveSelfFromParent();
+		parent = nullptr;
+	}
 	void SetParent(ObjectTransform& newParent)
 	{
-		if (parent)
-		{
-			auto it = parent->children.find(this);
-			_ASSERT_EXPR(it != parent->children.end(), L"Parent must have this as a child");
-			parent->children.erase(it);
-		}
+		if (parent) _RemoveSelfFromParent();
 		parent = &newParent;
-		if (parent)
-			parent->children.insert(this);
+		_AddSelfToParent();
+	}
+	void SetParent(Object* newParentObj)
+	{
+		if (newParentObj)
+			SetParent(newParentObj->transform);
+		else
+			RemoveParent();
 	}
 	void SetParent_KeepWorld(ObjectTransform& newParent)
 	{
@@ -444,7 +462,7 @@ template<class T>
 concept ObjectDerivative = std::is_base_of_v<Object, T>;
 
 template<ObjectDerivative ObjectType>
-ObjectTransform& Instantiate(Vector2 position, Vector2 anchor)
+ObjectTransform& Instantiate(Vector2 position = { 0,0 }, Vector2 anchor = { 0.5f,0.5f })
 {
 	ObjectTransform trans;
 	trans.SetLocalPosition(position, anchor);
@@ -482,10 +500,14 @@ int main()
 
 		{
 			Instantiate<Pin>({ 100, 0 }, { 0, 1 });
+		}
+		{
 			Instantiate<Block>({ 400, 0 }, { 0, 1 });
-			Instantiate<Pin>({}, {})
-				.SetParent(objects[1]->transform);
-			objects[2]->transform.SetLocalPosition({ blockWidth / 2, 0 }, { 0.5, 0.5f });
+		}
+		{
+			ObjectTransform& pin = Instantiate<Pin>();
+			pin.SetParent(objects[1]);
+			pin.SetLocalPosition({ blockWidth / 2, 0 }, { 0.5, 0.5f });
 		}
 	}
 
