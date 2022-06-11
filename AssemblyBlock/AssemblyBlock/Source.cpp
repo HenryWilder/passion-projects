@@ -496,6 +496,16 @@ int main()
 			pin.SetParent(objects[1]->transform);
 			pin.SetLocalPosition({ blockWidth / 2, 0 }, { 0.5, 0.5f });
 		}
+		{
+			ObjectTransform& pin = Instantiate<Pin>();
+			pin.SetParent(objects[1]->transform);
+			pin.SetLocalPosition({ blockWidth / 2 + pinWidth * 2, 0 }, { 0.5, 0.5f });
+		}
+		{
+			ObjectTransform& pin = Instantiate<Pin>();
+			pin.SetParent(objects[1]->transform);
+			pin.SetLocalPosition({ blockWidth / 2 + pinWidth * 4, 0 }, { 0.5, 0.5f });
+		}
 	}
 
 	while (!WindowShouldClose())
