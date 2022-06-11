@@ -2,6 +2,7 @@
 #include <raymath.h>
 #include <fstream>
 #include <unordered_set>
+#include <set>
 #include <typeinfo>
 
 // Extend as implemented
@@ -52,19 +53,52 @@ class Object;
 
 struct ObjectTransform
 {
-	const ObjectTransform* parent = nullptr;
-	const Object* object = nullptr;
+private:
+	std::set<ObjectTransform*> children;
+	ObjectTransform* parent = nullptr;
+	Object* object = nullptr;
+
+public:
 	Rectangle bounds = { 0,0,0,0 };
 
-	void SetParent_KeepLocal(const ObjectTransform& newParent)
+	auto begin()
 	{
-		parent = &newParent;
+		return children.begin();
 	}
-	void SetParent_KeepWorld(const ObjectTransform& newParent)
+	auto end()
+	{
+		return children.end();
+	}
+
+	void SetParent(ObjectTransform& newParent)
+	{
+		if (parent)
+		{
+			auto it = parent->children.find(this);
+			_ASSERT_EXPR(it != parent->children.end(), L"Parent must have this as a child");
+			parent->children.erase(it);
+		}
+		parent = &newParent;
+		newParent.children.insert(this);
+	}
+	void SetParent_KeepWorld(ObjectTransform& newParent)
 	{
 		Vector2 worldPosition = GetWorldPosition();
-		parent = &newParent;
+		SetParent(newParent);
 		SetWorldPosition(worldPosition);
+	}
+	const ObjectTransform* Parent() const
+	{
+		return parent;
+	}
+
+	void SetObject(Object* object)
+	{
+		this->object = object;
+	}
+	const Object* Object() const
+	{
+		return object;
 	}
 
 	Vector2 GetLocalPosition(Vector2 anchor = { 0.5f, 0.5f }) const
@@ -158,7 +192,7 @@ public:
 	ObjectTransform transform;
 
 	Object() = default;
-	Object(ObjectTransform trans) : transform(trans) { transform.object = this; }
+	Object(ObjectTransform trans) : transform(trans) { transform.SetObject(this); }
 	~Object() = default;
 
 #pragma region Check collision
@@ -379,6 +413,23 @@ public:
 	}
 };
 
+template<class T>
+concept ObjectDerivative = std::is_base_of_v<Object, T>;
+
+template<ObjectDerivative ObjectType>
+ObjectTransform& Instantiate(Vector2 position, Vector2 anchor)
+{
+	ObjectTransform trans;
+	trans.SetLocalPosition(position, anchor);
+	ObjectType* ret = new ObjectType(trans);
+	Persistent::allObjects.push_back(ret);
+	return ret->transform;
+}
+void Destroy(Object* object)
+{
+	delete object;
+}
+
 int main()
 {
 	InitWindow(1280, 720, "Assembly Block v0.0.1");
@@ -409,10 +460,14 @@ int main()
 		constexpr float blockHeight = Block::blockExtents.y;
 
 		{
+			Instantiate<Pin>({ 100, 0 }, { 0, 1 });
+			Instantiate<Block>({ 100, 0 }, { 0, 1 });
+			Instantiate<Pin>({ 100, 0 }, { 0, 1 });
+
 			CreateObject(new Pin,   { 100, 0 }, { 0, 1 });
 			CreateObject(new Block, { 400, 0 }, { 0, 1 });
 			CreateObject(new Pin, { 0, blockHeight * 0.5f }, { 0.5f, 0.5f })
-				->SetParent_KeepLocal(objects[1]->transform);
+				->SetParent(objects[1]->transform);
 		}
 	}
 
