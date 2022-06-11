@@ -170,8 +170,8 @@
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="Data.cpp" />
     <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="Main.cpp" />
     <ClCompile Include="Pin.cpp" />
-    <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Block.h" />
