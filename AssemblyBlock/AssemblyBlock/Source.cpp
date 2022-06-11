@@ -2,6 +2,7 @@
 #include <raymath.h>
 #include <fstream>
 #include <set>
+#include <vector>
 
 // Extend as implemented
 inline Vector2 operator-(Vector2 v, float sub) { return Vector2SubtractValue(v, sub); }
