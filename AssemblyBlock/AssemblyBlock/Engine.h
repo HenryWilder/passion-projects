@@ -105,7 +105,7 @@ public:
 
 template<class ObjectType>
 ObjectTransform& Instantiate(Vector2 position = { 0,0 }, Vector2 anchor = { 0.5f,0.5f })
-requires std::is_base_of_v<Object, ObjectType>
+	requires std::is_base_of_v<Object, ObjectType>
 {
 	ObjectTransform trans;
 	trans.SetLocalPosition(position, anchor);
@@ -132,7 +132,6 @@ public:
 };
 
 
-// Focuses when clicked inside; loses focus when clicked elsewhere
 class FocusableBase : public Hoverable
 {
 private:
