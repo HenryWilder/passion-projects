@@ -15,4 +15,5 @@ public:
 
 	void Update() final;
 	void Draw() const final;
+	inline const char* GetTypeName() const override { return "Pin"; }
 };

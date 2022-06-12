@@ -227,12 +227,25 @@ void SortObjects()
 
 Hoverable::Hoverable(BasicTransform trans) : Object(trans), hovered() {}
 
+void Hoverable::OnHover() {}
+void Hoverable::OnUnhover() {}
 void Hoverable::Update()
 {
-	hovered = CheckPointSimpleCollision(Frame::cursor);
-	if (!hovered) return;
-	if (IsComplexCollisionDifferentFromSimpleCollision())
-		hovered &= CheckPointComplexCollision(Frame::cursor);
+	bool previouslyHovered = hovered;
+	hovered = false;
+	do {
+		if (Frame::foundHovered) break;
+		hovered = CheckPointSimpleCollision(Frame::cursor);
+		if (!hovered) break;
+		if (IsComplexCollisionDifferentFromSimpleCollision())
+			hovered &= CheckPointComplexCollision(Frame::cursor);
+		Frame::foundHovered = hovered;
+	} while (false);
+	if (hovered == previouslyHovered) return;
+	if (hovered)
+		OnHover();
+	else
+		OnUnhover();
 }
 
 
@@ -308,7 +321,7 @@ void Draggable::OnStopDragging() {}
 void Draggable::Update()
 {
 	ADDFocusable::Update();
-	beingDragged = focused && b_draggable;
+	beingDragged = focused && b_draggable; // @Todo: if b_draggable gets unset mid-drag, OnStopDragging doesn't get called...
 	if (beingDragged)
 		transform.Offset(GetMouseDelta());
 }

@@ -27,6 +27,7 @@ namespace Data
 	namespace Frame
 	{
 		extern Vector2 cursor;
+		extern bool foundHovered;
 
 		void Init();
 	}

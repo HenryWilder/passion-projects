@@ -101,6 +101,8 @@ public:
 };
 
 
+#pragma region Abstract classes
+
 
 class Object
 {
@@ -122,6 +124,7 @@ public:
 
 	virtual void Update() = 0;
 	virtual void Draw() const = 0;
+	virtual const char* GetTypeName() const = 0;
 };
 
 template<class ObjectType, typename... Args>
@@ -141,6 +144,8 @@ class Hoverable : public Object
 {
 protected:
 	bool hovered;
+	virtual void OnHover();
+	virtual void OnUnhover();
 
 public:
 	Hoverable() = default;
@@ -227,3 +232,5 @@ public:
 	bool IsDraggable() const;
 	void SetDraggable(bool value);
 };
+
+#pragma endregion

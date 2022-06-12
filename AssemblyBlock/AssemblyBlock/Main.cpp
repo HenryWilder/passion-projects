@@ -21,9 +21,9 @@ int main()
 		Data::Frame::Init();
 
 		// Sim phase
-		for (Object* obj : Data::Persistent::allObjects)
+		for (size_t i = Data::Persistent::allObjects.size(); i > 0; --i)
 		{
-			obj->Update();
+			Data::Persistent::allObjects[i - 1]->Update();
 		}
 
 		// Draw phase

@@ -15,4 +15,5 @@ public:
 
 	void Update() override;
 	void Draw() const override;
+	inline const char* GetTypeName() const override { return "Block"; }
 };

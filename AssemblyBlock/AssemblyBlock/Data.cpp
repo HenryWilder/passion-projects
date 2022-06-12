@@ -32,10 +32,12 @@ namespace Data
 	namespace Frame
 	{
 		Vector2 cursor;
+		bool foundHovered;
 
 		void Init()
 		{
 			cursor = GetMousePosition();
+			foundHovered = false;
 		}
 	}
 }
