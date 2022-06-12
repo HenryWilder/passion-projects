@@ -102,66 +102,10 @@ public:
 
 
 
-class Component
-{
-private:
-	ObjectTransform& transform;
-	bool enabled;
-
-	virtual void OnEnable() = 0;
-	virtual void OnDisable() = 0;
-	virtual void OnUpdate() = 0;
-
-public:
-	Component(ObjectTransform& trans, bool enabledByDefault = true) :
-		transform(trans), enabled(false)
-	{
-		SetEnabled(enabledByDefault);
-	}
-
-	bool Enabled() const { return enabled; }
-	void SetEnabled(bool value)
-	{
-		if (enabled == value) return;
-
-		if (enabled = value)
-			OnEnable();
-		else
-			OnDisable();
-	}
-};
-
 class Object
 {
 public:
 	ObjectTransform transform;
-	std::vector<Component*> components;
-
-	template<typename T, typename... Args>
-	requires(std::is_base_of_v<Component, T>)
-	bool AddComponent(bool enabledByDefault, Args&&... _Val)
-	{
-		if (GetComponent<T>()) return false;
-		components.emplace(new T(transform, enabledByDefault, std::forward<Args>(_Val)...));
-		return true;
-	}
-	template<typename T>
-	T* GetComponent()
-	{
-		for (Component* c : components)
-		{
-			T* t = dynamic_cast<T*>(c);
-			if (t) return t;
-		}
-		return nullptr;
-	}
-	bool RemoveComponent(Component* what)
-	{
-		auto it = std::find(components.begin(), components.end(), what);
-		if (it == components.end()) return false;
-		components.erase(it);
-		return true;
-	}
 
 	Object() = default;
 	Object(BasicTransform trans);
