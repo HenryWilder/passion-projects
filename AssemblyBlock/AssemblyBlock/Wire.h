@@ -24,5 +24,8 @@ public:
 
 	void Update() override;
 	void Draw() const override;
+#if _DEBUG
+	virtual void DrawDebug() const override;
+#endif
 	inline const char* GetTypeName() const override { return "Wire"; }
 };

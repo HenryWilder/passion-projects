@@ -10,7 +10,7 @@ inline void Startup()
 {
 	decltype(Data::Persistent::allObjects)& objects = Data::Persistent::allObjects;
 
-	ObjectTransform& nodeTrans = Instantiate<Node>(BasicTransform{ .position{ 600,400 } }, 3);
-	ObjectTransform& pinTrans = Instantiate<Pin>(BasicTransform{ .position{ 100,0 } });
-	Instantiate<Wire>(nodeTrans.ob, &pinTrans); // Todo: Get pin from node
+	Node* node = Instantiate<Node>(BasicTransform{ .position{ 600,400 } }, 3);
+	Pin* pin = Instantiate<Pin>(BasicTransform{ .position{ 100,0 } });
+	Instantiate<Wire>(node->GetPin(0), pin); // Todo: Get pin from node
 }

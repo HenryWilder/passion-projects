@@ -142,13 +142,12 @@ Vector2 ObjectTransform::GetLocalPosition() const
 	return RectanglePosition(bounds) + LocalFromAnchor(RectangleExtents(bounds), pivot);
 }
 
+// Todo: Fix bugs
 Vector2 ObjectTransform::GetWorldPosition() const
 {
-	Vector2 local = GetLocalPosition();
-	if (parent)
-		return local + parent->GetWorldPosition();
-	else
-		return local;
+	Vector2 pos = GetLocalPosition();
+	if (parent) pos = pos + parent->GetWorldPosition();
+	return pos;
 }
 
 void ObjectTransform::SetLocalPosition(Vector2 position)
@@ -156,6 +155,7 @@ void ObjectTransform::SetLocalPosition(Vector2 position)
 	SetRectanglePosition(bounds, position - LocalFromAnchor(RectangleExtents(bounds), pivot));
 }
 
+// Todo: Fix bugs
 void ObjectTransform::SetWorldPosition(Vector2 position)
 {
 	Vector2 localPos;
@@ -195,14 +195,21 @@ void SortObjects()
 {
 	std::map<const ObjectTransform*, size_t> depth;
 	depth.emplace(nullptr, -1); // I just need a number that equals 0 when added to 1, overflow or not.
-	for (Object* obj : Data::Persistent::allObjects)
+	for (size_t i = 0; i < Data::Persistent::allObjects.size(); ++i)
 	{
-		if (depth.contains(&obj->transform))
+		Object* obj = Data::Persistent::allObjects[i];
+		if (depth.contains(&obj->transform)) // Skip if we've already checked this one
 			continue;
 		std::stack<const ObjectTransform*> route;
 		route.push(&obj->transform);
+#if _DEBUG
+		size_t j = -1; // For tracing
+#endif
 		while (!route.empty())
 		{
+#if _DEBUG
+			++j;
+#endif
 			const ObjectTransform* current = route.top();
 			const ObjectTransform* parent = current->Parent();
 			if (!depth.contains(parent))
@@ -248,11 +255,24 @@ void Hoverable::Update()
 		OnUnhover();
 }
 
+#if _DEBUG
+void Hoverable::DrawDebug() const
+{
+	// Todo
+}
+#endif
+
 
 FocusableBase::FocusableBase(BasicTransform trans) : Hoverable(trans) {}
 
 void FocusableBase::OnFocus() {}
 void FocusableBase::OnLoseFocus() {}
+#if _DEBUG
+void FocusableBase::DrawDebug() const
+{
+	// Todo
+}
+#endif
 bool FocusableBase::IsFocusable() const
 {
 	return b_focusable;
@@ -280,6 +300,13 @@ void Focusable::Update()
 	}
 }
 
+#if _DEBUG
+void Focusable::DrawDebug() const
+{
+	// Todo
+}
+#endif
+
 
 ADDFocusable::ADDFocusable(BasicTransform trans) : FocusableBase(trans) {}
 
@@ -298,6 +325,13 @@ void ADDFocusable::Update()
 		OnFocus();
 	}
 }
+
+#if _DEBUG
+void ADDFocusable::DrawDebug() const
+{
+	// Todo
+}
+#endif
 
 
 Draggable::Draggable(BasicTransform trans) : ADDFocusable(trans) {}
@@ -325,6 +359,13 @@ void Draggable::Update()
 	if (beingDragged)
 		transform.Offset(GetMouseDelta());
 }
+
+#if _DEBUG
+void Draggable::DrawDebug() const
+{
+	// Todo
+}
+#endif
 
 bool Draggable::IsDraggable() const
 {

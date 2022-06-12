@@ -10,3 +10,10 @@ void Block::Draw() const
 {
 	DrawRectangleRec(transform.WorldBounds(), (beingDragged ? color_dragged : (hovered ? color_hovered : color_basic)));
 }
+
+#if _DEBUG
+void Block::DrawDebug() const
+{
+	// Todo
+}
+#endif

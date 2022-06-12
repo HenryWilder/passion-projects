@@ -35,6 +35,13 @@ int main()
 			{
 				obj->Draw();
 			}
+
+#if _DEBUG
+			for (Object* obj : Data::Persistent::allObjects)
+			{
+				obj->DrawDebug();
+			}
+#endif
 		}
 		EndDrawing();
 	}

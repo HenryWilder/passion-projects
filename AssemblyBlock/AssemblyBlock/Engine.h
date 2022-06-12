@@ -124,16 +124,30 @@ public:
 
 	virtual void Update() = 0;
 	virtual void Draw() const = 0;
-	virtual const char* GetTypeName() const = 0;
+#if _DEBUG
+	// Will always be drawn above everything else
+	virtual void DrawDebug() const = 0;
+#endif
+	virtual inline const char* GetTypeName() const { return "Base Object"; }
 };
 
 template<class ObjectType, typename... Args>
-ObjectTransform& Instantiate(Args&&... _Val)
-	requires std::is_base_of_v<Object, ObjectType>
+concept ConstructableEngineObject = requires(Args&&... args)
 {
+	// Must be derivative of the Object base class
+	std::is_base_of_v<Object, ObjectType>;
+	// Passed arguments must constitute a valid constructor for the derived type
+	{ new ObjectType(std::forward<Args>(args)...) } -> std::convertible_to<ObjectType*>;
+};
+
+template<class ObjectType, typename... Args>
+ObjectType* Instantiate(Args&&... _Val) requires(ConstructableEngineObject<ObjectType, Args...>)
+{
+	// Reserve place in object list before calling constructor
+	// (Constructor might instantiate children, muddling the order)
 	ObjectType* ret = new ObjectType(std::forward<Args>(_Val)...);
 	Data::Persistent::allObjects.push_back(ret);
-	return ret->transform;
+	return ret;
 }
 void Destroy(Object* object);
 void SortObjects();
@@ -143,7 +157,7 @@ void SortObjects();
 class Hoverable : public Object
 {
 protected:
-	bool hovered;
+	bool hovered = false;
 	virtual void OnHover();
 	virtual void OnUnhover();
 
@@ -154,6 +168,9 @@ public:
 
 	virtual void Update() override;
 	virtual void Draw() const = 0;
+#if _DEBUG
+	virtual void DrawDebug() const override;
+#endif
 };
 
 
@@ -174,6 +191,9 @@ public:
 
 	virtual void Update() = 0;
 	virtual void Draw() const = 0;
+#if _DEBUG
+	virtual void DrawDebug() const override;
+#endif
 
 	bool IsFocusable() const;
 	void SetFocusable(bool value);
@@ -191,6 +211,9 @@ public:
 
 	virtual void Update() override;
 	virtual void Draw() const = 0;
+#if _DEBUG
+	virtual void DrawDebug() const override;
+#endif
 };
 
 
@@ -205,6 +228,9 @@ public:
 
 	virtual void Update() override;
 	virtual void Draw() const = 0;
+#if _DEBUG
+	virtual void DrawDebug() const override;
+#endif
 };
 
 
@@ -228,6 +254,9 @@ public:
 
 	virtual void Update() override;
 	virtual void Draw() const = 0;
+#if _DEBUG
+	virtual void DrawDebug() const override;
+#endif
 
 	bool IsDraggable() const;
 	void SetDraggable(bool value);

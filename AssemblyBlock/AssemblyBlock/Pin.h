@@ -10,10 +10,13 @@ public:
 	static constexpr Color color_focused = GRAY;
 
 	Pin() = default;
-	Pin(BasicTransform trans);
+	Pin(BasicTransform trans, bool isSquarePin = false);
 	~Pin() = default;
 
 	void Update() final;
 	void Draw() const final;
+#if _DEBUG
+	virtual void DrawDebug() const override;
+#endif
 	inline const char* GetTypeName() const override { return "Pin"; }
 };
