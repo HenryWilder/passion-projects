@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <map>
+#include <stack>
 #include "Engine.h"
 
 Vector2 LocalFromAnchor(Vector2 extents, Vector2 anchor)
@@ -183,7 +186,42 @@ bool Object::CheckPointComplexCollision(Vector2 point) const
 
 void Destroy(Object* object)
 {
+	auto it = std::find(Data::Persistent::allObjects.begin(), Data::Persistent::allObjects.end(), object);
+	_ASSERT_EXPR(it == Data::Persistent::allObjects.end(), L"Objects should always be created through Instantiate<>()");
+	Data::Persistent::allObjects.erase(it);
 	delete object;
+}
+void SortObjects()
+{
+	std::map<const ObjectTransform*, size_t> depth;
+	depth.emplace(nullptr, -1); // I just need a number that equals 0 when added to 1, overflow or not.
+	for (Object* obj : Data::Persistent::allObjects)
+	{
+		if (depth.contains(&obj->transform))
+			continue;
+		std::stack<const ObjectTransform*> route;
+		route.push(&obj->transform);
+		while (!route.empty())
+		{
+			const ObjectTransform* current = route.top();
+			const ObjectTransform* parent = current->Parent();
+			if (!depth.contains(parent))
+			{
+				route.push(parent);
+				continue;
+			}
+			auto it = depth.find(parent);
+			depth.emplace(current, it->second + 1);
+			route.pop();
+		}
+	}
+	auto sortFunction = [&depth](Object* a, Object* b)
+	{
+		size_t depthA = depth.find(&a->transform)->second;
+		size_t depthB = depth.find(&b->transform)->second;
+		return depthA < depthB;
+	};
+	std::sort(Data::Persistent::allObjects.begin(), Data::Persistent::allObjects.end(), sortFunction);
 }
 
 

@@ -133,6 +133,7 @@ ObjectTransform& Instantiate(Args&&... _Val)
 	return ret->transform;
 }
 void Destroy(Object* object);
+void SortObjects();
 
 
 

@@ -14,6 +14,7 @@ int main()
 
 	Data::Persistent::Init();
 	Startup();
+	SortObjects();
 
 	while (!WindowShouldClose())
 	{
