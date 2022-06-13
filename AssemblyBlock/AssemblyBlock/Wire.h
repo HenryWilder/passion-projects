@@ -4,6 +4,9 @@
 // Note: wire transform is not helpful!!
 class Wire : public Focusable
 {
+private:
+	void SetupDependancies();
+
 protected:
 	ObjectTransform* start = nullptr;
 	ObjectTransform* end = nullptr;

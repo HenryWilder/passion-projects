@@ -3,14 +3,14 @@
 #include "Engine.h"
 #include "Startup.h"
 
-std::unordered_map<Object*, std::vector<Object*>> unEvaluatedDependents;
-std::unordered_set<Object*> beenEvaluated;
+std::unordered_map<const Object*, std::vector<Object*>> unEvaluatedDependents;
+std::unordered_set<const Object*> beenEvaluated;
 
 template<bool isForwardUpdate>
 void TryEvaluate(Object* object)
 {
-	const std::vector<Object*>& dependencies = object->DependentOn();
-	for (Object* dep : dependencies)
+	const std::vector<const Object*>& dependencies = object->DependentOn();
+	for (const Object* dep : dependencies)
 	{
 		if (!beenEvaluated.contains(dep))
 		{

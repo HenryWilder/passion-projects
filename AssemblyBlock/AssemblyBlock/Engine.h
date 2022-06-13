@@ -232,7 +232,7 @@ protected:
 	template<bool isForwardUpdate> friend void TryEvaluate(Object*);
 
 	// Objects that need to be evaluated before this one can be (independent of forward/reverse)
-	std::vector<Object*> dependentOn;
+	std::vector<const Object*> dependentOn;
 
 	// Update parents before children
 	virtual void ForwardUpdate();
@@ -246,7 +246,7 @@ public:
 	Object(BasicTransform trans);
 	~Object() = default;
 
-	inline const std::vector<Object*>& DependentOn() const { return dependentOn; }
+	inline const std::vector<const Object*>& DependentOn() const { return dependentOn; }
 
 #pragma region Check collision
 	// Todo: make a function to get the anchor from a point on the rectangle
