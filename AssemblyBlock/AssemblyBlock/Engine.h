@@ -5,13 +5,118 @@
 #include <set>
 #include <vector>
 #include <functional>
+#include <stack>
+#include <queue>
 #include "Data.h"
+
+
+#if _DEBUG
+struct DebugPoint { Vector2 point; Color color = MAGENTA; };
+struct DebugCircle { Vector2 point; float radius; int segments = 12;  float thickness = 1; Color color = MAGENTA; };
+struct DebugLine { Vector2 start; Vector2 end; float thickness = 1; Color color = MAGENTA; };
+struct DebugRectangle { Rectangle rec; float thickness = 1; Color color = MAGENTA; };
+namespace Debug
+{
+	struct DebugShape
+	{
+		Color color;
+		DebugShape(Color color) :
+			color(color) {}
+		virtual void Draw() const = 0;
+	};
+	struct Point : public DebugShape
+	{
+		Vector2 center;
+		Point(DebugPoint data) :
+			DebugShape(data.color),
+			center(data.point) {}
+		inline void Draw() const override
+		{
+			constexpr int crosshairRadius = 8;
+			constexpr float circleRadius = 4.0f;
+			int x = (int)roundf(center.x);
+			int y = (int)roundf(center.y);
+			DrawLine(x - crosshairRadius, y, x + crosshairRadius, y, color);
+			DrawLine(x, y - crosshairRadius, x, y + crosshairRadius, color);
+			DrawRing({ (float)x, (float)y }, circleRadius - 0.5f, circleRadius + 0.5f, 0.0f, 360.0f, 36, color);
+		}
+	};
+	struct Circle : public Point
+	{
+		float radius;
+		float thickness;
+		int segments;
+		Circle(DebugCircle data) :
+			Point({ data.point, data.color }),
+			radius(data.radius), thickness(data.thickness), segments(data.segments) {}
+		inline void Draw() const final
+		{
+			float halfThick = thickness * 0.5f;
+			DrawRing(center, radius - halfThick, radius + halfThick, 0.0f, 360.0f, segments, color);
+		}
+	};
+	struct Line : public DebugShape
+	{
+		Vector2 start;
+		Vector2 end;
+		float thickness;
+		Line(DebugLine data) :
+			DebugShape(data.color),
+			start(data.start), end(data.end), thickness(data.thickness) {}
+		inline void Draw() const final
+		{
+			DrawLineEx(start, end, thickness, color);
+		}
+	};
+	struct Rect : public DebugShape
+	{
+		Rectangle rec;
+		float thickness;
+		Rect(DebugRectangle data) :
+			DebugShape(data.color),
+			rec(data.rec), thickness(data.thickness) {}
+		inline void Draw() const final
+		{
+			DrawRectangleLinesEx(rec, thickness, color);
+		}
+	};
+
+	extern std::queue<DebugShape*> _debugDrawQueue;
+}
+inline void DrawDebugPoint(DebugPoint data)
+{
+	Debug::_debugDrawQueue.push(new Debug::Point(data));
+}
+inline void DrawDebugCircle(DebugCircle data)
+{
+	Debug::_debugDrawQueue.push(new Debug::Circle(data));
+}
+inline void DrawDebugLine(DebugLine data)
+{
+	Debug::_debugDrawQueue.push(new Debug::Line(data));
+}
+inline void DrawDebugRect(DebugRectangle data)
+{
+	Debug::_debugDrawQueue.push(new Debug::Rect(data));
+}
+
+void _DrawDebug();
+#else
+#define DrawDebugPoint(data)
+#define DrawDebugCircle(data)
+#define DrawDebugCircle(data)
+#define DrawDebugLine(data)
+#define DrawDebugRect(data)
+
+#define _DrawDebug()
+#endif
 
 
 // Extend as implemented
 inline Vector2 operator-(Vector2 v, float sub) { return Vector2SubtractValue(v, sub); }
 inline Vector2 operator*(Vector2 v, float scale) { return Vector2Scale(v, scale); }
 inline Vector2 operator+(Vector2 v1, Vector2 v2) { return Vector2Add(v1, v2); }
+inline Vector2& operator+=(Vector2& v1, Vector2 v2) { return v1 = Vector2Add(v1, v2); }
 inline Vector2 operator-(Vector2 v1, Vector2 v2) { return Vector2Subtract(v1, v2); }
 inline Vector2 operator*(Vector2 v1, Vector2 v2) { return Vector2Multiply(v1, v2); }
 inline Vector2 operator/(Vector2 v1, Vector2 v2) { return Vector2Divide(v1, v2); }
@@ -51,7 +156,7 @@ private:
 
 public:
 	ObjectTransform() = default;
-	ObjectTransform(BasicTransform data);
+	ObjectTransform(BasicTransform data, Object* owningObject);
 	~ObjectTransform() = default;
 
 public:
@@ -74,10 +179,7 @@ public:
 	void SetObject(Object* object);
 	const Object* MyObject() const;
 
-private:
-	// Recursive
-	Vector2 _GetAnchorlessWorldPosition() const;
-public:
+	Vector2 RelativePivotPosition() const;
 	Rectangle WorldBounds() const;
 	Rectangle LocalBounds() const;
 	void SetExtents(Vector2 extents);
@@ -100,12 +202,43 @@ public:
 	inline void Offset(Vector2 amount) { AddRectanglePosition(bounds, amount); }
 };
 
+template<class _Eval>
+void TraverseFromAncestor(const ObjectTransform* start, _Eval evaluateNode)
+requires(std::is_invocable_v<_Eval, const ObjectTransform*>)
+{
+	if (!start) return;
+	std::stack<const ObjectTransform*> route({ start });
+	while (auto parent = route.top()->Parent())
+	{
+		route.push(parent);
+	}
+	while (!route.empty())
+	{
+		evaluateNode(route.top());
+		route.pop();
+	}
+}
+
 
 #pragma region Abstract classes
 
 
 class Object
 {
+protected:
+	// Whether reverse update should be evaluated before reverse update
+	bool _rbf = false;
+	friend int main();
+	template<bool isForwardUpdate> friend void TryEvaluate(Object*);
+
+	// Objects that need to be evaluated before this one can be (independent of forward/reverse)
+	std::vector<Object*> dependentOn;
+
+	// Update parents before children
+	virtual void ForwardUpdate();
+	// Update children before parents
+	virtual void ReverseUpdate();
+
 public:
 	ObjectTransform transform;
 
@@ -113,21 +246,22 @@ public:
 	Object(BasicTransform trans);
 	~Object() = default;
 
+	inline const std::vector<Object*>& DependentOn() const { return dependentOn; }
+
 #pragma region Check collision
 	// Todo: make a function to get the anchor from a point on the rectangle
 	bool CheckPointSimpleCollision(Vector2 point) const;
+#if _DEBUG
+	// Display that the collision check on this object has been skipped
+	void SkipPointSimpleCollision() const;
+#endif
 	// Make sure to specialize "IsComplexCollisionDifferentFromSimpleCollision"
 	// too if you specialize this function, or it will be skipped!!
 	virtual bool CheckPointComplexCollision(Vector2 point) const;
 	virtual constexpr bool IsComplexCollisionDifferentFromSimpleCollision() const { return false; }
 #pragma endregion
 
-	virtual void Update() = 0;
 	virtual void Draw() const = 0;
-#if _DEBUG
-	// Will always be drawn above everything else
-	virtual void DrawDebug() const = 0;
-#endif
 	virtual inline const char* GetTypeName() const { return "Base Object"; }
 };
 
@@ -160,17 +294,13 @@ protected:
 	bool hovered = false;
 	virtual void OnHover();
 	virtual void OnUnhover();
+	void ForwardUpdate() override;
+	void ReverseUpdate() override;
 
 public:
 	Hoverable() = default;
 	Hoverable(BasicTransform trans);
 	~Hoverable() = default;
-
-	virtual void Update() override;
-	virtual void Draw() const = 0;
-#if _DEBUG
-	virtual void DrawDebug() const override;
-#endif
 };
 
 
@@ -189,12 +319,6 @@ public:
 	FocusableBase(BasicTransform trans);
 	~FocusableBase() = default;
 
-	virtual void Update() = 0;
-	virtual void Draw() const = 0;
-#if _DEBUG
-	virtual void DrawDebug() const override;
-#endif
-
 	bool IsFocusable() const;
 	void SetFocusable(bool value);
 };
@@ -204,16 +328,14 @@ public:
 // Useful for things like dropdowns or windows
 class Focusable : public FocusableBase
 {
+protected:
+	void ForwardUpdate() override;
+	void ReverseUpdate() override;
+
 public:
 	Focusable() = default;
 	Focusable(BasicTransform trans);
 	~Focusable() = default;
-
-	virtual void Update() override;
-	virtual void Draw() const = 0;
-#if _DEBUG
-	virtual void DrawDebug() const override;
-#endif
 };
 
 
@@ -221,21 +343,23 @@ public:
 // Useful for things like sliders or spinners
 class ADDFocusable : public FocusableBase
 {
+protected:
+	void ForwardUpdate() override;
+	void ReverseUpdate() override;
+
 public:
 	ADDFocusable() = default;
 	ADDFocusable(BasicTransform trans);
 	~ADDFocusable() = default;
-
-	virtual void Update() override;
-	virtual void Draw() const = 0;
-#if _DEBUG
-	virtual void DrawDebug() const override;
-#endif
 };
 
 
 class Draggable : public ADDFocusable
 {
+protected:
+	void ForwardUpdate() override;
+	void ReverseUpdate() override;
+
 private:
 	bool b_draggable = true;
 
@@ -251,12 +375,6 @@ public:
 	Draggable() = default;
 	Draggable(BasicTransform trans);
 	~Draggable() = default;
-
-	virtual void Update() override;
-	virtual void Draw() const = 0;
-#if _DEBUG
-	virtual void DrawDebug() const override;
-#endif
 
 	bool IsDraggable() const;
 	void SetDraggable(bool value);

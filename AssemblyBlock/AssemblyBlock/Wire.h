@@ -8,11 +8,14 @@ protected:
 	ObjectTransform* start = nullptr;
 	ObjectTransform* end = nullptr;
 
+	void ForwardUpdate() override;
+	void ReverseUpdate() override;
+
 public:
 	static constexpr Color color_normal = GRAY;
 	static constexpr Color color_hovered = LIGHTGRAY;
 	static constexpr Color color_focused = SKYBLUE;
-	static constexpr float thickness = 2.0f;
+	static constexpr float thickness = 4.0f;
 
 	Wire() = default;
 	Wire(Object* start, Object* end);
@@ -22,10 +25,6 @@ public:
 	virtual bool CheckPointComplexCollision(Vector2 point) const;
 	virtual constexpr bool IsComplexCollisionDifferentFromSimpleCollision() const { return true; }
 
-	void Update() override;
 	void Draw() const override;
-#if _DEBUG
-	virtual void DrawDebug() const override;
-#endif
 	inline const char* GetTypeName() const override { return "Wire"; }
 };

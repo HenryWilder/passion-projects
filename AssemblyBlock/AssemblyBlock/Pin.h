@@ -3,6 +3,10 @@
 
 class Pin : public ADDFocusable
 {
+protected:
+	void ForwardUpdate() override;
+	void ReverseUpdate() override;
+
 public:
 	static constexpr Vector2 pinExtents = { 20, 40 };
 	static constexpr Color color_basic = DARKGRAY;
@@ -13,10 +17,6 @@ public:
 	Pin(BasicTransform trans, bool isSquarePin = false);
 	~Pin() = default;
 
-	void Update() final;
 	void Draw() const final;
-#if _DEBUG
-	virtual void DrawDebug() const override;
-#endif
 	inline const char* GetTypeName() const override { return "Pin"; }
 };

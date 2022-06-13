@@ -3,6 +3,10 @@
 
 class Block : public Draggable
 {
+protected:
+	void ForwardUpdate() override;
+	void ReverseUpdate() override;
+
 public:
 	static constexpr Vector2 blockExtents = { 150, 100 };
 	static constexpr Color color_basic = DARKGRAY;
@@ -13,10 +17,6 @@ public:
 	Block(BasicTransform trans);
 	~Block() = default;
 
-	void Update() override;
 	void Draw() const override;
-#if _DEBUG
-	virtual void DrawDebug() const override;
-#endif
 	inline const char* GetTypeName() const override { return "Block"; }
 };

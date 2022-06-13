@@ -3,6 +3,22 @@
 #include <stack>
 #include "Engine.h"
 
+#if _DEBUG
+std::queue<Debug::DebugShape*> Debug::_debugDrawQueue;
+
+void _DrawDebug()
+{
+	while (!Debug::_debugDrawQueue.empty())
+	{
+		auto next = Debug::_debugDrawQueue.front();
+		Debug::_debugDrawQueue.pop();
+		next->Draw();
+		delete next;
+	}
+}
+#endif
+
+
 Vector2 LocalFromAnchor(Vector2 extents, Vector2 anchor)
 {
 	return extents * anchor;
@@ -45,8 +61,9 @@ void SetRectangleExtents(Rectangle& rec, Vector2 ext)
 }
 
 
-ObjectTransform::ObjectTransform(BasicTransform data)
+ObjectTransform::ObjectTransform(BasicTransform data, Object* owningObject)
 {
+	object = owningObject;
 	SetPivot(data.pivot);
 	SetLocalPosition(data.position);
 	if (!data.parent) return;
@@ -104,19 +121,15 @@ const Object* ObjectTransform::MyObject() const
 }
 
 
-Vector2 ObjectTransform::_GetAnchorlessWorldPosition() const
+Vector2 ObjectTransform::RelativePivotPosition() const
 {
-	Vector2 local = RectanglePosition(bounds);
-	if (parent)
-		return local + parent->_GetAnchorlessWorldPosition();
-	else
-		return local;
+	return LocalFromAnchor(RectangleExtents(bounds), pivot);
 }
 
 Rectangle ObjectTransform::WorldBounds() const
 {
 	Rectangle ret = bounds;
-	SetRectanglePosition(ret, _GetAnchorlessWorldPosition());
+	SetRectanglePosition(ret, GetWorldPosition() - RelativePivotPosition());
 	return ret;
 }
 Rectangle ObjectTransform::LocalBounds() const
@@ -139,44 +152,57 @@ void ObjectTransform::SetPivot(Vector2 pivot)
 
 Vector2 ObjectTransform::GetLocalPosition() const
 {
-	return RectanglePosition(bounds) + LocalFromAnchor(RectangleExtents(bounds), pivot);
+	return RectanglePosition(bounds) + RelativePivotPosition();
 }
 
-// Todo: Fix bugs
 Vector2 ObjectTransform::GetWorldPosition() const
 {
-	Vector2 pos = GetLocalPosition();
-	if (parent) pos = pos + parent->GetWorldPosition();
+	Vector2 pos = Vector2Zero();
+	TraverseFromAncestor(this, [&pos](const ObjectTransform* current) { pos += current->GetLocalPosition(); });
 	return pos;
 }
 
-void ObjectTransform::SetLocalPosition(Vector2 position)
+void ObjectTransform::SetLocalPosition(Vector2 newPosition)
 {
-	SetRectanglePosition(bounds, position - LocalFromAnchor(RectangleExtents(bounds), pivot));
+	SetRectanglePosition(bounds, newPosition - RelativePivotPosition());
 }
 
-// Todo: Fix bugs
-void ObjectTransform::SetWorldPosition(Vector2 position)
+void ObjectTransform::SetWorldPosition(Vector2 newPosition)
 {
-	Vector2 localPos;
 	if (parent)
-		localPos = position - parent->GetWorldPosition();
+		SetLocalPosition(newPosition - parent->GetWorldPosition());
 	else
-		localPos = position;
-	SetLocalPosition(localPos);
+		SetLocalPosition(newPosition);
 }
 
 
 using namespace Data;
 
 
-Object::Object(BasicTransform trans) : transform(trans) { transform.SetObject(this); }
+void Object::ForwardUpdate() {}
+void Object::ReverseUpdate() {}
+
+Object::Object(BasicTransform trans) : transform(trans, this) {}
 
 // Todo: make a function to get the anchor from a point on the rectangle
 bool Object::CheckPointSimpleCollision(Vector2 point) const
 {
-	return CheckCollisionPointRec(point, transform.WorldBounds());
+	Rectangle bounds = transform.WorldBounds();
+	bool colliding = CheckCollisionPointRec(point, bounds);
+	Color stateColor;
+	if (!colliding) stateColor = RED;
+	else if (IsComplexCollisionDifferentFromSimpleCollision()) stateColor = BLUE;
+	else stateColor = GREEN;
+	DrawDebugRect({ .rec = bounds, .thickness = 2, .color = stateColor });
+	return colliding;
 }
+#if _DEBUG
+void Object::SkipPointSimpleCollision() const
+{
+	Rectangle bounds = transform.WorldBounds();
+	DrawDebugRect({ .rec = bounds, .thickness = 2, .color = ORANGE });
+}
+#endif
 // Make sure to specialize "IsComplexCollisionDifferentFromSimpleCollision"
 // too if you specialize this function, or it will be skipped!!
 bool Object::CheckPointComplexCollision(Vector2 point) const
@@ -202,14 +228,8 @@ void SortObjects()
 			continue;
 		std::stack<const ObjectTransform*> route;
 		route.push(&obj->transform);
-#if _DEBUG
-		size_t j = -1; // For tracing
-#endif
 		while (!route.empty())
 		{
-#if _DEBUG
-			++j;
-#endif
 			const ObjectTransform* current = route.top();
 			const ObjectTransform* parent = current->Parent();
 			if (!depth.contains(parent))
@@ -236,12 +256,22 @@ Hoverable::Hoverable(BasicTransform trans) : Object(trans), hovered() {}
 
 void Hoverable::OnHover() {}
 void Hoverable::OnUnhover() {}
-void Hoverable::Update()
+void Hoverable::ForwardUpdate()
+{
+	// Nothing yet
+}
+void Hoverable::ReverseUpdate()
 {
 	bool previouslyHovered = hovered;
 	hovered = false;
 	do {
-		if (Frame::foundHovered) break;
+		if (Frame::foundHovered)
+		{
+#if _DEBUG
+			SkipPointSimpleCollision();
+#endif
+			break;
+		}
 		hovered = CheckPointSimpleCollision(Frame::cursor);
 		if (!hovered) break;
 		if (IsComplexCollisionDifferentFromSimpleCollision())
@@ -255,24 +285,11 @@ void Hoverable::Update()
 		OnUnhover();
 }
 
-#if _DEBUG
-void Hoverable::DrawDebug() const
-{
-	// Todo
-}
-#endif
-
 
 FocusableBase::FocusableBase(BasicTransform trans) : Hoverable(trans) {}
 
 void FocusableBase::OnFocus() {}
 void FocusableBase::OnLoseFocus() {}
-#if _DEBUG
-void FocusableBase::DrawDebug() const
-{
-	// Todo
-}
-#endif
 bool FocusableBase::IsFocusable() const
 {
 	return b_focusable;
@@ -287,9 +304,9 @@ void FocusableBase::SetFocusable(bool value)
 
 Focusable::Focusable(BasicTransform trans) : FocusableBase(trans) {}
 
-void Focusable::Update()
+void Focusable::ForwardUpdate()
 {
-	Hoverable::Update();
+	Hoverable::ForwardUpdate();
 	if (!IsFocusable()) return;
 	if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
 	{
@@ -300,19 +317,17 @@ void Focusable::Update()
 	}
 }
 
-#if _DEBUG
-void Focusable::DrawDebug() const
+void Focusable::ReverseUpdate()
 {
-	// Todo
+	Hoverable::ReverseUpdate();
 }
-#endif
 
 
 ADDFocusable::ADDFocusable(BasicTransform trans) : FocusableBase(trans) {}
 
-void ADDFocusable::Update()
+void ADDFocusable::ForwardUpdate()
 {
-	Hoverable::Update();
+	Hoverable::ForwardUpdate();
 	if (!IsFocusable()) return;
 	if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
 	{
@@ -326,12 +341,10 @@ void ADDFocusable::Update()
 	}
 }
 
-#if _DEBUG
-void ADDFocusable::DrawDebug() const
+void ADDFocusable::ReverseUpdate()
 {
-	// Todo
+	Hoverable::ReverseUpdate();
 }
-#endif
 
 
 Draggable::Draggable(BasicTransform trans) : ADDFocusable(trans) {}
@@ -352,21 +365,6 @@ void Draggable::OnLoseFocus()
 void Draggable::OnStartDragging() {}
 void Draggable::OnStopDragging() {}
 
-void Draggable::Update()
-{
-	ADDFocusable::Update();
-	beingDragged = focused && b_draggable; // @Todo: if b_draggable gets unset mid-drag, OnStopDragging doesn't get called...
-	if (beingDragged)
-		transform.Offset(GetMouseDelta());
-}
-
-#if _DEBUG
-void Draggable::DrawDebug() const
-{
-	// Todo
-}
-#endif
-
 bool Draggable::IsDraggable() const
 {
 	return b_draggable;
@@ -376,4 +374,17 @@ void Draggable::SetDraggable(bool value)
 	b_draggable = value;
 	if (value == false)
 		beingDragged = false;
+}
+
+void Draggable::ForwardUpdate()
+{
+	ADDFocusable::ForwardUpdate();
+	beingDragged = focused && b_draggable; // @Todo: if b_draggable gets unset mid-drag, OnStopDragging doesn't get called...
+	if (beingDragged)
+		transform.Offset(GetMouseDelta());
+}
+
+void Draggable::ReverseUpdate()
+{
+	ADDFocusable::ReverseUpdate();
 }

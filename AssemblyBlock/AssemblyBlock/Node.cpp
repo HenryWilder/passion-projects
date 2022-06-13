@@ -1,5 +1,15 @@
 #include "Node.h"
 
+void Node::ForwardUpdate()
+{
+	Block::ForwardUpdate();
+}
+
+void Node::ReverseUpdate()
+{
+	Block::ReverseUpdate();
+}
+
 Node::Node(BasicTransform trans, unsigned pinCount) :
 	Block(trans)
 {
@@ -13,19 +23,7 @@ Node::Node(BasicTransform trans, unsigned pinCount) :
 	}
 }
 
-void Node::Update()
-{
-	Block::Update();
-}
-
 void Node::Draw() const
 {
 	Block::Draw();
 }
-
-#if _DEBUG
-void Node::DrawDebug() const
-{
-	// Todo
-}
-#endif
