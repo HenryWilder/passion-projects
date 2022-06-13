@@ -3,28 +3,25 @@
 #include "Engine.h"
 #include "Startup.h"
 
-std::queue<Object*> reverseAfterForewardObjects;
 std::unordered_map<Object*, std::vector<Object*>> unEvaluatedDependents;
 std::unordered_set<Object*> beenEvaluated;
 
 template<bool isForwardUpdate>
 void TryEvaluate(Object* object)
 {
-	do {
-		const std::vector<Object*>& dependencies = object->DependentOn();
-		if (dependencies.empty()) break; // Good to evaluate
-		for (Object* dep : dependencies)
+	const std::vector<Object*>& dependencies = object->DependentOn();
+	for (Object* dep : dependencies)
+	{
+		if (!beenEvaluated.contains(dep))
 		{
-			if (!beenEvaluated.contains(dep))
-			{
-				if (unEvaluatedDependents.contains(dep))
-					unEvaluatedDependents.at(dep).push_back(object);
-				else
-					unEvaluatedDependents.insert({ dep, { object } });
-				return;
-			}
+			if (unEvaluatedDependents.contains(dep))
+				unEvaluatedDependents.at(dep).push_back(object);
+			else
+				unEvaluatedDependents.insert({ dep, { object } });
+
+			return;
 		}
-	} while (false);
+	}
 
 	// Evaluate
 	if constexpr (isForwardUpdate) object->ForwardUpdate();
@@ -64,22 +61,17 @@ int main()
 		for (size_t i = Data::Persistent::allObjects.size(); i > 0; --i)
 		{
 			Object* what = Data::Persistent::allObjects[i - 1];
-			if (what->_rbf)
-				TryEvaluate<false>(what);
-			else
-				reverseAfterForewardObjects.push(what);
+			if (what->_rbf) TryEvaluate<false>(what);
 		}
 		for (size_t i = 0; i < Data::Persistent::allObjects.size(); ++i)
 		{
 			Object* what = Data::Persistent::allObjects[i];
-			what->ForwardUpdate();
-			TryEvaluate<false>(what);
+			TryEvaluate<true>(what);
 		}
-		while (!reverseAfterForewardObjects.empty())
+		for (size_t i = Data::Persistent::allObjects.size(); i > 0; --i)
 		{
-			Object* what = reverseAfterForewardObjects.front();
-			TryEvaluate<false>(what);
-			reverseAfterForewardObjects.pop();
+			Object* what = Data::Persistent::allObjects[i - 1];
+			if (!what->_rbf) TryEvaluate<false>(what);
 		}
 		beenEvaluated.clear();
 		unEvaluatedDependents.clear();
