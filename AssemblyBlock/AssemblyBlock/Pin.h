@@ -1,11 +1,16 @@
 #pragma once
 #include "Engine.h"
 
+class Wire;
+
 class Pin : public ADDFocusable
 {
 protected:
 	void ForwardUpdate() override;
 	void ReverseUpdate() override;
+	bool inDragMode = false;
+	Pin* createdPin = nullptr;
+	Wire* createdwire = nullptr;
 
 public:
 	static constexpr Color color_basic = DARKGRAY;
@@ -13,7 +18,7 @@ public:
 	static constexpr Color color_focused = GRAY;
 
 	Pin() = default;
-	Pin(BasicTransform trans);
+	Pin(BasicTransform trans, bool instantlyDragging = false);
 	~Pin() = default;
 
 	void Draw() const override;
@@ -28,11 +33,14 @@ protected:
 	void ForwardUpdate() override;
 	void ReverseUpdate() override;
 
+	void OnFocus() final;
+	void OnLoseFocus() final;
+
 public:
 	static constexpr Vector2 pinExtents = { 20, 40 };
 
 	MemoryPin() = default;
-	MemoryPin(BasicTransform trans);
+	MemoryPin(BasicTransform trans, bool instantlyDragging = false);
 	~MemoryPin() = default;
 
 	inline const char* GetTypeName() const override { return "Memory pin"; }
@@ -49,7 +57,7 @@ public:
 	static constexpr Vector2 pinExtents = { 20, 20 };
 
 	MemoryIOPin() = default;
-	MemoryIOPin(BasicTransform trans);
+	MemoryIOPin(BasicTransform trans, bool instantlyDragging = false);
 	~MemoryIOPin() = default;
 
 	inline const char* GetTypeName() const override { return "Memory IO pin"; }
@@ -69,7 +77,7 @@ public:
 	static constexpr Vector2 pinExtents = { 20, 20 };
 
 	ExecutionPin() = default;
-	ExecutionPin(BasicTransform trans);
+	ExecutionPin(BasicTransform trans, bool instantlyDragging = false);
 	~ExecutionPin() = default;
 
 	virtual bool CheckPointComplexCollision(Vector2 point) const;

@@ -33,11 +33,13 @@ namespace Data
 	{
 		Vector2 cursor;
 		bool foundHovered;
+		extern std::vector<Object*> hovered;
 
 		void Init()
 		{
 			cursor = GetMousePosition();
 			foundHovered = false;
+			hovered.clear();
 		}
 	}
 }

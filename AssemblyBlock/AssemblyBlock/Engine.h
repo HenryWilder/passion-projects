@@ -267,7 +267,6 @@ concept ConstructableEngineObject = requires(Args&&... args)
 template<class ObjectType, typename... Args>
 ObjectType* Instantiate(Args&&... _Val) requires(ConstructableEngineObject<ObjectType, Args...>)
 {
-	// Reserve place in object list before calling constructor (Constructor might instantiate children, muddling the order)
 	ObjectType* ret = new ObjectType(std::forward<Args>(_Val)...);
 	Data::Persistent::allObjects.push_back(ret);
 	return ret;
@@ -301,6 +300,9 @@ protected:
 	virtual void OnUnhover();
 	void ForwardUpdate() override;
 	void ReverseUpdate() override;
+	friend class FocusableBase;
+	friend class Focusable;
+	friend class FocusableADD;
 
 public:
 	Hoverable() = default;

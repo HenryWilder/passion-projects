@@ -14,6 +14,6 @@ inline void Startup()
 	{
 		Instantiate<MemoryPin>(BasicTransform{ .position{ 100 + i * MemoryPin::pinExtents.x * 1.5f, 0 } });
 	}
-	Node* node = Instantiate<Node>(BasicTransform{ .position{ 600,400 } }, 3, "Text");
+	Node* node = Instantiate<Node>(BasicTransform{ .position{ 600,400 } }, 3, "ADD");
 	Instantiate<Wire>(node->GetPin(0), objects[0]); // Todo: Get pin from node
 }

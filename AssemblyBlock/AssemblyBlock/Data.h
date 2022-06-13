@@ -28,6 +28,7 @@ namespace Data
 	{
 		extern Vector2 cursor;
 		extern bool foundHovered;
+		extern std::vector<Object*> hovered;
 
 		void Init();
 	}

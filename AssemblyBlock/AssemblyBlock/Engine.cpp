@@ -218,11 +218,13 @@ bool Object::CheckPointComplexCollision(Vector2 point) const
 
 void Destroy(Object* object)
 {
+	_ASSERT_EXPR(object, L"Cannot destroy null");
 	auto it = std::find(Data::Persistent::allObjects.begin(), Data::Persistent::allObjects.end(), object);
-	_ASSERT_EXPR(it == Data::Persistent::allObjects.end(), L"Objects should always be created through Instantiate<>()");
+	_ASSERT_EXPR(it != Data::Persistent::allObjects.end(), L"Objects should always be created through Instantiate<>()");
 	Data::Persistent::allObjects.erase(it);
 	delete object;
 }
+
 void SortObjects()
 {
 	std::map<const ObjectTransform*, size_t> depth;
@@ -308,7 +310,10 @@ void Hoverable::ReverseUpdate()
 	} while (false);
 	if (hovered == previouslyHovered) return;
 	if (hovered)
+	{
+		Frame::hovered.push_back(this);
 		OnHover();
+	}
 	else
 		OnUnhover();
 }
@@ -335,6 +340,11 @@ Focusable::Focusable(BasicTransform trans) : FocusableBase(trans) {}
 void Focusable::ForwardUpdate()
 {
 	Hoverable::ForwardUpdate();
+}
+
+void Focusable::ReverseUpdate()
+{
+	Hoverable::ReverseUpdate();
 	if (!IsFocusable()) return;
 	if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
 	{
@@ -343,11 +353,15 @@ void Focusable::ForwardUpdate()
 		else
 			OnLoseFocus();
 	}
-}
-
-void Focusable::ReverseUpdate()
-{
-	Hoverable::ReverseUpdate();
+	if (focused)
+	{
+		Frame::foundHovered = true; // Stop searching for hover once focus is found!
+		if (Hoverable* hovered = dynamic_cast<Hoverable*>(Frame::hovered.back()))
+		{
+			hovered->hovered = false;
+			Frame::hovered.pop_back();
+		}
+	}
 }
 
 

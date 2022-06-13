@@ -1,8 +1,11 @@
 #include "Engine.h"
+#include "Wire.h"
 #include "Pin.h"
 
 void Pin::ForwardUpdate()
 {
+	if (inDragMode)
+		transform.SetWorldPosition(Data::Frame::cursor);
 	ADDFocusable::ForwardUpdate();
 }
 
@@ -11,7 +14,7 @@ void Pin::ReverseUpdate()
 	ADDFocusable::ReverseUpdate();
 }
 
-Pin::Pin(BasicTransform trans) : ADDFocusable(trans) {}
+Pin::Pin(BasicTransform trans, bool instantlyDragging) : ADDFocusable(trans), inDragMode(instantlyDragging) {}
 
 void Pin::Draw() const
 {
@@ -33,7 +36,7 @@ void ExecutionPin::ReverseUpdate()
 	Pin::ReverseUpdate();
 }
 
-ExecutionPin::ExecutionPin(BasicTransform trans) : Pin(trans)
+ExecutionPin::ExecutionPin(BasicTransform trans, bool instantlyDragging) : Pin(trans, instantlyDragging)
 {
 	transform.SetExtents(pinExtents);
 }
@@ -60,7 +63,27 @@ void MemoryPin::ReverseUpdate()
 	Pin::ReverseUpdate();
 }
 
-MemoryPin::MemoryPin(BasicTransform trans) : Pin(trans)
+void MemoryPin::OnFocus()
+{
+	createdPin = Instantiate<MemoryPin>(BasicTransform{ .position = Data::Frame::cursor }, true);
+	createdwire = Instantiate<Wire>(this, createdPin);
+}
+
+void MemoryPin::OnLoseFocus()
+{
+	if (createdPin)
+	{
+		Destroy(createdPin);
+		createdPin = nullptr;
+	}
+	if (createdwire)
+	{
+		Destroy(createdwire);
+		createdwire = nullptr;
+	}
+}
+
+MemoryPin::MemoryPin(BasicTransform trans, bool instantlyDragging) : Pin(trans, instantlyDragging)
 {
 	transform.SetExtents(pinExtents);
 }
@@ -75,7 +98,7 @@ void MemoryIOPin::ReverseUpdate()
 	Pin::ReverseUpdate();
 }
 
-MemoryIOPin::MemoryIOPin(BasicTransform trans) : Pin(trans)
+MemoryIOPin::MemoryIOPin(BasicTransform trans, bool instantlyDragging) : Pin(trans, instantlyDragging)
 {
 	transform.SetExtents(pinExtents);
 }
