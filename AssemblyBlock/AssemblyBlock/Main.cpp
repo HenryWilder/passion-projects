@@ -3,42 +3,6 @@
 #include "Engine.h"
 #include "Startup.h"
 
-std::unordered_map<const Object*, std::vector<Object*>> unEvaluatedDependents;
-std::unordered_set<const Object*> beenEvaluated;
-
-template<bool isForwardUpdate>
-void TryEvaluate(Object* object)
-{
-	const std::vector<const Object*>& dependencies = object->DependentOn();
-	for (const Object* dep : dependencies)
-	{
-		if (!beenEvaluated.contains(dep))
-		{
-			if (unEvaluatedDependents.contains(dep))
-				unEvaluatedDependents.at(dep).push_back(object);
-			else
-				unEvaluatedDependents.insert({ dep, { object } });
-
-			return;
-		}
-	}
-
-	// Evaluate
-	if constexpr (isForwardUpdate) object->ForwardUpdate();
-	else						   object->ReverseUpdate();
-	beenEvaluated.insert(object);
-
-	// Evaluate everything dependent on this
-	if (unEvaluatedDependents.contains(object))
-	{
-		for (Object* dependent : unEvaluatedDependents.at(object))
-		{
-			TryEvaluate<isForwardUpdate>(dependent);
-		}
-		unEvaluatedDependents.erase(object);
-	}
-}
-
 int main()
 {
 	InitWindow(1280, 720, "Assembly Block v0.0.1");
@@ -61,20 +25,18 @@ int main()
 		for (size_t i = Data::Persistent::allObjects.size(); i > 0; --i)
 		{
 			Object* what = Data::Persistent::allObjects[i - 1];
-			if (what->_rbf) TryEvaluate<false>(what);
+			if (what->_rbf) what->ReverseUpdate();
 		}
 		for (size_t i = 0; i < Data::Persistent::allObjects.size(); ++i)
 		{
 			Object* what = Data::Persistent::allObjects[i];
-			TryEvaluate<true>(what);
+			what->ForwardUpdate();
 		}
 		for (size_t i = Data::Persistent::allObjects.size(); i > 0; --i)
 		{
 			Object* what = Data::Persistent::allObjects[i - 1];
-			if (!what->_rbf) TryEvaluate<false>(what);
+			if (!what->_rbf) what->ReverseUpdate();
 		}
-		beenEvaluated.clear();
-		unEvaluatedDependents.clear();
 
 		// Draw phase
 		BeginDrawing();

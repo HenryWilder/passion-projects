@@ -1,12 +1,6 @@
 #include <algorithm>
 #include "Wire.h"
 
-void Wire::SetupDependancies()
-{
-	dependentOn.push_back(start->MyObject());
-	dependentOn.push_back(end->MyObject());
-}
-
 void Wire::ForwardUpdate()
 {
 	// Update bounds
@@ -33,7 +27,6 @@ Wire::Wire(Object* start, Object* end) :
 {
 	this->start = &start->transform;
 	this->end = &end->transform;
-	SetupDependancies();
 }
 
 Wire::Wire(ObjectTransform* start, ObjectTransform* end) :
@@ -41,7 +34,6 @@ Wire::Wire(ObjectTransform* start, ObjectTransform* end) :
 {
 	this->start = start;
 	this->end = end;
-	SetupDependancies();
 }
 
 bool CheckCollisionLineCircle(Vector2 p1, Vector2 p2, Vector2 c, float r)
