@@ -23,14 +23,14 @@ void Wire::ReverseUpdate()
 }
 
 Wire::Wire(Object* start, Object* end) :
-	Focusable(BasicTransform{ .parent{ &start->transform } })
+	Focusable(BasicTransform{ .parent = &start->transform })
 {
 	this->start = &start->transform;
 	this->end = &end->transform;
 }
 
 Wire::Wire(ObjectTransform* start, ObjectTransform* end) :
-	Focusable(BasicTransform{ .parent{ start } })
+	Focusable(BasicTransform{ .parent = start })
 {
 	this->start = start;
 	this->end = end;
@@ -74,13 +74,15 @@ bool CheckCollisionLineCircle(Vector2 p1, Vector2 p2, Vector2 c, float r)
 
 bool Wire::CheckPointComplexCollision(Vector2 point) const
 {
-	CheckCollisionLineCircle(start->GetWorldPosition(), end->GetWorldPosition(), point, thickness);
-	return false;
+	return CheckCollisionLineCircle(start->GetWorldPosition(), end->GetWorldPosition(), point, thickness);
 }
 
 void Wire::Draw() const
 {
 	_ASSERT_EXPR(start && end, L"Wires should be constructed with valid start and end before drawing");
-	DrawLineEx(start->GetWorldPosition(), end->GetWorldPosition(), thickness,
-		focused ? color_focused : (hovered ? color_hovered : color_normal));
+	Color color;
+	if (focused)	  color = color_focused;
+	else if (hovered) color = color_hovered;
+	else			  color = color_normal;
+	DrawLineEx(start->GetWorldPosition(), end->GetWorldPosition(), thickness, color);
 }

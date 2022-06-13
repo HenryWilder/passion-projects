@@ -226,10 +226,7 @@ requires(std::is_invocable_v<_Eval, const ObjectTransform*>)
 class Object
 {
 protected:
-	// Whether reverse update should be evaluated before reverse update
-	bool _rbf = false;
 	friend int main();
-
 	// Update parents before children
 	virtual void ForwardUpdate();
 	// Update children before parents

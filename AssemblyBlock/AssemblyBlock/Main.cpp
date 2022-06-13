@@ -25,17 +25,12 @@ int main()
 		for (size_t i = Data::Persistent::allObjects.size(); i > 0; --i)
 		{
 			Object* what = Data::Persistent::allObjects[i - 1];
-			if (what->_rbf) what->ReverseUpdate();
+			what->ReverseUpdate();
 		}
 		for (size_t i = 0; i < Data::Persistent::allObjects.size(); ++i)
 		{
 			Object* what = Data::Persistent::allObjects[i];
 			what->ForwardUpdate();
-		}
-		for (size_t i = Data::Persistent::allObjects.size(); i > 0; --i)
-		{
-			Object* what = Data::Persistent::allObjects[i - 1];
-			if (!what->_rbf) what->ReverseUpdate();
 		}
 
 		// Draw phase

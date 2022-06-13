@@ -15,7 +15,7 @@ public:
 	static constexpr Color color_normal = GRAY;
 	static constexpr Color color_hovered = LIGHTGRAY;
 	static constexpr Color color_focused = SKYBLUE;
-	static constexpr float thickness = 4.0f;
+	static constexpr float thickness = 8.0f;
 
 	Wire() = default;
 	Wire(Object* start, Object* end);
