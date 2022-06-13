@@ -5,7 +5,8 @@
 class Node : public Block
 {
 private:
-	std::vector<Pin*> pins;
+	std::vector<MemoryIOPin*> pins;
+	std::vector<ExecutionPin*> exPins;
 	TextRenderer* text;
 	static constexpr Color textColor = WHITE;
 
@@ -19,7 +20,7 @@ public:
 
 	~Node() = default;
 
-	inline Pin* GetPin(size_t index) { return pins[index]; }
+	inline MemoryIOPin* GetPin(size_t index) { return pins[index]; }
 
 	void Draw() const override;
 	inline const char* GetTypeName() const override { return "Node"; }
