@@ -6,6 +6,8 @@ class Node : public Block
 {
 private:
 	std::vector<Pin*> pins;
+	TextRenderer* text;
+	static constexpr Color textColor = WHITE;
 
 protected:
 	void ForwardUpdate() override;
@@ -13,7 +15,8 @@ protected:
 
 public:
 	Node() = default;
-	Node(BasicTransform trans, unsigned pinCount);
+	Node(BasicTransform trans, unsigned pinCount, const std::string& text);
+
 	~Node() = default;
 
 	inline Pin* GetPin(size_t index) { return pins[index]; }

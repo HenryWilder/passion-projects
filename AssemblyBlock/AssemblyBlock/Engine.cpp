@@ -179,8 +179,14 @@ void ObjectTransform::SetWorldPosition(Vector2 newPosition)
 using namespace Data;
 
 
-void Object::ForwardUpdate() {}
-void Object::ReverseUpdate() {}
+void Object::ForwardUpdate()
+{
+	DrawDebugPoint({ .point = transform.GetWorldPosition() });
+}
+void Object::ReverseUpdate()
+{
+
+}
 
 Object::Object(BasicTransform trans) : transform(trans, this) {}
 
@@ -255,17 +261,21 @@ void SortObjects()
 
 void TextRenderer::ForwardUpdate()
 {
-
+	Object::ForwardUpdate();
 }
 void TextRenderer::ReverseUpdate()
 {
-
+	Object::ReverseUpdate();
 }
+
+TextRenderer::TextRenderer(BasicTransform trans, const std::string& text, Color color) :
+	Object(trans),
+	text(text), color(color) {}
 
 void TextRenderer::Draw() const
 {
 	Rectangle bounds = transform.WorldBounds();
-	DrawText(text.c_str(), bounds.x, bounds.y, bounds.height, color);
+	DrawText(text.c_str(), (int)bounds.x, (int)bounds.y, (int)bounds.height, color);
 }
 
 
@@ -275,10 +285,11 @@ void Hoverable::OnHover() {}
 void Hoverable::OnUnhover() {}
 void Hoverable::ForwardUpdate()
 {
-	// Nothing yet
+	Object::ForwardUpdate();
 }
 void Hoverable::ReverseUpdate()
 {
+	Object::ReverseUpdate();
 	bool previouslyHovered = hovered;
 	hovered = false;
 	do {

@@ -47,7 +47,7 @@ int main()
 			{
 				obj->Draw();
 			}
-			DrawDebugPoint({ .point{ Data::Frame::cursor } });
+			DrawDebugPoint({ .point = Data::Frame::cursor, .color = BLUE });
 			_DrawDebug();
 		}
 		EndDrawing();

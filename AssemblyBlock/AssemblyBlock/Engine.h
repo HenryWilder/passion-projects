@@ -249,8 +249,7 @@ public:
 	// Display that the collision check on this object has been skipped
 	void SkipPointSimpleCollision() const;
 #endif
-	// Make sure to specialize "IsComplexCollisionDifferentFromSimpleCollision"
-	// too if you specialize this function, or it will be skipped!!
+	// Make sure to specialize "IsComplexCollisionDifferentFromSimpleCollision" too if you specialize this function, or it will be skipped!!
 	virtual bool CheckPointComplexCollision(Vector2 point) const;
 	virtual constexpr bool IsComplexCollisionDifferentFromSimpleCollision() const { return false; }
 #pragma endregion
@@ -271,8 +270,7 @@ concept ConstructableEngineObject = requires(Args&&... args)
 template<class ObjectType, typename... Args>
 ObjectType* Instantiate(Args&&... _Val) requires(ConstructableEngineObject<ObjectType, Args...>)
 {
-	// Reserve place in object list before calling constructor
-	// (Constructor might instantiate children, muddling the order)
+	// Reserve place in object list before calling constructor (Constructor might instantiate children, muddling the order)
 	ObjectType* ret = new ObjectType(std::forward<Args>(_Val)...);
 	Data::Persistent::allObjects.push_back(ret);
 	return ret;
@@ -292,10 +290,7 @@ protected:
 
 public:
 	TextRenderer() = default;
-	template<std::convertible_to<std::string> Text>
-	TextRenderer(BasicTransform trans, const Text&& text, Color color) :
-		Object(trans),
-		text(std::forward<Text>(text)), color(color) {}
+	TextRenderer(BasicTransform trans, const std::string& text, Color color);
 	~TextRenderer() = default;
 	void Draw() const override;
 };
