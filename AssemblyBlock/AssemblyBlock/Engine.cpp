@@ -252,6 +252,23 @@ void SortObjects()
 }
 
 
+
+void TextRenderer::ForwardUpdate()
+{
+
+}
+void TextRenderer::ReverseUpdate()
+{
+
+}
+
+void TextRenderer::Draw() const
+{
+	Rectangle bounds = transform.WorldBounds();
+	DrawText(text.c_str(), bounds.x, bounds.y, bounds.height, color);
+}
+
+
 Hoverable::Hoverable(BasicTransform trans) : Object(trans), hovered() {}
 
 void Hoverable::OnHover() {}

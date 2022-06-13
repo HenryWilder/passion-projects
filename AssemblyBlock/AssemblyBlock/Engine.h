@@ -282,6 +282,25 @@ void SortObjects();
 
 
 
+class TextRenderer : public Object
+{
+protected:
+	std::string text = "";
+	Color color;
+	void ForwardUpdate() override;
+	void ReverseUpdate() override;
+
+public:
+	TextRenderer() = default;
+	template<std::convertible_to<std::string> Text>
+	TextRenderer(BasicTransform trans, const Text&& text, Color color) :
+		Object(trans),
+		text(std::forward<Text>(text)), color(color) {}
+	~TextRenderer() = default;
+	void Draw() const override;
+};
+
+
 class Hoverable : public Object
 {
 protected:
