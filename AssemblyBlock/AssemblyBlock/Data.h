@@ -1,8 +1,12 @@
 #pragma once
 #include <raylib.h>
 #include <vector>
+#include "Engine.h"
 
 class Object;
+
+extern Event<Vector2> MouseMovedEvent;
+
 
 namespace Data
 {
@@ -26,9 +30,10 @@ namespace Data
 	// Data that is cleaned and reset at the start of every frame
 	namespace Frame
 	{
-		extern Vector2 cursor;
-		extern bool foundHovered;
-		extern std::vector<Object*> hovered;
+		extern Vector2 cursorPrev;
+		extern Vector2 cursor = { NAN, NAN };
+		extern Vector2 cursorDelta;
+		extern bool cursorMoved;
 
 		void Init();
 	}

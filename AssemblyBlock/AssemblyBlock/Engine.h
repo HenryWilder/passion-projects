@@ -130,261 +130,195 @@ void SetRectanglePosition(Rectangle& rec, Vector2 pos);
 void AddRectanglePosition(Rectangle& rec, Vector2 offset);
 void SetRectangleExtents(Rectangle& rec, Vector2 ext);
 
-
-class ObjectTransform;
-
-// Structure for constructing an ObjectTransform
-struct BasicTransform
+class DelegateBase
 {
-	ObjectTransform* parent = nullptr;
-	Vector2 pivot = { .5f, .5f };
-	Vector2 position = { 0,0 };
-	bool positionIsWorldspace = false;
+public:
+	virtual void Invoke() = 0;
 };
 
-class Object;
-
-
-class ObjectTransform
+template<class _Callable, typename... TEventArgs>
+requires std::is_invocable_v<_Callable, TEventArgs...>
+class Delegate : public DelegateBase
 {
 private:
-	ObjectTransform* parent = nullptr;
-	Object* object = nullptr;
-	Rectangle bounds = { 0,0,0,0 }; // Local space
-	Vector2 pivot = { 0,0 };
-	std::set<ObjectTransform*> children;
-
+	_Callable func;
 public:
-	ObjectTransform() = default;
-	ObjectTransform(BasicTransform data, Object* owningObject);
-	~ObjectTransform() = default;
-
-public:
-	_NODISCARD inline decltype(children)::iterator begin() noexcept { return children.begin(); }
-	_NODISCARD inline decltype(children)::const_iterator begin() const noexcept { return children.begin(); }
-	_NODISCARD inline decltype(children)::iterator end() noexcept { return children.end(); }
-	_NODISCARD inline decltype(children)::const_iterator end() const noexcept { return children.end(); }
-	
-private:
-	void _RemoveSelfFromParent();
-	void _AddSelfToParent();
-public:
-	void RemoveParent();
-	void SetParent_KeepLocal(ObjectTransform& newParent);
-	void SetParent_KeepWorld(ObjectTransform& newParent);
-	void SetParent(ObjectTransform& newParent, bool keepWorld);
-
-	const ObjectTransform* Parent() const;
-
-	void SetObject(Object* object);
-	const Object* MyObject() const;
-
-	Vector2 RelativePivotPosition() const;
-	Rectangle WorldBounds() const;
-	Rectangle LocalBounds() const;
-	void SetExtents(Vector2 extents);
-
-	Vector2 Pivot() const;
-	void SetPivot(Vector2 pivot);
-
-	Vector2 GetLocalPosition() const;
-	// Recursive
-	Vector2 GetWorldPosition() const;
-
-	void SetLocalPosition(Vector2 position);
-	// Recursive
-	void SetWorldPosition(Vector2 position);
-	// Todo: add function for setting the position relative to the parent, with anchors for both the parent and the child
-
-	// Substantially cheaper than getting the position (world or local)
-	// and setting the position to that + your offset.
-	// Remember: velocity doesn't care about your position, just your direction & magnitude.
-	inline void Offset(Vector2 amount) { AddRectanglePosition(bounds, amount); }
+	Delegate(_Callable func) : func(func) {}
+	void Invoke(TEventArgs... _Val) final { func(_Val...); }
 };
 
-template<class _Eval>
-void TraverseFromAncestor(const ObjectTransform* start, _Eval evaluateNode)
-requires(std::is_invocable_v<_Eval, const ObjectTransform*>)
+template<class _Callable>
+requires std::is_invocable_v<_Callable>
+class Delegate<_Callable> : public DelegateBase
 {
-	if (!start) return;
-	std::stack<const ObjectTransform*> route({ start });
-	while (auto parent = route.top()->Parent())
+private:
+	_Callable func;
+public:
+	Delegate(_Callable func) : func(func) {}
+	void Invoke() final { func(); }
+};
+
+template<class T, class _Callable, typename... TEventArgs>
+requires std::is_class_v<T> && std::is_member_pointer_v<_Callable> && std::is_invocable_v<_Callable, TEventArgs...>
+class MemberDelegate : public DelegateBase
+{
+private:
+	T caller;
+	_Callable func;
+public:
+	MemberDelegate(T caller, _Callable func) : caller(caller), func(func) {}
+	void Invoke(TEventArgs... _Val) final { caller->func(_Val...); }
+};
+
+template<class T, class _Callable>
+requires std::is_class_v<T> && std::is_member_pointer_v<_Callable> && std::is_invocable_v<_Callable>
+class MemberDelegate : public DelegateBase
+{
+private:
+	T caller;
+	_Callable func;
+public:
+	MemberDelegate(T caller, _Callable func) : caller(caller), func(func) {}
+	void Invoke() final { caller->func(); }
+};
+
+template<typename... TEventArgs>
+class Event
+{
+private:
+	std::vector<DelegateBase*> delegates;
+
+public:
+	~Event() { DisconnectAll(); }
+
+	// Returns the index to use for disconnecting
+	template<class _Callable>
+	requires std::is_invocable_v<_Callable, TEventArgs...>
+	size_t Connect(_Callable func)
 	{
-		route.push(parent);
+		delegates.push_back(new Delegate<_Callable, TEventArgs>(func));
+		return delegates.size() - 1;
 	}
-	while (!route.empty())
+	template<class T, class _Callable>
+	requires std::is_invocable_v<_Callable, TEventArgs...>
+	size_t Connect(T caller, _Callable func)
 	{
-		evaluateNode(route.top());
-		route.pop();
+		delegates.push_back(new MemberDelegate<T, _Callable, TEventArgs>(func));
+		return delegates.size() - 1;
 	}
-}
-
-
-#pragma region Abstract classes
-
-
-class Object
-{
-protected:
-	friend int main();
-	// Update parents before children
-	virtual void ForwardUpdate();
-	// Update children before parents
-	virtual void ReverseUpdate();
-
-public:
-	ObjectTransform transform;
-
-	Object() = default;
-	Object(BasicTransform trans);
-	~Object() = default;
-
-#pragma region Check collision
-	// Todo: make a function to get the anchor from a point on the rectangle
-	bool CheckPointSimpleCollision(Vector2 point) const;
-#if _DEBUG
-	// Display that the collision check on this object has been skipped
-	void SkipPointSimpleCollision() const;
-#endif
-	// Make sure to specialize "IsComplexCollisionDifferentFromSimpleCollision" too if you specialize this function, or it will be skipped!!
-	virtual bool CheckPointComplexCollision(Vector2 point) const;
-	virtual constexpr bool IsComplexCollisionDifferentFromSimpleCollision() const { return false; }
-#pragma endregion
-
-	virtual void Draw() const = 0;
-	virtual inline const char* GetTypeName() const { return "Base Object"; }
+	inline void Disconnect(size_t index)
+	{
+		delete delegates[index];
+		delegates.erase(delegates.begin() + index);
+	}
+	inline void DisconnectAll()
+	{
+		for (DelegateBase* d : delegates)
+		{
+			delete d;
+		}
+		delegates.clear();
+	}
+	inline void Invoke(TEventArgs... args)
+	{
+		for (DelegateBase* d : delegates)
+		{
+			d->Invoke(args...);
+		}
+	}
 };
 
-template<class ObjectType, typename... Args>
-concept ConstructableEngineObject = requires(Args&&... args)
-{
-	// Must be derivative of the Object base class
-	std::is_base_of_v<Object, ObjectType>;
-	// Passed arguments must constitute a valid constructor for the derived type
-	{ new ObjectType(std::forward<Args>(args)...) } -> std::convertible_to<ObjectType*>;
-};
-
-template<class ObjectType, typename... Args>
-ObjectType* Instantiate(Args&&... _Val) requires(ConstructableEngineObject<ObjectType, Args...>)
-{
-	ObjectType* ret = new ObjectType(std::forward<Args>(_Val)...);
-	Data::Persistent::allObjects.push_back(ret);
-	return ret;
-}
-void Destroy(Object* object);
-void SortObjects();
-
-
-
-class TextRenderer : public Object
-{
-protected:
-	std::string text = "";
-	Color color;
-	void ForwardUpdate() override;
-	void ReverseUpdate() override;
-
-public:
-	TextRenderer() = default;
-	TextRenderer(BasicTransform trans, const std::string& text, Color color);
-	~TextRenderer() = default;
-	void Draw() const override;
-};
-
-
-class Hoverable : public Object
-{
-protected:
-	bool hovered = false;
-	virtual void OnHover();
-	virtual void OnUnhover();
-	void ForwardUpdate() override;
-	void ReverseUpdate() override;
-	friend class FocusableBase;
-	friend class Focusable;
-	friend class FocusableADD;
-
-public:
-	Hoverable() = default;
-	Hoverable(BasicTransform trans);
-	~Hoverable() = default;
-};
-
-
-class FocusableBase : public Hoverable
+template<>
+class Event<>
 {
 private:
-	bool b_focusable = true;
-
-protected:
-	bool focused = false;
-	virtual void OnFocus();
-	virtual void OnLoseFocus();
+	std::vector<DelegateBase*> delegates;
 
 public:
-	FocusableBase() = default;
-	FocusableBase(BasicTransform trans);
-	~FocusableBase() = default;
+	~Event() { DisconnectAll(); }
 
-	bool IsFocusable() const;
-	void SetFocusable(bool value);
+	// Returns the index to use for disconnecting
+	template<class _Callable>
+	requires std::is_invocable_v<_Callable>
+	size_t Connect(_Callable func)
+	{
+		delegates.push_back(new Delegate<_Callable>(func));
+		return delegates.size() - 1;
+	}
+	inline void Disconnect(size_t index)
+	{
+		delete delegates[index];
+		delegates.erase(delegates.begin() + index);
+	}
+	inline void DisconnectAll()
+	{
+		for (DelegateBase* d : delegates)
+		{
+			delete d;
+		}
+		delegates.clear();
+	}
+	inline void Invoke()
+	{
+		for (DelegateBase* d : delegates)
+		{
+			d->Invoke();
+		}
+	}
 };
 
-
-// Focuses when clicked inside; loses focus when clicked elsewhere
-// Useful for things like dropdowns or windows
-class Focusable : public FocusableBase
+class UIRectangle
 {
-protected:
-	void ForwardUpdate() override;
-	void ReverseUpdate() override;
-
-public:
-	Focusable() = default;
-	Focusable(BasicTransform trans);
-	~Focusable() = default;
-};
-
-
-// Focus only lasts as long as the mouse is down
-// Useful for things like sliders or spinners
-class ADDFocusable : public FocusableBase
-{
-protected:
-	void ForwardUpdate() override;
-	void ReverseUpdate() override;
-
-public:
-	ADDFocusable() = default;
-	ADDFocusable(BasicTransform trans);
-	~ADDFocusable() = default;
-};
-
-
-class Draggable : public ADDFocusable
-{
-protected:
-	void ForwardUpdate() override;
-	void ReverseUpdate() override;
-
 private:
-	bool b_draggable = true;
-
-	void OnFocus() final;
-	void OnLoseFocus() final;
-
-protected:
-	bool beingDragged = false;
-	virtual void OnStartDragging();
-	virtual void OnStopDragging();
+	Rectangle rect;
+	bool enabled = false;
+	bool mouseInside = false;
+	bool mousePressedMeButHasntReleased = false;
 
 public:
-	Draggable() = default;
-	Draggable(BasicTransform trans);
-	~Draggable() = default;
+	Event<> MouseEnterEvent;
+	Event<> MouseLeaveEvent;
+	Event<Vector2> MousePressEvent;
+	Event<Vector2> MouseReleaseEvent;
 
-	bool IsDraggable() const;
-	void SetDraggable(bool value);
+	void PollMouseHover(Vector2 position)
+	{
+
+	}
+
+	void SetEnabled(bool enabled)
+	{
+		if (this->enabled == enabled) return;
+		this->enabled = enabled;
+		if (this->enabled)
+			MouseMovedEvent.Connect(this, PollMouseHover);
+		else
+			MouseMovedEvent.Disconnect(PollMouseHover);
+	}
+
+	void PollEvents()
+	{
+		// Mouse enter/leave
+		if (Data::Frame::cursorMoved)
+		{
+			bool mouseCollision = CheckCollisionPointRec(Data::Frame::cursor, rect);
+			if (mouseInside != mouseCollision)
+			{
+				if (mouseInside = mouseCollision) MouseEnterEvent.Invoke();
+				else                              MouseLeaveEvent.Invoke();
+			}
+		}
+		// Mouse press (only when already inside)
+		if (mouseInside && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+		{
+			mousePressedMeButHasntReleased = true;
+			MousePressEvent.Invoke(Data::Frame::cursor);
+		}
+		// Mouse release (only when previously pressed inside)
+		if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON) && mousePressedMeButHasntReleased)
+		{
+			mousePressedMeButHasntReleased = false;
+			MouseReleaseEvent.Invoke(Data::Frame::cursor);
+		}
+	}
 };
-
-#pragma endregion

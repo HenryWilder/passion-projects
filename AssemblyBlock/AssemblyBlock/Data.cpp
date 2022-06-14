@@ -1,4 +1,7 @@
+#include "Data.h"
 #include "Engine.h"
+
+Event<Vector2> MouseMovedEvent;
 
 namespace Data
 {
@@ -31,15 +34,22 @@ namespace Data
 
 	namespace Frame
 	{
-		Vector2 cursor;
-		bool foundHovered;
-		extern std::vector<Object*> hovered;
+		Vector2 cursorPrev;
+		Vector2 cursor = { NAN, NAN };
+		Vector2 cursorDelta;
+		bool cursorMoved;
 
 		void Init()
 		{
+			cursorPrev = cursor;
 			cursor = GetMousePosition();
-			foundHovered = false;
-			hovered.clear();
+			cursorDelta = cursor - cursorPrev;
+			cursorMoved =
+				cursor.x != cursorPrev.x ||
+				cursor.y != cursorPrev.y;
+
+			if (cursorMoved)
+				MouseMovedEvent.Invoke(cursor);
 		}
 	}
 }
