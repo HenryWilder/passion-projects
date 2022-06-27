@@ -167,22 +167,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Block.cpp" />
-    <ClCompile Include="Data.cpp" />
-    <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Node.cpp" />
-    <ClCompile Include="Pin.cpp" />
-    <ClCompile Include="Wire.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Block.h" />
-    <ClInclude Include="Data.h" />
-    <ClInclude Include="Engine.h" />
-    <ClInclude Include="Node.h" />
-    <ClInclude Include="Pin.h" />
-    <ClInclude Include="Startup.h" />
-    <ClInclude Include="Wire.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
