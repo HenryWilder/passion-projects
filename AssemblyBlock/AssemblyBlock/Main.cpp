@@ -209,13 +209,129 @@ void UseInvertedScoll(bool value)
 
 int lineIndex = 0;
 #define PushDebugText(text, ...) DrawText(TextFormat(text, __VA_ARGS__), 0, 16 * lineIndex++, 8, MAGENTA)
+#define property_ro(GetFunc) __declspec(property(get = GetFunc))
+#define property_rw(GetFunc, SetFunc) __declspec(property(get = GetFunc, put = SetFunc))
+
+struct Rect
+{
+private:
+	float xMin, yMin, xMax, yMax;
+
+public:
+	Rect() = default;
+	Rect(float sidelength) :
+		xMin(0), yMin(0), xMax(sidelength), yMax(sidelength) {}
+	Rect(float width, float height) :
+		xMin(0), yMin(0), xMax(width), yMax(height) {}
+	Rect(float xMin, float yMin, float xMax, float yMax) :
+		xMin(xMin), yMin(yMin), xMax(xMax), yMax(yMax) {}
+
+	explicit Rect(const Rectangle& original) :
+		xMin(original.x), yMin(original.y), xMax(original.width + original.x), yMax(original.height + original.y) {}
+
+	explicit operator Rectangle() { return { X, Y, Width, Height }; }
+
+	float GetX()		const { return xMin; }
+	float GetY()		const { return yMin; }
+	float GetWidth()	const { return xMax - xMin; }
+	float GetHeight()	const { return yMax - yMin; }
+	float GetXMin()		const { return xMin; }
+	float GetYMin()		const { return yMin; }
+	float GetXMax()		const { return xMax; }
+	float GetYMax()		const { return yMax; }
+
+	void SetX	  (float value) { xMin = value; }
+	void SetY	  (float value) { yMin = value; }
+	void SetWidth (float value) { xMax = value - xMin; }
+	void SetHeight(float value) { yMax = value - yMin; }
+	void SetXMin  (float value) { xMin = value; }
+	void SetYMin  (float value) { yMin = value; }
+	void SetXMax  (float value) { xMax = value; }
+	void SetYMax  (float value) { yMax = value; }
+
+	property_rw(GetX, SetX)				float X;
+	property_rw(GetY, SetY)				float Y;
+	property_rw(GetWidth, SetWidth)		float Width;
+	property_rw(GetHeight, SetHeight)	float Height;
+
+	property_rw(GetXMin, SetXMin)		float XMin;
+	property_rw(GetYMin, SetYMin)		float YMin;
+	property_rw(GetXMax, SetXMax)		float XMax;
+	property_rw(GetYMax, SetYMax)		float YMax;
+};
+
+// A sub-window panel. Can be dragged and resized within the main window
+class Pane
+{
+	Rect rect;
+public:
+	virtual void Tick() = 0;
+	virtual void Draw() const = 0;
+};
+
+// An interactive look into the game world
+class Viewport : public Pane
+{
+public:
+	void Tick() final
+	{
+
+	}
+	void Draw() const final
+	{
+
+	}
+};
+
+// A bar for tools and actions
+class Toolbar : public Pane
+{
+public:
+	void Tick() final
+	{
+
+	}
+	void Draw() const final
+	{
+
+	}
+};
+
+// A panel displaying informations and options for the selection
+class Inspector : public Pane
+{
+public:
+	void Tick() final
+	{
+
+	}
+	void Draw() const final
+	{
+
+	}
+};
+
+// A text output for displaying warnings, errors, assertions, and letting the user know when something needs attention
+class Console : public Pane
+{
+public:
+	void Tick() final
+	{
+
+	}
+	void Draw() const final
+	{
+
+	}
+};
 
 int main()
 {
+	SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
 	Vector2 windowSize = { 1280, 720 };
 	InitWindow((int)windowSize.x, (int)windowSize.y, "Assembly Block v0.0.1");
 
-	SetTargetFPS(60);
+	//SetTargetFPS(60);
 
 	// Prep phase
 	bool invertScrolling = false;
@@ -225,6 +341,11 @@ int main()
 	{
 		// Sim phase
 
+		if (IsWindowResized())
+
+		windowSize.x = GetRenderWidth();
+		windowSize.y = GetRenderHeight();
+
 		Vector2 mousePos = GetMousePosition();
 
 		if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
@@ -232,11 +353,13 @@ int main()
 
 		IVec2 hoveredSpace = GetScreenToGrid(mousePos);
 
+		if (float scroll = GetMouseWheelMove(); scroll != 0.0f)
 		{
-			float scroll = GetMouseWheelMove();
+			float windowMin = std::min(windowSize.x, windowSize.y);
+			float zoomMax = windowMin / g_gridWidth;
 			if (scroll > 0.0f && g_camera.zoom > FLT_MIN)
 				g_camera.zoom *= positiveScrollIncrement;
-			else if (scroll < 0.0f)
+			else if (scroll < 0.0f && g_camera.zoom < (zoomMax))
 				g_camera.zoom *= negativeScrollIncrement;
 		}
 
@@ -249,8 +372,8 @@ int main()
 
 			size_t gridpointsRendered = 0;
 
-			Screenspace_t screenMin = {128,128};
-			Screenspace_t screenMax = windowSize - Vector2{128,128};
+			Screenspace_t screenMin = {-g_gridWidth,-g_gridWidth};
+			Screenspace_t screenMax = windowSize + Vector2{g_gridWidth,g_gridWidth};
 			Worldspace_t renderMin = SnapWorldToGrid(GetScreenToWorld(screenMin));
 			Worldspace_t renderMax = SnapWorldToGrid(GetScreenToWorld(screenMax));
 			Worldspace_t hoveredSpace_ws = GetGridToWorld(hoveredSpace);
@@ -259,23 +382,34 @@ int main()
 			{
 				DrawRectangleV(hoveredSpace_ws, { g_gridWidth, g_gridWidth }, ColorAlpha(LIGHTGRAY, 0.5f));
 
-				Vector2 point = renderMin;
-				for (point.y = renderMin.y; point.y <= renderMax.y; point.y += g_gridWidth)
+				if ((1.0f / g_camera.zoom) < (g_gridWidth / 4))
 				{
-					for (point.x = renderMin.x; point.x <= renderMax.x; point.x += g_gridWidth)
+					Vector2 point = renderMin;
+					for (point.y = renderMin.y; point.y <= renderMax.y; point.y += g_gridWidth)
 					{
-						DrawPoint2D(point, 2.0f, GRAY);
-						++gridpointsRendered;
+						for (point.x = renderMin.x; point.x <= renderMax.x; point.x += g_gridWidth)
+						{
+							DrawPoint2D(point, 2.0f, LIGHTGRAY);
+							++gridpointsRendered;
+						}
 					}
+				}
+				else
+				{
+					DrawRectangleV(renderMin, renderMax - renderMin, LIGHTGRAY);
 				}
 			}
 			EndMode2D();
 
 			lineIndex = 0;
 
+			DrawFPS(0,0);
+			++lineIndex;
+
 			PushDebugText("Gridpoints being rendered: %i", gridpointsRendered);
 			PushDebugText("Min and max screen coords: (%f, %f)-(%f, %f)", screenMin.x, screenMin.y, screenMax.x, screenMax.y);
 			PushDebugText("Hovered coords: (%i, %i)", hoveredSpace.x, hoveredSpace.y);
+			PushDebugText("Zoom: %f)", g_camera.zoom);
 		}
 		EndDrawing();
 	}
