@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <numeric>
 #include <raylib.h>
 #include <raymath.h>
 #include <unordered_map>
@@ -76,8 +78,6 @@ class Space
 
 };
 
-Camera2D g_camera{ { 0,0 }, { 0,0 }, 0.0f, 1.0f };
-Vector2& g_framePosition = g_camera.offset;
 std::unordered_map<IVec2, Space*> world;
 
 #pragma region Space conversions
@@ -92,108 +92,15 @@ std::unordered_map<IVec2, Space*> world;
 // Get_____ToGrid()  = _____ -> integer grid space
 // Get_____ToGridV() = _____ -> fractional grid space
 
-// A point in grid space
-// Integer
-using Gridspace_t = IVec2;
 
-// A point in fractional grid space
-// Floating point
-using GridFract_t = Vector2;
-
-// A point in world space
-// Floating point
-using Worldspace_t = Vector2;
-
-// A point in screen space
-// Floating point
-using Screenspace_t = Vector2;
-
-// I'm really super counting on you to do your peephole optimization thing, compiler
-
-// Width of a gridspace in world units
-constexpr float g_gridWidth = 32.0f;
-constexpr float g_InverseGridScale = 1.0f / g_gridWidth;
-
-GridFract_t GetWorldToGridV(Worldspace_t point)
-{
-	GridFract_t spacef = point * g_InverseGridScale; // Don't floor, don't cast
-	return spacef;
-}
-Gridspace_t GetWorldToGrid(Worldspace_t point)
-{
-	GridFract_t spacef = GetWorldToGridV(point);
-	Gridspace_t space = Vector2FloorToIVec(spacef); // Floor with cast
-	return space;
-}
-Worldspace_t GetGridToWorld(Gridspace_t space)
-{
-	GridFract_t spacef = (GridFract_t)space;
-	Worldspace_t point = spacef * g_gridWidth;
-	return point;
-}
-Worldspace_t GetGridToWorldV(GridFract_t spacef)
-{
-	Worldspace_t point = spacef * g_gridWidth;
-	return point;
-}
-
-GridFract_t SnapToGrid(GridFract_t spacef)
-{
-	GridFract_t floored = Vector2Floor(spacef); // Floor without cast
-	return floored;
-}
-
-Worldspace_t SnapWorldToGrid(Worldspace_t point)
-{
-	GridFract_t spacef = GetWorldToGridV(point);
-	GridFract_t spacef_floored = SnapToGrid(spacef); // Floor without cast
-	Worldspace_t point_snapped = GetGridToWorldV(spacef_floored);
-	return point_snapped;
-}
-
-Screenspace_t GetWorldToScreen(Worldspace_t point)
-{
-	Screenspace_t pixel = GetWorldToScreen2D(point, g_camera);
-	return pixel;
-}
-Worldspace_t GetScreenToWorld(Screenspace_t pixel)
-{
-	Screenspace_t point = GetScreenToWorld2D(pixel, g_camera);
-	return point;
-}
-
-Gridspace_t GetScreenToGrid(Screenspace_t pixel)
-{
-	Worldspace_t point = GetScreenToWorld(pixel);
-	Gridspace_t space = GetWorldToGrid(point);
-	return  space;
-}
-GridFract_t GetScreenToGridV(Screenspace_t pixel)
-{
-	Worldspace_t point = GetScreenToWorld(pixel);
-	GridFract_t spacef = GetWorldToGridV(point);
-	return  spacef;
-}
-Screenspace_t GetGridToScreen(Gridspace_t space)
-{
-	Worldspace_t point = GetGridToWorld(space);
-	Screenspace_t pixel = GetWorldToScreen(point);
-	return  pixel;
-}
-Screenspace_t GetGridToScreenV(GridFract_t spacef)
-{
-	Worldspace_t point = GetGridToWorldV(spacef);
-	Screenspace_t pixel = GetWorldToScreen(point);
-	return  pixel;
-}
 
 #pragma endregion
 
 // Draws a square centered around the point
 // Size in screenspace
-inline void DrawPoint2D(Vector2 point, float size, Color color)
+inline void DrawPoint2D(Vector2 point, float size, Color color, Camera2D camera)
 {
-	float sizeWS = size / g_camera.zoom;
+	float sizeWS = size / camera.zoom;
 	float halfSize = sizeWS * 0.5f;
 	Vector2 position = point - halfSize;
 	DrawRectangleV(position, { sizeWS, sizeWS }, color);
@@ -214,16 +121,14 @@ int lineIndex = 0;
 
 struct Rect
 {
-private:
 	float xMin, yMin, xMax, yMax;
 
-public:
 	Rect() = default;
 	Rect(float sidelength) :
 		xMin(0), yMin(0), xMax(sidelength), yMax(sidelength) {}
 	Rect(float width, float height) :
 		xMin(0), yMin(0), xMax(width), yMax(height) {}
-	Rect(float xMin, float yMin, float xMax, float yMax) :
+	Rect(float x, float y, float width, float height) :
 		xMin(xMin), yMin(yMin), xMax(xMax), yMax(yMax) {}
 
 	explicit Rect(const Rectangle& original) :
@@ -231,55 +136,324 @@ public:
 
 	explicit operator Rectangle() { return { X, Y, Width, Height }; }
 
+	static Rect MinMaxRect(float xmin, float ymin, float xmax, float ymax)
+	{
+		Rect ret{};
+		ret.xMin = xmin;
+		ret.xMax = xmax;
+		ret.yMin = ymin;
+		ret.yMax = ymax;
+		return ret;
+	}
+
 	float GetX()		const { return xMin; }
 	float GetY()		const { return yMin; }
 	float GetWidth()	const { return xMax - xMin; }
 	float GetHeight()	const { return yMax - yMin; }
-	float GetXMin()		const { return xMin; }
-	float GetYMin()		const { return yMin; }
-	float GetXMax()		const { return xMax; }
-	float GetYMax()		const { return yMax; }
+
+	// Top left corner
+	Vector2 GetPosition() const { return { xMin, yMin }; }
+	Vector2 GetCenter()	const { return { (xMin + xMax) * 0.5f, (yMin + yMax) * 0.5f }; }
+	// Measured from the position
+	Vector2 GetSize()	const { return { GetWidth(), GetHeight() }; }
+	// Half size
+	Vector2 GetExtents() const { return GetSize() * 0.5f; }
 
 	void SetX	  (float value) { xMin = value; }
 	void SetY	  (float value) { yMin = value; }
 	void SetWidth (float value) { xMax = value - xMin; }
 	void SetHeight(float value) { yMax = value - yMin; }
-	void SetXMin  (float value) { xMin = value; }
-	void SetYMin  (float value) { yMin = value; }
-	void SetXMax  (float value) { xMax = value; }
-	void SetYMax  (float value) { yMax = value; }
+
+	// Move rect but keep size
+	void SetPosition(Vector2 value)
+	{
+		Vector2 size = GetSize();
+		xMin = value.x;
+		yMin = value.y;
+		xMax = xMin + size.x;
+		yMax = yMin + size.y;
+	}
+	// Move rect but keep size
+	void SetCenter(Vector2 value) { SetPosition(value - GetExtents()); }
+	// Measured from the position
+	void SetSize(Vector2 value) { xMax = xMin + value.x; yMax = yMin + value.y; }
 
 	property_rw(GetX, SetX)				float X;
 	property_rw(GetY, SetY)				float Y;
 	property_rw(GetWidth, SetWidth)		float Width;
 	property_rw(GetHeight, SetHeight)	float Height;
 
-	property_rw(GetXMin, SetXMin)		float XMin;
-	property_rw(GetYMin, SetYMin)		float YMin;
-	property_rw(GetXMax, SetXMax)		float XMax;
-	property_rw(GetYMax, SetYMax)		float YMax;
+	property_rw(GetPosition, SetPosition) Vector2 Position;
+	property_rw(GetCenter, SetCenter)	Vector2 Center;
+
+	property_rw(GetSize, SetSize)		Vector2 Size;
+	property_ro(GetExtents)				Vector2 Extents;
+
+	bool Contains(Vector2 point) const
+	{
+		return
+			(point.x >= xMin) &&
+			(point.x <= xMax) &&
+			(point.y >= yMin) &&
+			(point.y <= yMax);
+
+	}
+	bool Overlaps(Rect other) const
+	{
+		return
+			(xMin < other.xMax && xMax > other.xMin) &&
+			(yMin < other.yMax && yMax > other.yMin);
+	}
+
+	static Vector2 NormalizedToPoint(Rect rectangle, Vector2 normalizedRectCoordinates)
+	{
+		return normalizedRectCoordinates * rectangle.GetSize() + rectangle.GetPosition();
+	}
+	// Clamped
+	static Vector2 PointToNormalized(Rect rectangle, Vector2 point)
+	{
+		return (point - rectangle.GetPosition()) / rectangle.GetSize();
+	}
+
+	const static Rect Zero;
+};
+const Rect Rect::Zero = { 0,0,0,0 };
+
+struct RectOffset
+{
+	int left, right, top, bottom;
+
+	RectOffset() = default;
+	RectOffset(int left, int right, int top, int bottom) : left(left), right(right), top(top), bottom(bottom) {}
+
+	int GetVertical() const { return left + right; }
+	int GetHorizontal() const { return top + bottom; }
+
+	property_ro(GetHorizontal) int Horizontal;
+	property_ro(GetVertical) int Vertical;
+
+	Rect Add(Rect rect)
+	{
+		rect.xMin += left;
+		rect.xMax -= right;
+		rect.yMin += top;
+		rect.yMax -= bottom;
+		return rect;
+	}
+	Rect Remove(Rect rect)
+	{
+		rect.xMin -= left;
+		rect.xMax += right;
+		rect.yMin -= top;
+		rect.yMax += bottom;
+		return rect;
+	}
 };
 
 // A sub-window panel. Can be dragged and resized within the main window
 class Pane
 {
+protected:
 	Rect rect;
+
+	static Vector2 mousePos; // Screenspace
+	static Vector2 windowSize; // Screenspace
+
+	bool CheckMouseInPane() const { return rect.Contains(mousePos); }
+
 public:
-	virtual void Tick() = 0;
-	virtual void Draw() const = 0;
+	// This should be called before any ticks
+	static void Update()
+	{
+		if (IsWindowResized())
+			windowSize = { (float)GetRenderWidth(), (float)GetRenderHeight() };
+
+		mousePos = GetMousePosition();
+	}
+
+	// Base: handles frame/decoration interactions for the pane
+	virtual void Tick()
+	{
+
+	}
+	// Base: draws the frame & decoration of the pane
+	virtual void Draw() const
+	{
+
+	}
 };
+Vector2 Pane::mousePos; // Screenspace
+Vector2 Pane::windowSize; // Screenspace
 
 // An interactive look into the game world
 class Viewport : public Pane
 {
 public:
+	// A point in world space
+	// Floating point
+	using Worldspace_t = Vector2;
+
+	// A point in screen space
+	// Floating point
+	using Screenspace_t = Vector2;
+
+	// A point in grid space
+	// Integer
+	using Gridspace_t = IVec2;
+
+	// A point in fractional grid space
+	// Floating point
+	using GridFract_t = Vector2;
+
+private:
+	Gridspace_t hoveredSpace; // Gridspace
+
+	Camera2D viewportCamera{ { 0,0 }, { 0,0 }, 0.0f, 1.0f };
+	Worldspace_t& framePosition = viewportCamera.offset;
+	Worldspace_t frameSize = GetScreenToWorld(windowSize); // Size of the viewport in worldspace
+
+public:
+	// Width of a gridspace in world units
+	static constexpr float gridWidth = 32.0f;
+	static constexpr float inverseGridScale = 1.0f / gridWidth;
+
+#pragma region Conversions
+	Screenspace_t GetWorldToScreen(Worldspace_t point) const
+	{
+		Screenspace_t pixel = GetWorldToScreen2D(point, viewportCamera);
+		return pixel;
+	}
+	Worldspace_t GetScreenToWorld(Screenspace_t pixel) const
+	{
+		Screenspace_t point = GetScreenToWorld2D(pixel, viewportCamera);
+		return point;
+	}
+
+	GridFract_t GetWorldToGridV(Worldspace_t point) const
+	{
+		GridFract_t spacef = point * inverseGridScale; // Don't floor, don't cast
+		return spacef;
+	}
+	Gridspace_t GetWorldToGrid(Worldspace_t point) const
+	{
+		GridFract_t spacef = GetWorldToGridV(point);
+		Gridspace_t space = Vector2FloorToIVec(spacef); // Floor with cast
+		return space;
+	}
+	Worldspace_t GetGridToWorld(Gridspace_t space) const
+	{
+		GridFract_t spacef = (GridFract_t)space;
+		Worldspace_t point = spacef * gridWidth;
+		return point;
+	}
+	Worldspace_t GetGridToWorldV(GridFract_t spacef) const
+	{
+		Worldspace_t point = spacef * gridWidth;
+		return point;
+	}
+
+	GridFract_t SnapToGrid(GridFract_t spacef) const
+	{
+		GridFract_t floored = Vector2Floor(spacef); // Floor without cast
+		return floored;
+	}
+
+	Worldspace_t SnapWorldToGrid(Worldspace_t point) const
+	{
+		GridFract_t spacef = GetWorldToGridV(point);
+		GridFract_t spacef_floored = SnapToGrid(spacef); // Floor without cast
+		Worldspace_t point_snapped = GetGridToWorldV(spacef_floored);
+		return point_snapped;
+	}
+	Gridspace_t GetScreenToGrid(Screenspace_t pixel) const
+	{
+		Worldspace_t point = GetScreenToWorld(pixel);
+		Gridspace_t space = GetWorldToGrid(point);
+		return  space;
+	}
+	GridFract_t GetScreenToGridV(Screenspace_t pixel) const
+	{
+		Worldspace_t point = GetScreenToWorld(pixel);
+		GridFract_t spacef = GetWorldToGridV(point);
+		return  spacef;
+	}
+	Screenspace_t GetGridToScreen(Gridspace_t space) const
+	{
+		Worldspace_t point = GetGridToWorld(space);
+		Screenspace_t pixel = GetWorldToScreen(point);
+		return  pixel;
+	}
+	Screenspace_t GetGridToScreenV(GridFract_t spacef) const
+	{
+		Worldspace_t point = GetGridToWorldV(spacef);
+		Screenspace_t pixel = GetWorldToScreen(point);
+		return  pixel;
+	}
+#pragma endregion
+
+public:
 	void Tick() final
 	{
+		Pane::Tick();
 
+		if (!CheckMouseInPane())
+			return;
+
+		// Update input and resizing things
+		{
+			if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
+				framePosition += GetMouseDelta();
+
+			hoveredSpace = GetScreenToGrid(mousePos);
+
+			if (float scroll = GetMouseWheelMove(); scroll != 0.0f)
+			{
+				float windowMin = std::min(windowSize.x, windowSize.y);
+				float zoomMax = windowMin / gridWidth;
+				if (scroll > 0.0f && viewportCamera.zoom > FLT_MIN)
+					viewportCamera.zoom *= positiveScrollIncrement;
+				else if (scroll < 0.0f && viewportCamera.zoom < (gridWidth / 2))
+					viewportCamera.zoom *= negativeScrollIncrement;
+			}
+			frameSize = GetScreenToWorld(rect.Size);
+		}
+
+		{
+			// Todo: movement/interaction
+		}
 	}
+
 	void Draw() const final
 	{
+		Pane::Draw();
 
+		Screenspace_t screenMin = { -gridWidth,-gridWidth };
+		Screenspace_t screenMax = windowSize + Vector2{ gridWidth,gridWidth };
+		Worldspace_t renderMin = SnapWorldToGrid(GetScreenToWorld(screenMin));
+		Worldspace_t renderMax = SnapWorldToGrid(GetScreenToWorld(screenMax));
+		Worldspace_t hoveredSpace_ws = GetGridToWorld(hoveredSpace);
+
+		BeginMode2D(viewportCamera);
+		{
+			DrawRectangleV(hoveredSpace_ws, { gridWidth, gridWidth }, ColorAlpha(LIGHTGRAY, 0.5f));
+
+			if ((1.0f / viewportCamera.zoom) < (gridWidth / 2))
+			{
+				Vector2 point = renderMin;
+				for (point.y = renderMin.y; point.y <= renderMax.y; point.y += gridWidth)
+				{
+					for (point.x = renderMin.x; point.x <= renderMax.x; point.x += gridWidth)
+					{
+						DrawPoint2D(point, 2.0f, LIGHTGRAY, viewportCamera);
+					}
+				}
+			}
+			else
+			{
+				DrawRectangleV(renderMin, renderMax - renderMin, LIGHTGRAY);
+			}
+		}
+		EndMode2D();
 	}
 };
 
@@ -289,10 +463,13 @@ class Toolbar : public Pane
 public:
 	void Tick() final
 	{
+		Pane::Tick();
 
 	}
+
 	void Draw() const final
 	{
+		Pane::Draw();
 
 	}
 };
@@ -303,10 +480,13 @@ class Inspector : public Pane
 public:
 	void Tick() final
 	{
+		Pane::Tick();
 
 	}
+
 	void Draw() const final
 	{
+		Pane::Draw();
 
 	}
 };
@@ -317,10 +497,13 @@ class Console : public Pane
 public:
 	void Tick() final
 	{
+		Pane::Tick();
 
 	}
+
 	void Draw() const final
 	{
+		Pane::Draw();
 
 	}
 };
@@ -331,85 +514,45 @@ int main()
 	Vector2 windowSize = { 1280, 720 };
 	InitWindow((int)windowSize.x, (int)windowSize.y, "Assembly Block v0.0.1");
 
-	//SetTargetFPS(60);
+	SetTargetFPS(60);
 
 	// Prep phase
 	bool invertScrolling = false;
 	UseInvertedScoll(invertScrolling);
 
+	std::vector<Viewport> viewports;
+	viewports.reserve(4); // Max expected before needing to reallocate
+	viewports.push_back({});
+
+	std::vector<Toolbar> toolbars;
+	toolbars.reserve(8); // Max expected before needing to reallocate
+
+	std::vector<Inspector> inspectors;
+	inspectors.reserve(1); // Max expected before needing to reallocate
+
+	std::vector<Console> consoles;
+	consoles.reserve(1); // Max expected before needing to reallocate
+
+	std::vector<const Pane*> drawOrder;
+
 	while (!WindowShouldClose())
 	{
 		// Sim phase
 
-		if (IsWindowResized())
-
-		windowSize.x = GetRenderWidth();
-		windowSize.y = GetRenderHeight();
-
-		Vector2 mousePos = GetMousePosition();
-
-		if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
-			g_framePosition += GetMouseDelta();
-
-		IVec2 hoveredSpace = GetScreenToGrid(mousePos);
-
-		if (float scroll = GetMouseWheelMove(); scroll != 0.0f)
-		{
-			float windowMin = std::min(windowSize.x, windowSize.y);
-			float zoomMax = windowMin / g_gridWidth;
-			if (scroll > 0.0f && g_camera.zoom > FLT_MIN)
-				g_camera.zoom *= positiveScrollIncrement;
-			else if (scroll < 0.0f && g_camera.zoom < (zoomMax))
-				g_camera.zoom *= negativeScrollIncrement;
-		}
-
-		Worldspace_t frameSize = GetScreenToWorld(windowSize);
+		Pane::Update();
+		for ( Viewport& pane : viewports ) { pane.Tick(); }
+		for (  Toolbar& pane : toolbars  ) { pane.Tick(); }
+		for (Inspector& pane : inspectors) { pane.Tick(); }
+		for (  Console& pane : consoles  ) { pane.Tick(); }
 
 		// Draw phase
 		BeginDrawing();
 		{
-			ClearBackground(RAYWHITE);
+			ClearBackground(DARKGRAY);
 
-			size_t gridpointsRendered = 0;
-
-			Screenspace_t screenMin = {-g_gridWidth,-g_gridWidth};
-			Screenspace_t screenMax = windowSize + Vector2{g_gridWidth,g_gridWidth};
-			Worldspace_t renderMin = SnapWorldToGrid(GetScreenToWorld(screenMin));
-			Worldspace_t renderMax = SnapWorldToGrid(GetScreenToWorld(screenMax));
-			Worldspace_t hoveredSpace_ws = GetGridToWorld(hoveredSpace);
-
-			BeginMode2D(g_camera);
-			{
-				DrawRectangleV(hoveredSpace_ws, { g_gridWidth, g_gridWidth }, ColorAlpha(LIGHTGRAY, 0.5f));
-
-				if ((1.0f / g_camera.zoom) < (g_gridWidth / 4))
-				{
-					Vector2 point = renderMin;
-					for (point.y = renderMin.y; point.y <= renderMax.y; point.y += g_gridWidth)
-					{
-						for (point.x = renderMin.x; point.x <= renderMax.x; point.x += g_gridWidth)
-						{
-							DrawPoint2D(point, 2.0f, LIGHTGRAY);
-							++gridpointsRendered;
-						}
-					}
-				}
-				else
-				{
-					DrawRectangleV(renderMin, renderMax - renderMin, LIGHTGRAY);
-				}
-			}
-			EndMode2D();
-
-			lineIndex = 0;
+			for (const Pane* pane : drawOrder) { pane->Draw(); }
 
 			DrawFPS(0,0);
-			++lineIndex;
-
-			PushDebugText("Gridpoints being rendered: %i", gridpointsRendered);
-			PushDebugText("Min and max screen coords: (%f, %f)-(%f, %f)", screenMin.x, screenMin.y, screenMax.x, screenMax.y);
-			PushDebugText("Hovered coords: (%i, %i)", hoveredSpace.x, hoveredSpace.y);
-			PushDebugText("Zoom: %f)", g_camera.zoom);
 		}
 		EndDrawing();
 	}
