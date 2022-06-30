@@ -508,9 +508,11 @@ public:
 			// Enter a panel
 			if (draggingTab)
 			{
+				Rect tabRect = decorationRect;
+				tabRect.Width = tabWidth;
 				for (Panel* panel : panels)
 				{
-					if (panel != this && panel->decorationRect.Contains(Window::mousePos))
+					if (panel != this && tabRect.Overlaps(panel->decorationRect))
 					{
 						Frame* tab = GetCurrentTab();
 						panel->AddTab(tab);
@@ -526,7 +528,7 @@ public:
 						{
 							RemovePanelAfterTick(this);
 						}
-						SetActivePanel(panel);
+						SetActivePanel(panel); // Todo: Uhhh... Could be problematic...
 						break;
 					}
 				}
@@ -538,45 +540,44 @@ public:
 			return;
 		}
 
-		if (beingDragged)
+		else if (beingDragged || draggingTab)
 		{
-			Vector2 delta = GetMouseDelta();
-			rect.Position += delta;
-			decorationRect.Position += delta;
-			MoveViewport(delta);
-		}
-		else if (draggingTab)
-		{
-			tabDelta += GetMouseDelta();
-			// Want to enter a panel
-			for (Panel* panel : panels)
+			if (beingDragged)
 			{
-				if (panel != this && panel->decorationRect.Contains(Window::mousePos))
-				{
-					panel->newTabIndex = panel->tabs.size();
-					break;
-				}
-				else
-				{
-					panel->newTabIndex = -1;
-				}
-
+				Vector2 delta = GetMouseDelta();
+				rect.Position += delta;
+				decorationRect.Position += delta;
+				MoveViewport(delta);
 			}
-			// Exit the panel
-			if (!beingDragged && !decorationRect.Contains(Window::mousePos))
+			if (draggingTab)
 			{
-				Rect newPanelRect = rect;
-				newPanelRect.Position += tabDelta;
-				newPanelRect.X += tabIndex * tabWidth;
-				Frame* tab = GetCurrentTab();
-				Panel* newPanel = new Panel(newPanelRect, tab);
-				newPanel->beingDragged = true;
-				newPanel->draggingTab = true;
-				newPanel->active = true;
-				AddPanelAfterTick(newPanel);
-				RemoveTab(tabIndex);
-				draggingTab = false;
-				active = false;
+				tabDelta += GetMouseDelta();
+				// Want to enter a panel
+				Rect tabRect = decorationRect;
+				tabRect.Width = tabWidth;
+				for (Panel* panel : panels)
+				{
+					if (panel != this && tabRect.Overlaps(panel->decorationRect))
+						panel->newTabIndex = panel->tabs.size();
+					else
+						panel->newTabIndex = -1;
+				}
+				// Exit the panel
+				if (!beingDragged && !decorationRect.Contains(Window::mousePos))
+				{
+					Rect newPanelRect = rect;
+					newPanelRect.Position += tabDelta;
+					newPanelRect.X += tabIndex * tabWidth;
+					Frame* tab = GetCurrentTab();
+					Panel* newPanel = new Panel(newPanelRect, tab);
+					newPanel->beingDragged = true;
+					newPanel->draggingTab = true;
+					newPanel->active = true;
+					AddPanelAfterTick(newPanel);
+					RemoveTab(tabIndex);
+					draggingTab = false;
+					active = false;
+				}
 			}
 		}
 		else
