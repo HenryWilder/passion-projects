@@ -311,7 +311,7 @@ struct Rect
 };
 const Rect Rect::Zero = { 0,0,0,0 };
 
-inline void BeginScissorMode(Rect rect) { BeginScissorMode(rect.X, rect.Y, rect.Width, rect.Height); }
+inline void BeginScissorMode(Rect rect) { BeginScissorMode(rect.X, rect.Y, std::max((int)rect.Width, 0), std::max((int)rect.Height, 0)); }
 
 struct RectOffset
 {
@@ -320,8 +320,8 @@ struct RectOffset
 	RectOffset() = default;
 	constexpr RectOffset(int left, int right, int top, int bottom) : left(left), right(right), top(top), bottom(bottom) {}
 
-	int GetVertical() const { return left + right; }
-	int GetHorizontal() const { return top + bottom; }
+	constexpr int GetVertical() const { return left + right; }
+	constexpr int GetHorizontal() const { return top + bottom; }
 
 	property_ro(GetHorizontal) int Horizontal;
 	property_ro(GetVertical) int Vertical;
@@ -390,6 +390,11 @@ private:
 	static constexpr RectOffset border = RectOffset(4,4,4,4); // Offset from rect to the frame
 	static constexpr int decorationHeight = 21;
 	static constexpr float tabWidth = 100;
+	static constexpr Vector2 minSize =
+	{
+		tabWidth + border.GetHorizontal(), // Todo: Make min width the size of the x button
+		decorationHeight + border.GetVertical()
+	};
 	size_t tabIndex = 0; // The currently visible tab
 	std::vector<Frame*> tabs;
 	bool active = false;
@@ -477,18 +482,46 @@ public:
 		}
 		else
 		{
-			Vector2 delta = GetMouseDelta();
+			Vector2 actualChange = { 0,0 };
+			switch (beingResized_horizontal)
+			{
+			case Panel::Axis::negative:
+				actualChange.x = -rect.xMin;
+				rect.xMin = std::min(Window::mousePos.x, rect.xMax - minSize.x);
+				actualChange.x += rect.xMin;
+				break;
 
-			Vector2 move = delta * Vector2{
+			case Panel::Axis::positive:
+				actualChange.x = -rect.xMax;
+				rect.xMax = std::max(Window::mousePos.x, rect.xMin - minSize.x);
+				actualChange.x += rect.xMax;
+				break;
+
+			default: break;
+			}
+
+			switch (beingResized_vertical)
+			{
+			case Panel::Axis::negative:
+				actualChange.y = -rect.yMin;
+				rect.yMin = std::min(Window::mousePos.y, rect.yMax - minSize.y);
+				actualChange.y += rect.yMin;
+				break;
+
+			case Panel::Axis::positive:
+				actualChange.y = -rect.yMax;
+				rect.yMax = std::max(Window::mousePos.y, rect.yMin - minSize.y);
+				actualChange.y += rect.yMax;
+				break;
+
+			default: break;
+			}
+			
+			Vector2 move = actualChange * Vector2{
 				abs((float)beingResized_horizontal),
 				abs((float)beingResized_vertical)
 			};
 			MoveViewport(move * 0.5f);
-
-			if      (beingResized_horizontal == Axis::negative) rect.xMin += delta.x;
-			else if (beingResized_horizontal == Axis::positive) rect.xMax += delta.x;
-			if      (beingResized_vertical   == Axis::negative) rect.yMin += delta.y;
-			else if (beingResized_vertical   == Axis::positive) rect.yMax += delta.y;
 
 			UpdateDecorationRect();
 		}
@@ -565,14 +598,18 @@ public:
 		tabRect.Width = tabWidth;
 		constexpr int fontSize = 10;
 		int textY = rect.yMin + border.top + (border.top + decorationHeight - fontSize) / 2;
-		for (size_t i = 0; i < tabs.size(); ++i)
+		bool breakAfterTab = false;
+		for (size_t i = 0; i < tabs.size() && !breakAfterTab; ++i)
 		{
-			if (active && i == tabIndex)
-				tabRect.Draw({ 0, 127, 255, 255 });
-			else
-				DrawLineV({ tabRect.xMax - 0.5f, tabRect.yMin }, { tabRect.xMax - 0.5f, tabRect.yMax }, GRAY);
+			if (tabRect.xMax > decorationRect.xMax)
+			{
+				tabRect.xMax = decorationRect.xMax;
+				breakAfterTab = true;
+			}
+			if (active && i == tabIndex) tabRect.Draw({ 0, 127, 255, 255 });
+			DrawLineV({ tabRect.xMax - 0.5f, tabRect.yMin }, { tabRect.xMax - 0.5f, tabRect.yMax }, GRAY);
 			BeginScissorMode(tabRect);
-			DrawText(tabs[i]->GetName(), tabRect.xMin + border.left * 2, textY, fontSize, RAYWHITE);
+			DrawText(tabs[i]->GetName(), tabRect.xMin + border.left, textY, fontSize, RAYWHITE);
 			EndScissorMode();
 			tabRect.X += tabWidth;
 		}
