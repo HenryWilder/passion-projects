@@ -953,10 +953,11 @@ public:
 
 			if (float scroll = GetMouseWheelMove(); scroll != 0.0f)
 			{
-				if (scroll > 0.0f && viewportCamera.zoom > FLT_MIN)
+				if (scroll > 0.0f)
 					viewportCamera.zoom *= positiveScrollIncrement;
-				else if (scroll < 0.0f && viewportCamera.zoom < (gridWidth / 2))
+				else if (scroll < 0.0f)
 					viewportCamera.zoom *= negativeScrollIncrement;
+				viewportCamera.zoom = Clamp(viewportCamera.zoom, 0.0625f, 8.0f);
 			}
 		}
 
@@ -1000,6 +1001,14 @@ public:
 						DrawPoint2D(point, 2.0f, gridpointColor, viewportCamera);
 					}
 				}
+				//for (float y = renderMin.y; y <= renderMax.y; y += gridWidth)
+				//{
+				//	DrawLineV({ renderMin.x, y }, { renderMax.x, y }, gridpointColor);
+				//}
+				//for (float x = renderMin.x; x <= renderMax.x; x += gridWidth)
+				//{
+				//	DrawLineV({ x, renderMin.y }, { x, renderMax.y }, gridpointColor);
+				//}
 			}
 			else
 			{
@@ -1098,10 +1107,10 @@ int main()
 	UseInvertedScoll(invertScrolling);
 
 	panels.reserve(16); // Max expected before needing to reallocate
-	panels.push_back(new Panel(Rect(50,50,400,200), new Viewport()));
-	panels.front()->AddTab(new Inspector());
-	panels.push_back(new Panel(Rect(50,250,400,200), new Console()));
-	panels.push_back(new Panel(Rect(450,250,400,200), new Toolbox()));
+	panels.push_back(new Panel(Rect(0,0,1280,80), new Toolbox()));
+	panels.push_back(new Panel(Rect(0,80,200,640), new Inspector()));
+	panels.push_back(new Panel(Rect(200,80,1080,440), new Viewport()));
+	panels.push_back(new Panel(Rect(200,520,1080,200), new Console()));
 
 	while (!WindowShouldClose())
 	{
@@ -1156,8 +1165,6 @@ int main()
 			{
 				panels[i]->Draw();
 			}
-
-			DrawFPS(0,0);
 		}
 		EndDrawing();
 	}
@@ -1168,6 +1175,11 @@ int main()
 	UnloadTexture(texShapes);
 
 	CloseWindow();
+
+	for (Panel* panel : panels)
+	{
+		delete panel;
+	}
 
 	return 0;
 }
