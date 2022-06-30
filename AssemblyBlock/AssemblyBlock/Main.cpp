@@ -1,8 +1,13 @@
 #include <algorithm>
 #include <numeric>
 #include <raylib.h>
+#include <config.h>
 #include <raymath.h>
+#include <rlgl.h>
+#include "external/glad.h"
 #include <unordered_map>
+
+#pragma region Shorthands
 
 #pragma region Vector operators
 
@@ -33,10 +38,58 @@ inline Vector2& operator/=(Vector2& a, float b)		{ return a = Vector2Scale(a, 1.
 
 #pragma endregion
 
+inline void rlVertexV2(Vector2 vert) { rlVertex2f(vert.x, vert.y); }
+
+#pragma endregion
+
 Vector2 Vector2Floor(Vector2 vec)
 {
 	Vector2 ret = { floorf(vec.x), floorf(vec.y) };
 	return ret;
+}
+
+void DrawRectangleMinMax(float xMin, float yMin, float xMax, float yMax, Color color)
+{
+	Vector2 topLeft     = { xMin, yMin };
+	Vector2 topRight    = { xMax, yMin };
+	Vector2 bottomLeft  = { xMin, yMax };
+	Vector2 bottomRight = { xMax, yMax };
+
+#if defined(SUPPORT_QUADS_DRAW_MODE)
+	rlCheckRenderBatchLimit(4);
+
+	rlSetTexture(1u);
+
+	rlBegin(RL_QUADS);
+
+	rlNormal3f(0.0f, 0.0f, 1.0f);
+	rlColor4ub(color.r, color.g, color.b, color.a);
+	rlTexCoord2f(0, 0);
+	rlVertexV2(topLeft);
+	rlVertexV2(bottomLeft);
+	rlVertexV2(bottomRight);
+	rlVertexV2(topRight);
+
+	rlEnd();
+
+	rlSetTexture(0);
+#else
+	rlCheckRenderBatchLimit(6);
+
+	rlBegin(RL_TRIANGLES);
+
+	rlColor4ub(color.r, color.g, color.b, color.a);
+
+	rlVertex2f(topLeft.x, topLeft.y);
+	rlVertex2f(bottomLeft.x, bottomLeft.y);
+	rlVertex2f(topRight.x, topRight.y);
+
+	rlVertex2f(topRight.x, topRight.y);
+	rlVertex2f(bottomLeft.x, bottomLeft.y);
+	rlVertex2f(bottomRight.x, bottomRight.y);
+
+	rlEnd();
+#endif
 }
 
 using HalfLong_t = std::conditional_t<sizeof(size_t) == 8, int, short>;
@@ -75,26 +128,10 @@ namespace std
 // Base class for anything that can be on a gridspace
 class Space
 {
-
+	// Todo
 };
 
 std::unordered_map<IVec2, Space*> world;
-
-#pragma region Space conversions
-
-// Naming convention:
-// Gridspace (IVec) = space
-// Gridspace (Vec)	= spacef
-// Worldspace		= point
-// Screenspace		= pixel
-
-// Function naming:
-// Get_____ToGrid()  = _____ -> integer grid space
-// Get_____ToGridV() = _____ -> fractional grid space
-
-
-
-#pragma endregion
 
 // Draws a square centered around the point
 // Size in screenspace
@@ -116,9 +153,20 @@ void UseInvertedScoll(bool value)
 
 int lineIndex = 0;
 #define PushDebugText(text, ...) DrawText(TextFormat(text, __VA_ARGS__), 0, 16 * lineIndex++, 8, MAGENTA)
+
 #define property_ro(GetFunc) __declspec(property(get = GetFunc))
 #define property_rw(GetFunc, SetFunc) __declspec(property(get = GetFunc, put = SetFunc))
 
+Texture2D texShapes;
+Rectangle texShapesRec = { 0,0,1,1 };
+void InitShapeTexture()
+{
+	Image img = GenImageColor(1,1,WHITE);
+	texShapes = LoadTextureFromImage(img);
+	UnloadImage(img);
+}
+
+// A rectangle with extra stuff
 struct Rect
 {
 	float xMin, yMin, xMax, yMax;
@@ -129,10 +177,10 @@ struct Rect
 	Rect(float width, float height) :
 		xMin(0), yMin(0), xMax(width), yMax(height) {}
 	Rect(float x, float y, float width, float height) :
-		xMin(xMin), yMin(yMin), xMax(xMax), yMax(yMax) {}
+		xMin(x), yMin(y), xMax(x + width), yMax(y + height) {}
 
 	explicit Rect(const Rectangle& original) :
-		xMin(original.x), yMin(original.y), xMax(original.width + original.x), yMax(original.height + original.y) {}
+		xMin(original.x), yMin(original.y), xMax(original.x + original.width), yMax(original.y + original.height) {}
 
 	explicit operator Rectangle() { return { X, Y, Width, Height }; }
 
@@ -146,24 +194,24 @@ struct Rect
 		return ret;
 	}
 
-	float GetX()		const { return xMin; }
-	float GetY()		const { return yMin; }
-	float GetWidth()	const { return xMax - xMin; }
-	float GetHeight()	const { return yMax - yMin; }
+	float GetX() const { return xMin; }
+	void SetX(float value) { xMin = value; }
+	property_rw(GetX, SetX)	float X;
+
+	float GetY() const { return yMin; }
+	void SetY(float value) { yMin = value; }
+	property_rw(GetY, SetY)	float Y;
+
+	float GetWidth() const { return xMax - xMin; }
+	void SetWidth (float value) { xMax = value + xMin; }
+	property_rw(GetWidth, SetWidth) float Width;
+
+	float GetHeight() const { return yMax - yMin; }
+	void SetHeight(float value) { yMax = value + yMin; }
+	property_rw(GetHeight, SetHeight) float Height;
 
 	// Top left corner
 	Vector2 GetPosition() const { return { xMin, yMin }; }
-	Vector2 GetCenter()	const { return { (xMin + xMax) * 0.5f, (yMin + yMax) * 0.5f }; }
-	// Measured from the position
-	Vector2 GetSize()	const { return { GetWidth(), GetHeight() }; }
-	// Half size
-	Vector2 GetExtents() const { return GetSize() * 0.5f; }
-
-	void SetX	  (float value) { xMin = value; }
-	void SetY	  (float value) { yMin = value; }
-	void SetWidth (float value) { xMax = value - xMin; }
-	void SetHeight(float value) { yMax = value - yMin; }
-
 	// Move rect but keep size
 	void SetPosition(Vector2 value)
 	{
@@ -173,21 +221,30 @@ struct Rect
 		xMax = xMin + size.x;
 		yMax = yMin + size.y;
 	}
+	property_rw(GetPosition, SetPosition) Vector2 Position;
+
+	// Top left corner
+	Vector2 GetMinPos() const { return { xMin, yMin }; }
+	property_ro(GetMinPos) Vector2 Min;
+
+	// Bottom right corner
+	Vector2 GetMaxPos() const { return { xMax, yMax }; }
+	property_ro(GetMaxPos) Vector2 Max;
+
+	Vector2 GetCenter()	const { return { (xMin + xMax) * 0.5f, (yMin + yMax) * 0.5f }; }
 	// Move rect but keep size
 	void SetCenter(Vector2 value) { SetPosition(value - GetExtents()); }
+	property_rw(GetCenter, SetCenter) Vector2 Center;
+
+	// Measured from the position
+	Vector2 GetSize() const { return { GetWidth(), GetHeight() }; }
 	// Measured from the position
 	void SetSize(Vector2 value) { xMax = xMin + value.x; yMax = yMin + value.y; }
+	property_rw(GetSize, SetSize) Vector2 Size;
 
-	property_rw(GetX, SetX)				float X;
-	property_rw(GetY, SetY)				float Y;
-	property_rw(GetWidth, SetWidth)		float Width;
-	property_rw(GetHeight, SetHeight)	float Height;
-
-	property_rw(GetPosition, SetPosition) Vector2 Position;
-	property_rw(GetCenter, SetCenter)	Vector2 Center;
-
-	property_rw(GetSize, SetSize)		Vector2 Size;
-	property_ro(GetExtents)				Vector2 Extents;
+	// Half size
+	Vector2 GetExtents() const { return GetSize() * 0.5f; }
+	property_ro(GetExtents)	Vector2 Extents;
 
 	bool Contains(Vector2 point) const
 	{
@@ -209,22 +266,33 @@ struct Rect
 	{
 		return normalizedRectCoordinates * rectangle.GetSize() + rectangle.GetPosition();
 	}
-	// Clamped
 	static Vector2 PointToNormalized(Rect rectangle, Vector2 point)
 	{
 		return (point - rectangle.GetPosition()) / rectangle.GetSize();
 	}
 
 	const static Rect Zero;
+
+	inline void Draw(Color color) const
+	{
+		DrawRectangleMinMax(xMin, yMin, xMax, yMax, color);
+	}
 };
 const Rect Rect::Zero = { 0,0,0,0 };
+
+inline void BeginScissorMode(Rect rect) { BeginScissorMode(rect.X, rect.Y, rect.Width, rect.Height); }
+
+inline void DrawRectangleRect(Rect rect, Color color)
+{
+	rect.Draw(color);
+}
 
 struct RectOffset
 {
 	int left, right, top, bottom;
 
 	RectOffset() = default;
-	RectOffset(int left, int right, int top, int bottom) : left(left), right(right), top(top), bottom(bottom) {}
+	constexpr RectOffset(int left, int right, int top, int bottom) : left(left), right(right), top(top), bottom(bottom) {}
 
 	int GetVertical() const { return left + right; }
 	int GetHorizontal() const { return top + bottom; }
@@ -232,7 +300,7 @@ struct RectOffset
 	property_ro(GetHorizontal) int Horizontal;
 	property_ro(GetVertical) int Vertical;
 
-	Rect Add(Rect rect)
+	Rect Add(Rect rect) const
 	{
 		rect.xMin += left;
 		rect.xMax -= right;
@@ -240,7 +308,7 @@ struct RectOffset
 		rect.yMax -= bottom;
 		return rect;
 	}
-	Rect Remove(Rect rect)
+	Rect Remove(Rect rect) const
 	{
 		rect.xMin -= left;
 		rect.xMax += right;
@@ -248,45 +316,234 @@ struct RectOffset
 		rect.yMax += bottom;
 		return rect;
 	}
+
+	static const RectOffset inset;
+	static const RectOffset expand;
 };
+const RectOffset RectOffset::inset = RectOffset(1,1,1,1);
+const RectOffset RectOffset::expand = RectOffset(-1,-1,-1,-1);
 
-// A sub-window panel. Can be dragged and resized within the main window
-class Pane
+// Global data for all things contained inside the window
+namespace Window
 {
-protected:
-	Rect rect;
+	Vector2 mousePos; // Screenspace
+	Vector2 windowSize; // Screenspace
 
-	static Vector2 mousePos; // Screenspace
-	static Vector2 windowSize; // Screenspace
-
-	bool CheckMouseInPane() const { return rect.Contains(mousePos); }
-
-public:
-	// This should be called before any ticks
-	static void Update()
+	// This should be called ticking any Panels
+	void Update()
 	{
+		mousePos = GetMousePosition();
 		if (IsWindowResized())
 			windowSize = { (float)GetRenderWidth(), (float)GetRenderHeight() };
+	}
+}
 
-		mousePos = GetMousePosition();
+class Panel;
+
+// Contents that gets put inside a SubWindow
+class Frame
+{
+protected:
+	Panel* panel; // The owning panel
+
+public:
+	void SetPanel(Panel* panel) { this->panel = panel; }
+
+	virtual void TickPassive() = 0; // Tick without any interaction
+	virtual void TickActive() = 0; // Tick with interaction
+	virtual void Draw() const = 0;
+	virtual const char* GetName() const = 0;
+};
+
+// A sub-window framel & panel for a Frame. Can be dragged and resized within the main window and displays contents.
+class Panel
+{
+private:
+	Rect rect;
+	Rect decorationRect; // Set whenever rect changes
+	static constexpr RectOffset border = RectOffset(4,4,4,4); // Offset from rect to the frame
+	static constexpr int decorationHeight = 21;
+	size_t tabIndex = 0; // The currently visible tab
+	std::vector<Frame*> tabs;
+	bool beingDragged = false;
+
+	enum class Axis { negative = -1, null = 0, positive = 1 };
+	Axis beingResized_horizontal = Axis::null;
+	Axis beingResized_vertical   = Axis::null;
+
+	void UpdateDecorationRect()
+	{
+		decorationRect = border.Add(rect);
+		decorationRect.Height = decorationHeight;
 	}
 
-	// Base: handles frame/decoration interactions for the pane
-	virtual void Tick()
-	{
+	void MoveViewport(Vector2 delta);
 
+public:
+	Rect GetContentRect() const
+	{
+		Rect contentRect = border.Add(rect);
+		contentRect.yMin += decorationHeight + 1;
+		return contentRect;
 	}
-	// Base: draws the frame & decoration of the pane
-	virtual void Draw() const
-	{
+	Frame* GetCurrentTab() { return tabs[tabIndex]; }
+	const Frame* GetCurrentTab() const { return tabs[tabIndex]; }
 
+	// Checks if the point is on the panel rect
+	bool PanelContains(Vector2 point)
+	{
+		return rect.Contains(point);
+	}
+	// Checks if the point is on the content rect
+	bool ContentContains(Vector2 point)
+	{
+		return GetContentRect().Contains(point);
+	}
+	// Checks if the point is on panel rect but not the content
+	bool BorderContains(Vector2 point)
+	{
+		return PanelContains(point) && !ContentContains(point);
+	}
+
+	Panel() = default;
+	Panel(Rect rect) : rect(rect) { UpdateDecorationRect(); }
+	Panel(Rect rect, Frame* tab) : rect(rect) { UpdateDecorationRect(); AddTab(tab, 0); }
+
+	void AddTab(Frame* tab, size_t at)
+	{
+		_ASSERT(at <= tabs.size());
+		_ASSERT(tab != nullptr);
+		tab->SetPanel(this);
+		tabs.insert(tabs.begin() + at, tab);
+	}
+	Frame* RemoveTab(size_t at)
+	{
+		_ASSERT(at < tabs.size());
+		Frame* tab = tabs[at];
+		tabs.erase(tabs.begin() + at);
+		return tab;
+	}
+
+	// Handles dragging and resizing
+	void TickActive()
+	{
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
+			// On decoration
+			if (decorationRect.Contains(Window::mousePos))
+				beingDragged = true;
+
+			// On border
+			else
+			{
+				Rect contentRect = border.Add(rect);
+
+				if (Window::mousePos.x < contentRect.xMin)
+					beingResized_horizontal = Axis::negative;
+				else if (Window::mousePos.x > contentRect.xMax)
+					beingResized_horizontal = Axis::positive;
+				else
+					beingResized_horizontal = Axis::null;
+
+				if (Window::mousePos.y < contentRect.yMin)
+					beingResized_vertical = Axis::negative;
+				else if (Window::mousePos.y > contentRect.yMax)
+					beingResized_vertical = Axis::positive;
+				else
+					beingResized_vertical = Axis::null;
+			}
+		}
+	}
+	// Todo: figure out a purpose for this function
+	void TickPassive()
+	{
+		
+	}
+
+	// Check whether to pass vs active tick and do it
+	void Tick()
+	{
+		// Refactor: Might need to active tick sometimes even when mouse is outside
+
+		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+		{
+			beingDragged = false;
+			beingResized_horizontal = Axis::null;
+			beingResized_vertical = Axis::null;
+		}
+
+		if (beingDragged)
+		{
+			Vector2 delta = GetMouseDelta();
+			rect.Position += delta;
+			decorationRect.Position += delta;
+			MoveViewport(delta);
+		}
+		else
+		{
+			Vector2 delta = GetMouseDelta();
+
+			Vector2 move = delta * Vector2{
+				abs((float)beingResized_horizontal),
+				abs((float)beingResized_vertical)
+			};
+			MoveViewport(move * 0.5f);
+
+			if      (beingResized_horizontal == Axis::negative) rect.xMin += delta.x;
+			else if (beingResized_horizontal == Axis::positive) rect.xMax += delta.x;
+			if      (beingResized_vertical   == Axis::negative) rect.yMin += delta.y;
+			else if (beingResized_vertical   == Axis::positive) rect.yMax += delta.y;
+
+			UpdateDecorationRect();
+		}
+
+		if (PanelContains(Window::mousePos))
+		{
+			if (ContentContains(Window::mousePos))
+			{
+				TickPassive();
+				GetCurrentTab()->TickActive();
+			}
+			else
+			{
+				TickActive();
+				GetCurrentTab()->TickPassive();
+			}
+		}
+		else
+		{
+			TickPassive();
+			GetCurrentTab()->TickPassive();
+		}
+	}
+
+	// Draws decoration and content
+	void Draw() const
+	{
+		rect.Draw({ 60,60,60,255 });
+		
+		RectOffset::expand.Add(border.Add(rect)).Draw(GRAY);
+
+		// Decoration
+		BeginScissorMode(decorationRect);
+		decorationRect.Draw({ 60,60,60,255 });
+		constexpr int fontSize = 10;
+		DrawText(GetCurrentTab()->GetName(),
+			rect.xMin + border.left * 2,
+			rect.yMin + border.top + (border.top + decorationHeight - fontSize) / 2,
+			fontSize, RAYWHITE);
+		EndScissorMode();
+
+		// Frame
+		Rect contentRect = GetContentRect();
+		BeginScissorMode(contentRect);
+		GetCurrentTab()->Draw();
+		EndScissorMode();
 	}
 };
-Vector2 Pane::mousePos; // Screenspace
-Vector2 Pane::windowSize; // Screenspace
 
 // An interactive look into the game world
-class Viewport : public Pane
+class Viewport : public Frame
 {
 public:
 	// A point in world space
@@ -306,11 +563,14 @@ public:
 	using GridFract_t = Vector2;
 
 private:
-	Gridspace_t hoveredSpace; // Gridspace
+	Gridspace_t hoveredSpace = {}; // Gridspace
 
 	Camera2D viewportCamera{ { 0,0 }, { 0,0 }, 0.0f, 1.0f };
-	Worldspace_t& framePosition = viewportCamera.offset;
-	Worldspace_t frameSize = GetScreenToWorld(windowSize); // Size of the viewport in worldspace
+	Worldspace_t& panelPosition = viewportCamera.offset; // Relative to the frame
+
+	Worldspace_t frameSize = { 0,0 };
+
+	bool drawHoveredSpace = false;
 
 public:
 	// Width of a gridspace in world units
@@ -392,50 +652,59 @@ public:
 #pragma endregion
 
 public:
-	void Tick() final
+	void MoveViewport(Vector2 delta)
 	{
-		Pane::Tick();
+		panelPosition += delta;
+	}
 
-		if (!CheckMouseInPane())
-			return;
-
+	void TickActive() final
+	{
 		// Update input and resizing things
 		{
 			if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
-				framePosition += GetMouseDelta();
+				panelPosition += GetMouseDelta();
 
-			hoveredSpace = GetScreenToGrid(mousePos);
+			hoveredSpace = GetScreenToGrid(Window::mousePos);
+			drawHoveredSpace = true;
 
 			if (float scroll = GetMouseWheelMove(); scroll != 0.0f)
 			{
-				float windowMin = std::min(windowSize.x, windowSize.y);
-				float zoomMax = windowMin / gridWidth;
 				if (scroll > 0.0f && viewportCamera.zoom > FLT_MIN)
 					viewportCamera.zoom *= positiveScrollIncrement;
 				else if (scroll < 0.0f && viewportCamera.zoom < (gridWidth / 2))
 					viewportCamera.zoom *= negativeScrollIncrement;
 			}
-			frameSize = GetScreenToWorld(rect.Size);
 		}
 
 		{
 			// Todo: movement/interaction
 		}
 	}
+	void TickPassive() final
+	{
+		drawHoveredSpace = false;
+	}
 
 	void Draw() const final
 	{
-		Pane::Draw();
+		ClearBackground({ 40,40,40,255 });
 
-		Screenspace_t screenMin = { -gridWidth,-gridWidth };
-		Screenspace_t screenMax = windowSize + Vector2{ gridWidth,gridWidth };
-		Worldspace_t renderMin = SnapWorldToGrid(GetScreenToWorld(screenMin));
-		Worldspace_t renderMax = SnapWorldToGrid(GetScreenToWorld(screenMax));
+		Rect contentRect = panel->GetContentRect();
+
+		Vector2 gridSpace = { gridWidth,gridWidth };
+		Screenspace_t frameMin = contentRect.Min - gridSpace;
+		Screenspace_t frameMax = contentRect.Max + gridSpace;
+		Worldspace_t renderMin = GetScreenToWorld(frameMin);
+		Worldspace_t renderMax = GetScreenToWorld(frameMax);
+		renderMin = SnapWorldToGrid(renderMin);
+		renderMax = SnapWorldToGrid(renderMax);
 		Worldspace_t hoveredSpace_ws = GetGridToWorld(hoveredSpace);
 
+		Color gridpointColor = { 80,80,80,255 };
 		BeginMode2D(viewportCamera);
 		{
-			DrawRectangleV(hoveredSpace_ws, { gridWidth, gridWidth }, ColorAlpha(LIGHTGRAY, 0.5f));
+			if (drawHoveredSpace)
+				DrawRectangleV(hoveredSpace_ws, { gridWidth, gridWidth }, ColorAlpha(gridpointColor, 0.5f));
 
 			if ((1.0f / viewportCamera.zoom) < (gridWidth / 2))
 			{
@@ -444,68 +713,90 @@ public:
 				{
 					for (point.x = renderMin.x; point.x <= renderMax.x; point.x += gridWidth)
 					{
-						DrawPoint2D(point, 2.0f, LIGHTGRAY, viewportCamera);
+						DrawPoint2D(point, 2.0f, gridpointColor, viewportCamera);
 					}
 				}
 			}
 			else
 			{
-				DrawRectangleV(renderMin, renderMax - renderMin, LIGHTGRAY);
+				DrawRectangleV(renderMin, renderMax - renderMin, gridpointColor);
 			}
 		}
 		EndMode2D();
 	}
+
+	const char* GetName() const final { return "Viewport"; }
 };
+void Panel::MoveViewport(Vector2 delta)
+{
+	for (Frame* frame : tabs)
+	{
+		if (Viewport* viewport = dynamic_cast<Viewport*>(frame))
+			viewport->MoveViewport(delta);
+	}
+}
 
 // A bar for tools and actions
-class Toolbar : public Pane
+class Toolbar : public Frame
 {
 public:
-	void Tick() final
+	void TickActive() final
 	{
-		Pane::Tick();
-
+		// Todo
+	}
+	void TickPassive() final
+	{
+		// Todo
 	}
 
 	void Draw() const final
 	{
-		Pane::Draw();
-
+		// Todo
 	}
+
+	const char* GetName() const final { return ""; }
 };
 
-// A panel displaying informations and options for the selection
-class Inspector : public Pane
+// A framel displaying informations and options for the selection
+class Inspector : public Frame
 {
 public:
-	void Tick() final
+	void TickActive() final
 	{
-		Pane::Tick();
-
+		// Todo
+	}
+	void TickPassive() final
+	{
+		// Todo
 	}
 
 	void Draw() const final
 	{
-		Pane::Draw();
-
+		// Todo
 	}
+
+	const char* GetName() const final { return "Inspector"; }
 };
 
 // A text output for displaying warnings, errors, assertions, and letting the user know when something needs attention
-class Console : public Pane
+class Console : public Frame
 {
 public:
-	void Tick() final
+	void TickActive() final
 	{
-		Pane::Tick();
-
+		// Todo
+	}
+	void TickPassive() final
+	{
+		// Todo
 	}
 
 	void Draw() const final
 	{
-		Pane::Draw();
-
+		// Todo
 	}
+
+	const char* GetName() const final { return "Console"; }
 };
 
 int main()
@@ -513,44 +804,31 @@ int main()
 	SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_WINDOW_RESIZABLE);
 	Vector2 windowSize = { 1280, 720 };
 	InitWindow((int)windowSize.x, (int)windowSize.y, "Assembly Block v0.0.1");
-
+	InitShapeTexture();
 	SetTargetFPS(60);
 
 	// Prep phase
 	bool invertScrolling = false;
 	UseInvertedScoll(invertScrolling);
 
-	std::vector<Viewport> viewports;
-	viewports.reserve(4); // Max expected before needing to reallocate
-	viewports.push_back({});
-
-	std::vector<Toolbar> toolbars;
-	toolbars.reserve(8); // Max expected before needing to reallocate
-
-	std::vector<Inspector> inspectors;
-	inspectors.reserve(1); // Max expected before needing to reallocate
-
-	std::vector<Console> consoles;
-	consoles.reserve(1); // Max expected before needing to reallocate
-
-	std::vector<const Pane*> drawOrder;
+	std::vector<Panel*> panels;
+	panels.reserve(16); // Max expected before needing to reallocate
+	panels.push_back(new Panel(Rect(50,50,400,200), new Viewport()));
+	panels.push_back(new Panel(Rect(200,50,400,200), new Console()));
 
 	while (!WindowShouldClose())
 	{
 		// Sim phase
 
-		Pane::Update();
-		for ( Viewport& pane : viewports ) { pane.Tick(); }
-		for (  Toolbar& pane : toolbars  ) { pane.Tick(); }
-		for (Inspector& pane : inspectors) { pane.Tick(); }
-		for (  Console& pane : consoles  ) { pane.Tick(); }
+		Window::Update();
+		for (Panel* panel : panels) { panel->Tick(); }
 
 		// Draw phase
 		BeginDrawing();
 		{
-			ClearBackground(DARKGRAY);
+			ClearBackground({ 80,80,80,255 });
 
-			for (const Pane* pane : drawOrder) { pane->Draw(); }
+			for (const Panel* panel : panels) { panel->Draw(); }
 
 			DrawFPS(0,0);
 		}
@@ -558,6 +836,8 @@ int main()
 	}
 
 	// Cleanup phase
+
+	UnloadTexture(texShapes);
 
 	CloseWindow();
 
