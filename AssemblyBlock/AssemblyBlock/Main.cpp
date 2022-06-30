@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <vector>
+#include <queue>
 #include <numeric>
 #include <raylib.h>
 #include <config.h>
@@ -366,6 +368,35 @@ namespace Window
 
 class Panel;
 
+// Panels are in order of depth; first will always be focused
+std::vector<Panel*> panels;
+void SetActivePanel(size_t index)
+{
+	if (index != 0)
+	{
+		Panel* panel = panels[index];
+		panels.erase(panels.begin() + index);
+		panels.insert(panels.begin(), panel);
+	}
+}
+// Prefer MakeActivePanel(size_t) where index is already available.
+void SetActivePanel(Panel* panel)
+{
+	auto it = std::find(panels.begin(), panels.end(), panel);
+	_ASSERT(it != panels.end());
+	SetActivePanel(it - panels.begin());
+}
+std::queue<Panel*> panelsToAdd;
+std::queue<Panel*> panelsToRemove;
+void AddPanelAfterTick(Panel* panel)
+{
+	panelsToAdd.push(panel);
+}
+void RemovePanelAfterTick(Panel* panel)
+{
+	panelsToRemove.push(panel);
+}
+
 // Contents that gets put inside a SubWindow
 class Frame
 {
@@ -398,6 +429,10 @@ private:
 	std::vector<Frame*> tabs;
 	bool active = false;
 	bool beingDragged = false;
+	bool draggingTab = false;
+	int newTabIndex = -1; // Index of tab that is going to be added - negative for none
+	static constexpr int newTabInserterLineWidth = 5;
+	Vector2 tabDelta = { 0,0 };
 	enum class Axis { negative = -1, null = 0, positive = 1 };
 	Axis beingResized_horizontal = Axis::null;
 	Axis beingResized_vertical   = Axis::null;
@@ -462,6 +497,7 @@ public:
 		_ASSERT(at < tabs.size());
 		Frame* tab = tabs[at];
 		tabs.erase(tabs.begin() + at);
+		tabIndex = std::min(tabIndex, tabs.size() - 1);
 		return tab;
 	}
 
@@ -469,9 +505,37 @@ public:
 	{
 		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
 		{
+			// Enter a panel
+			if (draggingTab)
+			{
+				for (Panel* panel : panels)
+				{
+					if (panel != this && panel->decorationRect.Contains(Window::mousePos))
+					{
+						Frame* tab = GetCurrentTab();
+						panel->AddTab(tab);
+						panel->tabIndex = panel->tabs.size() - 1; // Todo: insertion, not just appending
+						panel->newTabIndex = -1;
+						if (tabs.size() > 1) // I have a family!
+						{
+							RemoveTab(tabIndex);
+							draggingTab = false;
+							active = false;
+						}
+						else // My work here is done.
+						{
+							RemovePanelAfterTick(this);
+						}
+						SetActivePanel(panel);
+						break;
+					}
+				}
+			}
 			beingDragged = false;
+			draggingTab = false;
 			beingResized_horizontal = Axis::null;
 			beingResized_vertical = Axis::null;
+			return;
 		}
 
 		if (beingDragged)
@@ -480,6 +544,40 @@ public:
 			rect.Position += delta;
 			decorationRect.Position += delta;
 			MoveViewport(delta);
+		}
+		else if (draggingTab)
+		{
+			tabDelta += GetMouseDelta();
+			// Want to enter a panel
+			for (Panel* panel : panels)
+			{
+				if (panel != this && panel->decorationRect.Contains(Window::mousePos))
+				{
+					panel->newTabIndex = panel->tabs.size();
+					break;
+				}
+				else
+				{
+					panel->newTabIndex = -1;
+				}
+
+			}
+			// Exit the panel
+			if (!beingDragged && !decorationRect.Contains(Window::mousePos))
+			{
+				Rect newPanelRect = rect;
+				newPanelRect.Position += tabDelta;
+				newPanelRect.X += tabIndex * tabWidth;
+				Frame* tab = GetCurrentTab();
+				Panel* newPanel = new Panel(newPanelRect, tab);
+				newPanel->beingDragged = true;
+				newPanel->draggingTab = true;
+				newPanel->active = true;
+				AddPanelAfterTick(newPanel);
+				RemoveTab(tabIndex);
+				draggingTab = false;
+				active = false;
+			}
 		}
 		else
 		{
@@ -550,7 +648,13 @@ public:
 				{
 					unsigned clickIndex = (unsigned)((Window::mousePos.x - decorationRect.xMin) / tabWidth);
 					if (clickIndex < tabs.size())
+					{
 						tabIndex = clickIndex;
+						if (tabs.size() == 1)
+							beingDragged = true;
+						draggingTab = true;
+						tabDelta = { 0,0 };
+					}
 					else
 						beingDragged = true;
 				}
@@ -613,6 +717,15 @@ public:
 			DrawText(tabs[i]->GetName(), tabRect.xMin + border.left, textY, fontSize, RAYWHITE);
 			EndScissorMode();
 			tabRect.X += tabWidth;
+		}
+		if (newTabIndex >= 0)
+		{
+			Rect inserterRect = {};
+			inserterRect.yMin = decorationRect.yMin;
+			inserterRect.yMax = decorationRect.yMax;
+			inserterRect.xMin = decorationRect.xMin + tabWidth * newTabIndex;
+			inserterRect.Width = newTabInserterLineWidth;
+			inserterRect.Draw({ 0, 127, 255, 255 });
 		}
 		Rect gripRect = tabRect;
 		gripRect.xMax = decorationRect.xMax;
@@ -909,12 +1022,11 @@ int main()
 	bool invertScrolling = false;
 	UseInvertedScoll(invertScrolling);
 
-	// Panels are in order of depth; first will always be focused
-	std::vector<Panel*> panels;
 	panels.reserve(16); // Max expected before needing to reallocate
 	panels.push_back(new Panel(Rect(50,50,400,200), new Viewport()));
 	panels.front()->AddTab(new Inspector());
 	panels.push_back(new Panel(Rect(50,250,400,200), new Console()));
+	panels.push_back(new Panel(Rect(450,250,400,200), new Toolbox()));
 
 	while (!WindowShouldClose())
 	{
@@ -930,11 +1042,7 @@ int main()
 			// Focused
 			if (panel->PanelContains(Window::mousePos) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				if (i != 0)
-				{
-					panels.erase(panels.begin() + i);
-					panels.insert(panels.begin(), panel);
-				}
+				SetActivePanel(i);
 				break;
 			}
 		}
@@ -943,6 +1051,21 @@ int main()
 		for (size_t i = 1; i < panels.size(); ++i)
 		{
 			panels[i]->TickPassive();
+		}
+
+		// Add and remove panels
+		while (!panelsToRemove.empty())
+		{
+			Panel* panel = panelsToRemove.front();
+			auto it = std::find(panels.begin(), panels.end(), panel);
+			panels.erase(it);
+			delete panel;
+			panelsToRemove.pop();
+		}
+		while (!panelsToAdd.empty())
+		{
+			panels.insert(panels.begin(), panelsToAdd.front()); // @Speed: this is gonna copy a lot if multiple panels are added in a tick
+			panelsToAdd.pop();
 		}
 
 		// Draw phase
