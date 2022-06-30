@@ -91,6 +91,33 @@ void DrawRectangleMinMax(float xMin, float yMin, float xMax, float yMax, Color c
 	rlEnd();
 #endif
 }
+void DrawRectangleLinesMinMax(float xMin, float yMin, float xMax, float yMax, Color color)
+{
+	float width = xMax - xMin;
+	float height = yMax - yMin;
+#if defined(SUPPORT_QUADS_DRAW_MODE)
+
+	DrawRectangleMinMax(xMin, yMin, xMax, 1, color);
+	DrawRectangleMinMax(xMin - 1, yMin + 1, 1, yMax - 1, color);
+	DrawRectangleMinMax(xMin, yMin + 1, xMax, 1, color);
+	DrawRectangleMinMax(xMin, yMin + 1, 1, yMax - 1, color);
+#else
+	rlBegin(RL_LINES);
+	rlColor4ub(color.r, color.g, color.b, color.a);
+	rlVertex2i(xMin + 1, yMin + 1);
+	rlVertex2i(xMax, yMin + 1);
+
+	rlVertex2i(xMax, yMin + 1);
+	rlVertex2i(xMax, yMax);
+
+	rlVertex2i(xMax, yMax);
+	rlVertex2i(xMin + 1, yMax);
+
+	rlVertex2i(xMin + 1, yMax);
+	rlVertex2i(xMin + 1, yMin + 1);
+	rlEnd();
+#endif
+}
 
 using HalfLong_t = std::conditional_t<sizeof(size_t) == 8, int, short>;
 
@@ -195,11 +222,11 @@ struct Rect
 	}
 
 	float GetX() const { return xMin; }
-	void SetX(float value) { xMin = value; }
+	void SetX(float value) { float w = Width; xMin = value; xMax = xMin + w; }
 	property_rw(GetX, SetX)	float X;
 
 	float GetY() const { return yMin; }
-	void SetY(float value) { yMin = value; }
+	void SetY(float value) { float h = Height; yMin = value; yMax = yMin + h; }
 	property_rw(GetY, SetY)	float Y;
 
 	float GetWidth() const { return xMax - xMin; }
@@ -277,15 +304,14 @@ struct Rect
 	{
 		DrawRectangleMinMax(xMin, yMin, xMax, yMax, color);
 	}
+	inline void DrawLines(Color color) const
+	{
+		DrawRectangleLinesMinMax(xMin, yMin, xMax, yMax, color);
+	}
 };
 const Rect Rect::Zero = { 0,0,0,0 };
 
 inline void BeginScissorMode(Rect rect) { BeginScissorMode(rect.X, rect.Y, rect.Width, rect.Height); }
-
-inline void DrawRectangleRect(Rect rect, Color color)
-{
-	rect.Draw(color);
-}
 
 struct RectOffset
 {
@@ -363,10 +389,11 @@ private:
 	Rect decorationRect; // Set whenever rect changes
 	static constexpr RectOffset border = RectOffset(4,4,4,4); // Offset from rect to the frame
 	static constexpr int decorationHeight = 21;
+	static constexpr float tabWidth = 100;
 	size_t tabIndex = 0; // The currently visible tab
 	std::vector<Frame*> tabs;
+	bool active = false;
 	bool beingDragged = false;
-
 	enum class Axis { negative = -1, null = 0, positive = 1 };
 	Axis beingResized_horizontal = Axis::null;
 	Axis beingResized_vertical   = Axis::null;
@@ -380,6 +407,8 @@ private:
 	void MoveViewport(Vector2 delta);
 
 public:
+	static Shader ghostShader;
+
 	Rect GetContentRect() const
 	{
 		Rect contentRect = border.Add(rect);
@@ -407,9 +436,15 @@ public:
 
 	Panel() = default;
 	Panel(Rect rect) : rect(rect) { UpdateDecorationRect(); }
-	Panel(Rect rect, Frame* tab) : rect(rect) { UpdateDecorationRect(); AddTab(tab, 0); }
+	Panel(Rect rect, Frame* tab) : rect(rect) { UpdateDecorationRect(); AddTab(tab); }
 
-	void AddTab(Frame* tab, size_t at)
+	void AddTab(Frame* tab)
+	{
+		_ASSERT(tab != nullptr);
+		tab->SetPanel(this);
+		tabs.push_back(tab);
+	}
+	void InsertTab(Frame* tab, size_t at)
 	{
 		_ASSERT(at <= tabs.size());
 		_ASSERT(tab != nullptr);
@@ -424,47 +459,8 @@ public:
 		return tab;
 	}
 
-	// Handles dragging and resizing
-	void TickActive()
+	void UpdateDragAndResize()
 	{
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-		{
-			// On decoration
-			if (decorationRect.Contains(Window::mousePos))
-				beingDragged = true;
-
-			// On border
-			else
-			{
-				Rect contentRect = border.Add(rect);
-
-				if (Window::mousePos.x < contentRect.xMin)
-					beingResized_horizontal = Axis::negative;
-				else if (Window::mousePos.x > contentRect.xMax)
-					beingResized_horizontal = Axis::positive;
-				else
-					beingResized_horizontal = Axis::null;
-
-				if (Window::mousePos.y < contentRect.yMin)
-					beingResized_vertical = Axis::negative;
-				else if (Window::mousePos.y > contentRect.yMax)
-					beingResized_vertical = Axis::positive;
-				else
-					beingResized_vertical = Axis::null;
-			}
-		}
-	}
-	// Todo: figure out a purpose for this function
-	void TickPassive()
-	{
-		
-	}
-
-	// Check whether to pass vs active tick and do it
-	void Tick()
-	{
-		// Refactor: Might need to active tick sometimes even when mouse is outside
-
 		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
 		{
 			beingDragged = false;
@@ -496,51 +492,100 @@ public:
 
 			UpdateDecorationRect();
 		}
+	}
 
+	void TickActive()
+	{
+		active = true;
+		UpdateDragAndResize();
+
+		// On content
+		if (ContentContains(Window::mousePos))
+		{
+			GetCurrentTab()->TickActive();
+			return;
+		}
+
+		// On border/decoration
 		if (PanelContains(Window::mousePos))
 		{
-			if (ContentContains(Window::mousePos))
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				TickPassive();
-				GetCurrentTab()->TickActive();
-			}
-			else
-			{
-				TickActive();
-				GetCurrentTab()->TickPassive();
+				// On decoration
+				if (decorationRect.Contains(Window::mousePos))
+				{
+					unsigned clickIndex = (unsigned)((Window::mousePos.x - decorationRect.xMin) / tabWidth);
+					if (clickIndex < tabs.size())
+						tabIndex = clickIndex;
+					else
+						beingDragged = true;
+				}
+
+				// On border
+				else
+				{
+					Rect contentRect = border.Add(rect);
+
+					if (Window::mousePos.x < contentRect.xMin)
+						beingResized_horizontal = Axis::negative;
+					else if (Window::mousePos.x > contentRect.xMax)
+						beingResized_horizontal = Axis::positive;
+					else
+						beingResized_horizontal = Axis::null;
+
+					if (Window::mousePos.y < contentRect.yMin)
+						beingResized_vertical = Axis::negative;
+					else if (Window::mousePos.y > contentRect.yMax)
+						beingResized_vertical = Axis::positive;
+					else
+						beingResized_vertical = Axis::null;
+				}
 			}
 		}
-		else
-		{
-			TickPassive();
-			GetCurrentTab()->TickPassive();
-		}
+
+		GetCurrentTab()->TickPassive();
+	}
+
+	void TickPassive()
+	{
+		active = false;
+		UpdateDragAndResize();
+		GetCurrentTab()->TickPassive();
 	}
 
 	// Draws decoration and content
 	void Draw() const
 	{
-		rect.Draw({ 60,60,60,255 });
-		
+		rect.Draw({ 60, 60, 60, 255 });
 		RectOffset::expand.Add(border.Add(rect)).Draw(GRAY);
 
 		// Decoration
-		BeginScissorMode(decorationRect);
-		decorationRect.Draw({ 60,60,60,255 });
+		decorationRect.Draw({ 60, 60, 60, 255 });
+		Rect tabRect = decorationRect;
+		tabRect.Width = tabWidth;
 		constexpr int fontSize = 10;
-		DrawText(GetCurrentTab()->GetName(),
-			rect.xMin + border.left * 2,
-			rect.yMin + border.top + (border.top + decorationHeight - fontSize) / 2,
-			fontSize, RAYWHITE);
-		EndScissorMode();
+		int textY = rect.yMin + border.top + (border.top + decorationHeight - fontSize) / 2;
+		for (size_t i = 0; i < tabs.size(); ++i)
+		{
+			if (active && i == tabIndex)
+				tabRect.Draw({ 0, 127, 255, 255 });
+			else
+				DrawLineV({ tabRect.xMax - 0.5f, tabRect.yMin }, { tabRect.xMax - 0.5f, tabRect.yMax }, GRAY);
+			BeginScissorMode(tabRect);
+			DrawText(tabs[i]->GetName(), tabRect.xMin + border.left * 2, textY, fontSize, RAYWHITE);
+			EndScissorMode();
+			tabRect.X += tabWidth;
+		}
 
 		// Frame
 		Rect contentRect = GetContentRect();
 		BeginScissorMode(contentRect);
+		ClearBackground({ 40,40,40,255 });
 		GetCurrentTab()->Draw();
 		EndScissorMode();
 	}
 };
+Shader Panel::ghostShader;
 
 // An interactive look into the game world
 class Viewport : public Frame
@@ -805,30 +850,58 @@ int main()
 	Vector2 windowSize = { 1280, 720 };
 	InitWindow((int)windowSize.x, (int)windowSize.y, "Assembly Block v0.0.1");
 	InitShapeTexture();
+	Panel::ghostShader = LoadShader(0, "ghost.frag");
 	SetTargetFPS(60);
 
 	// Prep phase
 	bool invertScrolling = false;
 	UseInvertedScoll(invertScrolling);
 
+	// Panels are in order of depth; first will always be focused
 	std::vector<Panel*> panels;
 	panels.reserve(16); // Max expected before needing to reallocate
 	panels.push_back(new Panel(Rect(50,50,400,200), new Viewport()));
-	panels.push_back(new Panel(Rect(200,50,400,200), new Console()));
+	panels.front()->AddTab(new Inspector());
+	panels.push_back(new Panel(Rect(50,250,400,200), new Console()));
 
 	while (!WindowShouldClose())
 	{
 		// Sim phase
 
 		Window::Update();
-		for (Panel* panel : panels) { panel->Tick(); }
+
+		// Order
+		for (size_t i = 0; i < panels.size(); ++i)
+		{
+			Panel* panel = panels[i];
+
+			// Focused
+			if (panel->PanelContains(Window::mousePos) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			{
+				if (i != 0)
+				{
+					panels.erase(panels.begin() + i);
+					panels.insert(panels.begin(), panel);
+				}
+				break;
+			}
+		}
+
+		panels[0]->TickActive();
+		for (size_t i = 1; i < panels.size(); ++i)
+		{
+			panels[i]->TickPassive();
+		}
 
 		// Draw phase
 		BeginDrawing();
 		{
 			ClearBackground({ 80,80,80,255 });
 
-			for (const Panel* panel : panels) { panel->Draw(); }
+			for (int i = panels.size() - 1; i >= 0; i--)
+			{
+				panels[i]->Draw();
+			}
 
 			DrawFPS(0,0);
 		}
@@ -837,6 +910,7 @@ int main()
 
 	// Cleanup phase
 
+	UnloadShader(Panel::ghostShader);
 	UnloadTexture(texShapes);
 
 	CloseWindow();
