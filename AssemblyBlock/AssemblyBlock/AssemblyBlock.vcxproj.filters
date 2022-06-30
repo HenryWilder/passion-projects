@@ -23,5 +23,8 @@
     <None Include="ghost.frag">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="grip.frag">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

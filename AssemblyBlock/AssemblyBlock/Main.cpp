@@ -388,10 +388,9 @@ private:
 	Rect rect;
 	Rect decorationRect; // Set whenever rect changes
 	static constexpr RectOffset border = RectOffset(4,4,4,4); // Offset from rect to the frame
-	static constexpr int decorationHeight = 21;
+	static constexpr int decorationHeight = 17;
 	static constexpr float tabWidth = 100;
-	static constexpr Vector2 minSize =
-	{
+	static constexpr Vector2 minSize = {
 		tabWidth + border.GetHorizontal(), // Todo: Make min width the size of the x button
 		decorationHeight + border.GetVertical()
 	};
@@ -413,6 +412,8 @@ private:
 
 public:
 	static Shader ghostShader;
+	static Shader gripShader;
+	static int gripShaderSizeLoc;
 
 	Rect GetContentRect() const
 	{
@@ -613,6 +614,17 @@ public:
 			EndScissorMode();
 			tabRect.X += tabWidth;
 		}
+		Rect gripRect = tabRect;
+		gripRect.xMax = decorationRect.xMax;
+		gripRect = RectOffset(5,5,5,5).Add(gripRect);
+		if (gripRect.Width > 0.0f)
+		{
+			float size[2] = { gripRect.Width, gripRect.Height };
+			SetShaderValue(gripShader, gripShaderSizeLoc, size, SHADER_UNIFORM_VEC2);
+			BeginShaderMode(gripShader);
+			DrawTexturePro(texShapes, texShapesRec, (Rectangle)gripRect, { 0,0 }, 0.0f, GRAY);
+			EndShaderMode();
+		}
 
 		// Frame
 		Rect contentRect = GetContentRect();
@@ -623,6 +635,8 @@ public:
 	}
 };
 Shader Panel::ghostShader;
+Shader Panel::gripShader;
+int Panel::gripShaderSizeLoc;
 
 // An interactive look into the game world
 class Viewport : public Frame
@@ -818,8 +832,8 @@ void Panel::MoveViewport(Vector2 delta)
 	}
 }
 
-// A bar for tools and actions
-class Toolbar : public Frame
+// A box for tools and actions
+class Toolbox : public Frame
 {
 public:
 	void TickActive() final
@@ -836,7 +850,7 @@ public:
 		// Todo
 	}
 
-	const char* GetName() const final { return ""; }
+	const char* GetName() const final { return "Toolbox"; }
 };
 
 // A framel displaying informations and options for the selection
@@ -887,7 +901,8 @@ int main()
 	Vector2 windowSize = { 1280, 720 };
 	InitWindow((int)windowSize.x, (int)windowSize.y, "Assembly Block v0.0.1");
 	InitShapeTexture();
-	Panel::ghostShader = LoadShader(0, "ghost.frag");
+	Panel::gripShader = LoadShader(0, "grip.frag");
+	Panel::gripShaderSizeLoc = GetShaderLocation(Panel::gripShader, "size");
 	SetTargetFPS(60);
 
 	// Prep phase
@@ -947,7 +962,7 @@ int main()
 
 	// Cleanup phase
 
-	UnloadShader(Panel::ghostShader);
+	UnloadShader(Panel::gripShader);
 	UnloadTexture(texShapes);
 
 	CloseWindow();
