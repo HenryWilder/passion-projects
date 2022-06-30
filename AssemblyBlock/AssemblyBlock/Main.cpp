@@ -493,7 +493,7 @@ public:
 
 			case Panel::Axis::positive:
 				actualChange.x = -rect.xMax;
-				rect.xMax = std::max(Window::mousePos.x, rect.xMin - minSize.x);
+				rect.xMax = std::max(Window::mousePos.x, rect.xMin + minSize.x);
 				actualChange.x += rect.xMax;
 				break;
 
@@ -510,7 +510,7 @@ public:
 
 			case Panel::Axis::positive:
 				actualChange.y = -rect.yMax;
-				rect.yMax = std::max(Window::mousePos.y, rect.yMin - minSize.y);
+				rect.yMax = std::max(Window::mousePos.y, rect.yMin + minSize.y);
 				actualChange.y += rect.yMax;
 				break;
 
