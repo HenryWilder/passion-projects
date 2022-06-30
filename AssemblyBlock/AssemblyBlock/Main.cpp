@@ -752,7 +752,7 @@ public:
 	void Draw() const
 	{
 		rect.Draw({ 60, 60, 60, 255 });
-		RectOffset::expand.Add(border.Add(rect)).Draw(GRAY);
+		RectOffset::expand.Add(border.Add(rect)).Draw({ 100,100,100,255 });
 
 		// Decoration
 		decorationRect.Draw({ 60, 60, 60, 255 });
@@ -768,8 +768,8 @@ public:
 				tabRect.xMax = decorationRect.xMax;
 				breakAfterTab = true;
 			}
-			if (active && i == tabIndex) tabRect.Draw({ 0, 127, 255, 255 });
-			DrawLineV({ tabRect.xMax - 0.5f, tabRect.yMin }, { tabRect.xMax - 0.5f, tabRect.yMax }, GRAY);
+			if (i == tabIndex) tabRect.Draw(active ? BLUE : Color{ 100,100,100,255 });
+			DrawLineV({ tabRect.xMax - 0.5f, tabRect.yMin }, { tabRect.xMax - 0.5f, tabRect.yMax }, { 100,100,100,255 });
 			BeginScissorMode(tabRect);
 			DrawText(tabs[i]->GetName(), tabRect.xMin + border.left, textY, fontSize, RAYWHITE);
 			EndScissorMode();
@@ -792,7 +792,7 @@ public:
 			float size[2] = { gripRect.Width, gripRect.Height };
 			SetShaderValue(gripShader, gripShaderSizeLoc, size, SHADER_UNIFORM_VEC2);
 			BeginShaderMode(gripShader);
-			DrawTexturePro(texShapes, texShapesRec, (Rectangle)gripRect, { 0,0 }, 0.0f, GRAY);
+			DrawTexturePro(texShapes, texShapesRec, (Rectangle)gripRect, { 0,0 }, 0.0f, { 100,100,100,255 });
 			EndShaderMode();
 		}
 
