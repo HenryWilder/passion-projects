@@ -716,33 +716,48 @@ public:
 		active = false;
 		UpdateDragAndResize();
 
-		// On border
-		if (BorderContains(Window::mousePos))
+		if (PanelContains(Window::mousePos))
 		{
-			Axis canResize_horizontal = Axis::null;
-			Axis canResize_vertical  = Axis::null;
-			Rect contentRect = border.Add(rect);
+			bool mouseIsBlocked = false;
+			for (Panel* panel : panels)
+			{
+				if (panel == this)
+					continue;
 
-			if (Window::mousePos.x < contentRect.xMin)
-				canResize_horizontal = Axis::negative;
-			else if (Window::mousePos.x > contentRect.xMax)
-				canResize_horizontal = Axis::positive;
+				if (panel->PanelContains(Window::mousePos))
+				{
+					mouseIsBlocked = true;
+					break;
+				}
+			}
+			// On border
+			if (!mouseIsBlocked && BorderContains(Window::mousePos))
+			{
+				Axis canResize_horizontal = Axis::null;
+				Axis canResize_vertical = Axis::null;
+				Rect contentRect = border.Add(rect);
 
-			if (Window::mousePos.y < contentRect.yMin)
-				canResize_vertical = Axis::negative;
-			else if (Window::mousePos.y > contentRect.yMax)
-				canResize_vertical = Axis::positive;
+				if (Window::mousePos.x < contentRect.xMin)
+					canResize_horizontal = Axis::negative;
+				else if (Window::mousePos.x > contentRect.xMax)
+					canResize_horizontal = Axis::positive;
 
-			if ((canResize_horizontal == Axis::negative && canResize_vertical == Axis::negative) ||
-				(canResize_horizontal == Axis::positive && canResize_vertical == Axis::positive))
-				Window::cursor = MOUSE_CURSOR_RESIZE_NWSE;
-			else if ((canResize_horizontal == Axis::negative && canResize_vertical == Axis::positive) ||
-				(canResize_horizontal == Axis::positive && canResize_vertical == Axis::negative))
-				Window::cursor = MOUSE_CURSOR_RESIZE_NESW;
-			else if (canResize_horizontal != Axis::null)
-				Window::cursor = MOUSE_CURSOR_RESIZE_EW;
-			else if (canResize_vertical != Axis::null)
-				Window::cursor = MOUSE_CURSOR_RESIZE_NS;
+				if (Window::mousePos.y < contentRect.yMin)
+					canResize_vertical = Axis::negative;
+				else if (Window::mousePos.y > contentRect.yMax)
+					canResize_vertical = Axis::positive;
+
+				if ((canResize_horizontal == Axis::negative && canResize_vertical == Axis::negative) ||
+					(canResize_horizontal == Axis::positive && canResize_vertical == Axis::positive))
+					Window::cursor = MOUSE_CURSOR_RESIZE_NWSE;
+				else if ((canResize_horizontal == Axis::negative && canResize_vertical == Axis::positive) ||
+					(canResize_horizontal == Axis::positive && canResize_vertical == Axis::negative))
+					Window::cursor = MOUSE_CURSOR_RESIZE_NESW;
+				else if (canResize_horizontal != Axis::null)
+					Window::cursor = MOUSE_CURSOR_RESIZE_EW;
+				else if (canResize_vertical != Axis::null)
+					Window::cursor = MOUSE_CURSOR_RESIZE_NS;
+			}
 		}
 
 		GetCurrentTab()->TickPassive();
@@ -928,7 +943,10 @@ public:
 		// Update input and resizing things
 		{
 			if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
+			{
+				Window::cursor = MOUSE_CURSOR_RESIZE_ALL;
 				panelPosition += GetMouseDelta();
+			}
 
 			hoveredSpace = GetScreenToGrid(Window::mousePos);
 			drawHoveredSpace = true;
