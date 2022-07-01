@@ -8,6 +8,9 @@ class Frame
 protected:
 	Panel* panel; // The owning panel
 
+	void DrawText(const char* text, int x, int y, int size, Color color);
+	void DrawRect(float xmin, float ymin, float xmax, float ymax, Color color);
+
 public:
 	void SetPanel(Panel* panel);
 

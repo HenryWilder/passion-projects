@@ -41,6 +41,7 @@ public:
 	static constexpr float inverseGridScale = 1.0f / gridWidth;
 
 #pragma region Conversions
+
 	Screenspace_t GetWorldToScreen(Worldspace_t point) const;
 	Worldspace_t GetScreenToWorld(Screenspace_t pixel) const;
 
@@ -56,6 +57,7 @@ public:
 	GridFract_t GetScreenToGridV(Screenspace_t pixel) const;
 	Screenspace_t GetGridToScreen(Gridspace_t space) const;
 	Screenspace_t GetGridToScreenV(GridFract_t spacef) const;
+
 #pragma endregion
 
 public:

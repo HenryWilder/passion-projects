@@ -1,3 +1,4 @@
+#include "rayex.h"
 #include "Console.h"
 
 #pragma region Console
@@ -14,7 +15,7 @@ void Console::TickPassive()
 
 void Console::Draw() const
 {
-	// Todo
+	DrawText("Test");
 }
 
 #pragma endregion
