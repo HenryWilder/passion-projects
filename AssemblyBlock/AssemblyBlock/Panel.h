@@ -1,18 +1,19 @@
 #pragma once
 #include <vector>
 #include <queue>
+#include <deque>
 #include "raylib.h"
 #include "Rect.h"
 
-class Panel;
 class Frame;
 
-// A sub-window framel & panel for a Frame. Can be dragged and resized within the main window and displays contents.
+// A window-like container for a Frame. Can be dragged and resized
+// within the main window and displays the frame as contents.
 class Panel
 {
 public:
 	// Panels are in order of depth; first will always be focused
-	static std::vector<Panel*> allPanels;
+	static std::deque<Panel*> allPanels;
 	static void SetActivePanel(size_t index);
 	// Prefer MakeActivePanel(size_t) where index is already available.
 	static void SetActivePanel(Panel* panel);
@@ -38,7 +39,7 @@ private:
 	bool active = false;
 	bool beingDragged = false;
 	bool draggingTab = false;
-	int newTabIndex = -1; // Index of tab that is going to be added - negative for none
+	int newTabIndex = -1; // Index of tab that is going to be added | negative for none
 	static constexpr int newTabInserterLineWidth = 5;
 	Vector2 tabDelta = { 0,0 };
 	enum class Axis { negative = -1, null = 0, positive = 1 };
@@ -73,10 +74,13 @@ public:
 	void InsertTab(Frame* tab, size_t at);
 	Frame* RemoveTab(size_t at);
 
+	// Psudo-focus tick when mouse may be outside of panel
 	void UpdateDragAndResize();
 
+	// Tick while focused
 	void TickActive();
 
+	// Tick while unfocused
 	void TickPassive();
 
 	// Draws decoration and content

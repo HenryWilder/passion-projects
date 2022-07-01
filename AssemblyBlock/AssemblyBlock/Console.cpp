@@ -15,7 +15,7 @@ void Console::TickPassive()
 
 void Console::Draw() const
 {
-	DrawText("Test");
+	// DrawText("Test");
 }
 
 #pragma endregion

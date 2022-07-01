@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <deque>
 #include <queue>
 #include "rayex.h"
 #include "Rect.h"
@@ -10,14 +11,14 @@
 // A sub-window framel & panel for a Frame. Can be dragged and resized within the main window and displays contents.
 #pragma region Panel
 // Panels are in order of depth; first will always be focused
-std::vector<Panel*> Panel::allPanels;
+std::deque<Panel*> Panel::allPanels;
 void Panel::SetActivePanel(size_t index)
 {
 	if (index != 0)
 	{
 		Panel* panel = allPanels[index];
 		allPanels.erase(allPanels.begin() + index);
-		allPanels.insert(allPanels.begin(), panel);
+		allPanels.push_front(panel);
 	}
 }
 // Prefer MakeActivePanel(size_t) where index is already available.
