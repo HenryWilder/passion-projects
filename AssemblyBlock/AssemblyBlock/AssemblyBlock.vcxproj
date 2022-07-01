@@ -165,11 +165,32 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Frame.cpp" />
+    <ClCompile Include="GridWorld.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Panel.cpp" />
+    <ClCompile Include="rayex.cpp" />
+    <ClCompile Include="Rect.cpp" />
+    <ClCompile Include="Viewport.cpp" />
+    <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cpp.hint" />
     <None Include="ghost.frag" />
     <None Include="grip.frag" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Console.h" />
+    <ClInclude Include="Frame.h" />
+    <ClInclude Include="GridWorld.h" />
+    <ClInclude Include="Inspector.h" />
+    <ClInclude Include="Panel.h" />
+    <ClInclude Include="Properties.h" />
+    <ClInclude Include="rayex.h" />
+    <ClInclude Include="Rect.h" />
+    <ClInclude Include="Toolbox.h" />
+    <ClInclude Include="Viewport.h" />
+    <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
