@@ -5,19 +5,10 @@
 class Inspector : public Frame
 {
 public:
-	void TickActive() final
-	{
-		// Todo
-	}
-	void TickPassive() final
-	{
-		// Todo
-	}
+	void TickActive() final;
+	void TickPassive() final;
 
-	void Draw() const final
-	{
-		// Todo
-	}
+	void Draw() const final;
 
-	const char* GetName() const final { return "Inspector"; }
+	inline const char* GetName() const final { return "Inspector"; }
 };

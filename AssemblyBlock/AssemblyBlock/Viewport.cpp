@@ -175,6 +175,4 @@ void Viewport::Draw() const
 	EndMode2D();
 }
 
-const char* Viewport::GetName() const { return "Viewport"; }
-
 #pragma endregion

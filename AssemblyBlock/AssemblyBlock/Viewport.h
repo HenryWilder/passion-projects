@@ -66,5 +66,5 @@ public:
 
 	void Draw() const final;
 
-	const char* GetName() const final;
+	inline const char* GetName() const final { return "Viewport"; }
 };
