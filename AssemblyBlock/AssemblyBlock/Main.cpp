@@ -26,10 +26,10 @@ int main()
 	bool invertScrolling = false;
 	UseInvertedScoll(invertScrolling);
 
-	Panel::allPanels.push_back(new Panel(Rect(0,0,1280,80), new Toolbox()));
-	Panel::allPanels.push_back(new Panel(Rect(0,80,200,640), new Inspector()));
-	Panel::allPanels.push_back(new Panel(Rect(200,80,1080,440), new Viewport()));
-	Panel::allPanels.push_back(new Panel(Rect(200,520,1080,200), new Console()));
+	Panel::CreatePanel(Rect(0,0,1280,80), new Toolbox());
+	Panel::CreatePanel(Rect(0,80,200,640), new Inspector());
+	Panel::CreatePanel(Rect(200,80,1080,440), new Viewport());
+	Panel::CreatePanel(Rect(200,520,1080,200), new Console());
 
 	while (!WindowShouldClose())
 	{

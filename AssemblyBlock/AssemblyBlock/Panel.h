@@ -24,6 +24,12 @@ public:
 	static std::queue<Panel*> panelsToRemove;
 	static void RemovePanelAfterTick(Panel* panel);
 
+	template<typename ..._Args>
+	static void CreatePanel(_Args&&... _Param)
+	{
+		allPanels.push_front(new Panel(std::forward<_Args>(_Param...))); // New panel will always be focused
+	}
+
 private:
 	Rect rect;
 	Rect decorationRect; // Set whenever rect changes
