@@ -20,6 +20,7 @@
 
 Blueprint g_clipboardBP;
 
+// does stuff
 void DrawTextShadowedIV(const std::string& text, IVec2 pos, int fontSize, Color color, Color shadow)
 {
     const char* str = text.c_str();
