@@ -59,7 +59,7 @@ void Console::IndentText(std::string& text)
 
     size_t offset = newlinesCount * indentChars;
 
-    /*
+    /**
      * Here we are resizing instead of reserving because we want to assign chars at specific indices before visiting the indices between.
      * 
      * i.e.
