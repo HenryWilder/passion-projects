@@ -4,48 +4,48 @@ const Style WARNING_STYLE = { .backgroundColor = "", .color = "" };
 const Style ERROR_STYLE = { .backgroundColor = "", .color = "" };
 
 /**
-* indent = 1
-* indentSize = 2
-* [Apples\nOranges\nBananas\nMangos]
-* [Apples\nOranges\nBananas\nMangos------->] // Resize
-* [Apples\nOranges\nBananas\n------->Mangos]
-* [Apples\nOranges\n----->Bananas\n  Mangos]
-* [Apples\n--->Oranges\n  Bananas\n  Mangos]
-* [->Apples\n  Oranges\n  Bananas\n  Mangos]
-* [  Apples\n  Oranges\n  Bananas\n  Mangos]
-* 
-* To clarify:
-* 
-* [Apples\nOranges\nBananas\n------->Mangos]:
-* 
-* offset = 8 (number of indents * size of indent)
-*                                 .-------v
-* [Apples\nOranges\nBananas\nMangos        ]
-*                                .-------v
-* [Apples\nOranges\nBananas\nMango        s]
-*                               .-------v
-* [Apples\nOranges\nBananas\nMang        os]
-* [Apples\nOranges\nBananas\nMan        gos]
-* [Apples\nOranges\nBananas\nMa        ngos]
-* [Apples\nOranges\nBananas\nM        angos]
-* [Apples\nOranges\nBananas\n        Mangos]
-* 
-* [Apples\nOranges\n----->Bananas\n  Mangos]:
-* 
-* offset = 6 (number of indents remaining * size of indent)
-*                          .-----v
-* [Apples\nOranges\nBananas\n        Mangos]
-*                         .-----v
-* [Apples\nOranges\nBananas      \n  Mangos]
-*                        .-----v
-* [Apples\nOranges\nBanana      s\n  Mangos]
-* [Apples\nOranges\nBanan      as\n  Mangos]
-* [Apples\nOranges\nBana      nas\n  Mangos]
-* [Apples\nOranges\nBan      anas\n  Mangos]
-* [Apples\nOranges\nBa      nanas\n  Mangos]
-* [Apples\nOranges\nB      ananas\n  Mangos]
-* [Apples\nOranges\n      Bananas\n  Mangos]
-*/
+ * indent = 1
+ * indentSize = 2
+ * [Apples\nOranges\nBananas\nMangos]
+ * [Apples\nOranges\nBananas\nMangos------->] // Resize
+ * [Apples\nOranges\nBananas\n------->Mangos]
+ * [Apples\nOranges\n----->Bananas\n  Mangos]
+ * [Apples\n--->Oranges\n  Bananas\n  Mangos]
+ * [->Apples\n  Oranges\n  Bananas\n  Mangos]
+ * [  Apples\n  Oranges\n  Bananas\n  Mangos]
+ * 
+ * To clarify:
+ * 
+ * [Apples\nOranges\nBananas\n------->Mangos]:
+ * 
+ * offset = 8 (number of indents * size of indent)
+ *                                 .-------v
+ * [Apples\nOranges\nBananas\nMangos        ]
+ *                                .-------v
+ * [Apples\nOranges\nBananas\nMango        s]
+ *                               .-------v
+ * [Apples\nOranges\nBananas\nMang        os]
+ * [Apples\nOranges\nBananas\nMan        gos]
+ * [Apples\nOranges\nBananas\nMa        ngos]
+ * [Apples\nOranges\nBananas\nM        angos]
+ * [Apples\nOranges\nBananas\n        Mangos]
+ * 
+ * [Apples\nOranges\n----->Bananas\n  Mangos]:
+ * 
+ * offset = 6 (number of indents remaining * size of indent)
+ *                          .-----v
+ * [Apples\nOranges\nBananas\n        Mangos]
+ *                         .-----v
+ * [Apples\nOranges\nBananas      \n  Mangos]
+ *                        .-----v
+ * [Apples\nOranges\nBanana      s\n  Mangos]
+ * [Apples\nOranges\nBanan      as\n  Mangos]
+ * [Apples\nOranges\nBana      nas\n  Mangos]
+ * [Apples\nOranges\nBan      anas\n  Mangos]
+ * [Apples\nOranges\nBa      nanas\n  Mangos]
+ * [Apples\nOranges\nB      ananas\n  Mangos]
+ * [Apples\nOranges\n      Bananas\n  Mangos]
+ */
 void Console::IndentText(std::string& text)
 {
     // Number of total additional chars per newline when indenting
