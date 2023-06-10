@@ -57,6 +57,10 @@ void Console::IndentText(std::string& text)
         newlinesCount += (size_t)(ch == '\n');
     }
 
+    size_t indentsTracked = 1; // Number of valid elements in indentPositions
+    size_t* indentPositions = new size_t[newlinesCount];
+    indentPositions[0] = 0;
+
     size_t offset = newlinesCount * indentChars;
 
     /**
@@ -97,11 +101,25 @@ void Console::IndentText(std::string& text)
         {
             i = (n -= indentChars) - 1;
             offset -= indentChars;
+
+            _ASSERT(indentsTracked < newlinesCount);
+            indentPositions[indentsTracked++] = i + 1;
         }
 
         text[i] = text[o];
-        text[o] = ' ';
     }
+
+    _ASSERT(indentsTracked == newlinesCount);
+    for (size_t i = 0; i < indentsTracked; ++i)
+    {
+        size_t o = indentPositions[i];
+        for (size_t j = o; j < o + indentChars; ++j)
+        {
+            text[j] = ' ';
+        }
+    }
+
+    delete[] indentPositions;
 }
 
 void Console::Log(std::string str)
